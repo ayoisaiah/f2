@@ -62,7 +62,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		red := color.FgRed.Render
+		red := color.New(color.FgRed, color.OpBold).Render
 		fmt.Fprintln(os.Stderr, red(err))
 	}
 }
