@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -46,7 +47,9 @@ func (op *Operation) Apply() error {
 	green := color.FgGreen.Render
 	for p, v := range op.newPaths {
 		if op.exec {
+			fmt.Println(p, "->", v)
 			if err := os.Rename(p, v); err != nil {
+				log.Print(err)
 				return fmt.Errorf("An error occured while renaming '%s' to '%s'", p, v)
 			}
 		} else {
@@ -82,7 +85,7 @@ func (op *Operation) FindMatches() error {
 
 		matched := op.searchRegex.MatchString(filename)
 		if matched {
-			op.matches = append(op.matches, f)
+			op.matches = append(op.matches, filepath.Clean(f))
 		}
 	}
 
@@ -153,6 +156,7 @@ func (op *Operation) Replace() error {
 		} else {
 			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
 		}
+
 		// replace `{og}` in the replacement string with the original
 		// filename (without the extension)
 		if og.Match([]byte(str)) {
@@ -169,6 +173,10 @@ func (op *Operation) Replace() error {
 			b := index.Find([]byte(str))
 			r := fmt.Sprintf(string(b), i+1)
 			str = index.ReplaceAllString(str, r)
+		}
+
+		if op.includeDir {
+			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
 		}
 
 		// Report error if replacement operation results in
