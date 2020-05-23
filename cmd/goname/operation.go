@@ -12,6 +12,12 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
+var (
+	red    = color.FgRed.Render
+	green  = color.FgGreen.Render
+	yellow = color.FgYellow.Render
+)
+
 // Operation represents a bulk rename operation
 type Operation struct {
 	paths           []string
@@ -39,7 +45,9 @@ func (op *Operation) Apply() error {
 	green := color.FgGreen.Render
 	for p, v := range op.newPaths {
 		if op.exec {
-			os.Rename(p, v)
+			if err := os.Rename(p, v); err != nil {
+				return fmt.Errorf("An error occured while renaming '%s' to '%s'", p, v)
+			}
 		} else {
 			fmt.Println(p, "➟", green(v), "✅")
 		}
@@ -53,7 +61,7 @@ func (op *Operation) Apply() error {
 }
 
 // FindMatches locates matches for the find pattern
-// in each filename. Directory names are exempted
+// in each filename. Directories and dotfiles are exempted
 func (op *Operation) FindMatches() error {
 	for _, f := range op.paths {
 		isDir, err := isDirectory(f)
@@ -66,6 +74,11 @@ func (op *Operation) FindMatches() error {
 		}
 
 		filename := filepath.Base(f)
+		// ignore dotfiles
+		if filename[0] == 46 {
+			continue
+		}
+
 		matched := op.searchRegex.MatchString(filename)
 		if matched {
 			op.matches = append(op.matches, f)
@@ -79,8 +92,6 @@ func (op *Operation) FindMatches() error {
 // after renaming a file
 func (op *Operation) ReportConflicts() error {
 	m := make(map[string][]string)
-	red := color.FgRed.Render
-	green := color.FgGreen.Render
 
 	var err error
 	for k, v := range op.newPaths {
@@ -88,7 +99,7 @@ func (op *Operation) ReportConflicts() error {
 		if _, err1 := os.Stat(v); err1 == nil || os.IsExist(err1) {
 			fmt.Printf("%s ➟ %s %s %s\n", k, red(v), red("[File exists]"), "❌")
 			if err == nil {
-				err = fmt.Errorf("Conflict detected: overwriting existing file(s)\nUse the -F flag to ignore conflicts and rename anyway")
+				err = fmt.Errorf("%s\n%s", red("Conflict detected: overwriting existing file(s)"), yellow("Use the -F flag to ignore conflicts and rename anyway"))
 			}
 		}
 
@@ -108,7 +119,7 @@ func (op *Operation) ReportConflicts() error {
 	for k, v := range m {
 		if len(v) > 1 {
 			if err == nil {
-				err = fmt.Errorf("%s", red("Conflict detected: overwriting newly renamed path\nUse the -F flag to ignore conflicts and rename anyway"))
+				err = fmt.Errorf("%s\n%s", red("Conflict detected: overwriting newly renamed path"), yellow("Use the -F flag to ignore conflicts and rename anyway"))
 			}
 
 			for i, s := range v {
@@ -124,35 +135,59 @@ func (op *Operation) ReportConflicts() error {
 	return err
 }
 
-// UseTemplate renames files using a template
-func (op *Operation) UseTemplate() {
-	for _, f := range op.matches {
-		fileName, dir := filepath.Base(f), filepath.Dir(f)
-		var slice []string
-		slice = append(slice, strings.Split(op.templateString, "|")...)
-		for i, str := range slice {
-			if str == "og" {
-				slice[i] = strings.TrimSuffix(fileName, filepath.Ext(fileName))
-			}
-		}
-		str := strings.Join(slice, "")
-		op.newPaths[f] = filepath.Join(dir, str)
-	}
-}
-
 // Replace replaces the matched text in each path with the
 // replacement string
-func (op *Operation) Replace() {
-	for _, f := range op.matches {
+func (op *Operation) Replace() error {
+	og := regexp.MustCompile("{og}")
+	ext := regexp.MustCompile("{ext}")
+	index := regexp.MustCompile("%[0-9]+d")
+	for i, f := range op.matches {
 		fileName, dir := filepath.Base(f), filepath.Dir(f)
-		str := op.searchRegex.ReplaceAllString(fileName, op.replaceString)
+		var str string
+		// If search pattern is an empty string
+		// match the entire filename
+		if op.searchRegex.Match([]byte("")) {
+			str = op.replaceString
+		} else {
+			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
+		}
+		// replace `{og}` in the replacement string with the original
+		// filename (without the extension)
+		if og.Match([]byte(str)) {
+			str = og.ReplaceAllString(str, strings.TrimSuffix(fileName, filepath.Ext(fileName)))
+		}
+
+		// replace `{ext}` in the replacement string with the file extension
+		if ext.Match([]byte(str)) {
+			str = ext.ReplaceAllString(str, filepath.Ext(fileName))
+		}
+
+		// If numbering scheme is present
+		if index.Match([]byte(str)) {
+			b := index.Find([]byte(str))
+			r := fmt.Sprintf(string(b), i+1)
+			str = index.ReplaceAllString(str, r)
+		}
+
+		// Report error if replacement operation results in
+		// an empty string for the new filename
+		if str == "" {
+			return fmt.Errorf("%s\n%s ➟ %s %s ", red("Error detected: Operation resulted in empty filename"), f, red("[Empty filename]"), "❌")
+		}
+
 		op.newPaths[f] = filepath.Join(dir, str)
 	}
+
+	return nil
 }
 
 // NewOperation returns an Operation constructed
 // from command line arguments
 func NewOperation(c *cli.Context) (*Operation, error) {
+	if c.String("find") == "" && c.String("replace") == "" {
+		return nil, fmt.Errorf("Invalid arguments: one of `-f` or `-r` must be present and set to a non empty string value\nUse 'goname --help' for more information.")
+	}
+
 	op := &Operation{}
 	op.paths = c.Args().Slice()
 	op.replaceString = c.String("replace")
