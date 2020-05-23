@@ -27,6 +27,7 @@ type Operation struct {
 	templateString  string
 	exec            bool
 	ignoreConflicts bool
+	includeDir      bool
 	searchRegex     *regexp.Regexp
 }
 
@@ -60,8 +61,8 @@ func (op *Operation) Apply() error {
 	return nil
 }
 
-// FindMatches locates matches for the find pattern
-// in each filename. Directories and dotfiles are exempted
+// FindMatches locates matches for the search pattern
+// in each filename. Hidden files and directories are exempted
 func (op *Operation) FindMatches() error {
 	for _, f := range op.paths {
 		isDir, err := isDirectory(f)
@@ -69,7 +70,7 @@ func (op *Operation) FindMatches() error {
 			return err
 		}
 
-		if isDir {
+		if isDir && !op.includeDir {
 			continue
 		}
 
@@ -144,9 +145,10 @@ func (op *Operation) Replace() error {
 	for i, f := range op.matches {
 		fileName, dir := filepath.Base(f), filepath.Dir(f)
 		var str string
-		// If search pattern is an empty string
-		// match the entire filename
+
+		// If the search pattern is an empty string
 		if op.searchRegex.Match([]byte("")) {
+			// use replacement string as template for new name
 			str = op.replaceString
 		} else {
 			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
@@ -182,7 +184,7 @@ func (op *Operation) Replace() error {
 }
 
 // NewOperation returns an Operation constructed
-// from command line arguments
+// from command line flags & arguments
 func NewOperation(c *cli.Context) (*Operation, error) {
 	if c.String("find") == "" && c.String("replace") == "" {
 		return nil, fmt.Errorf("Invalid arguments: one of `-f` or `-r` must be present and set to a non empty string value\nUse 'goname --help' for more information.")
@@ -193,6 +195,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.replaceString = c.String("replace")
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")
+	op.includeDir = c.Bool("include-dir")
 	op.newPaths = make(map[string]string)
 	op.templateString = c.String("template")
 

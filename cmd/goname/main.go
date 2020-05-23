@@ -36,6 +36,11 @@ func main() {
 				Usage:   "By default, goname will do a 'dry run' so that you can inspect the results and confirm that it looks correct. Add this flag to proceed with renaming the files.",
 			},
 			&cli.BoolFlag{
+				Name:    "include-dir",
+				Aliases: []string{"D"},
+				Usage:   "Rename directories",
+			},
+			&cli.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"F"},
 				Usage:   "If there are conflicts after a replacement operation (such as when overwriting existing files), goname will report them to you. Use this flag to force the renaming operation even if there are conflicts.",
