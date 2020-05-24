@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -19,13 +19,17 @@ var (
 	yellow = color.FgYellow.Render
 )
 
+type Change struct {
+	source string
+	target string
+	isDir  bool
+}
+
 // Operation represents a bulk rename operation
 type Operation struct {
 	paths           []string
-	matches         []string
-	newPaths        map[string]string
+	matches         []Change
 	replaceString   string
-	templateString  string
 	exec            bool
 	ignoreConflicts bool
 	includeDir      bool
@@ -44,49 +48,18 @@ func (op *Operation) Apply() error {
 		}
 	}
 
-	green := color.FgGreen.Render
-	for p, v := range op.newPaths {
+	for _, ch := range op.matches {
 		if op.exec {
-			fmt.Println(p, "->", v)
-			if err := os.Rename(p, v); err != nil {
-				log.Print(err)
-				return fmt.Errorf("An error occured while renaming '%s' to '%s'", p, v)
+			if err := os.Rename(ch.source, ch.target); err != nil {
+				return fmt.Errorf("An error occured while renaming '%s' to '%s'", ch.source, ch.target)
 			}
 		} else {
-			fmt.Println(p, "➟", green(v), "✅")
+			fmt.Println(ch.source, "➟", green(ch.target), "✅")
 		}
 	}
 
-	if !op.exec && len(op.newPaths) > 0 {
+	if !op.exec && len(op.matches) > 0 {
 		color.Style{color.FgYellow, color.OpBold}.Println("*** Use the -x flag to apply the above changes ***")
-	}
-
-	return nil
-}
-
-// FindMatches locates matches for the search pattern
-// in each filename. Hidden files and directories are exempted
-func (op *Operation) FindMatches() error {
-	for _, f := range op.paths {
-		isDir, err := isDirectory(f)
-		if err != nil {
-			return err
-		}
-
-		if isDir && !op.includeDir {
-			continue
-		}
-
-		filename := filepath.Base(f)
-		// ignore dotfiles
-		if filename[0] == 46 {
-			continue
-		}
-
-		matched := op.searchRegex.MatchString(filename)
-		if matched {
-			op.matches = append(op.matches, filepath.Clean(f))
-		}
 	}
 
 	return nil
@@ -98,20 +71,20 @@ func (op *Operation) ReportConflicts() error {
 	m := make(map[string][]string)
 
 	var err error
-	for k, v := range op.newPaths {
+	for _, ch := range op.matches {
 		// Ensure file does not exist on the filesystem
-		if _, err1 := os.Stat(v); err1 == nil || os.IsExist(err1) {
-			fmt.Printf("%s ➟ %s %s %s\n", k, red(v), red("[File exists]"), "❌")
+		if _, err1 := os.Stat(ch.target); err1 == nil || os.IsExist(err1) {
+			fmt.Printf("%s ➟ %s %s %s\n", ch.source, red(ch.target), red("[File exists]"), "❌")
 			if err == nil {
 				err = fmt.Errorf("%s\n%s", red("Conflict detected: overwriting existing file(s)"), yellow("Use the -F flag to ignore conflicts and rename anyway"))
 			}
 		}
 
 		// Detect duplicates after renaming paths
-		if _, exists := m[v]; exists {
-			m[v] = append(m[v], k)
+		if _, exists := m[ch.target]; exists {
+			m[ch.target] = append(m[ch.target], ch.source)
 		} else {
-			m[v] = []string{k}
+			m[ch.target] = []string{ch.source}
 		}
 	}
 
@@ -139,14 +112,52 @@ func (op *Operation) ReportConflicts() error {
 	return err
 }
 
+// FindMatches locates matches for the search pattern
+// in each filename. Hidden files and directories are exempted
+func (op *Operation) FindMatches() error {
+	for _, f := range op.paths {
+		var change Change
+		isDir, err := isDirectory(f)
+		if err != nil {
+			return err
+		}
+
+		if isDir && !op.includeDir {
+			continue
+		}
+
+		filename := filepath.Base(f)
+		// ignore dotfiles
+		if filename[0] == 46 {
+			continue
+		}
+
+		matched := op.searchRegex.MatchString(filename)
+		if matched {
+			change.isDir = isDir
+			change.source = filepath.Clean(f)
+			op.matches = append(op.matches, change)
+		}
+	}
+
+	return nil
+}
+
+// SortMatches is used to sort files before directories
+func (op *Operation) SortMatches() {
+	sort.SliceStable(op.matches, func(i, j int) bool {
+		return !op.matches[i].isDir
+	})
+}
+
 // Replace replaces the matched text in each path with the
 // replacement string
 func (op *Operation) Replace() error {
 	og := regexp.MustCompile("{og}")
 	ext := regexp.MustCompile("{ext}")
 	index := regexp.MustCompile("%[0-9]+d")
-	for i, f := range op.matches {
-		fileName, dir := filepath.Base(f), filepath.Dir(f)
+	for i, v := range op.matches {
+		fileName, dir := filepath.Base(v.source), filepath.Dir(v.source)
 		var str string
 
 		// If the search pattern is an empty string
@@ -175,17 +186,20 @@ func (op *Operation) Replace() error {
 			str = index.ReplaceAllString(str, r)
 		}
 
-		if op.includeDir {
+		// Only perform find and replace on `dir`
+		// if file is a directory to avoid conflicts
+		if op.includeDir && v.isDir {
 			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
 		}
 
 		// Report error if replacement operation results in
 		// an empty string for the new filename
 		if str == "" {
-			return fmt.Errorf("%s\n%s ➟ %s %s ", red("Error detected: Operation resulted in empty filename"), f, red("[Empty filename]"), "❌")
+			return fmt.Errorf("%s\n%s ➟ %s %s ", red("Error detected: Operation resulted in empty filename"), v.source, red("[Empty filename]"), "❌")
 		}
 
-		op.newPaths[f] = filepath.Join(dir, str)
+		v.target = filepath.Join(dir, str)
+		op.matches[i] = v
 	}
 
 	return nil
@@ -204,8 +218,6 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")
 	op.includeDir = c.Bool("include-dir")
-	op.newPaths = make(map[string]string)
-	op.templateString = c.String("template")
 
 	findPattern := c.String("find")
 

@@ -53,6 +53,7 @@ func main() {
 			}
 
 			op.FindMatches()
+			op.SortMatches()
 			if err := op.Replace(); err != nil {
 				return err
 			}
