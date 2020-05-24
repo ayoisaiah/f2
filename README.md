@@ -157,12 +157,12 @@ Screenshot from 2020-04-16 18-27-24.png ➟ Screenshot-006.png ✅
 
 ## Safe guards
 
-  - Your filesystem remains the same until the `--exec` or `-x` flag is included. This allows you to verify the changes before proceeding.
+  - Goname operates in print mode by default. Your filesystem remains the same until the `--exec` or `-x` flag is included. This allows you to verify any changes before proceeding.
 
   - If an operation will overwrite existing files, you will recieve a warning. The `-F` or `--force` flag can be used to proceed anyway.
 
 ```bash
-$ goname --find "pic2" --replace "pic1-bad.jpg" -T
+$ goname --find "pic2" --replace "pic1-bad.jpg" -T -x
 pic2-bad.png ➟ pic1-bad.jpg [File exists] ❌
 Conflict detected: overwriting existing file(s)
 Use the -F flag to ignore conflicts and rename anyway
@@ -191,7 +191,6 @@ pic1-bad.jpg ➟ [Empty filename] ❌
 - [ ] Write tests
 - [ ] Add undo support
 - [ ] Override starting integer for auto incrementing numbers in filenames
-
 
 ## Credit and sources
 
