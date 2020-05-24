@@ -54,10 +54,6 @@ Replace all instances of `Screenshot from ` in the current directory with `IMG`:
 
 ```bash
 $ goname --find "Screenshot from " --replace "IMG-"
-```
-
-```bash
-# Output
 Screenshot from 2020-04-23 01-07-22.png ➟ IMG-2020-04-23 01-07-22.png ✅
 Screenshot from 2020-04-19 22-17-02.png ➟ IMG-2020-04-19 22-17-02.png ✅
 Screenshot from 2020-04-16 18-27-24.png ➟ IMG-2020-04-16 18-27-24.png ✅
@@ -73,10 +69,6 @@ directories.
 
 ```bash
 $ goname --find "bad" --replace "good" **
-```
-
-```bash
-# Output
 morebad/pic3-bad.jpg ➟ morebad/pic3-good.jpg ✅
 morebad/pic4-bad.webp ➟ morebad/pic4-good.webp ✅
 pic1-bad.jpg ➟ pic1-good.jpg ✅
@@ -90,10 +82,6 @@ flag to include them:
 
 ```bash
 $ goname --find "bad" --replace "good" -D **
-```
-
-```bash
-# output
 pic2-bad.png ➟ pic2-good.png ✅
 pic1-bad.jpg ➟ pic1-good.jpg ✅
 morebad/pic4-bad.webp ➟ morebad/pic4-good.webp ✅
@@ -107,10 +95,6 @@ Use the `**/` pattern to operate only on directories and subdirectories. The `-D
 
 ```bash
 $ goname --find "bad" --replace "good" -D **/
-```
-
-```bash
-# output
 morebad ➟ moregood ✅
 ```
 
@@ -121,10 +105,6 @@ empty string:
 
 ```bash
 $ goname --find "Screenshot from "
-```
-
-```bash
-# output
 Screenshot from 2020-04-19 22-17-02.png ➟ 2020-04-19 22-17-02.png ✅
 Screenshot from 2020-04-23 01-07-22.png ➟ 2020-04-23 01-07-22.png ✅
 Screenshot from 2020-04-16 18-25-15.png ➟ 2020-04-16 18-25-15.png ✅
@@ -146,10 +126,6 @@ If you want to padd the number with ten zeros, use `%010d`. And so on.
 
 ```bash
 $ goname --find "Screenshot from " --replace "IMG-%03d_"
-```
-
-```bash
-# output
 Screenshot from 2020-04-19 22-17-02.png ➟ IMG-001_2020-04-19 22-17-02.png ✅
 Screenshot from 2020-04-23 01-07-22.png ➟ IMG-002_2020-04-23 01-07-22.png ✅
 Screenshot from 2020-04-16 18-25-15.png ➟ IMG-003_2020-04-16 18-25-15.png ✅
@@ -171,10 +147,6 @@ For example:
 
 ```bash
 $ goname --find "Screenshot from " --replace "Screenshot-%03d{ext}" -T
-```
-
-```bash
-# output
 Screenshot from 2020-04-19 22-17-02.png ➟ Screenshot-001.png ✅
 Screenshot from 2020-04-23 01-07-22.png ➟ Screenshot-002.png ✅
 Screenshot from 2020-04-16 18-25-15.png ➟ Screenshot-003.png ✅
@@ -191,10 +163,6 @@ Screenshot from 2020-04-16 18-27-24.png ➟ Screenshot-006.png ✅
 
 ```bash
 $ goname --find "pic2" --replace "pic1-bad.jpg" -T
-```
-
-```bash
-# output
 pic2-bad.png ➟ pic1-bad.jpg [File exists] ❌
 Conflict detected: overwriting existing file(s)
 Use the -F flag to ignore conflicts and rename anyway
@@ -204,10 +172,6 @@ Use the -F flag to ignore conflicts and rename anyway
 
 ```bash
 $ goname --find "2020-04-16" --replace "screenshot.png" -T
-```
-
-```bash
-# output
 Screenshot from 2020-04-16 18-25-15.png ➟ screenshot.png ✅
 Screenshot from 2020-04-16 18-27-24.png ➟ screenshot.png ❌
 Conflict detected: overwriting newly renamed path
@@ -218,10 +182,6 @@ Use the -F flag to ignore conflicts and rename anyway
 
 ```bash
 $ goname --find "pic1-bad.jpg" --replace ""
-```
-
-```bash
-# ouput
 Error detected: Operation resulted in empty filename
 pic1-bad.jpg ➟ [Empty filename] ❌
 ```
