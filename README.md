@@ -1,23 +1,27 @@
-Goname - Command line batch rename tool
+# Goname - Command-line batch rename tool
+[![Go Report Card](https://goreportcard.com/badge/github.com/ayoisaiah/goname)](https://goreportcard.com/report/github.com/ayoisaiah/goname)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/7136493cf477467387381890cb25dc9e)](https://www.codacy.com/manual/ayoisaiah/goname?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ayoisaiah/goname&amp;utm_campaign=Badge_Grade)
+[![HitCount](http://hits.dwyl.com/ayoisaiah/goname.svg)](http://hits.dwyl.com/ayoisaiah/goname)
+[![PR's Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 
-Goname is a cross-platform command-line tool for batch renaming files and directories safely.
+Goname is a cross-platform command-line tool for batch renaming files and directories safely. Written in Go!
 
 ## Features
 
-- Supports Linux, macOS, and Windows.
-- Supports filtering files using regular expression.
-- Safe by default. Goname will not modify any file names until you tell it to.
-- Supports piping files through other programs like `find` or `rg`.
-- Detects potential conflicts and errors and reports them to you.
-- Supports recursive renaming of both files and directories.
-- Supports renaming using a template
-- Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
+  - Supports Linux, macOS, and Windows.
+  - Supports filtering files using regular expression.
+  - Safe by default. Goname will not modify any file names until you tell it to.
+  - Supports piping files through other programs like `find` or `rg`.
+  - Detects potential conflicts and errors and reports them to you.
+  - Supports recursive renaming of both files and directories.
+  - Supports renaming using a template
+  - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
 
 ## Installation
 
 If you have Go installed, you can install `goname` using the command below:
 
-```
+```bash
 $ go get github.com/ayoisaiah/goname/cmd/...
 ```
 
@@ -46,10 +50,10 @@ All the examples below assume the following directory structure:
 
 ### Basic find and replace
 
-Replace all instances of `Image` in the current directory with `IMG`:
+Replace all instances of `Screenshot from ` in the current directory with `IMG`:
 
 ```bash
-$ goname --find "Image" --replace "IMG"
+$ goname --find "Screenshot from " --replace "IMG-"
 ```
 
 ```bash
@@ -60,7 +64,6 @@ Screenshot from 2020-04-16 18-27-24.png ➟ IMG-2020-04-16 18-27-24.png ✅
 Screenshot from 2020-05-10 08-51-16.png ➟ IMG-2020-05-10 08-51-16.png ✅
 Screenshot from 2020-05-20 23-29-50.png ➟ IMG-2020-05-20 23-29-50.png ✅
 Screenshot from 2020-04-16 18-25-15.png ➟ IMG-2020-04-16 18-25-15.png ✅
-*** Use the -x flag to apply the above changes ***
 ```
 
 ### Recursive find and replace
@@ -78,7 +81,6 @@ morebad/pic3-bad.jpg ➟ morebad/pic3-good.jpg ✅
 morebad/pic4-bad.webp ➟ morebad/pic4-good.webp ✅
 pic1-bad.jpg ➟ pic1-good.jpg ✅
 pic2-bad.png ➟ pic2-good.png ✅
-*** Use the -x flag to apply the above changes ***
 ```
 
 ### Include directories
@@ -97,7 +99,6 @@ pic1-bad.jpg ➟ pic1-good.jpg ✅
 morebad/pic4-bad.webp ➟ morebad/pic4-good.webp ✅
 morebad/pic3-bad.jpg ➟ morebad/pic3-good.jpg ✅
 morebad ➟ moregood ✅
-*** Use the -x flag to apply the above changes ***
 ```
 
 ### Operate on directories only
@@ -111,7 +112,6 @@ $ goname --find "bad" --replace "good" -D **/
 ```bash
 # output
 morebad ➟ moregood ✅
-*** Use the -x flag to apply the above changes ***
 ```
 
 ### Strip out unwanted text
@@ -131,7 +131,6 @@ Screenshot from 2020-04-16 18-25-15.png ➟ 2020-04-16 18-25-15.png ✅
 Screenshot from 2020-05-20 23-29-50.png ➟ 2020-05-20 23-29-50.png ✅
 Screenshot from 2020-05-10 08-51-16.png ➟ 2020-05-10 08-51-16.png ✅
 Screenshot from 2020-04-16 18-27-24.png ➟ 2020-04-16 18-27-24.png ✅
-*** Use the -x flag to apply the above changes ***
 ```
 
 ### Rename using an auto incrementing number
@@ -139,9 +138,9 @@ Screenshot from 2020-04-16 18-27-24.png ➟ 2020-04-16 18-27-24.png ✅
 You can specify an auto incrementing integer in the replacement string using the
 format below:
 
-- `%d`: 1,2,3 e.t.c
-- `%02d`: 01, 02, 03, e.t.c.
-- `%03d`: 001, 002, 003, e.t.c.
+  - `%d`: 1,2,3 e.t.c
+  - `%02d`: 01, 02, 03, e.t.c.
+  - `%03d`: 001, 002, 003, e.t.c.
 
 If you want to padd the number with ten zeros, use `%010d`. And so on.
 
@@ -157,7 +156,6 @@ Screenshot from 2020-04-16 18-25-15.png ➟ IMG-003_2020-04-16 18-25-15.png ✅
 Screenshot from 2020-05-20 23-29-50.png ➟ IMG-004_2020-05-20 23-29-50.png ✅
 Screenshot from 2020-05-10 08-51-16.png ➟ IMG-005_2020-05-10 08-51-16.png ✅
 Screenshot from 2020-04-16 18-27-24.png ➟ IMG-006_2020-04-16 18-27-24.png ✅
-*** Use the -x flag to apply the above changes ***
 ```
 
 ### Use a template
@@ -166,8 +164,8 @@ You can use the replacement string as a template for the new filenames instead o
 
 The replacement string tokens may come in handy in template mode:
 
-- `{og}` is the original filename (excluding the extension)
-- `{ext}` is the file extension
+  - `{og}` is the original filename (excluding the extension)
+  - `{ext}` is the file extension
 
 For example:
 
@@ -183,14 +181,13 @@ Screenshot from 2020-04-16 18-25-15.png ➟ Screenshot-003.png ✅
 Screenshot from 2020-05-20 23-29-50.png ➟ Screenshot-004.png ✅
 Screenshot from 2020-05-10 08-51-16.png ➟ Screenshot-005.png ✅
 Screenshot from 2020-04-16 18-27-24.png ➟ Screenshot-006.png ✅
-*** Use the -x flag to apply the above changes ***
 ```
 
 ## Safe guards
 
-- Your filesystem remains the same until the `--exec` or `-x` flag is included. This allows you to verify the changes before proceeding.
+  - Your filesystem remains the same until the `--exec` or `-x` flag is included. This allows you to verify the changes before proceeding.
 
-- If an operation will overwrite existing files, you will recieve a warning. The `-F` or `--force` flag can be used to proceed anyway.
+  - If an operation will overwrite existing files, you will recieve a warning. The `-F` or `--force` flag can be used to proceed anyway.
 
 ```bash
 $ goname --find "pic2" --replace "pic1-bad.jpg" -T
@@ -203,7 +200,7 @@ Conflict detected: overwriting existing file(s)
 Use the -F flag to ignore conflicts and rename anyway
 ```
 
-- If an operation results in two files having the same name, a warning will be printed. The `-F` or `--force` flag can be used to proceed anyway.
+  - If an operation results in two files having the same name, a warning will be printed. The `-F` or `--force` flag can be used to proceed anyway.
 
 ```bash
 $ goname --find "2020-04-16" --replace "screenshot.png" -T
@@ -217,7 +214,7 @@ Conflict detected: overwriting newly renamed path
 Use the -F flag to ignore conflicts and rename anyway
 ```
 
-- If an operation results in a file having an empty filename, an error will be displayed.
+  - If an operation results in a file having an empty filename, an error will be displayed.
 
 ```bash
 $ goname --find "pic1-bad.jpg" --replace ""
@@ -229,12 +226,19 @@ Error detected: Operation resulted in empty filename
 pic1-bad.jpg ➟ [Empty filename] ❌
 ```
 
+## TODO
+
+- [ ] Write tests
+- [ ] Add undo support
+- [ ] Override starting integer for auto incrementing numbers in filenames
+
+
 ## Credit and sources
 
 Goname relies heavily on other open source software listed below:
 
-- [urfave/cli](https://github.com/urfave/cli)
-- [gookit/color](https://github.com/gookit/color)
+  - [urfave/cli](https://github.com/urfave/cli)
+  - [gookit/color](https://github.com/gookit/color)
 
 ## Contribute
 
