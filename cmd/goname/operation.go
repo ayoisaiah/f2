@@ -19,6 +19,7 @@ var (
 	yellow = color.FgYellow.Render
 )
 
+// Change represents a single filename change
 type Change struct {
 	source string
 	target string
@@ -56,7 +57,7 @@ func (op *Operation) Apply() error {
 	for _, ch := range op.matches {
 		if op.exec {
 			if err := os.Rename(ch.source, ch.target); err != nil {
-				return fmt.Errorf("An error occured while renaming '%s' to '%s'", ch.source, ch.target)
+				return fmt.Errorf("An error occurred while renaming '%s' to '%s'", ch.source, ch.target)
 			}
 		} else {
 			fmt.Println(ch.source, "➟", green(ch.target), "✅")
@@ -214,7 +215,7 @@ func (op *Operation) Replace() error {
 // from command line flags & arguments
 func NewOperation(c *cli.Context) (*Operation, error) {
 	if c.String("find") == "" && c.String("replace") == "" {
-		return nil, fmt.Errorf("Invalid arguments: one of `-f` or `-r` must be present and set to a non empty string value\nUse 'goname --help' for more information.")
+		return nil, fmt.Errorf("Invalid arguments: one of `-f` or `-r` must be present and set to a non empty string value\nUse 'goname --help' for more information")
 	}
 
 	op := &Operation{}
