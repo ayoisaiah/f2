@@ -32,6 +32,7 @@ type Operation struct {
 	replaceString   string
 	exec            bool
 	ignoreConflicts bool
+	templateMode    bool
 	includeDir      bool
 	searchRegex     *regexp.Regexp
 }
@@ -41,6 +42,10 @@ type Operation struct {
 // if in execute mode. Conflicts will be ignored if
 // specified
 func (op *Operation) Apply() error {
+	if len(op.matches) == 0 {
+		return fmt.Errorf("Failed to match any files")
+	}
+
 	if !op.ignoreConflicts {
 		err := op.ReportConflicts()
 		if err != nil {
@@ -155,14 +160,13 @@ func (op *Operation) SortMatches() {
 func (op *Operation) Replace() error {
 	og := regexp.MustCompile("{og}")
 	ext := regexp.MustCompile("{ext}")
-	index := regexp.MustCompile("%[0-9]+d")
+	index := regexp.MustCompile("%([0-9]?)+d")
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.source), filepath.Dir(v.source)
 		var str string
 
-		// If the search pattern is an empty string
-		if op.searchRegex.Match([]byte("")) {
-			// use replacement string as template for new name
+		if op.templateMode {
+			// Use the replacement string as a template for new name
 			str = op.replaceString
 		} else {
 			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
@@ -187,8 +191,9 @@ func (op *Operation) Replace() error {
 		}
 
 		// Only perform find and replace on `dir`
-		// if file is a directory to avoid conflicts
-		if op.includeDir && v.isDir {
+		// if file is a directory and templateMode is off
+		// to avoid conflicts
+		if op.includeDir && v.isDir && !op.templateMode {
 			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
 		}
 
@@ -218,6 +223,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")
 	op.includeDir = c.Bool("include-dir")
+	op.templateMode = c.Bool("template-mode")
 
 	findPattern := c.String("find")
 
