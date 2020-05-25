@@ -30,6 +30,13 @@ func main() {
 				Aliases: []string{"r"},
 				Usage:   "Replacement `string`. If omitted, defaults to an empty string.",
 			},
+			&cli.IntFlag{
+				Name:        "start-num",
+				Aliases:     []string{"n"},
+				Usage:       "Starting number when using numbering scheme in replacement string such as %03d",
+				Value:       1,
+				DefaultText: "1",
+			},
 			&cli.BoolFlag{
 				Name:    "exec",
 				Aliases: []string{"x"},

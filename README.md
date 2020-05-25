@@ -122,7 +122,7 @@ format below:
   - `%02d`: 01, 02, 03, e.t.c.
   - `%03d`: 001, 002, 003, e.t.c.
 
-If you want to padd the number with ten zeros, use `%010d`. And so on.
+If you want to pad the number with ten zeros, use `%010d`, and so on.
 
 ```bash
 $ goname --find "Screenshot from " --replace "IMG-%03d_"
@@ -132,6 +132,18 @@ Screenshot from 2020-04-16 18-25-15.png ➟ IMG-003_2020-04-16 18-25-15.png ✅
 Screenshot from 2020-05-20 23-29-50.png ➟ IMG-004_2020-05-20 23-29-50.png ✅
 Screenshot from 2020-05-10 08-51-16.png ➟ IMG-005_2020-05-10 08-51-16.png ✅
 Screenshot from 2020-04-16 18-27-24.png ➟ IMG-006_2020-04-16 18-27-24.png ✅
+```
+
+You can also specify the number to start from using the `--start-num` flag:
+
+```bash
+$ goname --find "Screenshot from " --replace "IMG-%03d_" --start-num 20
+Screenshot from 2020-04-19 22-17-02.png ➟ IMG-020_2020-04-19 22-17-02.png ✅
+Screenshot from 2020-04-23 01-07-22.png ➟ IMG-021_2020-04-23 01-07-22.png ✅
+Screenshot from 2020-04-16 18-25-15.png ➟ IMG-022_2020-04-16 18-25-15.png ✅
+Screenshot from 2020-05-20 23-29-50.png ➟ IMG-023_2020-05-20 23-29-50.png ✅
+Screenshot from 2020-05-10 08-51-16.png ➟ IMG-024_2020-05-10 08-51-16.png ✅
+Screenshot from 2020-04-16 18-27-24.png ➟ IMG-025_2020-04-16 18-27-24.png ✅
 ```
 
 ### Use a template
@@ -190,7 +202,6 @@ pic1-bad.jpg ➟ [Empty filename] ❌
 
 - [ ] Write tests
 - [ ] Add undo support
-- [ ] Override starting integer for auto incrementing numbers in filenames
 
 ## Credit and sources
 

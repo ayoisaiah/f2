@@ -31,6 +31,7 @@ type Operation struct {
 	paths           []string
 	matches         []Change
 	replaceString   string
+	startNumber     int
 	exec            bool
 	ignoreConflicts bool
 	templateMode    bool
@@ -187,7 +188,7 @@ func (op *Operation) Replace() error {
 		// If numbering scheme is present
 		if index.Match([]byte(str)) {
 			b := index.Find([]byte(str))
-			r := fmt.Sprintf(string(b), i+1)
+			r := fmt.Sprintf(string(b), op.startNumber+i)
 			str = index.ReplaceAllString(str, r)
 		}
 
@@ -225,6 +226,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.ignoreConflicts = c.Bool("force")
 	op.includeDir = c.Bool("include-dir")
 	op.templateMode = c.Bool("template-mode")
+	op.startNumber = c.Int("start-num")
 
 	findPattern := c.String("find")
 
