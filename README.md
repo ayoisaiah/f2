@@ -18,6 +18,7 @@ Goname is a cross-platform command-line tool for batch renaming files and direct
   - Supports renaming using a template.
   - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
   - Supports undoing the last successful operation.
+  - Supports matching text with regular expressions.
 
 ## Installation
 
@@ -167,6 +168,40 @@ Screenshot from 2020-04-16 18-25-15.png ➟ Screenshot-003.png ✅
 Screenshot from 2020-05-20 23-29-50.png ➟ Screenshot-004.png ✅
 Screenshot from 2020-05-10 08-51-16.png ➟ Screenshot-005.png ✅
 Screenshot from 2020-04-16 18-27-24.png ➟ Screenshot-006.png ✅
+```
+
+This is helpful if you want to add a prefix or a suffix to a set of files:
+
+```bash
+# prefix
+$ goname -f "pic" -r "lagos-{og}{ext}" -T
+pic1-bad.jpg ➟ lagos-pic1-bad.jpg ✅
+pic2-bad.png ➟ lagos-pic2-bad.png ✅
+
+# suffix
+$ goname -f "pic" -r "{og}_ios{ext}" -T
+pic1-bad.jpg ➟ pic1-bad_ios.jpg ✅
+pic2-bad.png ➟ pic2-bad_ios.png ✅
+```
+
+## Regular expression examples
+
+The `--find` flag can accept regular expressions in addition to plain text.
+Here's a few examples:
+
+### Strip out whitespace
+
+Use `\s` to match whitespace in a string. Leaving out the `--replace` flag will
+default to an empty string.
+
+```bash
+goname --f "\s"
+Screenshot from 2020-04-19 22-17-02.png ➟ Screenshotfrom2020-04-1922-17-02.png ✅
+Screenshot from 2020-04-23 01-07-22.png ➟ Screenshotfrom2020-04-2301-07-22.png ✅
+Screenshot from 2020-04-16 18-25-15.png ➟ Screenshotfrom2020-04-1618-25-15.png ✅
+Screenshot from 2020-05-20 23-29-50.png ➟ Screenshotfrom2020-05-2023-29-50.png ✅
+Screenshot from 2020-05-10 08-51-16.png ➟ Screenshotfrom2020-05-1008-51-16.png ✅
+Screenshot from 2020-04-16 18-27-24.png ➟ Screenshotfrom2020-04-1618-27-24.png ✅
 ```
 
 ## Safe guards
