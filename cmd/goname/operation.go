@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -18,6 +19,8 @@ var (
 	green  = color.FgGreen.Render
 	yellow = color.FgYellow.Render
 )
+
+const opsFile = ".goname-operation.txt"
 
 // Change represents a single filename change
 type Change struct {
@@ -37,6 +40,108 @@ type Operation struct {
 	templateMode    bool
 	includeDir      bool
 	searchRegex     *regexp.Regexp
+}
+
+// WriteToFile writes the details of the last successful operation
+// to a file so that it may be reversed if necessary
+func (op *Operation) WriteToFile() error {
+	// Create or truncate file
+	file, err := os.Create(opsFile)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	for _, v := range op.matches {
+		_, err = writer.WriteString(v.target + "|" + v.source + "\n")
+		if err != nil {
+			return err
+		}
+	}
+
+	return writer.Flush()
+}
+
+// Undo reverses the last successful renaming operation
+func (op *Operation) Undo() error {
+	file, err := os.Open(opsFile)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	fi, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	// If file is empty
+	if fi.Size() == 0 {
+		return fmt.Errorf("No operation to undo")
+	}
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		slice := strings.Split(scanner.Text(), "|")
+		if len(slice) != 2 {
+			return fmt.Errorf("Corrupted data. Cannot undo")
+		}
+		source, target := slice[0], slice[1]
+		ch := Change{}
+		ch.source = source
+		ch.target = target
+
+		op.matches = append(op.matches, ch)
+	}
+
+	for i, v := range op.matches {
+		isDir, err := isDirectory(v.source)
+		if err != nil {
+			// An error may mean that the path does not exist
+			// which indicates that the directory containing the file
+			// was also renamed.
+			if os.IsNotExist(err) {
+				dir := filepath.Dir(v.source)
+
+				// Get the directory that is changing
+				var d Change
+				for _, m := range op.matches {
+					if m.target == dir {
+						d = m
+						break
+					}
+				}
+
+				re, err := regexp.Compile(d.target)
+				if err != nil {
+					return err
+				}
+
+				srcFile, srcDir := filepath.Base(v.source), filepath.Dir(v.source)
+				targetFile, targetDir := filepath.Base(v.target), filepath.Dir(v.target)
+
+				// Update the directory of the path to the current name
+				// instead of the old one which no longer exists
+				srcDir = re.ReplaceAllString(srcDir, d.source)
+				targetDir = re.ReplaceAllString(targetDir, d.source)
+
+				v.source = filepath.Join(srcDir, srcFile)
+				v.target = filepath.Join(targetDir, targetFile)
+			} else {
+				return err
+			}
+		}
+
+		v.isDir = isDir
+		op.matches[i] = v
+	}
+
+	op.SortMatches()
+
+	return op.Apply()
 }
 
 // Apply will check for conflicts and print
@@ -65,7 +170,9 @@ func (op *Operation) Apply() error {
 		}
 	}
 
-	if !op.exec && len(op.matches) > 0 {
+	if op.exec && len(op.matches) > 0 {
+		return op.WriteToFile()
+	} else if !op.exec && len(op.matches) > 0 {
 		color.Style{color.FgYellow, color.OpBold}.Println("*** Use the -x flag to apply the above changes ***")
 	}
 

@@ -43,6 +43,11 @@ func main() {
 				Usage:   "By default, goname will do a 'dry run' so that you can inspect the results and confirm that it looks correct. Add this flag to proceed with renaming the files.",
 			},
 			&cli.BoolFlag{
+				Name:    "undo",
+				Aliases: []string{"U"},
+				Usage:   "Undo the LAST successful operation",
+			},
+			&cli.BoolFlag{
 				Name:    "include-dir",
 				Aliases: []string{"D"},
 				Usage:   "Rename directories",
@@ -59,6 +64,13 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
+			if c.Bool("undo") {
+				op := &Operation{}
+				op.ignoreConflicts = c.Bool("force")
+				op.exec = c.Bool("exec")
+				return op.Undo()
+			}
+
 			op, err := NewOperation(c)
 			if err != nil {
 				return err

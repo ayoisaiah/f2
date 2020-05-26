@@ -1,4 +1,5 @@
 # Goname - Command-line batch renaming tool
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/ayoisaiah/goname)](https://goreportcard.com/report/github.com/ayoisaiah/goname)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7136493cf477467387381890cb25dc9e)](https://www.codacy.com/manual/ayoisaiah/goname?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ayoisaiah/goname&amp;utm_campaign=Badge_Grade)
 [![HitCount](http://hits.dwyl.com/ayoisaiah/goname.svg)](http://hits.dwyl.com/ayoisaiah/goname)
@@ -14,8 +15,9 @@ Goname is a cross-platform command-line tool for batch renaming files and direct
   - Supports piping files through other programs like `find` or `rg`.
   - Detects potential conflicts and errors and reports them to you.
   - Supports recursive renaming of both files and directories.
-  - Supports renaming using a template
+  - Supports renaming using a template.
   - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
+  - Supports undoing the last successful operation.
 
 ## Installation
 
@@ -29,7 +31,7 @@ Otherwise, you can download precompiled binaries for Linux, Windows, and macOS [
 
 ## Usage
 
-**Note**: running these commands will only print out the changes to be made. If you want to proceed, use the `-x` flag.
+**Note**: running these commands will only print out the changes to be made. If you want to carry out the operation, use the `-x` or `--exec` flag.
 
 All the examples below assume the following directory structure:
 
@@ -198,12 +200,22 @@ Error detected: Operation resulted in empty filename
 pic1-bad.jpg ➟ [Empty filename] ❌
 ```
 
+  - If you change your mind regarding a renaming operation, you can undo your changes using the `--undo` or `-U` flag. This only works for the last successful operation.
+
+```bash
+$ goname -U
+pic2-bad.png ➟ pic2-good.png ✅
+pic1-bad.jpg ➟ pic1-good.jpg ✅
+morebad/pic4-bad.webp ➟ morebad/pic4-good.webp ✅
+morebad/pic3-bad.jpg ➟ morebad/pic3-good.jpg ✅
+morebad ➟ moregood ✅
+```
+
 ## TODO
 
 - [ ] Write tests
-- [ ] Add undo support
 
-## Credit and sources
+## Credits
 
 Goname relies heavily on other open source software listed below:
 
@@ -212,7 +224,7 @@ Goname relies heavily on other open source software listed below:
 
 ## Contribute
 
-Bug reports, or pull requests are much welcome!
+Bug reports, feature requests, or pull requests are much welcome!
 
 ## Licence
 
