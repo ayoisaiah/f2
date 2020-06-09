@@ -98,7 +98,7 @@ AUTHOR:
 {{if .Version}}
 VERSION:
 	 {{.Version}}{{end}}
-{{if .Commands}}
+{{if .VisibleFlags}}
 FLAGS:{{range .VisibleFlags}}
 	 {{.}}
 	 {{end}}{{end}}
