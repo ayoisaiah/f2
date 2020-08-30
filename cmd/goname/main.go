@@ -77,7 +77,9 @@ func main() {
 			}
 
 			op.FindMatches()
-			op.SortMatches()
+			if op.includeDir {
+				op.SortMatches()
+			}
 			if err := op.Replace(); err != nil {
 				return err
 			}
@@ -109,5 +111,6 @@ WEBSITE:
 	err := app.Run(os.Args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }

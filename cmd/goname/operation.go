@@ -230,7 +230,6 @@ func (op *Operation) ReportConflicts() error {
 // in each filename. Hidden files and directories are exempted
 func (op *Operation) FindMatches() error {
 	for _, f := range op.paths {
-		var change Change
 		isDir, err := isDirectory(f)
 		if err != nil {
 			return err
@@ -248,8 +247,10 @@ func (op *Operation) FindMatches() error {
 
 		matched := op.searchRegex.MatchString(filename)
 		if matched {
-			change.isDir = isDir
-			change.source = filepath.Clean(f)
+			var change = Change{
+				isDir:  isDir,
+				source: filepath.Clean(f),
+			}
 			op.matches = append(op.matches, change)
 		}
 	}
