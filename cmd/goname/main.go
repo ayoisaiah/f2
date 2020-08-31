@@ -53,11 +53,6 @@ func main() {
 				Usage:   "Rename directories",
 			},
 			&cli.BoolFlag{
-				Name:    "template-mode",
-				Aliases: []string{"T"},
-				Usage:   "Opt into template mode",
-			},
-			&cli.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"F"},
 				Usage:   "If there are conflicts after a replacement operation (such as when overwriting existing files), goname will report them to you. Use this flag to force the renaming operation even if there are conflicts.",

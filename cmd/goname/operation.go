@@ -37,7 +37,6 @@ type Operation struct {
 	startNumber     int
 	exec            bool
 	ignoreConflicts bool
-	templateMode    bool
 	includeDir      bool
 	searchRegex     *regexp.Regexp
 }
@@ -273,14 +272,7 @@ func (op *Operation) Replace() error {
 	index := regexp.MustCompile("%([0-9]?)+d")
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.source), filepath.Dir(v.source)
-		var str string
-
-		if op.templateMode {
-			// Use the replacement string as a template for new name
-			str = op.replaceString
-		} else {
-			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
-		}
+		var str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
 
 		// replace `{og}` in the replacement string with the original
 		// filename (without the extension)
@@ -301,9 +293,8 @@ func (op *Operation) Replace() error {
 		}
 
 		// Only perform find and replace on `dir`
-		// if file is a directory and templateMode is off
-		// to avoid conflicts
-		if op.includeDir && v.isDir && !op.templateMode {
+		// if file is a directory to avoid conflicts
+		if op.includeDir && v.isDir {
 			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
 		}
 
@@ -333,7 +324,6 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")
 	op.includeDir = c.Bool("include-dir")
-	op.templateMode = c.Bool("template-mode")
 	op.startNumber = c.Int("start-num")
 
 	findPattern := c.String("find")
