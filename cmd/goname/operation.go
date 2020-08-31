@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/shenwei356/natsort"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/gookit/color.v1"
 )
@@ -39,6 +40,7 @@ type Operation struct {
 	ignoreConflicts bool
 	includeHidden   bool
 	includeDir      bool
+	naturalSort     bool
 	searchRegex     *regexp.Regexp
 }
 
@@ -327,6 +329,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.includeDir = c.Bool("include-dir")
 	op.startNumber = c.Int("start-num")
 	op.includeHidden = c.Bool("hidden")
+	op.naturalSort = c.Bool("natural-sort")
 
 	findPattern := c.String("find")
 
@@ -359,6 +362,10 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 		names, err := file.Readdirnames(0)
 		if err != nil {
 			return nil, err
+		}
+
+		if op.naturalSort {
+			natsort.Sort(names)
 		}
 
 		op.paths = names

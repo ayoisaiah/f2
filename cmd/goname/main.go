@@ -58,6 +58,11 @@ func main() {
 				Usage:   "Include hidden files and directories",
 			},
 			&cli.BoolFlag{
+				Name:    "natural-sort",
+				Aliases: []string{"N"},
+				Usage:   "Sort filenames in a natural order",
+			},
+			&cli.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"F"},
 				Usage:   "If there are conflicts after a replacement operation (such as when overwriting existing files), goname will report them to you. Use this flag to force the renaming operation even if there are conflicts.",
