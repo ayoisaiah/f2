@@ -37,6 +37,7 @@ type Operation struct {
 	startNumber     int
 	exec            bool
 	ignoreConflicts bool
+	includeHidden   bool
 	includeDir      bool
 	searchRegex     *regexp.Regexp
 }
@@ -240,7 +241,7 @@ func (op *Operation) FindMatches() error {
 
 		filename := filepath.Base(f)
 		// ignore dotfiles
-		if filename[0] == 46 {
+		if !op.includeHidden && filename[0] == 46 {
 			continue
 		}
 
@@ -325,6 +326,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.ignoreConflicts = c.Bool("force")
 	op.includeDir = c.Bool("include-dir")
 	op.startNumber = c.Int("start-num")
+	op.includeHidden = c.Bool("hidden")
 
 	findPattern := c.String("find")
 
