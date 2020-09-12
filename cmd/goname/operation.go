@@ -32,7 +32,7 @@ type Change struct {
 
 // Operation represents a bulk rename operation
 type Operation struct {
-	paths           []string
+	paths           []Change
 	matches         []Change
 	replaceString   string
 	startNumber     int
@@ -231,17 +231,13 @@ func (op *Operation) ReportConflicts() error {
 // FindMatches locates matches for the search pattern
 // in each filename. Hidden files and directories are exempted
 func (op *Operation) FindMatches() error {
-	for _, f := range op.paths {
-		isDir, err := isDirectory(f)
-		if err != nil {
-			return err
-		}
+	for _, v := range op.paths {
+		filename := filepath.Base(v.source)
 
-		if isDir && !op.includeDir {
+		if v.isDir && !op.includeDir {
 			continue
 		}
 
-		filename := filepath.Base(f)
 		// ignore dotfiles
 		if !op.includeHidden && filename[0] == 46 {
 			continue
@@ -249,11 +245,7 @@ func (op *Operation) FindMatches() error {
 
 		matched := op.searchRegex.MatchString(filename)
 		if matched {
-			var change = Change{
-				isDir:  isDir,
-				source: filepath.Clean(f),
-			}
-			op.matches = append(op.matches, change)
+			op.matches = append(op.matches, v)
 		}
 	}
 
@@ -314,6 +306,26 @@ func (op *Operation) Replace() error {
 	return nil
 }
 
+// setPaths creates a Change struct for each path
+// and checks if its a directory or not
+func (op *Operation) setPaths(paths []string) error {
+	for _, f := range paths {
+		isDir, err := isDirectory(f)
+		if err != nil {
+			return err
+		}
+
+		var change = Change{
+			isDir:  isDir,
+			source: filepath.Clean(f),
+		}
+
+		op.paths = append(op.paths, change)
+	}
+
+	return nil
+}
+
 // NewOperation returns an Operation constructed
 // from command line flags & arguments
 func NewOperation(c *cli.Context) (*Operation, error) {
@@ -322,7 +334,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	op := &Operation{}
-	op.paths = c.Args().Slice()
+	paths := c.Args().Slice()
 	op.replaceString = c.String("replace")
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")
@@ -347,11 +359,11 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 		if err != nil {
 			return nil, err
 		}
-		op.paths = strings.Split(string(bytes), "\n")
+		paths = strings.Split(string(bytes), "\n")
 	}
 
 	// If paths are omitted, default to the current directory
-	if len(op.paths) == 0 {
+	if len(paths) == 0 {
 		file, err := os.Open(".")
 		if err != nil {
 			return nil, err
@@ -368,8 +380,8 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 			natsort.Sort(names)
 		}
 
-		op.paths = names
+		paths = names
 	}
 
-	return op, nil
+	return op, op.setPaths(paths)
 }
