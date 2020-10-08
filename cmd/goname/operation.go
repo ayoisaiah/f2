@@ -189,7 +189,7 @@ func (op *Operation) ReportConflicts() error {
 	var err error
 	for _, ch := range op.matches {
 		// Ensure file does not exist on the filesystem
-		if _, err1 := os.Stat(ch.target); err1 == nil || os.IsExist(err1) {
+		if _, err1 := os.Stat(ch.target); err1 == nil || !os.IsNotExist(err1) {
 			fmt.Printf("%s ➟ %s %s %s\n", ch.source, red(ch.target), red("[File exists]"), "❌")
 			if err == nil {
 				err = fmt.Errorf("%s\n%s", red("Conflict detected: overwriting existing file(s)"), yellow("Use the -F flag to ignore conflicts and rename anyway"))
