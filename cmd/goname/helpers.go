@@ -1,6 +1,10 @@
 package main
 
-import "os"
+import (
+	"os"
+	"path"
+	"strings"
+)
 
 // isDirectory determines if a file represented
 // by `path` is a directory or not
@@ -22,4 +26,8 @@ func contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+func filenameWithoutExtension(fn string) string {
+	return strings.TrimSuffix(fn, path.Ext(fn))
 }

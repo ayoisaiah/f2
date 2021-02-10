@@ -3,17 +3,17 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
-	"github.com/shenwei356/natsort"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/gookit/color.v1"
 )
+
+var printFullPaths bool
 
 var (
 	red    = color.FgRed.Render
@@ -25,9 +25,10 @@ const opsFile = ".goname-operation.txt"
 
 // Change represents a single filename change
 type Change struct {
-	source string
-	target string
-	isDir  bool
+	baseDir string
+	source  string
+	target  string
+	isDir   bool
 }
 
 // Operation represents a bulk rename operation
@@ -40,7 +41,8 @@ type Operation struct {
 	ignoreConflicts bool
 	includeHidden   bool
 	includeDir      bool
-	naturalSort     bool
+	ignoreCase      bool
+	ignoreExt       bool
 	searchRegex     *regexp.Regexp
 }
 
@@ -152,7 +154,7 @@ func (op *Operation) Undo() error {
 // specified
 func (op *Operation) Apply() error {
 	if len(op.matches) == 0 {
-		return fmt.Errorf("Failed to match any files")
+		return fmt.Errorf("%s", red("Failed to match any files"))
 	}
 
 	if !op.ignoreConflicts {
@@ -163,19 +165,25 @@ func (op *Operation) Apply() error {
 	}
 
 	for _, ch := range op.matches {
+		var source, target = ch.source, ch.target
+		if printFullPaths {
+			source = filepath.Join(ch.baseDir, source)
+			target = filepath.Join(ch.baseDir, target)
+		}
+
 		if op.exec {
-			if err := os.Rename(ch.source, ch.target); err != nil {
-				return fmt.Errorf("An error occurred while renaming '%s' to '%s'", ch.source, ch.target)
+			if err := os.Rename(source, target); err != nil {
+				return fmt.Errorf("An error occurred while renaming '%s' to '%s'", source, target)
 			}
 		} else {
-			fmt.Println(ch.source, "➟", green(ch.target), "✅")
+			fmt.Println(source, "➟", green(target), "✅")
 		}
 	}
 
 	if op.exec && len(op.matches) > 0 {
 		return op.WriteToFile()
 	} else if !op.exec && len(op.matches) > 0 {
-		color.Style{color.FgYellow, color.OpBold}.Println("*** Use the -x flag to apply the above changes ***")
+		fmt.Printf("%s\n", yellow("*** Use the -x flag to apply the above changes ***"))
 	}
 
 	return nil
@@ -188,19 +196,25 @@ func (op *Operation) ReportConflicts() error {
 
 	var err error
 	for _, ch := range op.matches {
+		var source, target = ch.source, ch.target
+		if printFullPaths {
+			source = filepath.Join(ch.baseDir, source)
+			target = filepath.Join(ch.baseDir, target)
+		}
+
 		// Ensure file does not exist on the filesystem
-		if _, err1 := os.Stat(ch.target); err1 == nil || !os.IsNotExist(err1) {
-			fmt.Printf("%s ➟ %s %s %s\n", ch.source, red(ch.target), red("[File exists]"), "❌")
+		if _, err1 := os.Stat(target); err1 == nil || !os.IsNotExist(err1) {
+			fmt.Printf("%s ➟ %s %s %s\n", source, red(target), red("[File exists]"), "❌")
 			if err == nil {
 				err = fmt.Errorf("%s\n%s", red("Conflict detected: overwriting existing file(s)"), yellow("Use the -F flag to ignore conflicts and rename anyway"))
 			}
 		}
 
 		// Detect duplicates after renaming paths
-		if _, exists := m[ch.target]; exists {
-			m[ch.target] = append(m[ch.target], ch.source)
+		if _, exists := m[target]; exists {
+			m[target] = append(m[target], source)
 		} else {
-			m[ch.target] = []string{ch.source}
+			m[target] = []string{source}
 		}
 	}
 
@@ -243,7 +257,12 @@ func (op *Operation) FindMatches() error {
 			continue
 		}
 
-		matched := op.searchRegex.MatchString(filename)
+		var f = filename
+		if op.ignoreExt {
+			f = filenameWithoutExtension(f)
+		}
+
+		matched := op.searchRegex.MatchString(f)
 		if matched {
 			op.matches = append(op.matches, v)
 		}
@@ -308,19 +327,17 @@ func (op *Operation) Replace() error {
 
 // setPaths creates a Change struct for each path
 // and checks if its a directory or not
-func (op *Operation) setPaths(paths []string) error {
-	for _, f := range paths {
-		isDir, err := isDirectory(f)
-		if err != nil {
-			return err
-		}
+func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
+	for k, v := range paths {
+		for _, f := range v {
+			var change = Change{
+				baseDir: k,
+				isDir:   f.IsDir(),
+				source:  filepath.Clean(f.Name()),
+			}
 
-		var change = Change{
-			isDir:  isDir,
-			source: filepath.Clean(f),
+			op.paths = append(op.paths, change)
 		}
-
-		op.paths = append(op.paths, change)
 	}
 
 	return nil
@@ -334,16 +351,19 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	op := &Operation{}
-	paths := c.Args().Slice()
 	op.replaceString = c.String("replace")
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")
 	op.includeDir = c.Bool("include-dir")
 	op.startNumber = c.Int("start-num")
 	op.includeHidden = c.Bool("hidden")
-	op.naturalSort = c.Bool("natural-sort")
+	op.ignoreCase = c.Bool("ignore-case")
+	op.ignoreExt = c.Bool("ignore-ext")
 
 	findPattern := c.String("find")
+	if op.ignoreCase {
+		findPattern = "(?i)" + findPattern
+	}
 
 	re, err := regexp.Compile(findPattern)
 	if err != nil {
@@ -351,36 +371,32 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	}
 	op.searchRegex = re
 
-	// Check if a newline-separated list of paths are passed
-	// to the standard input
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		bytes, err := ioutil.ReadAll(os.Stdin)
+	var paths = make(map[string][]os.DirEntry)
+	for _, v := range c.Args().Slice() {
+		absolutePath, err := filepath.Abs(v)
 		if err != nil {
 			return nil, err
 		}
-		paths = strings.Split(string(bytes), "\n")
+		paths[absolutePath], err = os.ReadDir(v)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// If paths are omitted, default to the current directory
+	// Use current directory
 	if len(paths) == 0 {
-		file, err := os.Open(".")
+		currentDir, err := filepath.Abs(".")
 		if err != nil {
 			return nil, err
 		}
-
-		defer file.Close()
-
-		names, err := file.Readdirnames(0)
+		paths[currentDir], err = os.ReadDir(".")
 		if err != nil {
 			return nil, err
 		}
+	}
 
-		if op.naturalSort {
-			natsort.Sort(names)
-		}
-
-		paths = names
+	if len(paths) > 1 {
+		printFullPaths = true
 	}
 
 	return op, op.setPaths(paths)

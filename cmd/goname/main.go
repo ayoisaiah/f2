@@ -48,6 +48,16 @@ func main() {
 				Usage:   "Undo the LAST successful operation",
 			},
 			&cli.BoolFlag{
+				Name:    "ignore-case",
+				Aliases: []string{"i"},
+				Usage:   "Ignore case",
+			},
+			&cli.BoolFlag{
+				Name:    "ignore-ext",
+				Aliases: []string{"e"},
+				Usage:   "Ignore extension",
+			},
+			&cli.BoolFlag{
 				Name:    "include-dir",
 				Aliases: []string{"D"},
 				Usage:   "Rename directories",
@@ -56,11 +66,6 @@ func main() {
 				Name:    "hidden",
 				Aliases: []string{"H"},
 				Usage:   "Include hidden files and directories",
-			},
-			&cli.BoolFlag{
-				Name:    "natural-sort",
-				Aliases: []string{"N"},
-				Usage:   "Sort filenames in a natural order",
 			},
 			&cli.BoolFlag{
 				Name:    "force",
@@ -81,7 +86,11 @@ func main() {
 				return err
 			}
 
-			op.FindMatches()
+			err = op.FindMatches()
+			if err != nil {
+				return err
+			}
+
 			if op.includeDir {
 				op.SortMatches()
 			}
