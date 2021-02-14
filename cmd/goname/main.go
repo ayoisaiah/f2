@@ -7,8 +7,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func main() {
-	app := &cli.App{
+func getApp() *cli.App {
+	return &cli.App{
 		Name: "goname",
 		Authors: []*cli.Author{
 			{
@@ -43,6 +43,11 @@ func main() {
 				Usage:   "By default, goname will do a 'dry run' so that you can inspect the results and confirm that it looks correct. Add this flag to proceed with renaming the files.",
 			},
 			&cli.BoolFlag{
+				Name:    "recursive",
+				Aliases: []string{"R"},
+				Usage:   "Rename files recursively",
+			},
+			&cli.BoolFlag{
 				Name:    "undo",
 				Aliases: []string{"U"},
 				Usage:   "Undo the LAST successful operation",
@@ -70,7 +75,7 @@ func main() {
 			&cli.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"F"},
-				Usage:   "If there are conflicts after a replacement operation (such as when overwriting existing files), goname will report them to you. Use this flag to force the renaming operation even if there are conflicts.",
+				Usage:   "If there are conflicts after a replacement operation (such as when overwriting existing files), it will be reported to you. Use this flag to force the renaming operation even if there are conflicts.",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -101,6 +106,10 @@ func main() {
 			return op.Apply()
 		},
 	}
+}
+
+func run(args []string) error {
+	app := getApp()
 
 	// Override the default help template
 	cli.AppHelpTemplate = `DESCRIPTION:
@@ -122,7 +131,11 @@ WEBSITE:
 	https://github.com/ayoisaiah/goname
 `
 
-	err := app.Run(os.Args)
+	return app.Run(args)
+}
+
+func main() {
+	err := run(os.Args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

@@ -44,6 +44,8 @@ type Operation struct {
 	ignoreCase      bool
 	ignoreExt       bool
 	searchRegex     *regexp.Regexp
+	directories     []string
+	recursive       bool
 }
 
 // WriteToFile writes the details of the last successful operation
@@ -359,6 +361,8 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.includeHidden = c.Bool("hidden")
 	op.ignoreCase = c.Bool("ignore-case")
 	op.ignoreExt = c.Bool("ignore-ext")
+	op.recursive = c.Bool("recursive")
+	op.directories = c.Args().Slice()
 
 	findPattern := c.String("find")
 	if op.ignoreCase {
@@ -372,11 +376,12 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.searchRegex = re
 
 	var paths = make(map[string][]os.DirEntry)
-	for _, v := range c.Args().Slice() {
+	for _, v := range op.directories {
 		absolutePath, err := filepath.Abs(v)
 		if err != nil {
 			return nil, err
 		}
+
 		paths[absolutePath], err = os.ReadDir(v)
 		if err != nil {
 			return nil, err
@@ -389,7 +394,15 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		paths[currentDir], err = os.ReadDir(".")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if op.recursive {
+		paths, err = walk(paths)
 		if err != nil {
 			return nil, err
 		}

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -30,4 +31,40 @@ func contains(s []string, e string) bool {
 
 func filenameWithoutExtension(fn string) string {
 	return strings.TrimSuffix(fn, path.Ext(fn))
+}
+
+func walk(paths map[string][]os.DirEntry) (map[string][]os.DirEntry, error) {
+	iterated := []string{}
+	var n = make(map[string][]os.DirEntry)
+
+loop:
+	for k, v := range paths {
+		if contains(iterated, k) {
+			continue
+		}
+
+		iterated = append(iterated, k)
+		for _, de := range v {
+			if de.IsDir() {
+				fp := filepath.Join(k, de.Name())
+				dirEntry, err := os.ReadDir(fp)
+				if err != nil {
+					return nil, err
+				}
+
+				n[fp] = dirEntry
+			}
+		}
+	}
+
+	if len(n) > 0 {
+		for k, v := range n {
+			paths[k] = v
+			delete(n, k)
+		}
+
+		goto loop
+	}
+
+	return paths, nil
 }

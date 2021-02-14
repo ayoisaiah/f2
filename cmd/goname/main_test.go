@@ -1,118 +1,136 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
-	"regexp"
-	"strings"
 	"testing"
+
+	"github.com/urfave/cli/v2"
 )
 
-func TestFindMatches(t *testing.T) {
-	tests := []struct {
-		input []string
-		regex string
-		want  []Change
-	}{
-		{
-			input: []string{"20200112_100034.jpg", "How I Met Your Mother - S09E19.mp4", "Screenshot from 2020-09-12 12-04-15_1000", "How I Met Your Mother - S09E21.mp4"},
-			regex: "2020",
-			want: []Change{
-				{source: "20200112_100034.jpg"},
-				{source: "Screenshot from 2020-09-12 12-04-15_1000"},
-			},
-		},
-		{
-			input: []string{"img1.jpeg", "img2.png", "img3.jpeg", "img4.png", "img5.gif"},
-			regex: "jpeg",
-			want: []Change{
-				{source: "img1.jpeg"},
-				{source: "img3.jpeg"},
-			},
-		},
-		{
-			input: []string{"namecheap-order-3891443.pdf", "mysplits.pdf", "tmux-cheatsheet.pdf", "Blokada-204.conf", "tower heist (2011)-English.srt"},
-			regex: "[0-9]+",
-			want: []Change{
-				{source: "namecheap-order-3891443.pdf"},
-				{source: "Blokada-204.conf"},
-				{source: "tower heist (2011)-English.srt"},
-			},
-		},
+var fileSystem = []string{
+	"No Pressure (2021) S1.E1.1080p.mkv",
+	"No Pressure (2021) S1.E2.1080p.mkv",
+	"No Pressure (2021) S1.E3.1080p.mkv",
+	"images/a.jpg",
+	"images/abc.png",
+	"images/456.webp",
+	"images/pics/123.jpg",
+}
+
+// setup creates all required files and folders for
+// the tests and returns a function that is used as
+// a teardown function when the tests are done.
+func setup(t testing.TB) (string, func()) {
+	testDir, err := ioutil.TempDir(".", "")
+	if err != nil {
+		os.RemoveAll(testDir)
+		t.Fatal(err)
 	}
 
-	for i, tc := range tests {
-		op := &Operation{}
-		for _, v := range tc.input {
-			isDir := strings.HasSuffix(v, "/")
-			op.paths = append(op.paths, Change{
-				isDir:  isDir,
-				source: filepath.Clean(v),
-			})
-		}
-
-		op.searchRegex = regexp.MustCompile(tc.regex)
-		err := op.FindMatches()
+	directories := []string{"images/pics"}
+	for _, v := range directories {
+		filePath := filepath.Join(testDir, v)
+		err = os.MkdirAll(filePath, os.ModePerm)
 		if err != nil {
-			t.Errorf("Test %d — An error occurred while finding matches: %v", i+1, err)
+			os.RemoveAll(testDir)
+			t.Fatal(err)
 		}
+	}
 
-		if !reflect.DeepEqual(tc.want, op.matches) {
-			t.Fatalf("Test %d — Expected: %v, got: %v", i+1, tc.want, op.matches)
+	for _, f := range fileSystem {
+		filePath := filepath.Join(testDir, f)
+		if err := ioutil.WriteFile(filePath, []byte{}, 0755); err != nil {
+			os.RemoveAll(testDir)
+			t.Fatal(err)
+		}
+	}
+
+	abs, err := filepath.Abs(testDir)
+	if err != nil {
+		os.RemoveAll(testDir)
+		t.Fatal(err)
+	}
+
+	return abs, func() {
+		if os.RemoveAll(testDir); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
 
-func TestReplace(t *testing.T) {
-	tests := []struct {
-		matches       []Change
-		searchRegex   *regexp.Regexp
-		replaceString string
-		want          []Change
+func TestFindMatches(t *testing.T) {
+	testDir, teardown := setup(t)
+
+	defer teardown()
+
+	var result []Change
+
+	app := getApp()
+	app.Action = func(c *cli.Context) error {
+		op, err := NewOperation(c)
+		if err != nil {
+			return err
+		}
+
+		err = op.FindMatches()
+		if err != nil {
+			return err
+		}
+
+		result = op.matches
+
+		return nil
+	}
+
+	table := []struct {
+		want []Change
+		args []string
 	}{
 		{
-			matches: []Change{
-				{source: "How I Met Your Mother - S09E21.mp4"},
-				{source: "Dear Mother.epub"},
-				{source: "Mother - Charlie Puth.mp3"},
-			},
-			searchRegex:   regexp.MustCompile("Mother"),
-			replaceString: "Father",
 			want: []Change{
-				{source: "How I Met Your Mother - S09E21.mp4", target: "How I Met Your Father - S09E21.mp4"},
-				{source: "Dear Mother.epub", target: "Dear Father.epub"},
-				{source: "Mother - Charlie Puth.mp3", target: "Father - Charlie Puth.mp3"},
+				{source: "No Pressure (2021) S1.E1.1080p.mkv", baseDir: testDir},
+				{source: "No Pressure (2021) S1.E2.1080p.mkv", baseDir: testDir},
+				{source: "No Pressure (2021) S1.E3.1080p.mkv", baseDir: testDir},
 			},
+			args: []string{"-f", ".*E(\\d+).*", "-r", "", testDir},
 		},
 		{
-			matches: []Change{
-				{source: "pic-1.jpg"},
-				{source: "dir/pic-2.jpg"},
-				{source: "pic-3/pic-3.jpg"},
-				{source: "deep/nested/dir/pic-4.jpg"},
-			},
-			searchRegex: regexp.MustCompile("pic-"),
+			want: []Change{},
+			args: []string{"-f", "images", "-r", "", testDir},
+		},
+		{
 			want: []Change{
-				{source: "pic-1.jpg", target: "1.jpg"},
-				{source: "dir/pic-2.jpg", target: "dir/2.jpg"},
-				{source: "pic-3/pic-3.jpg", target: "pic-3/3.jpg"},
-				{source: "deep/nested/dir/pic-4.jpg", target: "deep/nested/dir/4.jpg"},
+				{source: "images", isDir: true, baseDir: testDir},
 			},
+			args: []string{"-f", "images", "-r", "", "-D", testDir},
+		},
+		{
+			want: []Change{
+				{source: "a.jpg", baseDir: filepath.Join(testDir, "images")},
+				{source: "abc.png", baseDir: filepath.Join(testDir, "images")},
+				{source: "123.jpg", baseDir: filepath.Join(testDir, "images", "pics")},
+			},
+			args: []string{"-f", "jpg|png", "-r", "", "-D", "-R", testDir},
 		},
 	}
 
-	for i, tc := range tests {
-		op := &Operation{}
-		op.searchRegex = tc.searchRegex
-		op.replaceString = tc.replaceString
-		op.matches = tc.matches
-		err := op.Replace()
+	for i, v := range table {
+		args := os.Args[0:1]
+		args = append(args, v.args...)
+		err := app.Run(args)
 		if err != nil {
-			t.Fatalf("Test %d — Error: %v", i+1, err)
+			t.Fatalf("Unexpected error occurred: %v", err)
 		}
 
-		if !reflect.DeepEqual(tc.want, op.matches) {
-			t.Fatalf("Test %d — Expected: %v, got: %v", i+1, tc.want, op.matches)
+		if err != nil {
+			t.Errorf("Test(%d) — An error occurred while finding matches: %v", i+1, err)
+		}
+
+		if !reflect.DeepEqual(v.want, result) && len(v.want) != 0 {
+			t.Fatalf("Test(%d) — Expected: %v, got: %v", i+1, v.want, result)
 		}
 	}
 }
