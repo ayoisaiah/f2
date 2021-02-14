@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/urfave/cli/v2"
@@ -20,10 +21,15 @@ var fileSystem = []string{
 	"images/pics/123.jpg",
 }
 
-// setup creates all required files and folders for
+type Table struct {
+	want []Change
+	args []string
+}
+
+// setupFileSystem creates all required files and folders for
 // the tests and returns a function that is used as
 // a teardown function when the tests are done.
-func setup(t testing.TB) (string, func()) {
+func setupFileSystem(t testing.TB) (string, func()) {
 	testDir, err := ioutil.TempDir(".", "")
 	if err != nil {
 		os.RemoveAll(testDir)
@@ -61,11 +67,7 @@ func setup(t testing.TB) (string, func()) {
 	}
 }
 
-func TestFindMatches(t *testing.T) {
-	testDir, teardown := setup(t)
-
-	defer teardown()
-
+func replaceAction(args []string) ([]Change, error) {
 	var result []Change
 
 	app := getApp()
@@ -80,57 +82,72 @@ func TestFindMatches(t *testing.T) {
 			return err
 		}
 
+		if op.includeDir {
+			op.SortMatches()
+		}
+
+		if err := op.Replace(); err != nil {
+			return err
+		}
+
 		result = op.matches
 
 		return nil
 	}
 
-	table := []struct {
-		want []Change
-		args []string
-	}{
-		{
-			want: []Change{
-				{source: "No Pressure (2021) S1.E1.1080p.mkv", baseDir: testDir},
-				{source: "No Pressure (2021) S1.E2.1080p.mkv", baseDir: testDir},
-				{source: "No Pressure (2021) S1.E3.1080p.mkv", baseDir: testDir},
-			},
-			args: []string{"-f", ".*E(\\d+).*", "-r", "", testDir},
-		},
-		{
-			want: []Change{},
-			args: []string{"-f", "images", "-r", "", testDir},
-		},
-		{
-			want: []Change{
-				{source: "images", isDir: true, baseDir: testDir},
-			},
-			args: []string{"-f", "images", "-r", "", "-D", testDir},
-		},
-		{
-			want: []Change{
-				{source: "a.jpg", baseDir: filepath.Join(testDir, "images")},
-				{source: "abc.png", baseDir: filepath.Join(testDir, "images")},
-				{source: "123.jpg", baseDir: filepath.Join(testDir, "images", "pics")},
-			},
-			args: []string{"-f", "jpg|png", "-r", "", "-D", "-R", testDir},
-		},
-	}
+	return result, app.Run(args)
+}
 
+func sortChanges(s []Change) {
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].source < s[j].source
+	})
+}
+
+func loop(t *testing.T, fn func([]string) ([]Change, error), table []Table) {
 	for i, v := range table {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
-		err := app.Run(args)
+		result, err := fn(args)
 		if err != nil {
 			t.Fatalf("Unexpected error occurred: %v", err)
 		}
 
 		if err != nil {
-			t.Errorf("Test(%d) — An error occurred while finding matches: %v", i+1, err)
+			t.Errorf("Test(%d) — Unexpected error: %v", i+1, err)
 		}
+
+		sortChanges(v.want)
+		sortChanges(result)
 
 		if !reflect.DeepEqual(v.want, result) && len(v.want) != 0 {
 			t.Fatalf("Test(%d) — Expected: %v, got: %v", i+1, v.want, result)
 		}
 	}
+}
+
+func TestFindReplace(t *testing.T) {
+	testDir, teardown := setupFileSystem(t)
+
+	defer teardown()
+
+	table := []Table{
+		{
+			want: []Change{
+				{source: "No Pressure (2021) S1.E1.1080p.mkv", baseDir: testDir, target: "1.mkv"},
+				{source: "No Pressure (2021) S1.E2.1080p.mkv", baseDir: testDir, target: "2.mkv"},
+				{source: "No Pressure (2021) S1.E3.1080p.mkv", baseDir: testDir, target: "3.mkv"},
+			},
+			args: []string{"-f", ".*E(\\d+).*", "-r", "$1.mkv", testDir},
+		},
+		{
+			want: []Change{
+				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "a.jpeg"},
+				{source: "123.jpg", baseDir: filepath.Join(testDir, "images", "pics"), target: "123.jpeg"},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", testDir},
+		},
+	}
+
+	loop(t, replaceAction, table)
 }
