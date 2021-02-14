@@ -204,6 +204,12 @@ func (op *Operation) ReportConflicts() error {
 			target = filepath.Join(ch.baseDir, target)
 		}
 
+		// Report error if replacement operation results in
+		// an empty string for the new filename
+		if ch.target == "." {
+			return fmt.Errorf("%s\n%s ➟ %s %s ", red("Error detected: Operation resulted in empty filename"), source, red("[Empty filename]"), "❌")
+		}
+
 		// Ensure file does not exist on the filesystem
 		if _, err1 := os.Stat(target); err1 == nil || !os.IsNotExist(err1) {
 			fmt.Printf("%s ➟ %s %s %s\n", source, red(target), red("[File exists]"), "❌")
@@ -312,12 +318,6 @@ func (op *Operation) Replace() error {
 		// if file is a directory to avoid conflicts
 		if op.includeDir && v.isDir {
 			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
-		}
-
-		// Report error if replacement operation results in
-		// an empty string for the new filename
-		if str == "" {
-			return fmt.Errorf("%s\n%s ➟ %s %s ", red("Error detected: Operation resulted in empty filename"), v.source, red("[Empty filename]"), "❌")
 		}
 
 		v.target = filepath.Join(dir, str)
