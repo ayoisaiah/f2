@@ -18,7 +18,10 @@ var fileSystem = []string{
 	"images/a.jpg",
 	"images/abc.png",
 	"images/456.webp",
-	"images/pics/123.jpg",
+	"images/pics/123.JPG",
+	"scripts/index.js",
+	"scripts/main.js",
+	"a-b-c.txt",
 }
 
 type Table struct {
@@ -36,7 +39,7 @@ func setupFileSystem(t testing.TB) (string, func()) {
 		t.Fatal(err)
 	}
 
-	directories := []string{"images/pics"}
+	directories := []string{"images/pics", "scripts"}
 	for _, v := range directories {
 		filePath := filepath.Join(testDir, v)
 		err = os.MkdirAll(filePath, os.ModePerm)
@@ -77,7 +80,7 @@ func replaceAction(args []string) ([]Change, error) {
 			return err
 		}
 
-		err = op.FindMatches()
+		op.FindMatches()
 		if err != nil {
 			return err
 		}
@@ -86,9 +89,7 @@ func replaceAction(args []string) ([]Change, error) {
 			op.SortMatches()
 		}
 
-		if err := op.Replace(); err != nil {
-			return err
-		}
+		op.Replace()
 
 		result = op.matches
 
@@ -121,7 +122,7 @@ func loop(t *testing.T, fn func([]string) ([]Change, error), table []Table) {
 		sortChanges(result)
 
 		if !reflect.DeepEqual(v.want, result) && len(v.want) != 0 {
-			t.Fatalf("Test(%d) — Expected: %v, got: %v", i+1, v.want, result)
+			t.Fatalf("Test(%d) — Expected: %+v, got: %+v", i+1, v.want, result)
 		}
 	}
 }
@@ -142,10 +143,38 @@ func TestFindReplace(t *testing.T) {
 		},
 		{
 			want: []Change{
+				{source: "No Pressure (2021) S1.E1.1080p.mkv", baseDir: testDir, target: "No Pressure 98.mkv"},
+				{source: "No Pressure (2021) S1.E2.1080p.mkv", baseDir: testDir, target: "No Pressure 99.mkv"},
+				{source: "No Pressure (2021) S1.E3.1080p.mkv", baseDir: testDir, target: "No Pressure 100.mkv"},
+			},
+			args: []string{"-f", "(No Pressure).*", "-r", "$1 %d.mkv", "-n", "98", testDir},
+		},
+		{
+			want: []Change{
 				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "a.jpeg"},
-				{source: "123.jpg", baseDir: filepath.Join(testDir, "images", "pics"), target: "123.jpeg"},
 			},
 			args: []string{"-f", "jpg", "-r", "jpeg", "-R", testDir},
+		},
+		{
+			want: []Change{
+				{source: "index.js", baseDir: filepath.Join(testDir, "scripts"), target: "index.ts"},
+				{source: "main.js", baseDir: filepath.Join(testDir, "scripts"), target: "main.ts"},
+			},
+			args: []string{"-f", "js", "-r", "ts", filepath.Join(testDir, "scripts")},
+		},
+		{
+			want: []Change{
+				{source: "index.js", baseDir: filepath.Join(testDir, "scripts"), target: "i n d e x .js"},
+				{source: "main.js", baseDir: filepath.Join(testDir, "scripts"), target: "m a i n .js"},
+			},
+			args: []string{"-f", "(.)", "-r", "$1 ", "-e", filepath.Join(testDir, "scripts")},
+		},
+		{
+			want: []Change{
+				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "a.jpeg"},
+				{source: "123.JPG", baseDir: filepath.Join(testDir, "images", "pics"), target: "123.jpeg"},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-i", testDir},
 		},
 	}
 
