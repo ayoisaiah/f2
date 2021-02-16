@@ -23,6 +23,21 @@ var (
 
 const opsFile = ".goname-operation.txt"
 
+type conflict int
+
+const (
+	EMPTY_FILENAME conflict = iota
+	FILE_EXISTS
+	OVERWRITNG_NEW_PATH
+)
+
+// Conflict represents a renaming operation conflict
+// such as duplicate targets or empty filenames
+type Conflict struct {
+	source []string
+	target string
+}
+
 // Change represents a single filename change
 type Change struct {
 	baseDir string
@@ -31,7 +46,7 @@ type Change struct {
 	isDir   bool
 }
 
-// Operation represents a bulk rename operation
+// Operation represents a batch renaming operation
 type Operation struct {
 	paths           []Change
 	matches         []Change
@@ -151,19 +166,19 @@ func (op *Operation) Undo() error {
 	return op.Apply()
 }
 
-// Apply will check for conflicts and print
-// the changes to be made or apply them directly
-// if in execute mode. Conflicts will be ignored if
-// specified
+// Apply will check for conflicts and print the changes to be made
+// or apply them directly to the filesystem if in execute mode.
+// Conflicts will be ignored if indicated
 func (op *Operation) Apply() error {
 	if len(op.matches) == 0 {
 		return fmt.Errorf("%s", red("Failed to match any files"))
 	}
 
 	if !op.ignoreConflicts {
-		err := op.ReportConflicts()
-		if err != nil {
-			return err
+		conflicts := op.DetectConflicts()
+		if len(conflicts) > 0 {
+			op.ReportConflicts(conflicts)
+			return fmt.Errorf("%s", yellow("Resolve the conflicts before proceeding or use the -F flag to ignore conflicts and rename anyway"))
 		}
 	}
 
@@ -204,12 +219,42 @@ func (op *Operation) Apply() error {
 	return nil
 }
 
-// ReportConflicts ensures that there are no conflicts
+// ReportConflicts prints any detected conflicts to the standard error
+func (op *Operation) ReportConflicts(conflicts map[conflict][]Conflict) {
+	if slice, exists := conflicts[EMPTY_FILENAME]; exists {
+		fmt.Fprintln(os.Stderr, color.Bold.Sprintf("Operation resulted in empty filename:"))
+		for _, v := range slice {
+			fmt.Fprintf(os.Stderr, "%s ➟ %s %s\n", strings.Join(v.source, ""), red("[Empty filename]"), "❌")
+		}
+	}
+
+	if slice, exists := conflicts[FILE_EXISTS]; exists {
+		fmt.Fprintln(os.Stderr, color.Bold.Sprintf("Overwriting existing path"))
+		for _, v := range slice {
+			fmt.Fprintf(os.Stderr, "%s ➟ %s %s %s\n", strings.Join(v.source, ""), red(v.target), red("[File exists]"), "❌")
+		}
+	}
+
+	if slice, exists := conflicts[OVERWRITNG_NEW_PATH]; exists {
+		for _, v := range slice {
+			fmt.Fprintln(os.Stderr, color.Bold.Sprintf("Overwriting newly renamed path:"))
+			for i, s := range v.source {
+				if i == 0 {
+					fmt.Fprintf(os.Stderr, "%s ➟ %s %s\n", s, green(v.target), "✅")
+				} else {
+					fmt.Fprintf(os.Stderr, "%s ➟ %s %s\n", s, red(v.target), "❌")
+				}
+			}
+		}
+	}
+}
+
+// DetectConflicts detects any conflicts that occur
 // after renaming a file
-func (op *Operation) ReportConflicts() error {
+func (op *Operation) DetectConflicts() map[conflict][]Conflict {
+	conflicts := make(map[conflict][]Conflict)
 	m := make(map[string][]string)
 
-	var err error
 	for _, ch := range op.matches {
 		var source, target = ch.source, ch.target
 		if printFullPaths {
@@ -217,50 +262,41 @@ func (op *Operation) ReportConflicts() error {
 			target = filepath.Join(ch.baseDir, target)
 		}
 
-		// Report error if replacement operation results in
+		// Report if replacement operation results in
 		// an empty string for the new filename
 		if ch.target == "." {
-			return fmt.Errorf("%s\n%s ➟ %s %s ", red("Error detected: Operation resulted in empty filename"), source, red("[Empty filename]"), "❌")
+			conflicts[EMPTY_FILENAME] = append(conflicts[EMPTY_FILENAME], Conflict{
+				source: []string{source},
+				target: target,
+			})
+
+			continue
 		}
 
-		// Ensure file does not exist on the filesystem
-		if _, err1 := os.Stat(target); err1 == nil || !os.IsNotExist(err1) {
-			fmt.Printf("%s ➟ %s %s %s\n", source, red(target), red("[File exists]"), "❌")
-			if err == nil {
-				err = fmt.Errorf("%s\n%s", red("Conflict detected: overwriting existing file(s)"), yellow("Use the -F flag to ignore conflicts and rename anyway"))
-			}
+		// Report if target file exists on the filesystem
+		if _, err := os.Stat(target); err == nil || !os.IsNotExist(err) {
+			conflicts[FILE_EXISTS] = append(conflicts[FILE_EXISTS], Conflict{
+				source: []string{source},
+				target: target,
+			})
 		}
 
-		// Detect duplicates after renaming paths
-		if _, exists := m[target]; exists {
-			m[target] = append(m[target], source)
-		} else {
-			m[target] = []string{source}
-		}
+		// For detecting duplicates after renaming paths
+		m[target] = append(m[target], source)
 	}
 
-	if err != nil {
-		return err
-	}
-
-	// Report duplicates if any
+	// Report duplicate targets if any
 	for k, v := range m {
 		if len(v) > 1 {
-			if err == nil {
-				err = fmt.Errorf("%s\n%s", red("Conflict detected: overwriting newly renamed path"), yellow("Use the -F flag to ignore conflicts and rename anyway"))
-			}
-
-			for i, s := range v {
-				if i == 0 {
-					fmt.Printf("%s ➟ %s %s\n", s, green(k), "✅")
-				} else {
-					fmt.Printf("%s ➟ %s %s\n", s, red(k), "❌")
-				}
-			}
+			conflicts[OVERWRITNG_NEW_PATH] = append(conflicts[OVERWRITNG_NEW_PATH], Conflict{
+				source: v,
+				target: k,
+			})
 		}
+
 	}
 
-	return err
+	return conflicts
 }
 
 // FindMatches locates matches for the search pattern
