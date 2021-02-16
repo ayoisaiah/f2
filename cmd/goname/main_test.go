@@ -19,14 +19,13 @@ var fileSystem = []string{
 	"images/abc.png",
 	"images/456.webp",
 	"images/pics/123.JPG",
+	"morepics/pic-1.avif",
+	"morepics/pic-2.avif",
 	"scripts/index.js",
 	"scripts/main.js",
-	"a-b-c.txt",
-}
-
-type Table struct {
-	want []Change
-	args []string
+	"abc.pdf",
+	"abc.epub",
+	".pics",
 }
 
 // setupFileSystem creates all required files and folders for
@@ -39,7 +38,7 @@ func setupFileSystem(t testing.TB) (string, func()) {
 		t.Fatal(err)
 	}
 
-	directories := []string{"images/pics", "scripts"}
+	directories := []string{"images/pics", "scripts", "morepics"}
 	for _, v := range directories {
 		filePath := filepath.Join(testDir, v)
 		err = os.MkdirAll(filePath, os.ModePerm)
@@ -70,8 +69,13 @@ func setupFileSystem(t testing.TB) (string, func()) {
 	}
 }
 
-func replaceAction(args []string) ([]Change, error) {
-	var result []Change
+type ActionResult struct {
+	changes   []Change
+	conflicts map[conflict][]Conflict
+}
+
+func action(args []string) (ActionResult, error) {
+	var result ActionResult
 
 	app := getApp()
 	app.Action = func(c *cli.Context) error {
@@ -81,9 +85,6 @@ func replaceAction(args []string) ([]Change, error) {
 		}
 
 		op.FindMatches()
-		if err != nil {
-			return err
-		}
 
 		if op.includeDir {
 			op.SortMatches()
@@ -91,7 +92,8 @@ func replaceAction(args []string) ([]Change, error) {
 
 		op.Replace()
 
-		result = op.matches
+		result.changes = op.matches
+		result.conflicts = op.DetectConflicts()
 
 		return nil
 	}
@@ -105,32 +107,15 @@ func sortChanges(s []Change) {
 	})
 }
 
-func loop(t *testing.T, fn func([]string) ([]Change, error), table []Table) {
-	for i, v := range table {
-		args := os.Args[0:1]
-		args = append(args, v.args...)
-		result, err := fn(args)
-		if err != nil {
-			t.Fatalf("Unexpected error occurred: %v", err)
-		}
-
-		if err != nil {
-			t.Errorf("Test(%d) — Unexpected error: %v", i+1, err)
-		}
-
-		sortChanges(v.want)
-		sortChanges(result)
-
-		if !reflect.DeepEqual(v.want, result) && len(v.want) != 0 {
-			t.Fatalf("Test(%d) — Expected: %+v, got: %+v", i+1, v.want, result)
-		}
-	}
-}
-
 func TestFindReplace(t *testing.T) {
 	testDir, teardown := setupFileSystem(t)
 
 	defer teardown()
+
+	type Table struct {
+		want []Change
+		args []string
+	}
 
 	table := []Table{
 		{
@@ -157,6 +142,22 @@ func TestFindReplace(t *testing.T) {
 		},
 		{
 			want: []Change{
+				{source: "456.webp", baseDir: filepath.Join(testDir, "images"), target: "456-001.webp"},
+				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "a-002.jpg"},
+				{source: "abc.png", baseDir: filepath.Join(testDir, "images"), target: "abc-003.png"},
+			},
+			args: []string{"-f", ".*(jpg|png|webp)", "-r", "{og}-%03d.$1", filepath.Join(testDir, "images")},
+		},
+		{
+			want: []Change{
+				{source: "456.webp", baseDir: filepath.Join(testDir, "images"), target: "001.webp"},
+				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "002.jpg"},
+				{source: "abc.png", baseDir: filepath.Join(testDir, "images"), target: "003.png"},
+			},
+			args: []string{"-f", ".*(jpg|png|webp)", "-r", "%03d{ext}", filepath.Join(testDir, "images")},
+		},
+		{
+			want: []Change{
 				{source: "index.js", baseDir: filepath.Join(testDir, "scripts"), target: "index.ts"},
 				{source: "main.js", baseDir: filepath.Join(testDir, "scripts"), target: "main.ts"},
 			},
@@ -176,7 +177,98 @@ func TestFindReplace(t *testing.T) {
 			},
 			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-i", testDir},
 		},
+		{
+			want: []Change{
+				{source: "pics", isDir: true, baseDir: filepath.Join(testDir, "images"), target: "images"},
+				{source: "morepics", isDir: true, baseDir: testDir, target: "moreimages"},
+				{source: "pic-1.avif", baseDir: filepath.Join(testDir, "morepics"), target: "image-1.avif"},
+				{source: "pic-2.avif", baseDir: filepath.Join(testDir, "morepics"), target: "image-2.avif"},
+			},
+			args: []string{"-f", "pic", "-r", "image", "-D", "-R", testDir},
+		},
 	}
 
-	loop(t, replaceAction, table)
+	for i, v := range table {
+		args := os.Args[0:1]
+		args = append(args, v.args...)
+		result, err := action(args)
+		if err != nil {
+			t.Fatalf("Test(%d) — Unexpected error: %v\n", i+1, err)
+		}
+
+		if len(result.conflicts) > 0 {
+			t.Fatalf("Test(%d) — Expected no conflicts but got some: %v", i+1, result.conflicts)
+		}
+
+		sortChanges(v.want)
+		sortChanges(result.changes)
+
+		if !reflect.DeepEqual(v.want, result.changes) && len(v.want) != 0 {
+			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.changes)
+		}
+	}
+}
+
+func TestDetectConflicts(t *testing.T) {
+	testDir, teardown := setupFileSystem(t)
+
+	defer teardown()
+
+	type Table struct {
+		want map[conflict][]Conflict
+		args []string
+	}
+
+	table := []Table{
+		{
+			want: map[conflict][]Conflict{
+				FILE_EXISTS: []Conflict{
+					{
+						source: []string{filepath.Join(testDir, "abc.pdf")},
+						target: filepath.Join(testDir, "abc.epub"),
+					},
+				},
+			},
+			args: []string{"-f", "pdf", "-r", "epub", testDir},
+		},
+		{
+			want: map[conflict][]Conflict{
+				EMPTY_FILENAME: []Conflict{
+					{
+						source: []string{filepath.Join(testDir, "abc.pdf")},
+						target: filepath.Join(testDir, ""),
+					},
+				},
+			},
+			args: []string{"-f", "abc.pdf", "-r", "", testDir},
+		},
+		{
+			want: map[conflict][]Conflict{
+				OVERWRITNG_NEW_PATH: []Conflict{
+					{
+						source: []string{filepath.Join(testDir, "abc.epub"), filepath.Join(testDir, "abc.pdf")},
+						target: filepath.Join(testDir, "abc.mobi"),
+					},
+				},
+			},
+			args: []string{"-f", "pdf|epub", "-r", "mobi", testDir},
+		},
+	}
+
+	for i, v := range table {
+		args := os.Args[0:1]
+		args = append(args, v.args...)
+		result, err := action(args)
+		if err != nil {
+			t.Fatalf("Test(%d) — Unexpected error: %v\n", i+1, err)
+		}
+
+		if len(result.conflicts) == 0 {
+			t.Fatalf("Test(%d) — Expected some conflicts but got none", i+1)
+		}
+
+		if !reflect.DeepEqual(v.want, result.conflicts) {
+			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.conflicts)
+		}
+	}
 }
