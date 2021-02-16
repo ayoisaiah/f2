@@ -79,31 +79,12 @@ func getApp() *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			if c.Bool("undo") {
-				op := &Operation{}
-				op.ignoreConflicts = c.Bool("force")
-				op.exec = c.Bool("exec")
-				return op.Undo()
-			}
-
 			op, err := NewOperation(c)
 			if err != nil {
 				return err
 			}
 
-			err = op.FindMatches()
-			if err != nil {
-				return err
-			}
-
-			if op.includeDir {
-				op.SortMatches()
-			}
-			if err := op.Replace(); err != nil {
-				return err
-			}
-
-			return op.Apply()
+			return op.Run()
 		},
 	}
 }

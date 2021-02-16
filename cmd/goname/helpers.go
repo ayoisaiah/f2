@@ -2,9 +2,7 @@ package main
 
 import (
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
 )
 
 // isDirectory determines if a file represented
@@ -29,8 +27,8 @@ func contains(s []string, e string) bool {
 	return false
 }
 
-func filenameWithoutExtension(fn string) string {
-	return strings.TrimSuffix(fn, path.Ext(fn))
+func filenameWithoutExtension(fileName string) string {
+	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }
 
 func walk(paths map[string][]os.DirEntry) (map[string][]os.DirEntry, error) {

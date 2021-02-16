@@ -46,6 +46,7 @@ type Operation struct {
 	searchRegex     *regexp.Regexp
 	directories     []string
 	recursive       bool
+	undoMode        bool
 }
 
 // WriteToFile writes the details of the last successful operation
@@ -174,8 +175,20 @@ func (op *Operation) Apply() error {
 		}
 
 		if op.exec {
+			// If target contains a slash, create all missing
+			// directories before renaming the file
+			execErr := fmt.Errorf("An error occurred while renaming '%s' to '%s'", source, target)
+			if strings.Contains(ch.target, "/") {
+				// No need to check if the `dir` exists since `os.MkdirAll` handles that
+				dir := filepath.Dir(ch.target)
+				err := os.MkdirAll(dir, 0755)
+				if err != nil {
+					return execErr
+				}
+			}
+
 			if err := os.Rename(source, target); err != nil {
-				return fmt.Errorf("An error occurred while renaming '%s' to '%s'", source, target)
+				return execErr
 			}
 		} else {
 			fmt.Println(source, "➟", green(target), "✅")
@@ -252,7 +265,7 @@ func (op *Operation) ReportConflicts() error {
 
 // FindMatches locates matches for the search pattern
 // in each filename. Hidden files and directories are exempted
-func (op *Operation) FindMatches() error {
+func (op *Operation) FindMatches() {
 	for _, v := range op.paths {
 		filename := filepath.Base(v.source)
 
@@ -275,8 +288,6 @@ func (op *Operation) FindMatches() error {
 			op.matches = append(op.matches, v)
 		}
 	}
-
-	return nil
 }
 
 // SortMatches is used to sort files before directories
@@ -288,23 +299,28 @@ func (op *Operation) SortMatches() {
 
 // Replace replaces the matched text in each path with the
 // replacement string
-func (op *Operation) Replace() error {
+func (op *Operation) Replace() {
 	og := regexp.MustCompile("{og}")
 	ext := regexp.MustCompile("{ext}")
 	index := regexp.MustCompile("%([0-9]?)+d")
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.source), filepath.Dir(v.source)
-		var str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
+		fileExt := filepath.Ext(fileName)
+		if op.ignoreExt {
+			fileName = filenameWithoutExtension(fileName)
+		}
+
+		str := op.searchRegex.ReplaceAllString(fileName, op.replaceString)
 
 		// replace `{og}` in the replacement string with the original
 		// filename (without the extension)
 		if og.Match([]byte(str)) {
-			str = og.ReplaceAllString(str, strings.TrimSuffix(fileName, filepath.Ext(fileName)))
+			str = og.ReplaceAllString(str, filenameWithoutExtension(fileName))
 		}
 
 		// replace `{ext}` in the replacement string with the file extension
 		if ext.Match([]byte(str)) {
-			str = ext.ReplaceAllString(str, filepath.Ext(fileName))
+			str = ext.ReplaceAllString(str, fileExt)
 		}
 
 		// If numbering scheme is present
@@ -320,11 +336,13 @@ func (op *Operation) Replace() error {
 			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
 		}
 
+		if op.ignoreExt {
+			str += fileExt
+		}
+
 		v.target = filepath.Join(dir, str)
 		op.matches[i] = v
 	}
-
-	return nil
 }
 
 // setPaths creates a Change struct for each path
@@ -345,6 +363,22 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
 	return nil
 }
 
+func (op *Operation) Run() error {
+	if op.undoMode {
+		return op.Undo()
+	}
+
+	op.FindMatches()
+
+	if op.includeDir {
+		op.SortMatches()
+	}
+
+	op.Replace()
+
+	return op.Apply()
+}
+
 // NewOperation returns an Operation constructed
 // from command line flags & arguments
 func NewOperation(c *cli.Context) (*Operation, error) {
@@ -363,6 +397,11 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.ignoreExt = c.Bool("ignore-ext")
 	op.recursive = c.Bool("recursive")
 	op.directories = c.Args().Slice()
+	op.undoMode = c.Bool("undo")
+
+	if op.undoMode {
+		return op, nil
+	}
 
 	findPattern := c.String("find")
 	if op.ignoreCase {
