@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,8 +22,6 @@ var (
 	yellow = color.FgYellow.Render
 )
 
-const opsFile = ".goname-operation.txt"
-
 type conflict int
 
 const (
@@ -40,10 +39,10 @@ type Conflict struct {
 
 // Change represents a single filename change
 type Change struct {
-	baseDir string
-	source  string
-	target  string
-	isDir   bool
+	BaseDir string `json:"base_dir"`
+	Source  string `json:"source"`
+	Target  string `json:"target"`
+	IsDir   bool   `json:"is_dir"`
 }
 
 // Operation represents a batch renaming operation
@@ -62,13 +61,15 @@ type Operation struct {
 	directories     []string
 	recursive       bool
 	undoMode        bool
+	outputFile      string
+	mapFile         string
 }
 
-// WriteToFile writes the details of the last successful operation
-// to a file so that it may be reversed if necessary
+// WriteToFile writes the details of a successful operation
+// to the specified file so that it may be reversed if necessary
 func (op *Operation) WriteToFile() error {
 	// Create or truncate file
-	file, err := os.Create(opsFile)
+	file, err := os.Create(op.outputFile)
 	if err != nil {
 		return err
 	}
@@ -76,88 +77,74 @@ func (op *Operation) WriteToFile() error {
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	for _, v := range op.matches {
-		_, err = writer.WriteString(v.target + "|" + v.source + "\n")
-		if err != nil {
-			return err
-		}
+	b, err := json.Marshal(op.matches)
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(b)
+	if err != nil {
+		return err
 	}
 
 	return writer.Flush()
 }
 
-// Undo reverses the last successful renaming operation
+// Undo reverses the a successful renaming operation indicated
+// in the specified map file
 func (op *Operation) Undo() error {
-	file, err := os.Open(opsFile)
+	if op.mapFile == "" {
+		return fmt.Errorf("Please pass a previously created map file to continue")
+	}
+
+	file, err := os.ReadFile(op.mapFile)
 	if err != nil {
 		return err
 	}
 
-	defer file.Close()
-
-	fi, err := file.Stat()
+	err = json.Unmarshal([]byte(file), &op.matches)
 	if err != nil {
 		return err
-	}
-
-	// If file is empty
-	if fi.Size() == 0 {
-		return fmt.Errorf("No operation to undo")
-	}
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		slice := strings.Split(scanner.Text(), "|")
-		if len(slice) != 2 {
-			return fmt.Errorf("Corrupted data. Cannot undo")
-		}
-		source, target := slice[0], slice[1]
-		ch := Change{}
-		ch.source = source
-		ch.target = target
-
-		op.matches = append(op.matches, ch)
 	}
 
 	for i, v := range op.matches {
-		isDir, err := isDirectory(v.source)
+		isDir, err := isDirectory(v.Source)
 		if err != nil {
 			// An error may mean that the path does not exist
 			// which indicates that the directory containing the file
 			// was also renamed.
 			if os.IsNotExist(err) {
-				dir := filepath.Dir(v.source)
+				dir := filepath.Dir(v.Source)
 
 				// Get the directory that is changing
 				var d Change
 				for _, m := range op.matches {
-					if m.target == dir {
+					if m.Target == dir {
 						d = m
 						break
 					}
 				}
 
-				re, err := regexp.Compile(d.target)
+				re, err := regexp.Compile(d.Target)
 				if err != nil {
 					return err
 				}
 
-				srcFile, srcDir := filepath.Base(v.source), filepath.Dir(v.source)
-				targetFile, targetDir := filepath.Base(v.target), filepath.Dir(v.target)
+				srcFile, srcDir := filepath.Base(v.Source), filepath.Dir(v.Source)
+				targetFile, targetDir := filepath.Base(v.Target), filepath.Dir(v.Target)
 
 				// Update the directory of the path to the current name
 				// instead of the old one which no longer exists
-				srcDir = re.ReplaceAllString(srcDir, d.source)
-				targetDir = re.ReplaceAllString(targetDir, d.source)
+				srcDir = re.ReplaceAllString(srcDir, d.Source)
+				targetDir = re.ReplaceAllString(targetDir, d.Source)
 
-				v.source = filepath.Join(srcDir, srcFile)
-				v.target = filepath.Join(targetDir, targetFile)
+				v.Source = filepath.Join(srcDir, srcFile)
+				v.Target = filepath.Join(targetDir, targetFile)
 			} else {
 				return err
 			}
 		}
 
-		v.isDir = isDir
+		v.IsDir = isDir
 		op.matches[i] = v
 	}
 
@@ -183,19 +170,19 @@ func (op *Operation) Apply() error {
 	}
 
 	for _, ch := range op.matches {
-		var source, target = ch.source, ch.target
+		var source, target = ch.Source, ch.Target
 		if printFullPaths {
-			source = filepath.Join(ch.baseDir, source)
-			target = filepath.Join(ch.baseDir, target)
+			source = filepath.Join(ch.BaseDir, source)
+			target = filepath.Join(ch.BaseDir, target)
 		}
 
 		if op.exec {
 			// If target contains a slash, create all missing
 			// directories before renaming the file
 			execErr := fmt.Errorf("An error occurred while renaming '%s' to '%s'", source, target)
-			if strings.Contains(ch.target, "/") {
+			if strings.Contains(ch.Target, "/") {
 				// No need to check if the `dir` exists since `os.MkdirAll` handles that
-				dir := filepath.Dir(ch.target)
+				dir := filepath.Dir(ch.Target)
 				err := os.MkdirAll(dir, 0755)
 				if err != nil {
 					return execErr
@@ -210,7 +197,7 @@ func (op *Operation) Apply() error {
 		}
 	}
 
-	if op.exec && len(op.matches) > 0 {
+	if op.exec && len(op.matches) > 0 && op.outputFile != "" {
 		return op.WriteToFile()
 	} else if !op.exec && len(op.matches) > 0 {
 		fmt.Printf("%s\n", yellow("*** Use the -x flag to apply the above changes ***"))
@@ -256,15 +243,15 @@ func (op *Operation) DetectConflicts() map[conflict][]Conflict {
 	m := make(map[string][]string)
 
 	for _, ch := range op.matches {
-		var source, target = ch.source, ch.target
+		var source, target = ch.Source, ch.Target
 		if printFullPaths {
-			source = filepath.Join(ch.baseDir, source)
-			target = filepath.Join(ch.baseDir, target)
+			source = filepath.Join(ch.BaseDir, source)
+			target = filepath.Join(ch.BaseDir, target)
 		}
 
 		// Report if replacement operation results in
 		// an empty string for the new filename
-		if ch.target == "." {
+		if ch.Target == "." {
 			conflicts[EMPTY_FILENAME] = append(conflicts[EMPTY_FILENAME], Conflict{
 				source: []string{source},
 				target: target,
@@ -303,9 +290,9 @@ func (op *Operation) DetectConflicts() map[conflict][]Conflict {
 // in each filename. Hidden files and directories are exempted
 func (op *Operation) FindMatches() {
 	for _, v := range op.paths {
-		filename := filepath.Base(v.source)
+		filename := filepath.Base(v.Source)
 
-		if v.isDir && !op.includeDir {
+		if v.IsDir && !op.includeDir {
 			continue
 		}
 
@@ -329,7 +316,7 @@ func (op *Operation) FindMatches() {
 // SortMatches is used to sort files before directories
 func (op *Operation) SortMatches() {
 	sort.SliceStable(op.matches, func(i, j int) bool {
-		return !op.matches[i].isDir
+		return !op.matches[i].IsDir
 	})
 }
 
@@ -340,7 +327,7 @@ func (op *Operation) Replace() {
 	ext := regexp.MustCompile("{ext}")
 	index := regexp.MustCompile("%([0-9]?)+d")
 	for i, v := range op.matches {
-		fileName, dir := filepath.Base(v.source), filepath.Dir(v.source)
+		fileName, dir := filepath.Base(v.Source), filepath.Dir(v.Source)
 		fileExt := filepath.Ext(fileName)
 		if op.ignoreExt {
 			fileName = filenameWithoutExtension(fileName)
@@ -368,7 +355,7 @@ func (op *Operation) Replace() {
 
 		// Only perform find and replace on `dir`
 		// if file is a directory to avoid conflicts
-		if op.includeDir && v.isDir {
+		if op.includeDir && v.IsDir {
 			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
 		}
 
@@ -376,7 +363,7 @@ func (op *Operation) Replace() {
 			str += fileExt
 		}
 
-		v.target = filepath.Join(dir, str)
+		v.Target = filepath.Join(dir, str)
 		op.matches[i] = v
 	}
 }
@@ -387,9 +374,9 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
 	for k, v := range paths {
 		for _, f := range v {
 			var change = Change{
-				baseDir: k,
-				isDir:   f.IsDir(),
-				source:  filepath.Clean(f.Name()),
+				BaseDir: k,
+				IsDir:   f.IsDir(),
+				Source:  filepath.Clean(f.Name()),
 			}
 
 			op.paths = append(op.paths, change)
@@ -423,6 +410,8 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	op := &Operation{}
+	op.outputFile = c.String("output-file")
+	op.mapFile = c.String("map-file")
 	op.replaceString = c.String("replace")
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")

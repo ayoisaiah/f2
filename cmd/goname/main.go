@@ -37,6 +37,11 @@ func getApp() *cli.App {
 				Value:       1,
 				DefaultText: "1",
 			},
+			&cli.StringFlag{
+				Name:    "output-file",
+				Aliases: []string{"o"},
+				Usage:   "Generates a map file that can be used to undo a successful operation",
+			},
 			&cli.BoolFlag{
 				Name:    "exec",
 				Aliases: []string{"x"},

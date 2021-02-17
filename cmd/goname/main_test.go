@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -72,6 +73,7 @@ func setupFileSystem(t testing.TB) (string, func()) {
 type ActionResult struct {
 	changes   []Change
 	conflicts map[conflict][]Conflict
+	mapFile   string
 }
 
 func action(args []string) (ActionResult, error) {
@@ -95,6 +97,11 @@ func action(args []string) (ActionResult, error) {
 		result.changes = op.matches
 		result.conflicts = op.DetectConflicts()
 
+		if op.outputFile != "" {
+			result.mapFile = op.outputFile
+			op.WriteToFile()
+		}
+
 		return nil
 	}
 
@@ -103,7 +110,7 @@ func action(args []string) (ActionResult, error) {
 
 func sortChanges(s []Change) {
 	sort.Slice(s, func(i, j int) bool {
-		return s[i].source < s[j].source
+		return s[i].Source < s[j].Source
 	})
 }
 
@@ -120,69 +127,69 @@ func TestFindReplace(t *testing.T) {
 	table := []Table{
 		{
 			want: []Change{
-				{source: "No Pressure (2021) S1.E1.1080p.mkv", baseDir: testDir, target: "1.mkv"},
-				{source: "No Pressure (2021) S1.E2.1080p.mkv", baseDir: testDir, target: "2.mkv"},
-				{source: "No Pressure (2021) S1.E3.1080p.mkv", baseDir: testDir, target: "3.mkv"},
+				{Source: "No Pressure (2021) S1.E1.1080p.mkv", BaseDir: testDir, Target: "1.mkv"},
+				{Source: "No Pressure (2021) S1.E2.1080p.mkv", BaseDir: testDir, Target: "2.mkv"},
+				{Source: "No Pressure (2021) S1.E3.1080p.mkv", BaseDir: testDir, Target: "3.mkv"},
 			},
-			args: []string{"-f", ".*E(\\d+).*", "-r", "$1.mkv", testDir},
+			args: []string{"-f", ".*E(\\d+).*", "-r", "$1.mkv", "-o", "map.json", testDir},
 		},
 		{
 			want: []Change{
-				{source: "No Pressure (2021) S1.E1.1080p.mkv", baseDir: testDir, target: "No Pressure 98.mkv"},
-				{source: "No Pressure (2021) S1.E2.1080p.mkv", baseDir: testDir, target: "No Pressure 99.mkv"},
-				{source: "No Pressure (2021) S1.E3.1080p.mkv", baseDir: testDir, target: "No Pressure 100.mkv"},
+				{Source: "No Pressure (2021) S1.E1.1080p.mkv", BaseDir: testDir, Target: "No Pressure 98.mkv"},
+				{Source: "No Pressure (2021) S1.E2.1080p.mkv", BaseDir: testDir, Target: "No Pressure 99.mkv"},
+				{Source: "No Pressure (2021) S1.E3.1080p.mkv", BaseDir: testDir, Target: "No Pressure 100.mkv"},
 			},
 			args: []string{"-f", "(No Pressure).*", "-r", "$1 %d.mkv", "-n", "98", testDir},
 		},
 		{
 			want: []Change{
-				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "a.jpeg"},
+				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
 			},
 			args: []string{"-f", "jpg", "-r", "jpeg", "-R", testDir},
 		},
 		{
 			want: []Change{
-				{source: "456.webp", baseDir: filepath.Join(testDir, "images"), target: "456-001.webp"},
-				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "a-002.jpg"},
-				{source: "abc.png", baseDir: filepath.Join(testDir, "images"), target: "abc-003.png"},
+				{Source: "456.webp", BaseDir: filepath.Join(testDir, "images"), Target: "456-001.webp"},
+				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a-002.jpg"},
+				{Source: "abc.png", BaseDir: filepath.Join(testDir, "images"), Target: "abc-003.png"},
 			},
 			args: []string{"-f", ".*(jpg|png|webp)", "-r", "{og}-%03d.$1", filepath.Join(testDir, "images")},
 		},
 		{
 			want: []Change{
-				{source: "456.webp", baseDir: filepath.Join(testDir, "images"), target: "001.webp"},
-				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "002.jpg"},
-				{source: "abc.png", baseDir: filepath.Join(testDir, "images"), target: "003.png"},
+				{Source: "456.webp", BaseDir: filepath.Join(testDir, "images"), Target: "001.webp"},
+				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "002.jpg"},
+				{Source: "abc.png", BaseDir: filepath.Join(testDir, "images"), Target: "003.png"},
 			},
 			args: []string{"-f", ".*(jpg|png|webp)", "-r", "%03d{ext}", filepath.Join(testDir, "images")},
 		},
 		{
 			want: []Change{
-				{source: "index.js", baseDir: filepath.Join(testDir, "scripts"), target: "index.ts"},
-				{source: "main.js", baseDir: filepath.Join(testDir, "scripts"), target: "main.ts"},
+				{Source: "index.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "index.ts"},
+				{Source: "main.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "main.ts"},
 			},
 			args: []string{"-f", "js", "-r", "ts", filepath.Join(testDir, "scripts")},
 		},
 		{
 			want: []Change{
-				{source: "index.js", baseDir: filepath.Join(testDir, "scripts"), target: "i n d e x .js"},
-				{source: "main.js", baseDir: filepath.Join(testDir, "scripts"), target: "m a i n .js"},
+				{Source: "index.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "i n d e x .js"},
+				{Source: "main.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "m a i n .js"},
 			},
 			args: []string{"-f", "(.)", "-r", "$1 ", "-e", filepath.Join(testDir, "scripts")},
 		},
 		{
 			want: []Change{
-				{source: "a.jpg", baseDir: filepath.Join(testDir, "images"), target: "a.jpeg"},
-				{source: "123.JPG", baseDir: filepath.Join(testDir, "images", "pics"), target: "123.jpeg"},
+				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
+				{Source: "123.JPG", BaseDir: filepath.Join(testDir, "images", "pics"), Target: "123.jpeg"},
 			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-i", testDir},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-i", "-o", "map.json", testDir},
 		},
 		{
 			want: []Change{
-				{source: "pics", isDir: true, baseDir: filepath.Join(testDir, "images"), target: "images"},
-				{source: "morepics", isDir: true, baseDir: testDir, target: "moreimages"},
-				{source: "pic-1.avif", baseDir: filepath.Join(testDir, "morepics"), target: "image-1.avif"},
-				{source: "pic-2.avif", baseDir: filepath.Join(testDir, "morepics"), target: "image-2.avif"},
+				{Source: "pics", IsDir: true, BaseDir: filepath.Join(testDir, "images"), Target: "images"},
+				{Source: "morepics", IsDir: true, BaseDir: testDir, Target: "moreimages"},
+				{Source: "pic-1.avif", BaseDir: filepath.Join(testDir, "morepics"), Target: "image-1.avif"},
+				{Source: "pic-2.avif", BaseDir: filepath.Join(testDir, "morepics"), Target: "image-2.avif"},
 			},
 			args: []string{"-f", "pic", "-r", "image", "-D", "-R", testDir},
 		},
@@ -205,6 +212,31 @@ func TestFindReplace(t *testing.T) {
 
 		if !reflect.DeepEqual(v.want, result.changes) && len(v.want) != 0 {
 			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.changes)
+		}
+
+		// Test if the map file was written successfully
+		if result.mapFile != "" {
+			file, err := os.ReadFile(result.mapFile)
+			if err != nil {
+				t.Fatalf("Unexpected error when trying to read map file: %v\n", err)
+			}
+
+			ch := []Change{}
+			err = json.Unmarshal([]byte(file), &ch)
+			if err != nil {
+				t.Fatalf("Unexpected error when trying to unmarshal map file contents: %v\n", err)
+			}
+
+			sortChanges(ch)
+
+			if !reflect.DeepEqual(v.want, ch) && len(v.want) != 0 {
+				t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, ch)
+			}
+
+			err = os.Remove(result.mapFile)
+			if err != nil {
+				t.Log("Failed to remove log file")
+			}
 		}
 	}
 }
