@@ -14,8 +14,6 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
-var printFullPaths bool
-
 var (
 	red    = color.FgRed.Render
 	green  = color.FgGreen.Render
@@ -91,7 +89,6 @@ func (op *Operation) WriteToFile() error {
 // Undo reverses the a successful renaming operation indicated
 // in the specified map file
 func (op *Operation) Undo() error {
-	printFullPaths = true
 	if op.undoFile == "" {
 		return fmt.Errorf("Please pass a previously created map file to continue")
 	}
@@ -140,10 +137,8 @@ func (op *Operation) Apply() error {
 
 	for _, ch := range op.matches {
 		var source, target = ch.Source, ch.Target
-		if printFullPaths {
-			source = filepath.Join(ch.BaseDir, source)
-			target = filepath.Join(ch.BaseDir, target)
-		}
+		source = filepath.Join(ch.BaseDir, source)
+		target = filepath.Join(ch.BaseDir, target)
 
 		if op.exec {
 			// If target contains a slash, create all missing
@@ -213,10 +208,8 @@ func (op *Operation) DetectConflicts() map[conflict][]Conflict {
 
 	for _, ch := range op.matches {
 		var source, target = ch.Source, ch.Target
-		if printFullPaths {
-			source = filepath.Join(ch.BaseDir, source)
-			target = filepath.Join(ch.BaseDir, target)
-		}
+		source = filepath.Join(ch.BaseDir, source)
+		target = filepath.Join(ch.BaseDir, target)
 
 		// Report if replacement operation results in
 		// an empty string for the new filename
@@ -414,12 +407,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 
 	var paths = make(map[string][]os.DirEntry)
 	for _, v := range op.directories {
-		absolutePath, err := filepath.Abs(v)
-		if err != nil {
-			return nil, err
-		}
-
-		paths[absolutePath], err = os.ReadDir(v)
+		paths[v], err = os.ReadDir(v)
 		if err != nil {
 			return nil, err
 		}
@@ -427,12 +415,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 
 	// Use current directory
 	if len(paths) == 0 {
-		currentDir, err := filepath.Abs(".")
-		if err != nil {
-			return nil, err
-		}
-
-		paths[currentDir], err = os.ReadDir(".")
+		paths["."], err = os.ReadDir(".")
 		if err != nil {
 			return nil, err
 		}
@@ -443,10 +426,6 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	if len(paths) > 1 {
-		printFullPaths = true
 	}
 
 	return op, op.setPaths(paths)
