@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 // isDirectory determines if a file represented
@@ -34,6 +36,18 @@ func contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+func printTable(data [][]string) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Input", "Output", "Status"})
+	table.SetAutoWrapText(false)
+
+	for _, v := range data {
+		table.Append(v)
+	}
+
+	table.Render()
 }
 
 func filenameWithoutExtension(fileName string) string {

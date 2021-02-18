@@ -119,6 +119,18 @@ func (op *Operation) Undo() error {
 	return op.Apply()
 }
 
+func (op *Operation) PrintChanges() {
+	var data = make([][]string, len(op.matches))
+	for i, v := range op.matches {
+		source := filepath.Join(v.BaseDir, v.Source)
+		target := filepath.Join(v.BaseDir, v.Target)
+		d := []string{source, target, green("ok")}
+		data[i] = d
+	}
+
+	printTable(data)
+}
+
 // Apply will check for conflicts and print the changes to be made
 // or apply them directly to the filesystem if in execute mode.
 // Conflicts will be ignored if indicated
@@ -131,7 +143,8 @@ func (op *Operation) Apply() error {
 		conflicts := op.DetectConflicts()
 		if len(conflicts) > 0 {
 			op.ReportConflicts(conflicts)
-			return fmt.Errorf("%s", yellow("Resolve the conflicts before proceeding or use the -F flag to ignore conflicts and rename anyway"))
+			fmt.Fprintln(os.Stderr, "Conflict detected! Please resolve before proceeding")
+			return fmt.Errorf("Or append the %s flag to ignore all conflicts (may cause data loss)", yellow("-F"))
 		}
 	}
 
@@ -156,15 +169,14 @@ func (op *Operation) Apply() error {
 			if err := os.Rename(source, target); err != nil {
 				return execErr
 			}
-		} else {
-			fmt.Println(source, "➟", green(target), "✅")
 		}
 	}
 
 	if op.exec && len(op.matches) > 0 && op.outputFile != "" {
 		return op.WriteToFile()
 	} else if !op.exec && len(op.matches) > 0 {
-		fmt.Printf("%s\n", yellow("*** Use the -x flag to apply the above changes ***"))
+		op.PrintChanges()
+		fmt.Printf("Append the %s flag to apply the above changes\n", yellow("-x"))
 	}
 
 	return nil
@@ -172,32 +184,36 @@ func (op *Operation) Apply() error {
 
 // ReportConflicts prints any detected conflicts to the standard error
 func (op *Operation) ReportConflicts(conflicts map[conflict][]Conflict) {
+	var data [][]string
 	if slice, exists := conflicts[EMPTY_FILENAME]; exists {
-		fmt.Fprintln(os.Stderr, color.Bold.Sprintf("Operation resulted in empty filename:"))
 		for _, v := range slice {
-			fmt.Fprintf(os.Stderr, "%s ➟ %s %s\n", strings.Join(v.source, ""), red("[Empty filename]"), "❌")
+			slice := []string{strings.Join(v.source, ""), "", red("❌ [Empty filename]")}
+			data = append(data, slice)
 		}
 	}
 
 	if slice, exists := conflicts[FILE_EXISTS]; exists {
-		fmt.Fprintln(os.Stderr, color.Bold.Sprintf("Overwriting existing path"))
 		for _, v := range slice {
-			fmt.Fprintf(os.Stderr, "%s ➟ %s %s %s\n", strings.Join(v.source, ""), red(v.target), red("[File exists]"), "❌")
+			slice := []string{strings.Join(v.source, ""), v.target, red("❌ [Path already exists]")}
+			data = append(data, slice)
 		}
 	}
 
 	if slice, exists := conflicts[OVERWRITNG_NEW_PATH]; exists {
 		for _, v := range slice {
-			fmt.Fprintln(os.Stderr, color.Bold.Sprintf("Overwriting newly renamed path:"))
 			for i, s := range v.source {
+				var slice []string
 				if i == 0 {
-					fmt.Fprintf(os.Stderr, "%s ➟ %s %s\n", s, green(v.target), "✅")
+					slice = []string{s, v.target, green("ok")}
 				} else {
-					fmt.Fprintf(os.Stderr, "%s ➟ %s %s\n", s, red(v.target), "❌")
+					slice = []string{s, v.target, red("❌ [Overwriting newly renamed path]")}
 				}
+				data = append(data, slice)
 			}
 		}
 	}
+
+	printTable(data)
 }
 
 // DetectConflicts detects any conflicts that occur
