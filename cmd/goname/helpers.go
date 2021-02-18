@@ -7,17 +7,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-// isDirectory determines if a file represented
-// by `path` is a directory or not
-func isDirectory(path string) (bool, error) {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-
-	return fileInfo.IsDir(), err
-}
-
 func removeDotfiles(de []os.DirEntry) (ret []os.DirEntry) {
 	for _, e := range de {
 		if e.Name()[0] != 46 {

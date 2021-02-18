@@ -119,6 +119,8 @@ func (op *Operation) Undo() error {
 	return op.Apply()
 }
 
+// PrintChanges displays the changes to be made in a
+// table format
 func (op *Operation) PrintChanges() {
 	var data = make([][]string, len(op.matches))
 	for i, v := range op.matches {

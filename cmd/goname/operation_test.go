@@ -71,9 +71,10 @@ func setupFileSystem(t testing.TB) (string, func()) {
 }
 
 type ActionResult struct {
-	changes   []Change
-	conflicts map[conflict][]Conflict
-	mapFile   string
+	changes    []Change
+	conflicts  map[conflict][]Conflict
+	outputFile string
+	applyError error
 }
 
 func action(args []string) (ActionResult, error) {
@@ -84,6 +85,10 @@ func action(args []string) (ActionResult, error) {
 		op, err := NewOperation(c)
 		if err != nil {
 			return err
+		}
+
+		if op.undoFile != "" {
+			return op.Undo()
 		}
 
 		op.FindMatches()
@@ -98,9 +103,11 @@ func action(args []string) (ActionResult, error) {
 		result.conflicts = op.DetectConflicts()
 
 		if op.outputFile != "" {
-			result.mapFile = op.outputFile
+			result.outputFile = op.outputFile
 			op.WriteToFile()
 		}
+
+		result.applyError = op.Apply()
 
 		return nil
 	}
@@ -215,8 +222,8 @@ func TestFindReplace(t *testing.T) {
 		}
 
 		// Test if the map file was written successfully
-		if result.mapFile != "" {
-			file, err := os.ReadFile(result.mapFile)
+		if result.outputFile != "" {
+			file, err := os.ReadFile(result.outputFile)
 			if err != nil {
 				t.Fatalf("Unexpected error when trying to read map file: %v\n", err)
 			}
@@ -233,9 +240,9 @@ func TestFindReplace(t *testing.T) {
 				t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, ch)
 			}
 
-			err = os.Remove(result.mapFile)
+			err = os.Remove(result.outputFile)
 			if err != nil {
-				t.Log("Failed to remove log file")
+				t.Log("Failed to remove output file")
 			}
 		}
 	}
@@ -302,5 +309,62 @@ func TestDetectConflicts(t *testing.T) {
 		if !reflect.DeepEqual(v.want, result.conflicts) {
 			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.conflicts)
 		}
+	}
+}
+
+func TestApplyUndo(t *testing.T) {
+	type Table struct {
+		want []Change
+		exec []string
+		undo []string
+	}
+
+	table := []Table{
+		{
+			want: []Change{
+				{Source: "No Pressure (2021) S1.E1.1080p.mkv", Target: "1.mkv"},
+				{Source: "No Pressure (2021) S1.E2.1080p.mkv", Target: "2.mkv"},
+				{Source: "No Pressure (2021) S1.E3.1080p.mkv", Target: "3.mkv"},
+			},
+			exec: []string{"-f", ".*E(\\d+).*", "-r", "$1.mkv", "-o", "map.json", "-x"},
+			undo: []string{"-u", "map.json"},
+		},
+	}
+
+	for i, v := range table {
+		testDir, teardown := setupFileSystem(t)
+
+		for _, ch := range v.want {
+			ch.BaseDir = testDir
+		}
+
+		v.exec = append(v.exec, testDir)
+
+		args := os.Args[0:1]
+		args = append(args, v.exec...)
+		result, _ := action(args) // err will be nil
+
+		if len(result.conflicts) > 0 {
+			t.Fatalf("Test(%d) — Expected no conflicts but got some: %v", i+1, result.conflicts)
+		}
+
+		if result.applyError != nil {
+			t.Fatalf("Test(%d) — Unexpected apply error: %v\n", i+1, result.applyError)
+		}
+
+		// Test Undo function
+		args = os.Args[0:1]
+		args = append(args, v.undo...)
+		result, err := action(args)
+		if err != nil {
+			t.Fatalf("Test(%d) — Unexpected error in undo mode: %v\n", i+1, err)
+		}
+
+		err = os.Remove(result.outputFile)
+		if err != nil {
+			t.Log("Failed to remove output file")
+		}
+
+		teardown()
 	}
 }
