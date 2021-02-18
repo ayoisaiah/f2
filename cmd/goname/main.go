@@ -40,7 +40,7 @@ func getApp() *cli.App {
 			&cli.StringFlag{
 				Name:    "output-file",
 				Aliases: []string{"o"},
-				Usage:   "Generates a map file that can be used to undo a successful operation",
+				Usage:   "Generate a map file that can be used to undo a successful operation",
 			},
 			&cli.BoolFlag{
 				Name:    "exec",
@@ -52,10 +52,10 @@ func getApp() *cli.App {
 				Aliases: []string{"R"},
 				Usage:   "Rename files recursively",
 			},
-			&cli.BoolFlag{
+			&cli.StringFlag{
 				Name:    "undo",
-				Aliases: []string{"U"},
-				Usage:   "Undo the LAST successful operation",
+				Aliases: []string{"u"},
+				Usage:   "Undo the a successful operation using a map file",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-case",

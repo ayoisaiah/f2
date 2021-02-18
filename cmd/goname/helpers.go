@@ -16,6 +16,15 @@ func isDirectory(path string) (bool, error) {
 	return fileInfo.IsDir(), err
 }
 
+func removeDotfiles(de []os.DirEntry) (ret []os.DirEntry) {
+	for _, e := range de {
+		if e.Name()[0] != 46 {
+			ret = append(ret, e)
+		}
+	}
+	return
+}
+
 // contains checks if a string is present in
 // a string slice
 func contains(s []string, e string) bool {
@@ -31,7 +40,7 @@ func filenameWithoutExtension(fileName string) string {
 	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }
 
-func walk(paths map[string][]os.DirEntry) (map[string][]os.DirEntry, error) {
+func walk(paths map[string][]os.DirEntry, includeHidden bool) (map[string][]os.DirEntry, error) {
 	iterated := []string{}
 	var n = make(map[string][]os.DirEntry)
 
@@ -39,6 +48,10 @@ loop:
 	for k, v := range paths {
 		if contains(iterated, k) {
 			continue
+		}
+
+		if !includeHidden {
+			v = removeDotfiles(v)
 		}
 
 		iterated = append(iterated, k)

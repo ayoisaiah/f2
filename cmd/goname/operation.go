@@ -60,9 +60,8 @@ type Operation struct {
 	searchRegex     *regexp.Regexp
 	directories     []string
 	recursive       bool
-	undoMode        bool
+	undoFile        string
 	outputFile      string
-	mapFile         string
 }
 
 // WriteToFile writes the details of a successful operation
@@ -92,11 +91,12 @@ func (op *Operation) WriteToFile() error {
 // Undo reverses the a successful renaming operation indicated
 // in the specified map file
 func (op *Operation) Undo() error {
-	if op.mapFile == "" {
+	printFullPaths = true
+	if op.undoFile == "" {
 		return fmt.Errorf("Please pass a previously created map file to continue")
 	}
 
-	file, err := os.ReadFile(op.mapFile)
+	file, err := os.ReadFile(op.undoFile)
 	if err != nil {
 		return err
 	}
@@ -107,48 +107,17 @@ func (op *Operation) Undo() error {
 	}
 
 	for i, v := range op.matches {
-		isDir, err := isDirectory(v.Source)
-		if err != nil {
-			// An error may mean that the path does not exist
-			// which indicates that the directory containing the file
-			// was also renamed.
-			if os.IsNotExist(err) {
-				dir := filepath.Dir(v.Source)
+		ch := v
+		ch.Source = v.Target
+		ch.Target = v.Source
 
-				// Get the directory that is changing
-				var d Change
-				for _, m := range op.matches {
-					if m.Target == dir {
-						d = m
-						break
-					}
-				}
-
-				re, err := regexp.Compile(d.Target)
-				if err != nil {
-					return err
-				}
-
-				srcFile, srcDir := filepath.Base(v.Source), filepath.Dir(v.Source)
-				targetFile, targetDir := filepath.Base(v.Target), filepath.Dir(v.Target)
-
-				// Update the directory of the path to the current name
-				// instead of the old one which no longer exists
-				srcDir = re.ReplaceAllString(srcDir, d.Source)
-				targetDir = re.ReplaceAllString(targetDir, d.Source)
-
-				v.Source = filepath.Join(srcDir, srcFile)
-				v.Target = filepath.Join(targetDir, targetFile)
-			} else {
-				return err
-			}
-		}
-
-		v.IsDir = isDir
-		op.matches[i] = v
+		op.matches[i] = ch
 	}
 
-	op.SortMatches()
+	// sort parent directories before child directories
+	sort.SliceStable(op.matches, func(i, j int) bool {
+		return op.matches[i].BaseDir < op.matches[j].BaseDir
+	})
 
 	return op.Apply()
 }
@@ -314,9 +283,14 @@ func (op *Operation) FindMatches() {
 }
 
 // SortMatches is used to sort files before directories
+// and child directories before their parents
 func (op *Operation) SortMatches() {
 	sort.SliceStable(op.matches, func(i, j int) bool {
-		return !op.matches[i].IsDir
+		if !op.matches[i].IsDir {
+			return true
+		}
+
+		return op.matches[i].BaseDir > op.matches[j].BaseDir
 	})
 }
 
@@ -387,7 +361,7 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
 }
 
 func (op *Operation) Run() error {
-	if op.undoMode {
+	if op.undoFile != "" {
 		return op.Undo()
 	}
 
@@ -405,13 +379,12 @@ func (op *Operation) Run() error {
 // NewOperation returns an Operation constructed
 // from command line flags & arguments
 func NewOperation(c *cli.Context) (*Operation, error) {
-	if c.String("find") == "" && c.String("replace") == "" {
-		return nil, fmt.Errorf("Invalid arguments: one of `-f` or `-r` must be present and set to a non empty string value\nUse 'goname --help' for more information")
+	if c.String("find") == "" && c.String("replace") == "" && c.String("undo") == "" {
+		return nil, fmt.Errorf("Invalid arguments: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'goname --help' for more information")
 	}
 
 	op := &Operation{}
 	op.outputFile = c.String("output-file")
-	op.mapFile = c.String("map-file")
 	op.replaceString = c.String("replace")
 	op.exec = c.Bool("exec")
 	op.ignoreConflicts = c.Bool("force")
@@ -422,9 +395,9 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.ignoreExt = c.Bool("ignore-ext")
 	op.recursive = c.Bool("recursive")
 	op.directories = c.Args().Slice()
-	op.undoMode = c.Bool("undo")
+	op.undoFile = c.String("undo")
 
-	if op.undoMode {
+	if op.undoFile != "" {
 		return op, nil
 	}
 
@@ -466,7 +439,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	if op.recursive {
-		paths, err = walk(paths)
+		paths, err = walk(paths, op.includeHidden)
 		if err != nil {
 			return nil, err
 		}
