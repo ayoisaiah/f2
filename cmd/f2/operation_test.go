@@ -205,10 +205,7 @@ func TestFindReplace(t *testing.T) {
 	for i, v := range table {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
-		result, err := action(args)
-		if err != nil {
-			t.Fatalf("Test(%d) — Unexpected error: %v\n", i+1, err)
-		}
+		result, _ := action(args) // err will be nil
 
 		if len(result.conflicts) > 0 {
 			t.Fatalf("Test(%d) — Expected no conflicts but got some: %v", i+1, result.conflicts)
@@ -327,7 +324,17 @@ func TestApplyUndo(t *testing.T) {
 				{Source: "No Pressure (2021) S1.E3.1080p.mkv", Target: "3.mkv"},
 			},
 			exec: []string{"-f", ".*E(\\d+).*", "-r", "$1.mkv", "-o", "map.json", "-x"},
-			undo: []string{"-u", "map.json"},
+			undo: []string{"-u", "map.json", "-x"},
+		},
+		{
+			want: []Change{
+				{Source: "pics", IsDir: true, Target: "images"},
+				{Source: "morepics", IsDir: true, Target: "moreimages"},
+				{Source: "pic-1.avif", Target: "image-1.avif"},
+				{Source: "pic-2.avif", Target: "image-2.avif"},
+			},
+			exec: []string{"-f", "pic", "-r", "image", "-D", "-R", "-o", "map.json", "-x"},
+			undo: []string{"-u", "map.json", "-x"},
 		},
 	}
 

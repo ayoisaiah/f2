@@ -1,6 +1,6 @@
-module github.com/ayoisaiah/goname
+module github.com/ayoisaiah/f2
 
-go 1.14
+go 1.16
 
 require (
 	github.com/olekukonko/tablewriter v0.0.5

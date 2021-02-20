@@ -9,21 +9,21 @@ import (
 
 func getApp() *cli.App {
 	return &cli.App{
-		Name: "goname",
+		Name: "F2",
 		Authors: []*cli.Author{
 			{
 				Name:  "Ayooluwa Isaiah",
 				Email: "ayo@freshman.tech",
 			},
 		},
-		Usage:     "Batch rename multiple files and directories. Hidden files and directories are skipped automatically.",
-		UsageText: "[options] [files...]",
+		Usage:     "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
+		UsageText: "[flags] [options] [paths...]",
 		Version:   "v0.1.0",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "find",
 				Aliases: []string{"f"},
-				Usage:   "Search `string` or regular expression. If omitted, the whole filename will be matched and replaced.",
+				Usage:   "Search `string` or regular expression.",
 			},
 			&cli.StringFlag{
 				Name:    "replace",
@@ -40,12 +40,12 @@ func getApp() *cli.App {
 			&cli.StringFlag{
 				Name:    "output-file",
 				Aliases: []string{"o"},
-				Usage:   "Generate a map file that can be used to undo a successful operation",
+				Usage:   "Output a map file for the current operation",
 			},
 			&cli.BoolFlag{
 				Name:    "exec",
 				Aliases: []string{"x"},
-				Usage:   "By default, goname will do a 'dry run' so that you can inspect the results and confirm that it looks correct. Add this flag to proceed with renaming the files.",
+				Usage:   "Execute the batch renaming operation",
 			},
 			&cli.BoolFlag{
 				Name:    "recursive",
@@ -55,7 +55,7 @@ func getApp() *cli.App {
 			&cli.StringFlag{
 				Name:    "undo",
 				Aliases: []string{"u"},
-				Usage:   "Undo the a successful operation using a map file",
+				Usage:   "Undo a successful operation using a previously created map file",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-case",
@@ -80,7 +80,7 @@ func getApp() *cli.App {
 			&cli.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"F"},
-				Usage:   "If there are conflicts after a replacement operation (such as when overwriting existing files), it will be reported to you. Use this flag to force the renaming operation even if there are conflicts.",
+				Usage:   "Force the renaming operation even when there are conflicts (may cause data loss).",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -111,10 +111,10 @@ VERSION:
 	 {{.Version}}{{end}}
 {{if .VisibleFlags}}
 FLAGS:{{range .VisibleFlags}}
-	 {{.}}
-	 {{end}}{{end}}
+	 {{.}}{{end}}{{end}}
+
 WEBSITE:
-	https://github.com/ayoisaiah/goname
+	https://github.com/ayoisaiah/f2
 `
 
 	return app.Run(args)
