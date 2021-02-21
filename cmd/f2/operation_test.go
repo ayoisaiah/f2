@@ -160,7 +160,7 @@ func TestFindReplace(t *testing.T) {
 				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a-002.jpg"},
 				{Source: "abc.png", BaseDir: filepath.Join(testDir, "images"), Target: "abc-003.png"},
 			},
-			args: []string{"-f", ".*(jpg|png|webp)", "-r", "{og}-%03d.$1", filepath.Join(testDir, "images")},
+			args: []string{"-f", ".*(jpg|png|webp)", "-r", "{{f}}-%03d.$1", filepath.Join(testDir, "images")},
 		},
 		{
 			want: []Change{
@@ -168,7 +168,7 @@ func TestFindReplace(t *testing.T) {
 				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "002.jpg"},
 				{Source: "abc.png", BaseDir: filepath.Join(testDir, "images"), Target: "003.png"},
 			},
-			args: []string{"-f", ".*(jpg|png|webp)", "-r", "%03d{ext}", filepath.Join(testDir, "images")},
+			args: []string{"-f", ".*(jpg|png|webp)", "-r", "%03d{{ext}}", filepath.Join(testDir, "images")},
 		},
 		{
 			want: []Change{

@@ -308,8 +308,8 @@ func (op *Operation) SortMatches() {
 // Replace replaces the matched text in each path with the
 // replacement string
 func (op *Operation) Replace() {
-	og := regexp.MustCompile("{og}")
-	ext := regexp.MustCompile("{ext}")
+	og := regexp.MustCompile("{{f}}")
+	ext := regexp.MustCompile("{{ext}}")
 	index := regexp.MustCompile("%([0-9]?)+d")
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.Source), filepath.Dir(v.Source)
@@ -371,6 +371,7 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
 	return nil
 }
 
+// Run executes the operation sequence
 func (op *Operation) Run() error {
 	if op.undoFile != "" {
 		return op.Undo()

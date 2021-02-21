@@ -17,7 +17,7 @@ func getApp() *cli.App {
 			},
 		},
 		Usage:     "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
-		UsageText: "[flags] [options] [paths...]",
+		UsageText: "FLAGS [OPTIONS] [PATHS...]",
 		Version:   "v0.1.0",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
