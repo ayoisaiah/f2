@@ -13,7 +13,7 @@
 
 **F2** is a cross-platform command-line tool for batch renaming files and directories **quickly** and **safely**. Written in Go!
 
-[demo]
+<img src="https://ik.imagekit.io/turnupdev/f2_5sH344M5q.png?tr:q-100" alt="Screenshot of F2 in action">
 
 ## Features
 
@@ -31,7 +31,7 @@
 
 ## Installation
 
-F2 is written in Go, so you can build it from source with `go install`:
+F2 is written in Go, so you can install it through `go get`:
 
 ```bash
 $ go get github.com/ayoisaiah/f2/cmd/...
