@@ -127,7 +127,7 @@ func (op *Operation) PrintChanges() {
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
-		d := []string{source, target, green("ok")}
+		d := []string{source, target, "ok"}
 		data[i] = d
 	}
 
@@ -424,6 +424,11 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	findPattern := c.String("find")
+	// Match entire string if find pattern is empty
+	if findPattern == "" {
+		findPattern = ".*"
+	}
+
 	if op.ignoreCase {
 		findPattern = "(?i)" + findPattern
 	}
