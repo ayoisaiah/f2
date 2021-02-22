@@ -7,6 +7,7 @@
    <a href="https://www.codacy.com/manual/ayoisaiah/f2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ayoisaiah/f2&amp;utm_campaign=Badge_Grade"><img src="https://api.codacy.com/project/badge/Grade/7136493cf477467387381890cb25dc9e" alt="Codacy Badge"></a>
    <a href="http://hits.dwyl.com/ayoisaiah/f2"><img src="http://hits.dwyl.com/ayoisaiah/f2.svg" alt="HitCount"></a>
    <a href="http://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt=""></a>
+   <a href="https://github.com/ayoisaiah/F2/actions"><img src="https://github.com/ayoisaiah/F2/actions/workflows/test.yml/badge.svg" alt="Github Actions"></a>
 </p>
 
 <h1 align="center">F2 - Command-line batch renaming tool</h1>
@@ -15,13 +16,34 @@
 
 <img src="https://ik.imagekit.io/turnupdev/f2_5sH344M5q.png?tr:q-100" alt="Screenshot of F2 in action">
 
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Command-line options](#command-line-options)
+- [Examples](#examples)
+   - [Basic find and replace](#basic-find-and-replace)
+   - [Recursive find and replace](#recursive-find-and-replace)
+   - [Include directories](#include-directories)
+   - [Strip out unwanted text](#strip-out-unwanted-text)
+   - [Rename using an auto incrementing number](#rename-using-an-auto-incrementing-number)
+   - [Replace spaces with underscores](#replace-spaces-with-underscores)
+   - [Use a variable](#use-a-variable)
+   - [Conflict detection](#conflict-detection)
+- [Credits](#credits)
+- [Contribute](#contribute)
+- [Licence](#licence)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
 ## Features
 
 - Extremely fast. Can work on 10,000 files in less than half a second.
 - Supports Linux, macOS, and Windows.
 - Supports filtering files using regular expression, including capture groups.
-- Supports the inclusion of hidden or dotfiles (excluded by default).
-- Safe by default. F2 will not modify any file names until you tell it to.
+- Ignores hidden directories and files by default.
+- Safe. F2 will not modify any file names until you tell it to.
 - Detects potential conflicts such as file collisions, or overwrites.
 - Supports recursive renaming of both files and directories.
 - Supports renaming using a template.
@@ -31,7 +53,8 @@
 
 ## Installation
 
-F2 is written in Go, so you can install it through `go get`:
+F2 is written in Go, so you can install it through `go get` (Requires Go 1.16 or
+later):
 
 ```bash
 $ go get github.com/ayoisaiah/f2/cmd/...
@@ -39,9 +62,9 @@ $ go get github.com/ayoisaiah/f2/cmd/...
 
 Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases) (only for 64-bit machines).
 
-## Usage
+## Command-line options
 
-### Options
+This is the output of `f2 --help`:
 
 ```plaintext
 DESCRIPTION:
@@ -76,9 +99,12 @@ WEBSITE:
   https://github.com/ayoisaiah/f2
 ```
 
-### Examples
+## Examples
 
-**Note**: F2 does not make any changes to your filesystem by default. It only prints out the results of the operation for inspection. To enforce the changes, include the `--exec` or `-x` flag.
+**Notes**:
+- F2 does not make any changes to your filesystem by default (performs a dry run).
+- To enforce the changes, include the `--exec` or `-x` flag.
+- The `-f` or `--find` flag supports regular expressions.
 
 ### Basic find and replace
 
@@ -272,7 +298,7 @@ F2 relies on other open source software listed below:
 
 ## Contribute
 
-Bug reports, feature requests, or pull requests are much welcome!
+Bug reports and feature requests are much welcome! Please open an issue before creating a pull request.
 
 ## Licence
 
