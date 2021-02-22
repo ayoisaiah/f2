@@ -16,10 +16,10 @@
 
 <img src="https://ik.imagekit.io/turnupdev/f2_5sH344M5q.png?tr:q-100" alt="Screenshot of F2 in action">
 
-
 ## Table of Contents
 
 - [Features](#features)
+- [Benchmarks](#benchmarks)
 - [Installation](#installation)
 - [Command-line options](#command-line-options)
 - [Examples](#examples)
@@ -49,16 +49,59 @@
 - Supports undoing an operation from a map file.
 - Extensive unit testing.
 
+## Benchmarks
+
+Recursive batch renaming of 10,000 files from pic-{n}.png to {n}.png.
+
+**Versions**:
+- [f2](https://github.com/ayoisaiah/f2) — v1.0.0
+- [rnm](https://github.com/neurobin/rnm) — v4.0.9
+- [rnr](https://github.com/ChuckDaniels87/rnr) — v0.3.0
+- [brename](https://github.com/shenwei356/brename) — v2.11.0
+
+**Environment**:
+- **OS**: Ubuntu 20.04.2 LTS on Windows 10 x86_64
+- **CPU**: Intel i7-7560U (4) @ 2.400GHz
+- **Kernel**:  4.19.128-microsoft-standard
+
+Preparation script: [prepare-script.sh](https://gist.github.com/ayoisaiah/868437602e73084ebc11efcec262e92c).
+
+```bash
+$ hyperfine --warmup 3 --prepare "./prepare-script.sh" 'f2 -f "pic-(\d+).*" -r \$1.png -x -R' 'brename -p "pic-(\d+).*" -r \$1.png -q -R' 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1' 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/'
+Benchmark #1: f2 -f "pic-(\d+).*" -r \$1.png -x -R
+  Time (mean ± σ):     315.8 ms ±   7.9 ms    [User: 146.6 ms, System: 177.6 ms]
+  Range (min … max):   303.1 ms … 329.4 ms    10 runs
+
+Benchmark #2: brename -p "pic-(\d+).*" -r \$1.png -q -R
+  Time (mean ± σ):     562.6 ms ±  15.9 ms    [User: 188.1 ms, System: 280.3 ms]
+  Range (min … max):   535.1 ms … 588.8 ms    10 runs
+
+Benchmark #3: rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1
+  Time (mean ± σ):     816.1 ms ±  37.1 ms    [User: 560.4 ms, System: 251.7 ms]
+  Range (min … max):   761.0 ms … 892.3 ms    10 runs
+
+Benchmark #4: rnr -sfr "pic-(\d+).*" "\$1.png" dir1/
+  Time (mean ± σ):      1.023 s ±  0.230 s    [User: 272.3 ms, System: 683.6 ms]
+  Range (min … max):    0.907 s …  1.667 s    10 runs
+
+
+Summary
+  'f2 -f "pic-(\d+).*" -r \$1.png -x -R' ran
+    1.78 ± 0.07 times faster than 'brename -p "pic-(\d+).*" -r \$1.png -q -R'
+    2.58 ± 0.13 times faster than 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1'
+    3.24 ± 0.73 times faster than 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/'
+```
+
 ## Installation
 
 F2 is written in Go, so you can install it through `go get` (Requires Go 1.16 or
 later):
 
 ```bash
-$ go get github.com/ayoisaiah/f2/cmd/...
+$ go get -u github.com/ayoisaiah/f2/cmd/...
 ```
 
-Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases) (only for 64-bit machines).
+Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases).
 
 ## Command-line options
 
@@ -87,7 +130,8 @@ FLAGS:
    --undo value, -u value         Undo a successful operation using a previously created map file
    --ignore-case, -i              Ignore case (default: false)
    --ignore-ext, -e               Ignore extension (default: false)
-   --include-dir, -D              Rename directories (default: false)
+   --include-dir, -d              Rename directories (default: false)
+   --only-dir, -D                 Rename only directories (implies include-dir) (default: false)
    --hidden, -H                   Include hidden files and directories (default: false)
    --force, -F                    Force the renaming operation even when there are conflicts (may cause data loss). (default: false)
    --help, -h                     show help (default: false)
@@ -102,14 +146,15 @@ WEBSITE:
 **Notes**:
 - F2 does not make any changes to your filesystem by default (performs a dry run).
 - To enforce the changes, include the `--exec` or `-x` flag.
-- The `-f` or `--find` flag supports regular expressions.
+- The `-f` or `--find` flag supports regular expressions. If omitted, it matches the entire filename of each file.
+- The `-r` or `--replace` flag supports variables
 
 ### Basic find and replace
 
 Replace all instances of `Screenshot` in the current directory with `Image`:
 
 ```bash
-$ f2 -f "Screenshot" -r "Image"
+$ f2 -f 'Screenshot' -r 'Image'
 +--------------------+---------------+--------+
 |       INPUT        |    OUTPUT     | STATUS |
 +--------------------+---------------+--------+
@@ -124,7 +169,7 @@ $ f2 -f "Screenshot" -r "Image"
 Replace all instances of `js` to `ts` in the current directory and all sub directories (no depth limit).
 
 ```bash
-$ f2 -f "js" -r "ts" -R
+$ f2 -f 'js' -r 'ts' -R
 +---------------------+---------------------+--------+
 |        INPUT        |       OUTPUT        | STATUS |
 +---------------------+---------------------+--------+
@@ -139,8 +184,8 @@ $ f2 -f "js" -r "ts" -R
 
 ### Include directories
 
-By default, directories are exempted from the renaming operation. Use the `-D`
-flag to include them.
+Directories are exempted from the renaming operation by default. Use the `-d` or
+`--include-dir` flag to include them.
 
 *Original tree*:
 
@@ -153,7 +198,7 @@ flag to include them.
 ```
 
 ```bash
-$ f2 -f "pic" -r "image" -D -x
+$ f2 -f 'pic' -r 'image' -d -x
 ```
 
 *Renamed tree*:
@@ -166,12 +211,38 @@ $ f2 -f "pic" -r "image" -D -x
     └── pic-03.avif
 ```
 
+You can also rename only directories by using the `-D` or `--only-dir` flag:
+
+*Original tree*:
+
+```plaintext
+.
+├── pic-1.avif
+└── pics
+    ├── pic-02.avif
+    └── pic-03.avif
+```
+
+```bash
+$ f2 -f 'pic' -r 'image' -D -x
+```
+
+*Renamed tree*:
+
+```plaintext
+.
+├── pic-1.avif
+└── images
+    ├── pic-02.avif
+    └── pic-03.avif
+```
+
 ### Strip out unwanted text
 
 You can strip out text by leaving out the `-r` flag. It defaults to an empty string:
 
 ```bash
-$ f2 -f "pic-"
+$ f2 -f 'pic-'
 +-------------+---------+--------+
 |    INPUT    | OUTPUT  | STATUS |
 +-------------+---------+--------+
@@ -190,7 +261,7 @@ format below:
   - `%03d`: 001, 002, 003, e.t.c.
 
 ```bash
-$ f2 -f ".*\." -r "%03d."
+$ f2 -f '.*\.' -r '%03d.'
 +-----------------------------------------+---------+--------+
 |                  INPUT                  | OUTPUT  | STATUS |
 +-----------------------------------------+---------+--------+
@@ -203,7 +274,7 @@ $ f2 -f ".*\." -r "%03d."
 You can also specify the number to start from using the `-n` flag:
 
 ```bash
-$ f2 -f ".*\." -r "%03d." -n 20
+$ f2 -f '.*\.' -r '%03d.' -n 20
 +-----------------------------------------+---------+--------+
 |                  INPUT                  | OUTPUT  | STATUS |
 +-----------------------------------------+---------+--------+
@@ -216,7 +287,7 @@ $ f2 -f ".*\." -r "%03d." -n 20
 ### Replace spaces with underscores
 
 ```bash
-$ f2 -f "\s" -r "_"
+$ f2 -f '\s' -r '_'
 +--------------------+--------------------+--------+
 |       INPUT        |       OUTPUT       | STATUS |
 +--------------------+--------------------+--------+
@@ -224,66 +295,193 @@ $ f2 -f "\s" -r "_"
 | Screenshot (2).png | Screenshot_(2).png | ok     |
 | Screenshot (3).png | Screenshot_(3).png | ok     |
 +--------------------+--------------------+--------+
-Append the -x flag to apply the above changes
+```
+
+### Ignore cases
+
+Use the `-i` or `--ignore-case` flag:
+
+```bash
+$ f2 -f 'jpeg' -r 'jpg' -i
++--------+--------+--------+
+| INPUT  | OUTPUT | STATUS |
++--------+--------+--------+
+| a.JPEG | a.jpg  | ok     |
+| b.jpeg | b.jpg  | ok     |
+| c.jPEg | c.jpg  | ok     |
++--------+--------+--------+
+```
+
+### Use regex capture variables
+
+Regex capture variables are supported:
+
+```bash
+$ f2 -f '.* S(\d+).E(\d+).*.(mp4)' -r 'S$1 E$2.$3'
++--------------------------------------+-------------+--------+
+|                INPUT                 |   OUTPUT    | STATUS |
++--------------------------------------+-------------+--------+
+| No Pressure (2021) S01.E01.2160p.mp4 | S01 E01.mp4 | ok     |
+| No Pressure (2021) S01.E02.2160p.mp4 | S01 E02.mp4 | ok     |
+| No Pressure (2021) S01.E03.2160p.mp4 | S01 E03.mp4 | ok     |
++--------------------------------------+-------------+--------+
+```
+
+```bash
+$ f2 -f '(\w+) \((\d+)\).(\w+)' -r '$2-$1.$3'
++--------------------+------------------+--------+
+|       INPUT        |      OUTPUT      | STATUS |
++--------------------+------------------+--------+
+| Screenshot (1).png | 1-Screenshot.png | ok     |
+| Screenshot (2).png | 2-Screenshot.png | ok     |
+| Screenshot (3).png | 3-Screenshot.png | ok     |
++--------------------+------------------+--------+
+```
+
+### Directories are auto created if necessary
+
+Assuming the following directory:
+
+```bash
+$ ls
+x-y-z.pdf
+```
+
+```bash
+$ f2 -f '-' -r '/' -x
+```
+
+*Result*
+
+```bash
+.
+└── x
+    └── y
+        └── z.pdf
 ```
 
 ### Use a variable
 
-The new file name can contain any number of variables that will be replaced with their corresponding value.
-
-[Change to selecting the entire file]
-
-The replacement string tokens may come in handy in template mode:
+The replacement string can contain the following variables that will be replaced with their corresponding value.
 
   - `{{f}}` is the original filename (excluding the extension)
   - `{{ext}}` is the file extension
 
-For example:
-
 This is helpful if you want to add a prefix or a suffix to a set of files:
 
-## Conflict detection
-
-  - F2 operates in print mode by default. Your filesystem remains the same until the `--exec` or `-x` flag is included. This allows you to verify any changes before proceeding.
-
-  - If an operation will overwrite existing files, you will receive a warning. The `-F` or `--force` flag can be used to proceed anyway.
-
 ```bash
-$ f2 --find "pic2" --replace "pic1-bad.jpg" -T -x
-pic2-bad.png ➟ pic1-bad.jpg [File exists] ❌
-Conflict detected: overwriting existing file(s)
-Use the -F flag to ignore conflicts and rename anyway
+$ f2 -r '{{f}}_journal{{ext}}' # suffix
++-------------------+---------------------------+--------+
+|       INPUT       |          OUTPUT           | STATUS |
++-------------------+---------------------------+--------+
+| 2021-02-20.md     | 2021-02-20_journal.md     | ok     |
+| 2021-02-21.md     | 2021-02-21_journal.md     | ok     |
+| 2021-02-22.md     | 2021-02-22_journal.md     | ok     |
++-------------------+---------------------------+--------+
 ```
 
-  - If an operation results in two files having the same name, a warning will be printed. The `-F` or `--force` flag can be used to proceed anyway.
-
 ```bash
-$ f2 --find "2020-04-16" --replace "screenshot.png" -T
-Screenshot from 2020-04-16 18-25-15.png ➟ screenshot.png ✅
-Screenshot from 2020-04-16 18-27-24.png ➟ screenshot.png ❌
-Conflict detected: overwriting newly renamed path
-Use the -F flag to ignore conflicts and rename anyway
+$ f2 -r 'journal_{{f}}{{ext}}' # prefix
++-------------------+---------------------------+--------+
+|       INPUT       |          OUTPUT           | STATUS |
++-------------------+---------------------------+--------+
+| 2021-02-20.md     | journal_2021-02-20.md     | ok     |
+| 2021-02-21.md     | journal_2021-02-21.md     | ok     |
+| 2021-02-22.md     | journal_2021-02-22.md     | ok     |
++-------------------+---------------------------+--------+
 ```
 
-  - If an operation results in a file having an empty filename, an error will be displayed.
+*More variables coming soon*
+
+### Conflict detection
+
+F2 detects any conflicts that may arise during a renaming operation. Here are three examples:
+
+#### 1. File already exists
 
 ```bash
-$ f2 --find "pic1-bad.jpg" --replace ""
-Error detected: Operation resulted in empty filename
-pic1-bad.jpg ➟ [Empty filename] ❌
+$ ls
+a.txt b.txt
 ```
 
-### Undo your changes
+```bash
+$ f2 -f 'a' -r 'b'
++-------+--------+--------------------------+
+| INPUT | OUTPUT |          STATUS          |
++-------+--------+--------------------------+
+| a.txt | b.txt  | ❌ [Path already exists] |
++-------+--------+--------------------------+
+Conflict detected! Please resolve before proceeding
+```
 
-If you change your mind regarding a renaming operation, you can undo your changes using the `--undo` or `-U` flag. This only works for the last successful operation.
+#### 2. Overwriting newly renamed path
 
 ```bash
-$ f2 -U
-pic2-bad.png ➟ pic2-good.png ✅
-pic1-bad.jpg ➟ pic1-good.jpg ✅
-morebad/pic4-bad.webp ➟ morebad/pic4-good.webp ✅
-morebad/pic3-bad.jpg ➟ morebad/pic3-good.jpg ✅
-morebad ➟ moregood ✅
+$ ls
+a.txt b.txt
+```
+
+```bash
+$ f2 -f 'a|b' -r 'c'
++-------+--------+-------------------------------------+
+| INPUT | OUTPUT |               STATUS                |
++-------+--------+-------------------------------------+
+| a.txt | c.txt  | ok                                  |
+| b.txt | c.txt  | ❌ [Overwriting newly renamed path] |
++-------+--------+-------------------------------------+
+Conflict detected! Please resolve before proceeding
+```
+
+#### 3. Empty filename
+
+```bash
+$ ls
+a.txt b.txt
+```
+
+```bash
+$ f2 -f 'a.txt'
++-------+--------+---------------------+
+| INPUT | OUTPUT |       STATUS        |
++-------+--------+---------------------+
+| a.txt |        | ❌ [Empty filename] |
++-------+--------+---------------------+
+Conflict detected! Please resolve before proceeding
+```
+
+### Undoing changes
+
+Before you can undo a change, you must create a map file before making the
+change:
+
+```bash
+$ ls
+a.txt b.txt
+```
+
+```bash
+$ f2 -f 'txt' -r 'md' -o map.json -x
++-------+--------+--------+
+| INPUT | OUTPUT | STATUS |
++-------+--------+--------+
+| a.txt | a.md   | ok     |
+| b.txt | b.md   | ok     |
++-------+--------+--------+
+```
+
+```bash
+$ ls
+a.md b.md map.json
+```
+
+```bash
+$ f2 -u map.json
++-------+--------+--------+
+| INPUT | OUTPUT | STATUS |
++-------+--------+--------+
+| a.md  | a.txt  | ok     |
+| b.md  | b.txt  | ok     |
++-------+--------+--------+
 ```
 
 ## Credits
