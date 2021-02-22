@@ -233,11 +233,12 @@ func TestFindReplace(t *testing.T) {
 				t.Fatalf("Unexpected error when trying to read map file: %v\n", err)
 			}
 
-			ch := []Change{}
-			err = json.Unmarshal([]byte(file), &ch)
+			var mf mapFile
+			err = json.Unmarshal([]byte(file), &mf)
 			if err != nil {
 				t.Fatalf("Unexpected error when trying to unmarshal map file contents: %v\n", err)
 			}
+			ch := mf.Operations
 
 			sortChanges(ch)
 

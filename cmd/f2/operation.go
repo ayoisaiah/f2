@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"gopkg.in/gookit/color.v1"
@@ -63,6 +64,11 @@ type Operation struct {
 	outputFile      string
 }
 
+type mapFile struct {
+	Date       string   `json:"date"`
+	Operations []Change `json:"operations"`
+}
+
 // WriteToFile writes the details of a successful operation
 // to the specified file so that it may be reversed if necessary
 func (op *Operation) WriteToFile() error {
@@ -74,8 +80,13 @@ func (op *Operation) WriteToFile() error {
 
 	defer file.Close()
 
+	mf := mapFile{
+		Date:       time.Now().Format(time.RFC3339),
+		Operations: op.matches,
+	}
+
 	writer := bufio.NewWriter(file)
-	b, err := json.Marshal(op.matches)
+	b, err := json.MarshalIndent(mf, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -99,10 +110,12 @@ func (op *Operation) Undo() error {
 		return err
 	}
 
-	err = json.Unmarshal([]byte(file), &op.matches)
+	var mf mapFile
+	err = json.Unmarshal([]byte(file), &mf)
 	if err != nil {
 		return err
 	}
+	op.matches = mf.Operations
 
 	for i, v := range op.matches {
 		ch := v
