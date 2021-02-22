@@ -127,7 +127,7 @@ func (op *Operation) PrintChanges() {
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
-		d := []string{source, target, "ok"}
+		d := []string{source, target, green("ok")}
 		data[i] = d
 	}
 
