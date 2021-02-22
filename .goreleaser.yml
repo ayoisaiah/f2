@@ -14,11 +14,11 @@ builds:
     main: ./cmd/f2
 archives:
   - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
+      darwin: darwin
+      linux: linux
+      windows: windows
       386: i386
-      amd64: x86_64
+      amd64: amd64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
