@@ -53,6 +53,7 @@ type Operation struct {
 	ignoreConflicts bool
 	includeHidden   bool
 	includeDir      bool
+	onlyDir         bool
 	ignoreCase      bool
 	ignoreExt       bool
 	searchRegex     *regexp.Regexp
@@ -276,6 +277,10 @@ func (op *Operation) FindMatches() {
 			continue
 		}
 
+		if op.onlyDir && !v.IsDir {
+			continue
+		}
+
 		// ignore dotfiles
 		if !op.includeHidden && filename[0] == 46 {
 			continue
@@ -408,6 +413,11 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.recursive = c.Bool("recursive")
 	op.directories = c.Args().Slice()
 	op.undoFile = c.String("undo")
+	op.onlyDir = c.Bool("only-dir")
+
+	if op.onlyDir {
+		op.includeDir = true
+	}
 
 	if op.undoFile != "" {
 		return op, nil

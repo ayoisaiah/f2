@@ -199,6 +199,13 @@ func TestFindReplace(t *testing.T) {
 				{Source: "pic-1.avif", BaseDir: filepath.Join(testDir, "morepics"), Target: "image-1.avif"},
 				{Source: "pic-2.avif", BaseDir: filepath.Join(testDir, "morepics"), Target: "image-2.avif"},
 			},
+			args: []string{"-f", "pic", "-r", "image", "-d", "-R", testDir},
+		},
+		{
+			want: []Change{
+				{Source: "pics", IsDir: true, BaseDir: filepath.Join(testDir, "images"), Target: "images"},
+				{Source: "morepics", IsDir: true, BaseDir: testDir, Target: "moreimages"},
+			},
 			args: []string{"-f", "pic", "-r", "image", "-D", "-R", testDir},
 		},
 	}
@@ -334,7 +341,7 @@ func TestApplyUndo(t *testing.T) {
 				{Source: "pic-1.avif", Target: "image-1.avif"},
 				{Source: "pic-2.avif", Target: "image-2.avif"},
 			},
-			exec: []string{"-f", "pic", "-r", "image", "-D", "-R", "-o", "map.json", "-x"},
+			exec: []string{"-f", "pic", "-r", "image", "-d", "-R", "-o", "map.json", "-x"},
 			undo: []string{"-u", "map.json", "-x"},
 		},
 	}

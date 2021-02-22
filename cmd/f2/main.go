@@ -69,8 +69,13 @@ func getApp() *cli.App {
 			},
 			&cli.BoolFlag{
 				Name:    "include-dir",
+				Aliases: []string{"d"},
+				Usage:   "Include directories",
+			},
+			&cli.BoolFlag{
+				Name:    "only-dir",
 				Aliases: []string{"D"},
-				Usage:   "Rename directories",
+				Usage:   "Rename only directories (implies include-dir)",
 			},
 			&cli.BoolFlag{
 				Name:    "hidden",
