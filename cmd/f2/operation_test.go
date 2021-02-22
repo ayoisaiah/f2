@@ -88,6 +88,7 @@ func action(args []string) (ActionResult, error) {
 		}
 
 		if op.undoFile != "" {
+			result.outputFile = op.undoFile
 			return op.Undo()
 		}
 
