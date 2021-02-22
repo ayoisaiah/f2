@@ -1,4 +1,4 @@
-name: Test F2 on Linux
+name: Test F2 on Windows, macOS and Linux
 
 on:
   push:
@@ -11,7 +11,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v2
