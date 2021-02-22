@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-   <a href="https://goreportcard.com/report/github.com/ayoisaiah/f2"><img src="https://goreportcard.com/badge/github.com/ayoisaiah/f2" alt="Go Report Card"></a>
    <a href="https://www.codacy.com/manual/ayoisaiah/f2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ayoisaiah/f2&amp;utm_campaign=Badge_Grade"><img src="https://api.codacy.com/project/badge/Grade/7136493cf477467387381890cb25dc9e" alt="Codacy Badge"></a>
+   <a href="https://goreportcard.com/report/github.com/ayoisaiah/f2"><img src="https://goreportcard.com/badge/github.com/ayoisaiah/f2" alt="Go Report Card"></a>
    <a href="http://hits.dwyl.com/ayoisaiah/f2"><img src="http://hits.dwyl.com/ayoisaiah/f2.svg" alt="HitCount"></a>
    <a href="http://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt=""></a>
    <a href="https://github.com/ayoisaiah/F2/actions"><img src="https://github.com/ayoisaiah/F2/actions/workflows/test.yml/badge.svg" alt="Github Actions"></a>
@@ -29,22 +29,24 @@
    - [Strip out unwanted text](#strip-out-unwanted-text)
    - [Rename using an auto incrementing number](#rename-using-an-auto-incrementing-number)
    - [Replace spaces with underscores](#replace-spaces-with-underscores)
+   - [Use regex capture variables](#use-regex-capture-variables)
    - [Use a variable](#use-a-variable)
+   - [Directories are auto created if necessary](#directories-are-auto-created-if-necessary)
    - [Conflict detection](#conflict-detection)
+   - [Undoing changes](#undoing-changes)
 - [Credits](#credits)
 - [Contribute](#contribute)
 - [Licence](#licence)
 
 ## Features
 
-- Extremely fast. Can work on 10,000 files in less than half a second.
+- Extremely fast (see [benchmarks](#benchmarks)).
 - Supports Linux, macOS, and Windows.
 - Supports filtering files using regular expression, including capture groups.
 - Ignores hidden directories and files by default.
 - Safe. F2 will not modify any file names until you tell it to.
 - Detects potential conflicts such as file collisions, or overwrites.
 - Supports recursive renaming of both files and directories.
-- Supports renaming using a template.
 - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
 - Supports undoing an operation from a map file.
 - Extensive unit testing.
@@ -54,10 +56,10 @@
 Recursive batch renaming of 10,000 files from pic-{n}.png to {n}.png.
 
 **Versions**:
-- [f2](https://github.com/ayoisaiah/f2) — v1.0.0
-- [rnm](https://github.com/neurobin/rnm) — v4.0.9
-- [rnr](https://github.com/ChuckDaniels87/rnr) — v0.3.0
-- [brename](https://github.com/shenwei356/brename) — v2.11.0
+- [f2](https://github.com/ayoisaiah/f2) (Go) — v1.0.0
+- [rnm](https://github.com/neurobin/rnm) (C++) — v4.0.9
+- [rnr](https://github.com/ChuckDaniels87/rnr) (Rust) — v0.3.0
+- [brename](https://github.com/shenwei356/brename) (Go) — v2.11.0
 
 **Environment**:
 - **OS**: Ubuntu 20.04.2 LTS on Windows 10 x86_64
@@ -411,7 +413,6 @@ $ f2 -f 'a' -r 'b'
 +-------+--------+--------------------------+
 | a.txt | b.txt  | ❌ [Path already exists] |
 +-------+--------+--------------------------+
-Conflict detected! Please resolve before proceeding
 ```
 
 #### 2. Overwriting newly renamed path
@@ -429,7 +430,6 @@ $ f2 -f 'a|b' -r 'c'
 | a.txt | c.txt  | ok                                  |
 | b.txt | c.txt  | ❌ [Overwriting newly renamed path] |
 +-------+--------+-------------------------------------+
-Conflict detected! Please resolve before proceeding
 ```
 
 #### 3. Empty filename
@@ -446,7 +446,6 @@ $ f2 -f 'a.txt'
 +-------+--------+---------------------+
 | a.txt |        | ❌ [Empty filename] |
 +-------+--------+---------------------+
-Conflict detected! Please resolve before proceeding
 ```
 
 ### Undoing changes
