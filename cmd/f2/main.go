@@ -2,10 +2,36 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v2"
 )
+
+func checkForUpdates(app *cli.App) {
+	fmt.Println("Checking for updates...")
+
+	c := http.Client{Timeout: 20 * time.Second}
+	resp, err := c.Get("https://github.com/ayoisaiah/f2/releases/latest")
+	if err != nil {
+		fmt.Println("HTTP Error: Failed to check for update")
+		return
+	}
+	var version string
+	_, err = fmt.Sscanf(resp.Request.URL.String(), "https://github.com/ayoisaiah/f2/releases/tag/%s", &version)
+	if err != nil {
+		fmt.Println("Failed to get latest version")
+		return
+	}
+	version = "v" + version
+
+	if version == app.Version {
+		fmt.Printf("Congratulations, you are using the latest version of %s\n", app.Name)
+	} else {
+		fmt.Printf("%s: %s at %s\n", green("Update available"), version, resp.Request.URL.String())
+	}
+}
 
 func getApp() *cli.App {
 	return &cli.App{
@@ -16,9 +42,10 @@ func getApp() *cli.App {
 				Email: "ayo@freshman.tech",
 			},
 		},
-		Usage:     "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
-		UsageText: "FLAGS [OPTIONS] [PATHS...]",
-		Version:   "v1.0.0",
+		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
+		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
+		Version:              "v1.0.0",
+		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "find",
@@ -130,5 +157,9 @@ func main() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+
+	if contains(os.Args, "-v") || contains(os.Args, "--version") {
+		checkForUpdates(getApp())
 	}
 }
