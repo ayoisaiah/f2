@@ -35,8 +35,6 @@
 - [Contribute](#contribute)
 - [Licence](#licence)
 
-Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
-
 ## Features
 
 - Extremely fast. Can work on 10,000 files in less than half a second.
@@ -77,7 +75,7 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v0.1.0
+   v1.0.0
 
 FLAGS:
    --find string, -f string       Search string or regular expression.
