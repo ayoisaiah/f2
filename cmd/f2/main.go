@@ -24,7 +24,6 @@ func checkForUpdates(app *cli.App) {
 		fmt.Println("Failed to get latest version")
 		return
 	}
-	version = "v" + version
 
 	if version == app.Version {
 		fmt.Printf("Congratulations, you are using the latest version of %s\n", app.Name)
@@ -44,7 +43,7 @@ func getApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.0.0",
+		Version:              "v1.0.1",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
