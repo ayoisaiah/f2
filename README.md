@@ -103,6 +103,12 @@ later):
 $ go get -u github.com/ayoisaiah/f2/cmd/...
 ```
 
+You can also install it via `npm` if you have it installed:
+
+```bash
+$ npm i @ayoisaiah/f2 -g
+```
+
 Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases).
 
 ## Command-line options
