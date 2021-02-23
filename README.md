@@ -4,8 +4,6 @@
 
 <p align="center">
    <a href="https://www.codacy.com/manual/ayoisaiah/f2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ayoisaiah/f2&amp;utm_campaign=Badge_Grade"><img src="https://api.codacy.com/project/badge/Grade/7136493cf477467387381890cb25dc9e" alt="Codacy Badge"></a>
-   <a href="https://goreportcard.com/report/github.com/ayoisaiah/f2"><img src="https://goreportcard.com/badge/github.com/ayoisaiah/f2" data-canonical-src="https://goreportcard.com/badge/github.com/ayoisaiah/f2" alt="Go Report Card"></a>
-   <a href="http://hits.dwyl.com/ayoisaiah/f2"><img data-canonical-src="http://hits.dwyl.com/ayoisaiah/f2.svg" src="http://hits.dwyl.com/ayoisaiah/f2.svg" alt="HitCount"></a>
    <a href="http://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt=""></a>
    <a href="https://github.com/ayoisaiah/F2/actions"><img src="https://github.com/ayoisaiah/F2/actions/workflows/test.yml/badge.svg" alt="Github Actions"></a>
 </p>
@@ -69,29 +67,28 @@ Recursive batch renaming of 10,000 files from pic-{n}.png to {n}.png.
 Preparation script: [prepare-script.sh](https://gist.github.com/ayoisaiah/868437602e73084ebc11efcec262e92c).
 
 ```bash
-$ hyperfine --warmup 3 --prepare "./prepare-script.sh" 'f2 -f "pic-(\d+).*" -r \$1.png -x -R' 'brename -p "pic-(\d+).*" -r \$1.png -q -R' 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1' 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/'
-Benchmark #1: f2 -f "pic-(\d+).*" -r \$1.png -x -R
-  Time (mean ± σ):     315.8 ms ±   7.9 ms    [User: 146.6 ms, System: 177.6 ms]
-  Range (min … max):   303.1 ms … 329.4 ms    10 runs
+$ hyperfine --warmup 3 --prepare "./prepare-script.sh" 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/' 'f2 -f "pic-(\d+).*" -r \$1.png -x -R' 'brename -p "pic-(\d+).*" -r \$1.png -q -R' 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1'
+Benchmark #1: rnr -sfr "pic-(\d+).*" "\$1.png" dir1/
+  Time (mean ± σ):     944.1 ms ±  20.2 ms    [User: 238.5 ms, System: 666.5 ms]
+  Range (min … max):   916.0 ms … 982.2 ms    10 runs
 
-Benchmark #2: brename -p "pic-(\d+).*" -r \$1.png -q -R
-  Time (mean ± σ):     562.6 ms ±  15.9 ms    [User: 188.1 ms, System: 280.3 ms]
-  Range (min … max):   535.1 ms … 588.8 ms    10 runs
+Benchmark #2: f2 -f "pic-(\d+).*" -r \$1.png -x -R
+  Time (mean ± σ):     292.4 ms ±  11.8 ms    [User: 141.8 ms, System: 217.4 ms]
+  Range (min … max):   276.4 ms … 311.0 ms    10 runs
 
-Benchmark #3: rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1
-  Time (mean ± σ):     816.1 ms ±  37.1 ms    [User: 560.4 ms, System: 251.7 ms]
-  Range (min … max):   761.0 ms … 892.3 ms    10 runs
+Benchmark #3: brename -p "pic-(\d+).*" -r \$1.png -q -R
+  Time (mean ± σ):     602.3 ms ±  10.8 ms    [User: 202.1 ms, System: 311.7 ms]
+  Range (min … max):   587.2 ms … 626.9 ms    10 runs
 
-Benchmark #4: rnr -sfr "pic-(\d+).*" "\$1.png" dir1/
-  Time (mean ± σ):      1.023 s ±  0.230 s    [User: 272.3 ms, System: 683.6 ms]
-  Range (min … max):    0.907 s …  1.667 s    10 runs
-
+Benchmark #4: rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1
+  Time (mean ± σ):     821.0 ms ±  43.2 ms    [User: 564.6 ms, System: 254.7 ms]
+  Range (min … max):   783.9 ms … 926.2 ms    10 runs
 
 Summary
   'f2 -f "pic-(\d+).*" -r \$1.png -x -R' ran
-    1.78 ± 0.07 times faster than 'brename -p "pic-(\d+).*" -r \$1.png -q -R'
-    2.58 ± 0.13 times faster than 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1'
-    3.24 ± 0.73 times faster than 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/'
+    2.06 ± 0.09 times faster than 'brename -p "pic-(\d+).*" -r \$1.png -q -R'
+    2.81 ± 0.19 times faster than 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1'
+    3.23 ± 0.15 times faster than 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/'
 ```
 
 ## Installation
