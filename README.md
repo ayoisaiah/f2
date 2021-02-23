@@ -4,8 +4,8 @@
 
 <p align="center">
    <a href="https://www.codacy.com/manual/ayoisaiah/f2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ayoisaiah/f2&amp;utm_campaign=Badge_Grade"><img src="https://api.codacy.com/project/badge/Grade/7136493cf477467387381890cb25dc9e" alt="Codacy Badge"></a>
-   <a href="https://goreportcard.com/report/github.com/ayoisaiah/f2"><img src="https://goreportcard.com/badge/github.com/ayoisaiah/f2" alt="Go Report Card"></a>
-   <a href="http://hits.dwyl.com/ayoisaiah/f2"><img src="http://hits.dwyl.com/ayoisaiah/f2.svg" alt="HitCount"></a>
+   <a href="https://goreportcard.com/report/github.com/ayoisaiah/f2"><img src="https://goreportcard.com/badge/github.com/ayoisaiah/f2" data-canonical-src="https://goreportcard.com/badge/github.com/ayoisaiah/f2" alt="Go Report Card"></a>
+   <a href="http://hits.dwyl.com/ayoisaiah/f2"><img data-canonical-src="http://hits.dwyl.com/ayoisaiah/f2.svg" src="http://hits.dwyl.com/ayoisaiah/f2.svg" alt="HitCount"></a>
    <a href="http://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt=""></a>
    <a href="https://github.com/ayoisaiah/F2/actions"><img src="https://github.com/ayoisaiah/F2/actions/workflows/test.yml/badge.svg" alt="Github Actions"></a>
 </p>
