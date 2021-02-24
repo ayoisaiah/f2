@@ -24,6 +24,7 @@
    - [Basic find and replace](#basic-find-and-replace)
    - [Recursive find and replace](#recursive-find-and-replace)
    - [Include directories](#include-directories)
+   - [Ignore extensions](#ignore-extensions)
    - [Strip out unwanted text](#strip-out-unwanted-text)
    - [Rename using an auto incrementing number](#rename-using-an-auto-incrementing-number)
    - [Replace spaces with underscores](#replace-spaces-with-underscores)
@@ -240,6 +241,25 @@ $ f2 -f 'pic' -r 'image' -D -x
 └── images
     ├── pic-02.avif
     └── pic-03.avif
+```
+
+### Ignore extensions
+
+The file extension is matched by default. If this behaviour is not desired, use
+the `--ignore-ext` or `-e` flag:
+
+```bash
+$ ls
+a-jpeg-file.jpeg file.jpeg
+```
+
+```bash
+$ f2 -f "jpeg" -r "jpg" -e
++------------------+-----------------+--------+
+|      INPUT       |     OUTPUT      | STATUS |
++------------------+-----------------+--------+
+| a-jpeg-file.jpeg | a-jpg-file.jpeg | ok     |
++------------------+-----------------+--------+
 ```
 
 ### Strip out unwanted text
