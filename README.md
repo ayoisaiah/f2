@@ -254,7 +254,7 @@ a-jpeg-file.jpeg file.jpeg
 ```
 
 ```bash
-$ f2 -f "jpeg" -r "jpg" -e
+$ f2 -f 'jpeg' -r 'jpg' -e
 +------------------+-----------------+--------+
 |      INPUT       |     OUTPUT      | STATUS |
 +------------------+-----------------+--------+
@@ -466,7 +466,7 @@ $ f2 -f 'a|b' -r 'c'
 +-------+--------+-------------------------------------+
 ```
 
-You can append the `-F` flag to fix the conflict. This will add a number to the target path to differentiate it from the
+You can append the `-F` flag to fix the conflict. This will add a number to the target path to differentiate it from the other renamed files:
 
 ```bash
 $ f2 -f 'a|b' -r 'c' -F
