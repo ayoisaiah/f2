@@ -123,7 +123,7 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.0.0
+   v1.1.0
 
 FLAGS:
    --find string, -f string       Search string or regular expression.
@@ -135,10 +135,10 @@ FLAGS:
    --undo value, -u value         Undo a successful operation using a previously created map file
    --ignore-case, -i              Ignore case (default: false)
    --ignore-ext, -e               Ignore extension (default: false)
-   --include-dir, -d              Rename directories (default: false)
+   --include-dir, -d              Include directories (default: false)
    --only-dir, -D                 Rename only directories (implies include-dir) (default: false)
    --hidden, -H                   Include hidden files and directories (default: false)
-   --force, -F                    Force the renaming operation even when there are conflicts (may cause data loss). (default: false)
+   --fix-conflicts, -F            Fix any detected conflicts with auto indexing (default: false)
    --help, -h                     show help (default: false)
    --version, -v                  print the version (default: false)
 
@@ -400,7 +400,7 @@ $ f2 -r 'journal_{{f}}{{ext}}' # prefix
 
 ### Conflict detection
 
-F2 detects any conflicts that may arise during a renaming operation. Here are three examples:
+F2 detects any conflicts that may arise during a renaming operation. If you append the `-F` or `--fix-conflicts` flag, it can auto fix the conflicts for you. Here are three examples:
 
 #### 1. File already exists
 
@@ -418,6 +418,17 @@ $ f2 -f 'a' -r 'b'
 +-------+--------+--------------------------+
 ```
 
+You can append the `-F` flag to fix the conflict. This will add a number to the target file to differentiate it from the existing one.
+
+```bash
+$ f2 -f "a" -r "b" -F
++-------+-----------+--------+
+| INPUT |  OUTPUT   | STATUS |
++-------+-----------+--------+
+| a.txt | b (2).txt | ok     |
++-------+-----------+--------+
+```
+
 #### 2. Overwriting newly renamed path
 
 ```bash
@@ -430,9 +441,21 @@ $ f2 -f 'a|b' -r 'c'
 +-------+--------+-------------------------------------+
 | INPUT | OUTPUT |               STATUS                |
 +-------+--------+-------------------------------------+
-| a.txt | c.txt  | ok                                  |
+| a.txt | c.txt  | ❌ [Overwriting newly renamed path] |
 | b.txt | c.txt  | ❌ [Overwriting newly renamed path] |
 +-------+--------+-------------------------------------+
+```
+
+You can append the `-F` flag to fix the conflict. This will add a number to the target path to differentiate it from the
+
+```bash
+$ f2 -f 'a|b' -r 'c' -F
++-------+-----------+--------+
+| INPUT |  OUTPUT   | STATUS |
++-------+-----------+--------+
+| a.txt | c.txt     | ok     |
+| b.txt | c (2).txt | ok     |
++-------+-----------+--------+
 ```
 
 #### 3. Empty filename
@@ -449,6 +472,17 @@ $ f2 -f 'a.txt'
 +-------+--------+---------------------+
 | a.txt |        | ❌ [Empty filename] |
 +-------+--------+---------------------+
+```
+
+You can append the `-F` flag to fix the conflict. The filename will not be changed in this context.
+
+```bash
+$ f2 -f 'a.txt' -F
++-------+--------+--------+
+| INPUT | OUTPUT | STATUS |
++-------+--------+--------+
+| a.txt | a.txt  | ok     |
++-------+--------+--------+
 ```
 
 ### Undoing changes
