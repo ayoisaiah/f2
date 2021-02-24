@@ -94,7 +94,7 @@ Summary
 
 ## Installation
 
-F2 is written in Go, so you can install it through `go get` (Requires Go 1.16 or
+F2 is written in Go, so you can install it through `go get` (requires Go 1.16 or
 later):
 
 ```bash
