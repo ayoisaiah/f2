@@ -27,6 +27,10 @@ var fileSystem = []string{
 	"abc.pdf",
 	"abc.epub",
 	".pics",
+	"conflicts/abc.txt",
+	"conflicts/xyz.txt",
+	"conflicts/123.txt",
+	"conflicts/123 (3).txt",
 }
 
 // setupFileSystem creates all required files and folders for
@@ -39,7 +43,7 @@ func setupFileSystem(t testing.TB) (string, func()) {
 		t.Fatal(err)
 	}
 
-	directories := []string{"images/pics", "scripts", "morepics"}
+	directories := []string{"images/pics", "scripts", "morepics", "conflicts"}
 	for _, v := range directories {
 		filePath := filepath.Join(testDir, v)
 		err = os.MkdirAll(filePath, os.ModePerm)
@@ -101,8 +105,6 @@ func action(args []string) (ActionResult, error) {
 		op.Replace()
 
 		result.changes = op.matches
-		op.DetectConflicts()
-		result.conflicts = op.conflicts
 
 		if op.outputFile != "" {
 			result.outputFile = op.outputFile
@@ -110,6 +112,7 @@ func action(args []string) (ActionResult, error) {
 		}
 
 		result.applyError = op.Apply()
+		result.conflicts = op.conflicts
 
 		return nil
 	}
@@ -315,6 +318,63 @@ func TestDetectConflicts(t *testing.T) {
 
 		if !reflect.DeepEqual(v.want, result.conflicts) {
 			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.conflicts)
+		}
+	}
+}
+
+func TestFixConflicts(t *testing.T) {
+	testDir, teardown := setupFileSystem(t)
+
+	defer teardown()
+
+	type Table struct {
+		want []Change
+		args []string
+	}
+
+	table := []Table{
+		{
+			want: []Change{
+				{Source: "abc.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "123 (2).txt"},
+				{Source: "xyz.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "123 (4).txt"},
+			},
+			args: []string{"-f", "abc|xyz", "-r", "123", "-F", filepath.Join(testDir, "conflicts")},
+		},
+		{
+			want: []Change{
+				{Source: "123.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "abc (2).txt"},
+				{Source: "123 (3).txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "abc (3).txt"},
+			},
+			args: []string{"-f", "123", "-r", "abc", "-F", filepath.Join(testDir, "conflicts")},
+		},
+		{
+			want: []Change{
+				{Source: "xyz.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "123 (2).txt"},
+			},
+			args: []string{"-f", "xyz", "-r", "123", "-F", filepath.Join(testDir, "conflicts")},
+		},
+		{
+			want: []Change{
+				{Source: "xyz.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "xyz.txt"},
+			},
+			args: []string{"-f", "xyz.txt", "-F", filepath.Join(testDir, "conflicts")},
+		},
+	}
+
+	for i, v := range table {
+		args := os.Args[0:1]
+		args = append(args, v.args...)
+		result, _ := action(args) // err will be nil
+
+		if len(result.conflicts) == 0 {
+			t.Fatalf("Test(%d) — Expected some conflicts but got none", i+1)
+		}
+
+		sortChanges(v.want)
+		sortChanges(result.changes)
+
+		if !reflect.DeepEqual(v.want, result.changes) && len(v.want) != 0 {
+			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.changes)
 		}
 	}
 }
