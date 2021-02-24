@@ -101,7 +101,8 @@ func action(args []string) (ActionResult, error) {
 		op.Replace()
 
 		result.changes = op.matches
-		result.conflicts = op.DetectConflicts()
+		op.DetectConflicts()
+		result.conflicts = op.conflicts
 
 		if op.outputFile != "" {
 			result.outputFile = op.outputFile

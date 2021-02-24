@@ -46,22 +46,23 @@ type Change struct {
 
 // Operation represents a batch renaming operation
 type Operation struct {
-	paths           []Change
-	matches         []Change
-	replaceString   string
-	startNumber     int
-	exec            bool
-	ignoreConflicts bool
-	includeHidden   bool
-	includeDir      bool
-	onlyDir         bool
-	ignoreCase      bool
-	ignoreExt       bool
-	searchRegex     *regexp.Regexp
-	directories     []string
-	recursive       bool
-	undoFile        string
-	outputFile      string
+	paths         []Change
+	matches       []Change
+	conflicts     map[conflict][]Conflict
+	replaceString string
+	startNumber   int
+	exec          bool
+	fixConflicts  bool
+	includeHidden bool
+	includeDir    bool
+	onlyDir       bool
+	ignoreCase    bool
+	ignoreExt     bool
+	searchRegex   *regexp.Regexp
+	directories   []string
+	recursive     bool
+	undoFile      string
+	outputFile    string
 }
 
 type mapFile struct {
@@ -155,13 +156,11 @@ func (op *Operation) Apply() error {
 		return fmt.Errorf("%s", red("Failed to match any files"))
 	}
 
-	if !op.ignoreConflicts {
-		conflicts := op.DetectConflicts()
-		if len(conflicts) > 0 {
-			op.ReportConflicts(conflicts)
-			fmt.Fprintln(os.Stderr, "Conflict detected! Please resolve before proceeding")
-			return fmt.Errorf("Or append the %s flag to ignore all conflicts (may cause data loss)", yellow("-F"))
-		}
+	op.DetectConflicts()
+	if len(op.conflicts) > 0 && !op.fixConflicts {
+		op.ReportConflicts()
+		fmt.Fprintln(os.Stderr, "Conflict detected! Please resolve before proceeding")
+		return fmt.Errorf("Or append the %s flag to fix conflicts automatically", yellow("-F"))
 	}
 
 	for _, ch := range op.matches {
@@ -199,31 +198,26 @@ func (op *Operation) Apply() error {
 }
 
 // ReportConflicts prints any detected conflicts to the standard error
-func (op *Operation) ReportConflicts(conflicts map[conflict][]Conflict) {
+func (op *Operation) ReportConflicts() {
 	var data [][]string
-	if slice, exists := conflicts[EMPTY_FILENAME]; exists {
+	if slice, exists := op.conflicts[EMPTY_FILENAME]; exists {
 		for _, v := range slice {
 			slice := []string{strings.Join(v.source, ""), "", red("❌ [Empty filename]")}
 			data = append(data, slice)
 		}
 	}
 
-	if slice, exists := conflicts[FILE_EXISTS]; exists {
+	if slice, exists := op.conflicts[FILE_EXISTS]; exists {
 		for _, v := range slice {
 			slice := []string{strings.Join(v.source, ""), v.target, red("❌ [Path already exists]")}
 			data = append(data, slice)
 		}
 	}
 
-	if slice, exists := conflicts[OVERWRITNG_NEW_PATH]; exists {
+	if slice, exists := op.conflicts[OVERWRITNG_NEW_PATH]; exists {
 		for _, v := range slice {
-			for i, s := range v.source {
-				var slice []string
-				if i == 0 {
-					slice = []string{s, v.target, green("ok")}
-				} else {
-					slice = []string{s, v.target, red("❌ [Overwriting newly renamed path]")}
-				}
+			for _, s := range v.source {
+				slice := []string{s, v.target, red("❌ [Overwriting newly renamed path]")}
 				data = append(data, slice)
 			}
 		}
@@ -233,12 +227,16 @@ func (op *Operation) ReportConflicts(conflicts map[conflict][]Conflict) {
 }
 
 // DetectConflicts detects any conflicts that occur
-// after renaming a file
-func (op *Operation) DetectConflicts() map[conflict][]Conflict {
-	conflicts := make(map[conflict][]Conflict)
-	m := make(map[string][]string)
+// after renaming a file. Conflicts are automatically
+// fixed if specified
+func (op *Operation) DetectConflicts() {
+	op.conflicts = make(map[conflict][]Conflict)
+	m := make(map[string][]struct {
+		source string
+		index  int
+	})
 
-	for _, ch := range op.matches {
+	for i, ch := range op.matches {
 		var source, target = ch.Source, ch.Target
 		source = filepath.Join(ch.BaseDir, source)
 		target = filepath.Join(ch.BaseDir, target)
@@ -246,38 +244,69 @@ func (op *Operation) DetectConflicts() map[conflict][]Conflict {
 		// Report if replacement operation results in
 		// an empty string for the new filename
 		if ch.Target == "." {
-			conflicts[EMPTY_FILENAME] = append(conflicts[EMPTY_FILENAME], Conflict{
+			op.conflicts[EMPTY_FILENAME] = append(op.conflicts[EMPTY_FILENAME], Conflict{
 				source: []string{source},
 				target: target,
 			})
+
+			if op.fixConflicts {
+				// The file is left unchanged
+				op.matches[i].Target = ch.Source
+			}
 
 			continue
 		}
 
 		// Report if target file exists on the filesystem
 		if _, err := os.Stat(target); err == nil || !os.IsNotExist(err) {
-			conflicts[FILE_EXISTS] = append(conflicts[FILE_EXISTS], Conflict{
+			op.conflicts[FILE_EXISTS] = append(op.conflicts[FILE_EXISTS], Conflict{
 				source: []string{source},
 				target: target,
 			})
+
+			if op.fixConflicts {
+				str := getNewPath(target, ch.BaseDir, nil)
+				fullPath := filepath.Join(ch.BaseDir, str)
+				op.matches[i].Target = str
+				target = fullPath
+			}
 		}
 
 		// For detecting duplicates after renaming paths
-		m[target] = append(m[target], source)
+		m[target] = append(m[target], struct {
+			source string
+			index  int
+		}{
+			source: source,
+			index:  i,
+		})
 	}
 
 	// Report duplicate targets if any
 	for k, v := range m {
 		if len(v) > 1 {
-			conflicts[OVERWRITNG_NEW_PATH] = append(conflicts[OVERWRITNG_NEW_PATH], Conflict{
-				source: v,
+			var sources []string
+			for _, s := range v {
+				sources = append(sources, s.source)
+			}
+
+			op.conflicts[OVERWRITNG_NEW_PATH] = append(op.conflicts[OVERWRITNG_NEW_PATH], Conflict{
+				source: sources,
 				target: k,
 			})
+
+			if op.fixConflicts {
+				for i, item := range v {
+					if i == 0 {
+						continue
+					}
+
+					str := getNewPath(k, op.matches[item.index].BaseDir, m)
+					op.matches[item.index].Target = str
+				}
+			}
 		}
-
 	}
-
-	return conflicts
 }
 
 // FindMatches locates matches for the search pattern
@@ -417,7 +446,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.outputFile = c.String("output-file")
 	op.replaceString = c.String("replace")
 	op.exec = c.Bool("exec")
-	op.ignoreConflicts = c.Bool("force")
+	op.fixConflicts = c.Bool("fix-conflicts")
 	op.includeDir = c.Bool("include-dir")
 	op.startNumber = c.Int("start-num")
 	op.includeHidden = c.Bool("hidden")

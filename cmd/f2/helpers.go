@@ -1,11 +1,56 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/olekukonko/tablewriter"
 )
+
+// getNewPath returns a filename based on the target
+// which is not available due to it existing on the filesystem
+// or when another renamed file shares the same path.
+// It appends an increasing number to the target path until it finds one
+// that does not conflict with the filesystem or with another renamed
+// file
+func getNewPath(target, baseDir string, m map[string][]struct {
+	source string
+	index  int
+}) string {
+	f := filenameWithoutExtension(filepath.Base(target))
+	re := regexp.MustCompile("\\(\\d+\\)$")
+	// Extract the numbered index at the end of the filename (if any)
+	match := re.FindStringSubmatch(f)
+	if len(match) == 0 {
+		match = []string{"(2)"}
+		f += " (2)"
+	}
+	num := 2
+	// ignoring error from Sscanf. num will be set to 2 regardless
+	fmt.Sscanf(match[0], "(%d)", &num)
+	for {
+		newPath := re.ReplaceAllString(f, fmt.Sprintf("(%d)", num))
+		newPath = newPath + filepath.Ext(target)
+		fullPath := filepath.Join(baseDir, newPath)
+
+		// Ensure the new path does not exist on the filesystem
+		if _, err := os.Stat(fullPath); err != nil && os.IsNotExist(err) {
+			if m != nil {
+				// Check if newPath conflicts with another renamed file
+				for k := range m {
+					if k == fullPath {
+						goto out
+					}
+				}
+			}
+			return newPath
+		}
+	out:
+		num += 1
+	}
+}
 
 func removeDotfiles(de []os.DirEntry) (ret []os.DirEntry) {
 	for _, e := range de {

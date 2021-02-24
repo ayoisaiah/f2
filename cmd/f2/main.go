@@ -109,9 +109,9 @@ func getApp() *cli.App {
 				Usage:   "Include hidden files and directories",
 			},
 			&cli.BoolFlag{
-				Name:    "force",
+				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
-				Usage:   "Force the renaming operation even when there are conflicts (may cause data loss).",
+				Usage:   "Fix any detected conflicts with auto indexing",
 			},
 		},
 		Action: func(c *cli.Context) error {
