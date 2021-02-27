@@ -8,7 +8,18 @@ import (
 	"regexp"
 
 	"github.com/olekukonko/tablewriter"
+	"gopkg.in/djherbis/times.v1"
 )
+
+// getTimeInfo retrieves the atime, mtime, ctime and btime for files.
+func getTimeInfo(filename string) (times.Timespec, error) {
+	t, err := times.Stat(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
+}
 
 // getNewPath returns a filename based on the target
 // which is not available due to it existing on the filesystem

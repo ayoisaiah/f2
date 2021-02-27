@@ -22,6 +22,35 @@ var (
 	yellow = color.FgYellow.Render
 )
 
+var (
+	filenameVar  = regexp.MustCompile("{{f}}")
+	extensionVar = regexp.MustCompile("{{ext}}")
+	parentDirVar = regexp.MustCompile("{{p}}")
+	indexVar     = regexp.MustCompile("%([0-9]?)+d")
+	dateVar      *regexp.Regexp
+)
+
+var dateTokens = map[string]string{
+	"YYYY": "2006",
+	"YY":   "06",
+	"MMMM": "January",
+	"MMM":  "Jan",
+	"MM":   "01",
+	"M":    "1",
+	"DDDD": "Monday",
+	"DDD":  "Mon",
+	"DD":   "02",
+	"D":    "2",
+	"hh":   "15",
+	"h":    "3",
+	"mm":   "04",
+	"m":    "4",
+	"ss":   "05",
+	"s":    "5",
+	"A":    "PM",
+	"a":    "pm",
+}
+
 type conflict int
 
 const (
@@ -70,6 +99,16 @@ type Operation struct {
 type mapFile struct {
 	Date       string   `json:"date"`
 	Operations []Change `json:"operations"`
+}
+
+func init() {
+	tokens := make([]string, 0, len(dateTokens))
+	for key := range dateTokens {
+		tokens = append(tokens, key)
+	}
+
+	tokenString := strings.Join(tokens, "|")
+	dateVar = regexp.MustCompile(fmt.Sprintf("{{(mtime|ctime|btime|atime|now)\\.(%s)}}", tokenString))
 }
 
 // WriteToFile writes the details of a successful operation
@@ -354,11 +393,7 @@ func (op *Operation) SortMatches() {
 	})
 }
 
-func (op *Operation) handleVariables(str string, ch Change) string {
-	ogFilename := regexp.MustCompile("{{f}}")
-	ext := regexp.MustCompile("{{ext}}")
-	dir := regexp.MustCompile("{{p}}")
-
+func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	fileName := filepath.Base(ch.Source)
 	fileExt := filepath.Ext(fileName)
 	parentDir := filepath.Base(ch.BaseDir)
@@ -369,27 +404,72 @@ func (op *Operation) handleVariables(str string, ch Change) string {
 
 	// replace `{{f}}` in the replacement string with the original
 	// filename (without the extension)
-	if ogFilename.Match([]byte(str)) {
-		str = ogFilename.ReplaceAllString(str, filenameWithoutExtension(fileName))
+	if filenameVar.Match([]byte(str)) {
+		str = filenameVar.ReplaceAllString(str, filenameWithoutExtension(fileName))
 	}
 
 	// replace `{{ext}}` in the replacement string with the file extension
-	if ext.Match([]byte(str)) {
-		str = ext.ReplaceAllString(str, fileExt)
+	if extensionVar.Match([]byte(str)) {
+		str = extensionVar.ReplaceAllString(str, fileExt)
 	}
 
 	// replace `{{p}}` in the replacement string with the parent directory name
-	if dir.Match([]byte(str)) {
-		str = dir.ReplaceAllString(str, parentDir)
+	if parentDirVar.Match([]byte(str)) {
+		str = parentDirVar.ReplaceAllString(str, parentDir)
 	}
 
-	return str
+	// handle date variables (e.g {{mtime.DD}})
+	if dateVar.Match([]byte(str)) {
+		source := filepath.Join(ch.BaseDir, ch.Source)
+		t, err := getTimeInfo(source)
+		if err != nil {
+			return "", err
+		}
+
+		submatches := dateVar.FindAllStringSubmatch(str, -1)
+		for _, submatch := range submatches {
+			regex, err := regexp.Compile(submatch[0])
+			if err != nil {
+				return "", err
+			}
+
+			switch submatch[1] {
+			case "mtime":
+				modTime := t.ModTime()
+				out := modTime.Format(dateTokens[submatch[2]])
+				str = regex.ReplaceAllString(str, out)
+			case "btime":
+				birthTime := t.ModTime()
+				if t.HasBirthTime() {
+					birthTime = t.BirthTime()
+				}
+				out := birthTime.Format(dateTokens[submatch[2]])
+				str = regex.ReplaceAllString(str, out)
+			case "atime":
+				accessTime := t.AccessTime()
+				out := accessTime.Format(dateTokens[submatch[2]])
+				str = regex.ReplaceAllString(str, out)
+			case "ctime":
+				changeTime := t.AccessTime()
+				if t.HasChangeTime() {
+					changeTime = t.ChangeTime()
+				}
+				out := changeTime.Format(dateTokens[submatch[2]])
+				str = regex.ReplaceAllString(str, out)
+			case "now":
+				currentTime := time.Now()
+				out := currentTime.Format(dateTokens[submatch[2]])
+				str = regex.ReplaceAllString(str, out)
+			}
+		}
+	}
+
+	return str, nil
 }
 
 // Replace replaces the matched text in each path with the
 // replacement string
-func (op *Operation) Replace() {
-	index := regexp.MustCompile("%([0-9]?)+d")
+func (op *Operation) Replace() error {
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.Source), filepath.Dir(v.Source)
 		fileExt := filepath.Ext(fileName)
@@ -400,19 +480,16 @@ func (op *Operation) Replace() {
 		str := op.searchRegex.ReplaceAllString(fileName, op.replaceString)
 
 		// handle variables
-		str = op.handleVariables(str, v)
-
-		// If numbering scheme is present
-		if index.Match([]byte(str)) {
-			b := index.Find([]byte(str))
-			r := fmt.Sprintf(string(b), op.startNumber+i)
-			str = index.ReplaceAllString(str, r)
+		str, err := op.handleVariables(str, v)
+		if err != nil {
+			return err
 		}
 
-		// Only perform find and replace on `dir`
-		// if file is a directory to avoid conflicts
-		if op.includeDir && v.IsDir {
-			dir = op.searchRegex.ReplaceAllString(dir, op.replaceString)
+		// If numbering scheme is present
+		if indexVar.Match([]byte(str)) {
+			b := indexVar.Find([]byte(str))
+			r := fmt.Sprintf(string(b), op.startNumber+i)
+			str = indexVar.ReplaceAllString(str, r)
 		}
 
 		if op.ignoreExt {
@@ -422,6 +499,8 @@ func (op *Operation) Replace() {
 		v.Target = filepath.Join(dir, str)
 		op.matches[i] = v
 	}
+
+	return nil
 }
 
 // setPaths creates a Change struct for each path
@@ -454,7 +533,10 @@ func (op *Operation) Run() error {
 		op.SortMatches()
 	}
 
-	op.Replace()
+	err := op.Replace()
+	if err != nil {
+		return err
+	}
 
 	return op.Apply()
 }
