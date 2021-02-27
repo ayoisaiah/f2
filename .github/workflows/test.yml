@@ -1,4 +1,4 @@
-name: Test F2 on Windows, macOS and Linux
+name: Tests
 
 on:
   push:
@@ -27,4 +27,4 @@ jobs:
 
     # Tests
     - name: Run testing
-      run: go test ./cmd...
+      run: go test ./...
