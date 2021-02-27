@@ -3,6 +3,7 @@ package f2
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -63,6 +64,7 @@ type Operation struct {
 	recursive     bool
 	undoFile      string
 	outputFile    string
+	workingDir    string
 }
 
 type mapFile struct {
@@ -258,7 +260,7 @@ func (op *Operation) DetectConflicts() {
 		}
 
 		// Report if target file exists on the filesystem
-		if _, err := os.Stat(target); err == nil || !os.IsNotExist(err) {
+		if _, err := os.Stat(target); err == nil || !errors.Is(err, os.ErrNotExist) {
 			op.conflicts[FILE_EXISTS] = append(op.conflicts[FILE_EXISTS], Conflict{
 				source: []string{source},
 				target: target,
@@ -352,11 +354,41 @@ func (op *Operation) SortMatches() {
 	})
 }
 
+func (op *Operation) handleVariables(str string, ch Change) string {
+	ogFilename := regexp.MustCompile("{{f}}")
+	ext := regexp.MustCompile("{{ext}}")
+	dir := regexp.MustCompile("{{p}}")
+
+	fileName := filepath.Base(ch.Source)
+	fileExt := filepath.Ext(fileName)
+	parentDir := filepath.Base(ch.BaseDir)
+	if parentDir == "." {
+		// Set to base folder of current working directory
+		parentDir = filepath.Base(op.workingDir)
+	}
+
+	// replace `{{f}}` in the replacement string with the original
+	// filename (without the extension)
+	if ogFilename.Match([]byte(str)) {
+		str = ogFilename.ReplaceAllString(str, filenameWithoutExtension(fileName))
+	}
+
+	// replace `{{ext}}` in the replacement string with the file extension
+	if ext.Match([]byte(str)) {
+		str = ext.ReplaceAllString(str, fileExt)
+	}
+
+	// replace `{{p}}` in the replacement string with the parent directory name
+	if dir.Match([]byte(str)) {
+		str = dir.ReplaceAllString(str, parentDir)
+	}
+
+	return str
+}
+
 // Replace replaces the matched text in each path with the
 // replacement string
 func (op *Operation) Replace() {
-	og := regexp.MustCompile("{{f}}")
-	ext := regexp.MustCompile("{{ext}}")
 	index := regexp.MustCompile("%([0-9]?)+d")
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.Source), filepath.Dir(v.Source)
@@ -367,16 +399,8 @@ func (op *Operation) Replace() {
 
 		str := op.searchRegex.ReplaceAllString(fileName, op.replaceString)
 
-		// replace `{og}` in the replacement string with the original
-		// filename (without the extension)
-		if og.Match([]byte(str)) {
-			str = og.ReplaceAllString(str, filenameWithoutExtension(fileName))
-		}
-
-		// replace `{ext}` in the replacement string with the file extension
-		if ext.Match([]byte(str)) {
-			str = ext.ReplaceAllString(str, fileExt)
-		}
+		// handle variables
+		str = op.handleVariables(str, v)
 
 		// If numbering scheme is present
 		if index.Match([]byte(str)) {
@@ -502,6 +526,12 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Get the current working directory
+	op.workingDir, err = filepath.Abs(".")
+	if err != nil {
+		return nil, err
 	}
 
 	return op, op.setPaths(paths)
