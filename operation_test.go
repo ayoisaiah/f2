@@ -84,7 +84,7 @@ type ActionResult struct {
 func action(args []string) (ActionResult, error) {
 	var result ActionResult
 
-	app := getApp()
+	app := GetApp()
 	app.Action = func(c *cli.Context) error {
 		op, err := NewOperation(c)
 		if err != nil {
