@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -226,7 +226,7 @@ func TestFindReplace(t *testing.T) {
 		sortChanges(v.want)
 		sortChanges(result.changes)
 
-		if !reflect.DeepEqual(v.want, result.changes) && len(v.want) != 0 {
+		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
 			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.changes)
 		}
 
@@ -246,7 +246,7 @@ func TestFindReplace(t *testing.T) {
 
 			sortChanges(ch)
 
-			if !reflect.DeepEqual(v.want, ch) && len(v.want) != 0 {
+			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
 				t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, ch)
 			}
 
@@ -316,7 +316,7 @@ func TestDetectConflicts(t *testing.T) {
 			t.Fatalf("Test(%d) — Expected some conflicts but got none", i+1)
 		}
 
-		if !reflect.DeepEqual(v.want, result.conflicts) {
+		if !cmp.Equal(v.want, result.conflicts, cmp.AllowUnexported(Conflict{})) {
 			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.conflicts)
 		}
 	}
@@ -373,7 +373,7 @@ func TestFixConflicts(t *testing.T) {
 		sortChanges(v.want)
 		sortChanges(result.changes)
 
-		if !reflect.DeepEqual(v.want, result.changes) && len(v.want) != 0 {
+		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
 			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.changes)
 		}
 	}
