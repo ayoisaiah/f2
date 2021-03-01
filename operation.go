@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/rwcarlsen/goexif/exif"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/gookit/color.v1"
 )
@@ -27,6 +29,7 @@ var (
 	extensionVar = regexp.MustCompile("{{ext}}")
 	parentDirVar = regexp.MustCompile("{{p}}")
 	indexVar     = regexp.MustCompile("%([0-9]?)+d")
+	exifVar      = regexp.MustCompile("{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}")
 	dateVar      *regexp.Regexp
 )
 
@@ -101,6 +104,18 @@ type mapFile struct {
 	Operations []Change `json:"operations"`
 }
 
+type Exif struct {
+	ISOSpeedRatings []int
+	Make            string
+	Model           string
+	ExposureTime    []string
+	FocalLength     []string
+	FNumber         []string
+	ImageWidth      []int
+	ImageLength     []int // the image height
+	LensModel       string
+}
+
 func init() {
 	tokens := make([]string, 0, len(dateTokens))
 	for key := range dateTokens {
@@ -108,19 +123,24 @@ func init() {
 	}
 
 	tokenString := strings.Join(tokens, "|")
-	dateVar = regexp.MustCompile(fmt.Sprintf("{{(mtime|ctime|btime|atime|now)\\.(%s)}}", tokenString))
+	dateVar = regexp.MustCompile("{{(mtime|ctime|btime|atime|now)\\.(" + tokenString + ")}}")
 }
 
 // WriteToFile writes the details of a successful operation
 // to the specified file so that it may be reversed if necessary
-func (op *Operation) WriteToFile() error {
+func (op *Operation) WriteToFile() (err error) {
 	// Create or truncate file
 	file, err := os.Create(op.outputFile)
 	if err != nil {
 		return err
 	}
 
-	defer file.Close()
+	defer func() {
+		ferr := file.Close()
+		if ferr != nil {
+			err = ferr
+		}
+	}()
 
 	mf := mapFile{
 		Date:       time.Now().Format(time.RFC3339),
@@ -393,6 +413,139 @@ func (op *Operation) SortMatches() {
 	})
 }
 
+func replaceDateVariables(file, input string) (out string, err error) {
+	t, err := getTimeInfo(file)
+	if err != nil {
+		return "", err
+	}
+
+	submatches := dateVar.FindAllStringSubmatch(input, -1)
+	for _, submatch := range submatches {
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return "", err
+		}
+
+		switch submatch[1] {
+		case "mtime":
+			modTime := t.ModTime()
+			out := modTime.Format(dateTokens[submatch[2]])
+			input = regex.ReplaceAllString(input, out)
+		case "btime":
+			birthTime := t.ModTime()
+			if t.HasBirthTime() {
+				birthTime = t.BirthTime()
+			}
+			out := birthTime.Format(dateTokens[submatch[2]])
+			input = regex.ReplaceAllString(input, out)
+		case "atime":
+			accessTime := t.AccessTime()
+			out := accessTime.Format(dateTokens[submatch[2]])
+			input = regex.ReplaceAllString(input, out)
+		case "ctime":
+			changeTime := t.AccessTime()
+			if t.HasChangeTime() {
+				changeTime = t.ChangeTime()
+			}
+			out := changeTime.Format(dateTokens[submatch[2]])
+			input = regex.ReplaceAllString(input, out)
+		case "now":
+			currentTime := time.Now()
+			out := currentTime.Format(dateTokens[submatch[2]])
+			input = regex.ReplaceAllString(input, out)
+		}
+	}
+	return input, nil
+}
+
+func replaceExifVariables(file, input string) (out string, err error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		ferr := f.Close()
+		if ferr != nil {
+			err = ferr
+		}
+	}()
+
+	exifData := &Exif{}
+	// Errors in decoding the exif data are ignored intentionally
+	// The corresponding exif variable will be replaced by an empty
+	// string
+	x, err := exif.Decode(f)
+	if err == nil {
+		b, err := x.MarshalJSON()
+		if err == nil {
+			_ = json.Unmarshal(b, exifData)
+		}
+	}
+
+	submatches := exifVar.FindAllStringSubmatch(input, -1)
+	for _, submatch := range submatches {
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return "", err
+		}
+
+		switch submatch[1] {
+		case "model":
+			cmodel := exifData.Model
+			cmodel = strings.ReplaceAll(cmodel, "/", "_")
+			input = regex.ReplaceAllString(input, cmodel)
+		case "lens":
+			lens := exifData.LensModel
+			lens = strings.ReplaceAll(lens, "/", "_")
+			input = regex.ReplaceAllString(input, lens)
+		case "make":
+			cmake := exifData.Make
+			input = regex.ReplaceAllString(input, cmake)
+		case "iso":
+			var iso string
+			if len(exifData.ISOSpeedRatings) > 0 {
+				iso = strconv.Itoa(exifData.ISOSpeedRatings[0])
+			}
+			input = regex.ReplaceAllString(input, "ISO"+iso)
+		case "et":
+			var et string
+			if len(exifData.ExposureTime) > 0 {
+				et = exifData.ExposureTime[0]
+				et = strings.ReplaceAll(et, "/", "_")
+			}
+			input = regex.ReplaceAllString(input, et+"s")
+		case "fnum":
+			v := exifDivision(exifData.FNumber)
+			input = regex.ReplaceAllString(input, "f"+v)
+		case "fl":
+			v := exifDivision(exifData.FocalLength)
+			input = regex.ReplaceAllString(input, v+"mm")
+		case "wh":
+			var wh string
+			if len(exifData.ImageLength) > 0 && len(exifData.ImageWidth) > 0 {
+				h, w := exifData.ImageLength[0], exifData.ImageWidth[0]
+				wh = strconv.Itoa(w) + "x" + strconv.Itoa(h)
+			}
+			input = regex.ReplaceAllString(input, wh)
+		case "h":
+			var h string
+			if len(exifData.ImageLength) > 0 {
+				h = strconv.Itoa(exifData.ImageLength[0])
+			}
+			input = regex.ReplaceAllString(input, h)
+		case "w":
+			var w string
+			if len(exifData.ImageWidth) > 0 {
+				w = strconv.Itoa(exifData.ImageWidth[0])
+			}
+			input = regex.ReplaceAllString(input, w)
+		}
+	}
+
+	return input, nil
+}
+
 func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	fileName := filepath.Base(ch.Source)
 	fileExt := filepath.Ext(fileName)
@@ -421,47 +574,20 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	// handle date variables (e.g {{mtime.DD}})
 	if dateVar.Match([]byte(str)) {
 		source := filepath.Join(ch.BaseDir, ch.Source)
-		t, err := getTimeInfo(source)
+		out, err := replaceDateVariables(source, str)
 		if err != nil {
 			return "", err
 		}
+		str = out
+	}
 
-		submatches := dateVar.FindAllStringSubmatch(str, -1)
-		for _, submatch := range submatches {
-			regex, err := regexp.Compile(submatch[0])
-			if err != nil {
-				return "", err
-			}
-
-			switch submatch[1] {
-			case "mtime":
-				modTime := t.ModTime()
-				out := modTime.Format(dateTokens[submatch[2]])
-				str = regex.ReplaceAllString(str, out)
-			case "btime":
-				birthTime := t.ModTime()
-				if t.HasBirthTime() {
-					birthTime = t.BirthTime()
-				}
-				out := birthTime.Format(dateTokens[submatch[2]])
-				str = regex.ReplaceAllString(str, out)
-			case "atime":
-				accessTime := t.AccessTime()
-				out := accessTime.Format(dateTokens[submatch[2]])
-				str = regex.ReplaceAllString(str, out)
-			case "ctime":
-				changeTime := t.AccessTime()
-				if t.HasChangeTime() {
-					changeTime = t.ChangeTime()
-				}
-				out := changeTime.Format(dateTokens[submatch[2]])
-				str = regex.ReplaceAllString(str, out)
-			case "now":
-				currentTime := time.Now()
-				out := currentTime.Format(dateTokens[submatch[2]])
-				str = regex.ReplaceAllString(str, out)
-			}
+	if exifVar.Match([]byte(str)) {
+		source := filepath.Join(ch.BaseDir, ch.Source)
+		out, err := replaceExifVariables(source, str)
+		if err != nil {
+			return "", err
 		}
+		str = out
 	}
 
 	return str, nil

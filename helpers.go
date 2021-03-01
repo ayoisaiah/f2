@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/djherbis/times.v1"
@@ -43,7 +45,7 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 	// ignoring error from Sscanf. num will be set to 2 regardless
 	fmt.Sscanf(match[0], "(%d)", &num)
 	for {
-		newPath := re.ReplaceAllString(f, fmt.Sprintf("(%d)", num))
+		newPath := re.ReplaceAllString(f, "("+strconv.Itoa(num)+")")
 		newPath = newPath + filepath.Ext(target)
 		fullPath := filepath.Join(baseDir, newPath)
 
@@ -138,4 +140,32 @@ loop:
 	}
 
 	return paths, nil
+}
+
+func exifDivision(slice []string) string {
+	if len(slice) > 0 {
+		str := slice[0]
+		strSlice := strings.Split(str, "/")
+		if len(strSlice) == 2 {
+			numerator, err := strconv.Atoi(strSlice[0])
+			if err != nil {
+				return ""
+			}
+
+			denominator, err := strconv.Atoi(strSlice[1])
+			if err != nil {
+				return ""
+			}
+
+			v := float64(numerator) / float64(denominator)
+			str, err := strconv.FormatFloat(v, 'f', -1, 64), nil
+			if err != nil {
+				return ""
+			}
+
+			return str
+		}
+	}
+
+	return ""
 }
