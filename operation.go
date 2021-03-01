@@ -15,6 +15,7 @@ import (
 
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/djherbis/times.v1"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -414,7 +415,7 @@ func (op *Operation) SortMatches() {
 }
 
 func replaceDateVariables(file, input string) (out string, err error) {
-	t, err := getTimeInfo(file)
+	t, err := times.Stat(file)
 	if err != nil {
 		return "", err
 	}
@@ -443,7 +444,7 @@ func replaceDateVariables(file, input string) (out string, err error) {
 			out := accessTime.Format(dateTokens[submatch[2]])
 			input = regex.ReplaceAllString(input, out)
 		case "ctime":
-			changeTime := t.AccessTime()
+			changeTime := t.ModTime()
 			if t.HasChangeTime() {
 				changeTime = t.ChangeTime()
 			}

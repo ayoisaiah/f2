@@ -3,13 +3,16 @@ package f2
 import (
 	"encoding/json"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/djherbis/times.v1"
 )
 
 var fileSystem = []string{
@@ -31,6 +34,10 @@ var fileSystem = []string{
 	"conflicts/xyz.txt",
 	"conflicts/123.txt",
 	"conflicts/123 (3).txt",
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 // setupFileSystem creates all required files and folders for
@@ -443,5 +450,79 @@ func TestApplyUndo(t *testing.T) {
 		}
 
 		teardown()
+	}
+}
+
+func randate() time.Time {
+	min := time.Date(1970, 1, 0, 0, 0, 0, 0, time.UTC).Unix()
+	max := time.Date(2070, 1, 0, 0, 0, 0, 0, time.UTC).Unix()
+	delta := max - min
+
+	sec := rand.Int63n(delta) + min
+	return time.Unix(sec, 0)
+}
+
+func TestReplaceDateVariables(t *testing.T) {
+	testDir, teardown := setupFileSystem(t)
+
+	defer teardown()
+
+	for _, file := range fileSystem {
+		path := filepath.Join(testDir, file)
+
+		// change the atime and mtime to a random value
+		mtime, atime := randate(), randate()
+		err := os.Chtimes(path, atime, mtime)
+		if err != nil {
+			t.Fatalf("Expected no errors, but got one: %v\n", err)
+		}
+
+		timeInfo, err := times.Stat(path)
+		if err != nil {
+			t.Fatalf("Expected no errors, but got one: %v\n", err)
+		}
+
+		want := make(map[string]string)
+		got := make(map[string]string)
+
+		accessTime := timeInfo.AccessTime()
+		modTime := timeInfo.ModTime()
+
+		fileTimes := []string{"mtime", "atime", "ctime", "now", "btime"}
+
+		for _, v := range fileTimes {
+			var timeValue time.Time
+			switch v {
+			case "mtime":
+				timeValue = modTime
+			case "atime":
+				timeValue = accessTime
+			case "ctime":
+				timeValue = modTime
+				if timeInfo.HasChangeTime() {
+					timeValue = timeInfo.ChangeTime()
+				}
+			case "btime":
+				timeValue = modTime
+				if timeInfo.HasBirthTime() {
+					timeValue = timeInfo.BirthTime()
+				}
+			case "now":
+				timeValue = time.Now()
+			}
+
+			for key, token := range dateTokens {
+				want[v+"."+key] = timeValue.Format(token)
+				out, err := replaceDateVariables(path, "{{"+v+"."+key+"}}")
+				if err != nil {
+					t.Fatalf("Expected no errors, but got one: %v\n", err)
+				}
+				got[v+"."+key] = out
+			}
+		}
+
+		if !cmp.Equal(want, got) {
+			t.Fatalf("Expected %v, but got %v\n", want, got)
+		}
 	}
 }
