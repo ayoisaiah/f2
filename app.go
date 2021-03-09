@@ -71,7 +71,7 @@ func GetApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.1.1",
+		Version:              "v1.2.0",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -140,6 +140,11 @@ func GetApp() *cli.App {
 				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
 				Usage:   "Fix any detected conflicts with auto indexing",
+			},
+			&cli.BoolFlag{
+				Name:    "string-mode",
+				Aliases: []string{"s"},
+				Usage:   "Opt into string literal mode by treating find expressions as non-regex strings",
 			},
 		},
 		Action: func(c *cli.Context) error {

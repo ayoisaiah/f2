@@ -219,6 +219,14 @@ func TestFindReplace(t *testing.T) {
 			},
 			args: []string{"-f", "pic", "-r", "image", "-D", "-R", testDir},
 		},
+		{
+			want: []Change{
+				{Source: "No Pressure (2021) S1.E1.1080p.mkv", BaseDir: testDir, Target: "No Pressure (2022) S1.E1.1080p.mkv"},
+				{Source: "No Pressure (2021) S1.E2.1080p.mkv", BaseDir: testDir, Target: "No Pressure (2022) S1.E2.1080p.mkv"},
+				{Source: "No Pressure (2021) S1.E3.1080p.mkv", BaseDir: testDir, Target: "No Pressure (2022) S1.E3.1080p.mkv"},
+			},
+			args: []string{"-f", "(2021)", "-r", "(2022)", "-s", testDir},
+		},
 	}
 
 	for i, v := range table {

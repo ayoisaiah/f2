@@ -98,6 +98,7 @@ type Operation struct {
 	undoFile      string
 	outputFile    string
 	workingDir    string
+	stringMode    bool
 }
 
 type mapFile struct {
@@ -604,7 +605,12 @@ func (op *Operation) Replace() error {
 			fileName = filenameWithoutExtension(fileName)
 		}
 
-		str := op.searchRegex.ReplaceAllString(fileName, op.replaceString)
+		var str string
+		if op.stringMode {
+			str = strings.ReplaceAll(fileName, op.searchRegex.String(), op.replaceString)
+		} else {
+			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
+		}
 
 		// handle variables
 		str, err := op.handleVariables(str, v)
@@ -689,6 +695,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.directories = c.Args().Slice()
 	op.undoFile = c.String("undo")
 	op.onlyDir = c.Bool("only-dir")
+	op.stringMode = c.Bool("string-mode")
 
 	if op.onlyDir {
 		op.includeDir = true

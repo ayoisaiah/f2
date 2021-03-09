@@ -124,7 +124,7 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.1.0
+   v1.1.1
 
 FLAGS:
    --find string, -f string       Search string or regular expression.
@@ -140,6 +140,7 @@ FLAGS:
    --only-dir, -D                 Rename only directories (implies include-dir) (default: false)
    --hidden, -H                   Include hidden files and directories (default: false)
    --fix-conflicts, -F            Fix any detected conflicts with auto indexing (default: false)
+   --string-mode, -s              Opt into string literal mode by treating find expressions as non-regex strings (default: false)
    --help, -h                     show help (default: false)
    --version, -v                  print the version (default: false)
 
@@ -152,8 +153,8 @@ WEBSITE:
 **Notes**:
 - F2 does not make any changes to your filesystem by default (performs a dry run).
 - To enforce the changes, include the `--exec` or `-x` flag.
-- The `-f` or `--find` flag supports regular expressions. If omitted, it matches the entire filename of each file.
-- The `-r` or `--replace` flag supports variables
+- The `-f` or `--find` flag supports regular expressions and string literals. If omitted, it matches the entire filename of each file.
+- The `-r` or `--replace` flag supports [variables](#use-a-variable).
 
 ### Basic find and replace
 
@@ -168,6 +169,34 @@ $ f2 -f 'Screenshot' -r 'Image'
 | Screenshot (2).png | Image (2).png | ok     |
 | Screenshot (3).png | Image (3).png | ok     |
 +--------------------+---------------+--------+
+```
+
+By default, find expressions are treated as regex. Use `-s` or `--string-mode` to disable regex. This helps when replacing filenames with characters that have a special meaning in regex such as `- . { } ( [ ] )`.
+
+**Regex enabled**:
+
+```bash
+$ f2 -f '\(2021\)' -r '[2022]'
++--------------------------------------+--------------------------------------+--------+
+|                INPUT                 |                OUTPUT                | STATUS |
++--------------------------------------+--------------------------------------+--------+
+| No Pressure (2021) S01.E01.2160p.mp4 | No Pressure [2022] S01.E01.2160p.mp4 | ok     |
+| No Pressure (2021) S01.E02.2160p.mp4 | No Pressure [2022] S01.E02.2160p.mp4 | ok     |
+| No Pressure (2021) S01.E03.2160p.mp4 | No Pressure [2022] S01.E03.2160p.mp4 | ok     |
++--------------------------------------+--------------------------------------+--------+
+```
+
+**Regex disabled**:
+
+```bash
+$ f2 -f '(2021)' -r '[2022]' -s
++--------------------------------------+--------------------------------------+--------+
+|                INPUT                 |                OUTPUT                | STATUS |
++--------------------------------------+--------------------------------------+--------+
+| No Pressure (2021) S01.E01.2160p.mp4 | No Pressure [2022] S01.E01.2160p.mp4 | ok     |
+| No Pressure (2021) S01.E02.2160p.mp4 | No Pressure [2022] S01.E02.2160p.mp4 | ok     |
+| No Pressure (2021) S01.E03.2160p.mp4 | No Pressure [2022] S01.E03.2160p.mp4 | ok     |
++--------------------------------------+--------------------------------------+--------+
 ```
 
 ### Recursive find and replace
