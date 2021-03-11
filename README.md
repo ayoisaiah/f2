@@ -145,7 +145,7 @@ FLAGS:
    --version, -v                  print the version (default: false)
 
 DOCUMENTATION:
-	https://github.com/ayoisaiah/f2#examples
+  https://github.com/ayoisaiah/f2#examples
 
 WEBSITE:
   https://github.com/ayoisaiah/f2
@@ -463,7 +463,7 @@ The time attributes of a file can be used in the replacement string. F2 provides
 The above variables must be combined with any of the following date tokens:
 
 | Token  |  Explanation | Output |
-| ------------- | ------------- |
+| ------------- | ------------- | ------------- |
 | YYYY | Year represented by a full four digits | 1970 1971 ... 2029 2030 |
 | YY | Year represented only by the last two digits | 70 71 ... 29 30 |
 | MMMM | Name of the month | January February ... November December |
