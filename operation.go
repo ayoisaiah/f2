@@ -84,6 +84,7 @@ type Operation struct {
 	paths         []Change
 	matches       []Change
 	conflicts     map[conflict][]Conflict
+	findString    string
 	replaceString string
 	startNumber   int
 	exec          bool
@@ -405,6 +406,19 @@ func (op *Operation) FindMatches() {
 			f = filenameWithoutExtension(f)
 		}
 
+		if op.stringMode {
+			fs := op.findString
+			if op.ignoreCase {
+				f = strings.ToLower(f)
+				fs = strings.ToLower(fs)
+			}
+
+			if strings.Contains(f, fs) {
+				op.matches = append(op.matches, v)
+			}
+			continue
+		}
+
 		matched := op.searchRegex.MatchString(f)
 		if matched {
 			op.matches = append(op.matches, v)
@@ -424,7 +438,7 @@ func (op *Operation) SortMatches() {
 	})
 }
 
-func replaceDateVariables(file, input string) (out string, err error) {
+func replaceDateVariables(file, input string) (string, error) {
 	t, err := times.Stat(file)
 	if err != nil {
 		return "", err
@@ -437,35 +451,34 @@ func replaceDateVariables(file, input string) (out string, err error) {
 			return "", err
 		}
 
+		var timeStr string
 		switch submatch[1] {
 		case "mtime":
 			modTime := t.ModTime()
-			out := modTime.Format(dateTokens[submatch[2]])
-			input = regex.ReplaceAllString(input, out)
+			timeStr = modTime.Format(dateTokens[submatch[2]])
 		case "btime":
 			birthTime := t.ModTime()
 			if t.HasBirthTime() {
 				birthTime = t.BirthTime()
 			}
-			out := birthTime.Format(dateTokens[submatch[2]])
-			input = regex.ReplaceAllString(input, out)
+			timeStr = birthTime.Format(dateTokens[submatch[2]])
 		case "atime":
 			accessTime := t.AccessTime()
-			out := accessTime.Format(dateTokens[submatch[2]])
-			input = regex.ReplaceAllString(input, out)
+			timeStr = accessTime.Format(dateTokens[submatch[2]])
 		case "ctime":
 			changeTime := t.ModTime()
 			if t.HasChangeTime() {
 				changeTime = t.ChangeTime()
 			}
-			out := changeTime.Format(dateTokens[submatch[2]])
-			input = regex.ReplaceAllString(input, out)
+			timeStr = changeTime.Format(dateTokens[submatch[2]])
 		case "now":
 			currentTime := time.Now()
-			out := currentTime.Format(dateTokens[submatch[2]])
-			input = regex.ReplaceAllString(input, out)
+			timeStr = currentTime.Format(dateTokens[submatch[2]])
 		}
+
+		input = regex.ReplaceAllString(input, timeStr)
 	}
+
 	return input, nil
 }
 
@@ -616,7 +629,11 @@ func (op *Operation) Replace() error {
 
 		var str string
 		if op.stringMode {
-			str = strings.ReplaceAll(fileName, op.searchRegex.String(), op.replaceString)
+			if op.ignoreCase {
+				str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
+			} else {
+				str = strings.ReplaceAll(fileName, op.findString, op.replaceString)
+			}
 		} else {
 			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
 		}
@@ -692,6 +709,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 
 	op := &Operation{}
 	op.outputFile = c.String("output-file")
+	op.findString = c.String("find")
 	op.replaceString = c.String("replace")
 	op.exec = c.Bool("exec")
 	op.fixConflicts = c.Bool("fix-conflicts")

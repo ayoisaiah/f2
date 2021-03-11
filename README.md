@@ -124,7 +124,7 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.2.1
+   v1.2.2
 
 FLAGS:
    --find string, -f string       Search string or regular expression.
