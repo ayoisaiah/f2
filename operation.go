@@ -366,6 +366,13 @@ func (op *Operation) DetectConflicts() {
 					}
 
 					str := getNewPath(k, op.matches[item.index].BaseDir, m)
+					pt := filepath.Join(op.matches[item.index].BaseDir, str)
+					if _, ok := m[pt]; !ok {
+						m[pt] = []struct {
+							source string
+							index  int
+						}{}
+					}
 					op.matches[item.index].Target = str
 				}
 			}

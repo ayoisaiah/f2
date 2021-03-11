@@ -26,11 +26,11 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 	re := regexp.MustCompile("\\(\\d+\\)$")
 	// Extract the numbered index at the end of the filename (if any)
 	match := re.FindStringSubmatch(f)
-	if len(match) == 0 {
-		match = []string{"(2)"}
-		f += " (2)"
-	}
 	num := 2
+	if len(match) == 0 {
+		match = []string{"(" + strconv.Itoa(num) + ")"}
+		f += " (" + strconv.Itoa(num) + ")"
+	}
 	// ignoring error from Sscanf. num will be set to 2 regardless
 	fmt.Sscanf(match[0], "(%d)", &num)
 	for {
