@@ -25,6 +25,9 @@ VERSION:
 FLAGS:{{range .VisibleFlags}}
 	 {{.}}{{end}}{{end}}
 
+DOCUMENTATION:
+	https://github.com/ayoisaiah/f2#examples
+
 WEBSITE:
 	https://github.com/ayoisaiah/f2
 `
@@ -71,7 +74,7 @@ func GetApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.2.0",
+		Version:              "v1.2.1",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

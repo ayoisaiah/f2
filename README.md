@@ -124,7 +124,7 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.1.1
+   v1.2.1
 
 FLAGS:
    --find string, -f string       Search string or regular expression.
@@ -143,6 +143,9 @@ FLAGS:
    --string-mode, -s              Opt into string literal mode by treating find expressions as non-regex strings (default: false)
    --help, -h                     show help (default: false)
    --version, -v                  print the version (default: false)
+
+DOCUMENTATION:
+	https://github.com/ayoisaiah/f2#examples
 
 WEBSITE:
   https://github.com/ayoisaiah/f2
@@ -416,10 +419,12 @@ $ f2 -f '-' -r '/' -x
 
 ### Use a variable
 
-The replacement string can contain the following variables that will be replaced with their corresponding value.
+The replacement string can contain several variables will be replaced with their corresponding value.
 
-  - `{{f}}` is the original filename (excluding the extension)
-  - `{{ext}}` is the file extension
+#### File name and extension
+
+- `{{f}}` is the original filename (excluding the extension)
+- `{{ext}}` is the file extension
 
 This is helpful if you want to add a prefix or a suffix to a set of files:
 
@@ -443,6 +448,52 @@ $ f2 -r 'journal_{{f}}{{ext}}' # prefix
 | 2021-02-21.md     | journal_2021-02-21.md     | ok     |
 | 2021-02-22.md     | journal_2021-02-22.md     | ok     |
 +-------------------+---------------------------+--------+
+```
+
+#### Date variables
+
+The time attributes of a file can be used in the replacement string. F2 provides variables that enable you to access the file creation time, modification time, access time and more.
+
+- `ctime`: The time at which file metadata was changed. (Windows, macOS, and Linux).
+- `btime`: File birth time (Windows and macOS).
+- `atime`: The last time the file was accessed or read (Windows, macOS and Linux).
+- `mtime`: Time of last file modification (Windows, macOS and Linux).
+- `now`: The current time.
+
+The above variables must be combined with any of the following date tokens:
+
+| Token  |  Explanation | Output |
+| ------------- | ------------- |
+| YYYY | Year represented by a full four digits | 1970 1971 ... 2029 2030 |
+| YY | Year represented only by the last two digits | 70 71 ... 29 30 |
+| MMMM | Name of the month | January February ... November December |
+| MMM | Abbreviated name of the month | Jan Feb ... Nov Dec |
+| MM | Month as digits with leading zeros for single-digit months | 01 02 ... 11 12 |
+| M | Month as digits without leading zeros for single-digit months | 1 2 ... 11 12 |
+| DDDD | Name of the day of the week | Monday Tuesday ... Saturday Sunday |
+| DDD | Abbreviated name of the day of the week | Mon Tue ... Sat Sun |
+| DD | Day of the week as digit with leading zeros | 01 02 ... 06 07 |
+| D | Day of the week as digit without leading zeros | 1 2 ... 6 7 |
+| H | 24 Hours clock | 01 02 ... 22 23 |
+| hh | Hours with leading zeros for single-digit hours | 01 02 ... 11 12 |
+| h | Hours without leading zeros for single-digit hours | 1 2 ... 11 12 |
+| mm | Minutes with leading zeros for single-digit minutes | 01 02 ... 58 59 |
+| m | Minutes without leading zeros for single-digit minutes | 1 2 ... 58 59 |
+| ss | Seconds with leading zeros for single-digit seconds | 01 02 ... 58 59 |
+| s | Seconds without leading zeros for single-digit seconds | 1 2 ... 58 59 |
+| A | AM PM | AM PM |
+| a | am pm | am pm |
+
+**Example**
+
+```bash
+$ f2 -f 'screenshot' -r '{{mtime.MMM}}-{{mtime.DD}}-{{mtime.YYYY}}-screenshot'
++----------------+----------------------------+--------+
+|     INPUT      |           OUTPUT           | STATUS |
++----------------+----------------------------+--------+
+| screenshot.jpg | Nov-08-2020-screenshot.jpg | ok     |
+| screenshot.png | Mar-04-2021-screenshot.png | ok     |
++----------------+----------------------------+--------+
 ```
 
 *More variables coming soon*
