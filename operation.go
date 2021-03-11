@@ -216,7 +216,8 @@ func (op *Operation) PrintChanges() {
 // Conflicts will be ignored if indicated
 func (op *Operation) Apply() error {
 	if len(op.matches) == 0 {
-		return fmt.Errorf("%s", red("Failed to match any files"))
+		fmt.Println("Failed to match any files")
+		return nil
 	}
 
 	op.DetectConflicts()
