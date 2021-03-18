@@ -20,6 +20,7 @@ var fileSystem = []string{
 	"No Pressure (2021) S1.E2.1080p.mkv",
 	"No Pressure (2021) S1.E3.1080p.mkv",
 	"images/a.jpg",
+	"images/b.jPg",
 	"images/abc.png",
 	"images/456.webp",
 	"images/pics/123.JPG",
@@ -43,7 +44,7 @@ func init() {
 // setupFileSystem creates all required files and folders for
 // the tests and returns a function that is used as
 // a teardown function when the tests are done.
-func setupFileSystem(t testing.TB) (string, func()) {
+func setupFileSystem(t testing.TB) string {
 	testDir, err := ioutil.TempDir(".", "")
 	if err != nil {
 		os.RemoveAll(testDir)
@@ -74,11 +75,13 @@ func setupFileSystem(t testing.TB) (string, func()) {
 		t.Fatal(err)
 	}
 
-	return abs, func() {
+	t.Cleanup(func() {
 		if os.RemoveAll(testDir); err != nil {
 			t.Fatal(err)
 		}
-	}
+	})
+
+	return abs
 }
 
 type ActionResult struct {
@@ -134,9 +137,7 @@ func sortChanges(s []Change) {
 }
 
 func TestFindReplace(t *testing.T) {
-	testDir, teardown := setupFileSystem(t)
-
-	defer teardown()
+	testDir := setupFileSystem(t)
 
 	type Table struct {
 		want []Change
@@ -191,6 +192,13 @@ func TestFindReplace(t *testing.T) {
 		},
 		{
 			want: []Change{
+				{Source: "index.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "scripts-index.js"},
+				{Source: "main.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "scripts-main.js"},
+			},
+			args: []string{"-f", "index|main", "-r", "{{p}}-{{f}}", filepath.Join(testDir, "scripts")},
+		},
+		{
+			want: []Change{
 				{Source: "index.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "i n d e x .js"},
 				{Source: "main.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "m a i n .js"},
 			},
@@ -199,9 +207,24 @@ func TestFindReplace(t *testing.T) {
 		{
 			want: []Change{
 				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
+				{Source: "b.jPg", BaseDir: filepath.Join(testDir, "images"), Target: "b.jpeg"},
 				{Source: "123.JPG", BaseDir: filepath.Join(testDir, "images", "pics"), Target: "123.jpeg"},
 			},
 			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-i", "-o", "map.json", testDir},
+		},
+		{
+			want: []Change{
+				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-s", testDir},
+		},
+		{
+			want: []Change{
+				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
+				{Source: "b.jPg", BaseDir: filepath.Join(testDir, "images"), Target: "b.jpeg"},
+				{Source: "123.JPG", BaseDir: filepath.Join(testDir, "images", "pics"), Target: "123.jpeg"},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-s", "-i", testDir},
 		},
 		{
 			want: []Change{
@@ -274,9 +297,7 @@ func TestFindReplace(t *testing.T) {
 }
 
 func TestDetectConflicts(t *testing.T) {
-	testDir, teardown := setupFileSystem(t)
-
-	defer teardown()
+	testDir := setupFileSystem(t)
 
 	type Table struct {
 		want map[conflict][]Conflict
@@ -338,9 +359,7 @@ func TestDetectConflicts(t *testing.T) {
 }
 
 func TestFixConflicts(t *testing.T) {
-	testDir, teardown := setupFileSystem(t)
-
-	defer teardown()
+	testDir := setupFileSystem(t)
 
 	type Table struct {
 		want []Change
@@ -424,7 +443,7 @@ func TestApplyUndo(t *testing.T) {
 	}
 
 	for i, v := range table {
-		testDir, teardown := setupFileSystem(t)
+		testDir := setupFileSystem(t)
 
 		for _, ch := range v.want {
 			ch.BaseDir = testDir
@@ -456,8 +475,6 @@ func TestApplyUndo(t *testing.T) {
 		if err != nil {
 			t.Log("Failed to remove output file")
 		}
-
-		teardown()
 	}
 }
 
@@ -471,9 +488,7 @@ func randate() time.Time {
 }
 
 func TestReplaceDateVariables(t *testing.T) {
-	testDir, teardown := setupFileSystem(t)
-
-	defer teardown()
+	testDir := setupFileSystem(t)
 
 	for _, file := range fileSystem {
 		path := filepath.Join(testDir, file)
