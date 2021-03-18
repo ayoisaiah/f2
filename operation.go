@@ -382,50 +382,6 @@ func (op *Operation) DetectConflicts() {
 	}
 }
 
-// FindMatches locates matches for the search pattern
-// in each filename. Hidden files and directories are exempted
-func (op *Operation) FindMatches() {
-	for _, v := range op.paths {
-		filename := filepath.Base(v.Source)
-
-		if v.IsDir && !op.includeDir {
-			continue
-		}
-
-		if op.onlyDir && !v.IsDir {
-			continue
-		}
-
-		// ignore dotfiles
-		if !op.includeHidden && filename[0] == 46 {
-			continue
-		}
-
-		var f = filename
-		if op.ignoreExt {
-			f = filenameWithoutExtension(f)
-		}
-
-		if op.stringMode {
-			fs := op.findString
-			if op.ignoreCase {
-				f = strings.ToLower(f)
-				fs = strings.ToLower(fs)
-			}
-
-			if strings.Contains(f, fs) {
-				op.matches = append(op.matches, v)
-			}
-			continue
-		}
-
-		matched := op.searchRegex.MatchString(f)
-		if matched {
-			op.matches = append(op.matches, v)
-		}
-	}
-}
-
 // SortMatches is used to sort files before directories
 // and child directories before their parents
 func (op *Operation) SortMatches() {
@@ -660,6 +616,50 @@ func (op *Operation) Replace() error {
 	}
 
 	return nil
+}
+
+// FindMatches locates matches for the search pattern
+// in each filename. Hidden files and directories are exempted
+func (op *Operation) FindMatches() {
+	for _, v := range op.paths {
+		filename := filepath.Base(v.Source)
+
+		if v.IsDir && !op.includeDir {
+			continue
+		}
+
+		if op.onlyDir && !v.IsDir {
+			continue
+		}
+
+		// ignore dotfiles
+		if !op.includeHidden && filename[0] == 46 {
+			continue
+		}
+
+		var f = filename
+		if op.ignoreExt {
+			f = filenameWithoutExtension(f)
+		}
+
+		if op.stringMode {
+			fs := op.findString
+			if op.ignoreCase {
+				f = strings.ToLower(f)
+				fs = strings.ToLower(fs)
+			}
+
+			if strings.Contains(f, fs) {
+				op.matches = append(op.matches, v)
+			}
+			continue
+		}
+
+		matched := op.searchRegex.MatchString(f)
+		if matched {
+			op.matches = append(op.matches, v)
+		}
+	}
 }
 
 // setPaths creates a Change struct for each path
