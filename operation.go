@@ -26,12 +26,12 @@ var (
 )
 
 var (
-	filenameVar  = regexp.MustCompile("{{f}}")
-	extensionVar = regexp.MustCompile("{{ext}}")
-	parentDirVar = regexp.MustCompile("{{p}}")
-	indexVar     = regexp.MustCompile("%([0-9]?)+d")
-	exifVar      = regexp.MustCompile("{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}")
-	dateVar      *regexp.Regexp
+	filenameRegex  = regexp.MustCompile("{{f}}")
+	extensionRegex = regexp.MustCompile("{{ext}}")
+	parentDirRegex = regexp.MustCompile("{{p}}")
+	indexRegex     = regexp.MustCompile("%([0-9]?)+d")
+	exifRegex      = regexp.MustCompile("{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}")
+	dateRegex      *regexp.Regexp
 )
 
 var dateTokens = map[string]string{
@@ -127,7 +127,7 @@ func init() {
 	}
 
 	tokenString := strings.Join(tokens, "|")
-	dateVar = regexp.MustCompile("{{(mtime|ctime|btime|atime|now)\\.(" + tokenString + ")}}")
+	dateRegex = regexp.MustCompile("{{(mtime|ctime|btime|atime|now)\\.(" + tokenString + ")}}")
 }
 
 // WriteToFile writes the details of a successful operation
@@ -400,7 +400,7 @@ func replaceDateVariables(file, input string) (string, error) {
 		return "", err
 	}
 
-	submatches := dateVar.FindAllStringSubmatch(input, -1)
+	submatches := dateRegex.FindAllStringSubmatch(input, -1)
 	for _, submatch := range submatches {
 		regex, err := regexp.Compile(submatch[0])
 		if err != nil {
@@ -463,7 +463,7 @@ func replaceExifVariables(file, input string) (out string, err error) {
 		}
 	}
 
-	submatches := exifVar.FindAllStringSubmatch(input, -1)
+	submatches := exifRegex.FindAllStringSubmatch(input, -1)
 	for _, submatch := range submatches {
 		regex, err := regexp.Compile(submatch[0])
 		if err != nil {
@@ -537,22 +537,22 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 
 	// replace `{{f}}` in the replacement string with the original
 	// filename (without the extension)
-	if filenameVar.Match([]byte(str)) {
-		str = filenameVar.ReplaceAllString(str, filenameWithoutExtension(fileName))
+	if filenameRegex.Match([]byte(str)) {
+		str = filenameRegex.ReplaceAllString(str, filenameWithoutExtension(fileName))
 	}
 
 	// replace `{{ext}}` in the replacement string with the file extension
-	if extensionVar.Match([]byte(str)) {
-		str = extensionVar.ReplaceAllString(str, fileExt)
+	if extensionRegex.Match([]byte(str)) {
+		str = extensionRegex.ReplaceAllString(str, fileExt)
 	}
 
 	// replace `{{p}}` in the replacement string with the parent directory name
-	if parentDirVar.Match([]byte(str)) {
-		str = parentDirVar.ReplaceAllString(str, parentDir)
+	if parentDirRegex.Match([]byte(str)) {
+		str = parentDirRegex.ReplaceAllString(str, parentDir)
 	}
 
 	// handle date variables (e.g {{mtime.DD}})
-	if dateVar.Match([]byte(str)) {
+	if dateRegex.Match([]byte(str)) {
 		source := filepath.Join(ch.BaseDir, ch.Source)
 		out, err := replaceDateVariables(source, str)
 		if err != nil {
@@ -561,7 +561,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 		str = out
 	}
 
-	if exifVar.Match([]byte(str)) {
+	if exifRegex.Match([]byte(str)) {
 		source := filepath.Join(ch.BaseDir, ch.Source)
 		out, err := replaceExifVariables(source, str)
 		if err != nil {
@@ -601,10 +601,10 @@ func (op *Operation) Replace() error {
 		}
 
 		// If numbering scheme is present
-		if indexVar.Match([]byte(str)) {
-			b := indexVar.Find([]byte(str))
+		if indexRegex.Match([]byte(str)) {
+			b := indexRegex.Find([]byte(str))
 			r := fmt.Sprintf(string(b), op.startNumber+i)
-			str = indexVar.ReplaceAllString(str, r)
+			str = indexRegex.ReplaceAllString(str, r)
 		}
 
 		if op.ignoreExt {
