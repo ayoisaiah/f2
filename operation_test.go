@@ -466,7 +466,7 @@ func TestDetectConflicts(t *testing.T) {
 	table := []Table{
 		{
 			want: map[conflict][]Conflict{
-				FILE_EXISTS: []Conflict{
+				fileExists: []Conflict{
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, "abc.epub"),
@@ -477,7 +477,7 @@ func TestDetectConflicts(t *testing.T) {
 		},
 		{
 			want: map[conflict][]Conflict{
-				EMPTY_FILENAME: []Conflict{
+				emptyFilename: []Conflict{
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, ""),
@@ -488,7 +488,7 @@ func TestDetectConflicts(t *testing.T) {
 		},
 		{
 			want: map[conflict][]Conflict{
-				OVERWRITNG_NEW_PATH: []Conflict{
+				overwritingNewPath: []Conflict{
 					{
 						source: []string{
 							filepath.Join(testDir, "abc.epub"),

@@ -50,19 +50,27 @@ func checkForUpdates(app *cli.App) {
 		return
 	}
 	var version string
-	_, err = fmt.Sscanf(resp.Request.URL.String(), "https://github.com/ayoisaiah/f2/releases/tag/%s", &version)
+	_, err = fmt.Sscanf(
+		resp.Request.URL.String(),
+		"https://github.com/ayoisaiah/f2/releases/tag/%s",
+		&version,
+	)
 	if err != nil {
 		fmt.Println("Failed to get latest version")
 		return
 	}
 
 	if version == app.Version {
-		fmt.Printf("Congratulations, you are using the latest version of %s\n", app.Name)
+		fmt.Printf(
+			"Congratulations, you are using the latest version of %s\n",
+			app.Name,
+		)
 	} else {
 		fmt.Printf("%s: %s at %s\n", green("Update available"), version, resp.Request.URL.String())
 	}
 }
 
+// GetApp retrieves the f2 app instance
 func GetApp() *cli.App {
 	return &cli.App{
 		Name: "F2",

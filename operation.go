@@ -61,9 +61,9 @@ var dateTokens = map[string]string{
 type conflict int
 
 const (
-	EMPTY_FILENAME conflict = iota
-	FILE_EXISTS
-	OVERWRITNG_NEW_PATH
+	emptyFilename conflict = iota
+	fileExists
+	overwritingNewPath
 )
 
 // Conflict represents a renaming operation conflict
@@ -110,6 +110,7 @@ type mapFile struct {
 	Operations []Change `json:"operations"`
 }
 
+// Exif represents exif information from an image file
 type Exif struct {
 	ISOSpeedRatings []int
 	Make            string
@@ -282,7 +283,7 @@ func (op *Operation) Apply() error {
 // ReportConflicts prints any detected conflicts to the standard error
 func (op *Operation) ReportConflicts() {
 	var data [][]string
-	if slice, exists := op.conflicts[EMPTY_FILENAME]; exists {
+	if slice, exists := op.conflicts[emptyFilename]; exists {
 		for _, v := range slice {
 			slice := []string{
 				strings.Join(v.source, ""),
@@ -293,7 +294,7 @@ func (op *Operation) ReportConflicts() {
 		}
 	}
 
-	if slice, exists := op.conflicts[FILE_EXISTS]; exists {
+	if slice, exists := op.conflicts[fileExists]; exists {
 		for _, v := range slice {
 			slice := []string{
 				strings.Join(v.source, ""),
@@ -304,7 +305,7 @@ func (op *Operation) ReportConflicts() {
 		}
 	}
 
-	if slice, exists := op.conflicts[OVERWRITNG_NEW_PATH]; exists {
+	if slice, exists := op.conflicts[overwritingNewPath]; exists {
 		for _, v := range slice {
 			for _, s := range v.source {
 				slice := []string{
@@ -338,8 +339,8 @@ func (op *Operation) DetectConflicts() {
 		// Report if replacement operation results in
 		// an empty string for the new filename
 		if ch.Target == "." {
-			op.conflicts[EMPTY_FILENAME] = append(
-				op.conflicts[EMPTY_FILENAME],
+			op.conflicts[emptyFilename] = append(
+				op.conflicts[emptyFilename],
 				Conflict{
 					source: []string{source},
 					target: target,
@@ -357,8 +358,8 @@ func (op *Operation) DetectConflicts() {
 		// Report if target file exists on the filesystem
 		if _, err := os.Stat(target); err == nil ||
 			!errors.Is(err, os.ErrNotExist) {
-			op.conflicts[FILE_EXISTS] = append(
-				op.conflicts[FILE_EXISTS],
+			op.conflicts[fileExists] = append(
+				op.conflicts[fileExists],
 				Conflict{
 					source: []string{source},
 					target: target,
@@ -391,8 +392,8 @@ func (op *Operation) DetectConflicts() {
 				sources = append(sources, s.source)
 			}
 
-			op.conflicts[OVERWRITNG_NEW_PATH] = append(
-				op.conflicts[OVERWRITNG_NEW_PATH],
+			op.conflicts[overwritingNewPath] = append(
+				op.conflicts[overwritingNewPath],
 				Conflict{
 					source: sources,
 					target: k,
