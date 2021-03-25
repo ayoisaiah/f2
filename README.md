@@ -429,6 +429,7 @@ The replacement string can contain several variables will be replaced with their
 #### File name and extension
 
 - `{{f}}` is the original filename (excluding the extension)
+- `{{p}}` is the parent directory name
 - `{{ext}}` is the file extension
 
 This is helpful if you want to add a prefix or a suffix to a set of files:
@@ -459,10 +460,10 @@ $ f2 -r 'journal_{{f}}{{ext}}' # prefix
 
 The time attributes of a file can be used in the replacement string. F2 provides variables that enable you to access the file creation time, modification time, access time and more.
 
-- `ctime`: The time at which file metadata was changed (Windows, macOS, and Linux).
-- `btime`: File birth time (Windows and macOS).
-- `atime`: The last time the file was accessed or read (Windows, macOS and Linux).
-- `mtime`: The last time the contents of the file was modified (Windows, macOS and Linux).
+- `ctime`: The time at which file metadata was changed.
+- `btime`: File birth time (Windows and macOS only).
+- `atime`: The last time the file was accessed or read.
+- `mtime`: The last time the contents of the file was modified.
 - `now`: The current time.
 
 The above variables must be combined with any of the following date tokens:
