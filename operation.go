@@ -30,8 +30,10 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile("%([0-9]?)+d")
-	exifRegex      = regexp.MustCompile("{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}")
-	dateRegex      *regexp.Regexp
+	exifRegex      = regexp.MustCompile(
+		"{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}",
+	)
+	dateRegex *regexp.Regexp
 )
 
 var dateTokens = map[string]string{
@@ -127,7 +129,9 @@ func init() {
 	}
 
 	tokenString := strings.Join(tokens, "|")
-	dateRegex = regexp.MustCompile("{{(mtime|ctime|btime|atime|now)\\.(" + tokenString + ")}}")
+	dateRegex = regexp.MustCompile(
+		"{{(mtime|ctime|btime|atime|now)\\.(" + tokenString + ")}}",
+	)
 }
 
 // WriteToFile writes the details of a successful operation
@@ -168,7 +172,9 @@ func (op *Operation) WriteToFile() (err error) {
 // in the specified map file
 func (op *Operation) Undo() error {
 	if op.undoFile == "" {
-		return fmt.Errorf("Please pass a previously created map file to continue")
+		return fmt.Errorf(
+			"Please pass a previously created map file to continue",
+		)
 	}
 
 	file, err := os.ReadFile(op.undoFile)
@@ -225,8 +231,14 @@ func (op *Operation) Apply() error {
 	op.DetectConflicts()
 	if len(op.conflicts) > 0 && !op.fixConflicts {
 		op.ReportConflicts()
-		fmt.Fprintln(os.Stderr, "Conflict detected! Please resolve before proceeding")
-		return fmt.Errorf("Or append the %s flag to fix conflicts automatically", yellow("-F"))
+		fmt.Fprintln(
+			os.Stderr,
+			"Conflict detected! Please resolve before proceeding",
+		)
+		return fmt.Errorf(
+			"Or append the %s flag to fix conflicts automatically",
+			yellow("-F"),
+		)
 	}
 
 	for _, ch := range op.matches {
@@ -237,7 +249,11 @@ func (op *Operation) Apply() error {
 		if op.exec {
 			// If target contains a slash, create all missing
 			// directories before renaming the file
-			execErr := fmt.Errorf("An error occurred while renaming '%s' to '%s'", source, target)
+			execErr := fmt.Errorf(
+				"An error occurred while renaming '%s' to '%s'",
+				source,
+				target,
+			)
 			if strings.Contains(ch.Target, "/") {
 				// No need to check if the `dir` exists since `os.MkdirAll` handles that
 				dir := filepath.Dir(ch.Target)
@@ -268,14 +284,22 @@ func (op *Operation) ReportConflicts() {
 	var data [][]string
 	if slice, exists := op.conflicts[EMPTY_FILENAME]; exists {
 		for _, v := range slice {
-			slice := []string{strings.Join(v.source, ""), "", red("❌ [Empty filename]")}
+			slice := []string{
+				strings.Join(v.source, ""),
+				"",
+				red("❌ [Empty filename]"),
+			}
 			data = append(data, slice)
 		}
 	}
 
 	if slice, exists := op.conflicts[FILE_EXISTS]; exists {
 		for _, v := range slice {
-			slice := []string{strings.Join(v.source, ""), v.target, red("❌ [Path already exists]")}
+			slice := []string{
+				strings.Join(v.source, ""),
+				v.target,
+				red("❌ [Path already exists]"),
+			}
 			data = append(data, slice)
 		}
 	}
@@ -283,7 +307,11 @@ func (op *Operation) ReportConflicts() {
 	if slice, exists := op.conflicts[OVERWRITNG_NEW_PATH]; exists {
 		for _, v := range slice {
 			for _, s := range v.source {
-				slice := []string{s, v.target, red("❌ [Overwriting newly renamed path]")}
+				slice := []string{
+					s,
+					v.target,
+					red("❌ [Overwriting newly renamed path]"),
+				}
 				data = append(data, slice)
 			}
 		}
@@ -310,10 +338,13 @@ func (op *Operation) DetectConflicts() {
 		// Report if replacement operation results in
 		// an empty string for the new filename
 		if ch.Target == "." {
-			op.conflicts[EMPTY_FILENAME] = append(op.conflicts[EMPTY_FILENAME], Conflict{
-				source: []string{source},
-				target: target,
-			})
+			op.conflicts[EMPTY_FILENAME] = append(
+				op.conflicts[EMPTY_FILENAME],
+				Conflict{
+					source: []string{source},
+					target: target,
+				},
+			)
 
 			if op.fixConflicts {
 				// The file is left unchanged
@@ -324,11 +355,15 @@ func (op *Operation) DetectConflicts() {
 		}
 
 		// Report if target file exists on the filesystem
-		if _, err := os.Stat(target); err == nil || !errors.Is(err, os.ErrNotExist) {
-			op.conflicts[FILE_EXISTS] = append(op.conflicts[FILE_EXISTS], Conflict{
-				source: []string{source},
-				target: target,
-			})
+		if _, err := os.Stat(target); err == nil ||
+			!errors.Is(err, os.ErrNotExist) {
+			op.conflicts[FILE_EXISTS] = append(
+				op.conflicts[FILE_EXISTS],
+				Conflict{
+					source: []string{source},
+					target: target,
+				},
+			)
 
 			if op.fixConflicts {
 				str := getNewPath(target, ch.BaseDir, nil)
@@ -356,10 +391,13 @@ func (op *Operation) DetectConflicts() {
 				sources = append(sources, s.source)
 			}
 
-			op.conflicts[OVERWRITNG_NEW_PATH] = append(op.conflicts[OVERWRITNG_NEW_PATH], Conflict{
-				source: sources,
-				target: k,
-			})
+			op.conflicts[OVERWRITNG_NEW_PATH] = append(
+				op.conflicts[OVERWRITNG_NEW_PATH],
+				Conflict{
+					source: sources,
+					target: k,
+				},
+			)
 
 			if op.fixConflicts {
 				for i, item := range v {
@@ -538,7 +576,10 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	// replace `{{f}}` in the replacement string with the original
 	// filename (without the extension)
 	if filenameRegex.Match([]byte(str)) {
-		str = filenameRegex.ReplaceAllString(str, filenameWithoutExtension(fileName))
+		str = filenameRegex.ReplaceAllString(
+			str,
+			filenameWithoutExtension(fileName),
+		)
 	}
 
 	// replace `{{ext}}` in the replacement string with the file extension
@@ -586,7 +627,10 @@ func (op *Operation) Replace() error {
 		var str string
 		if op.stringMode {
 			if op.ignoreCase {
-				str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
+				str = op.searchRegex.ReplaceAllString(
+					fileName,
+					op.replaceString,
+				)
 			} else {
 				str = strings.ReplaceAll(fileName, op.findString, op.replaceString)
 			}
@@ -703,8 +747,11 @@ func (op *Operation) Run() error {
 // NewOperation returns an Operation constructed
 // from command line flags & arguments
 func NewOperation(c *cli.Context) (*Operation, error) {
-	if c.String("find") == "" && c.String("replace") == "" && c.String("undo") == "" {
-		return nil, fmt.Errorf("Invalid arguments: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'goname --help' for more information")
+	if c.String("find") == "" && c.String("replace") == "" &&
+		c.String("undo") == "" {
+		return nil, fmt.Errorf(
+			"Invalid arguments: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
+		)
 	}
 
 	op := &Operation{}
@@ -744,7 +791,10 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 
 	re, err := regexp.Compile(findPattern)
 	if err != nil {
-		return nil, fmt.Errorf("Malformed regular expression for search pattern %s", findPattern)
+		return nil, fmt.Errorf(
+			"Malformed regular expression for search pattern %s",
+			findPattern,
+		)
 	}
 	op.searchRegex = re
 
