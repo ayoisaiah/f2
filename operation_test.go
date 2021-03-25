@@ -7,7 +7,9 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -737,6 +739,57 @@ func randate() time.Time {
 
 	sec := rand.Int63n(delta) + min
 	return time.Unix(sec, 0)
+}
+
+func TestAutoIncrementingNumber(t *testing.T) {
+	testDir := setupFileSystem(t)
+	op := &Operation{}
+	op.replaceString = "%03d{{ext}}"
+	op.searchRegex = regexp.MustCompile(".*")
+	slice := []int{4, 10, 100, 150, 44, 82, 1000, 321}
+	for _, start := range slice {
+		op.startNumber = start
+
+		for _, path := range fileSystem {
+			dir := filepath.Dir(path)
+			ch := Change{
+				BaseDir: filepath.Join(testDir, dir),
+				Source:  filepath.Base(path),
+			}
+			op.matches = append(op.matches, ch)
+		}
+
+		op.SortMatches()
+		err := op.Replace()
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		sort.SliceStable(op.matches, func(i, j int) bool {
+			regex := regexp.MustCompile("[0-9]+")
+			inum, err := strconv.Atoi(regex.FindString(op.matches[i].Target))
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			jnum, err := strconv.Atoi(regex.FindString(op.matches[j].Target))
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			return inum < jnum
+		})
+
+		for i, v := range op.matches {
+			ext := filepath.Ext(v.Source)
+			index := fmt.Sprintf("%03d", i+start)
+
+			want := index + ext
+			if want != v.Target {
+				t.Fatalf("Expected: %s, but got: %s", want, v.Target)
+			}
+		}
+	}
 }
 
 func TestReplaceFilenameVariables(t *testing.T) {
