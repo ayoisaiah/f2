@@ -2,6 +2,7 @@ package f2
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -140,6 +141,7 @@ func TestFindReplace(t *testing.T) {
 	testDir := setupFileSystem(t)
 
 	type Table struct {
+		Name string
 		want []Change
 		args []string
 	}
@@ -147,106 +149,243 @@ func TestFindReplace(t *testing.T) {
 	table := []Table{
 		{
 			want: []Change{
-				{Source: "No Pressure (2021) S1.E1.1080p.mkv", BaseDir: testDir, Target: "1.mkv"},
-				{Source: "No Pressure (2021) S1.E2.1080p.mkv", BaseDir: testDir, Target: "2.mkv"},
-				{Source: "No Pressure (2021) S1.E3.1080p.mkv", BaseDir: testDir, Target: "3.mkv"},
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "1.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "2.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "3.mkv",
+				},
 			},
-			args: []string{"-f", ".*E(\\d+).*", "-r", "$1.mkv", "-o", "map.json", testDir},
+			args: []string{
+				"-f",
+				".*E(\\d+).*",
+				"-r",
+				"$1.mkv",
+				"-o",
+				"map.json",
+				testDir,
+			},
 		},
 		{
 			want: []Change{
-				{Source: "No Pressure (2021) S1.E1.1080p.mkv", BaseDir: testDir, Target: "No Pressure 98.mkv"},
-				{Source: "No Pressure (2021) S1.E2.1080p.mkv", BaseDir: testDir, Target: "No Pressure 99.mkv"},
-				{Source: "No Pressure (2021) S1.E3.1080p.mkv", BaseDir: testDir, Target: "No Pressure 100.mkv"},
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure 98.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure 99.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure 100.mkv",
+				},
 			},
-			args: []string{"-f", "(No Pressure).*", "-r", "$1 %d.mkv", "-n", "98", testDir},
+			args: []string{
+				"-f",
+				"(No Pressure).*",
+				"-r",
+				"$1 %d.mkv",
+				"-n",
+				"98",
+				testDir,
+			},
 		},
 		{
 			want: []Change{
-				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
 			},
 			args: []string{"-f", "jpg", "-r", "jpeg", "-R", testDir},
 		},
 		{
 			want: []Change{
-				{Source: "456.webp", BaseDir: filepath.Join(testDir, "images"), Target: "456-001.webp"},
-				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a-002.jpg"},
-				{Source: "abc.png", BaseDir: filepath.Join(testDir, "images"), Target: "abc-003.png"},
+				{
+					Source:  "index.js",
+					BaseDir: filepath.Join(testDir, "scripts"),
+					Target:  "index.ts",
+				},
+				{
+					Source:  "main.js",
+					BaseDir: filepath.Join(testDir, "scripts"),
+					Target:  "main.ts",
+				},
 			},
-			args: []string{"-f", ".*(jpg|png|webp)", "-r", "{{f}}-%03d.$1", filepath.Join(testDir, "images")},
+			args: []string{
+				"-f",
+				"js",
+				"-r",
+				"ts",
+				filepath.Join(testDir, "scripts"),
+			},
 		},
 		{
 			want: []Change{
-				{Source: "456.webp", BaseDir: filepath.Join(testDir, "images"), Target: "001.webp"},
-				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "002.jpg"},
-				{Source: "abc.png", BaseDir: filepath.Join(testDir, "images"), Target: "003.png"},
+				{
+					Source:  "index.js",
+					BaseDir: filepath.Join(testDir, "scripts"),
+					Target:  "i n d e x .js",
+				},
+				{
+					Source:  "main.js",
+					BaseDir: filepath.Join(testDir, "scripts"),
+					Target:  "m a i n .js",
+				},
 			},
-			args: []string{"-f", ".*(jpg|png|webp)", "-r", "%03d{{ext}}", filepath.Join(testDir, "images")},
+			args: []string{
+				"-f",
+				"(.)",
+				"-r",
+				"$1 ",
+				"-e",
+				filepath.Join(testDir, "scripts"),
+			},
 		},
 		{
 			want: []Change{
-				{Source: "index.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "index.ts"},
-				{Source: "main.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "main.ts"},
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+				{
+					Source:  "b.jPg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "b.jpeg",
+				},
+				{
+					Source:  "123.JPG",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "123.jpeg",
+				},
 			},
-			args: []string{"-f", "js", "-r", "ts", filepath.Join(testDir, "scripts")},
+			args: []string{
+				"-f",
+				"jpg",
+				"-r",
+				"jpeg",
+				"-R",
+				"-i",
+				"-o",
+				"map.json",
+				testDir,
+			},
 		},
 		{
 			want: []Change{
-				{Source: "index.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "scripts-index.js"},
-				{Source: "main.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "scripts-main.js"},
-			},
-			args: []string{"-f", "index|main", "-r", "{{p}}-{{f}}", filepath.Join(testDir, "scripts")},
-		},
-		{
-			want: []Change{
-				{Source: "index.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "i n d e x .js"},
-				{Source: "main.js", BaseDir: filepath.Join(testDir, "scripts"), Target: "m a i n .js"},
-			},
-			args: []string{"-f", "(.)", "-r", "$1 ", "-e", filepath.Join(testDir, "scripts")},
-		},
-		{
-			want: []Change{
-				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
-				{Source: "b.jPg", BaseDir: filepath.Join(testDir, "images"), Target: "b.jpeg"},
-				{Source: "123.JPG", BaseDir: filepath.Join(testDir, "images", "pics"), Target: "123.jpeg"},
-			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-i", "-o", "map.json", testDir},
-		},
-		{
-			want: []Change{
-				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
 			},
 			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-s", testDir},
 		},
 		{
 			want: []Change{
-				{Source: "a.jpg", BaseDir: filepath.Join(testDir, "images"), Target: "a.jpeg"},
-				{Source: "b.jPg", BaseDir: filepath.Join(testDir, "images"), Target: "b.jpeg"},
-				{Source: "123.JPG", BaseDir: filepath.Join(testDir, "images", "pics"), Target: "123.jpeg"},
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+				{
+					Source:  "b.jPg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "b.jpeg",
+				},
+				{
+					Source:  "123.JPG",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "123.jpeg",
+				},
 			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-s", "-i", testDir},
+			args: []string{
+				"-f",
+				"jpg",
+				"-r",
+				"jpeg",
+				"-R",
+				"-s",
+				"-i",
+				testDir,
+			},
 		},
 		{
 			want: []Change{
-				{Source: "pics", IsDir: true, BaseDir: filepath.Join(testDir, "images"), Target: "images"},
-				{Source: "morepics", IsDir: true, BaseDir: testDir, Target: "moreimages"},
-				{Source: "pic-1.avif", BaseDir: filepath.Join(testDir, "morepics"), Target: "image-1.avif"},
-				{Source: "pic-2.avif", BaseDir: filepath.Join(testDir, "morepics"), Target: "image-2.avif"},
+				{
+					Source:  "pics",
+					IsDir:   true,
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "images",
+				},
+				{
+					Source:  "morepics",
+					IsDir:   true,
+					BaseDir: testDir,
+					Target:  "moreimages",
+				},
+				{
+					Source:  "pic-1.avif",
+					BaseDir: filepath.Join(testDir, "morepics"),
+					Target:  "image-1.avif",
+				},
+				{
+					Source:  "pic-2.avif",
+					BaseDir: filepath.Join(testDir, "morepics"),
+					Target:  "image-2.avif",
+				},
 			},
 			args: []string{"-f", "pic", "-r", "image", "-d", "-R", testDir},
 		},
 		{
 			want: []Change{
-				{Source: "pics", IsDir: true, BaseDir: filepath.Join(testDir, "images"), Target: "images"},
-				{Source: "morepics", IsDir: true, BaseDir: testDir, Target: "moreimages"},
+				{
+					Source:  "pics",
+					IsDir:   true,
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "images",
+				},
+				{
+					Source:  "morepics",
+					IsDir:   true,
+					BaseDir: testDir,
+					Target:  "moreimages",
+				},
 			},
 			args: []string{"-f", "pic", "-r", "image", "-D", "-R", testDir},
 		},
 		{
 			want: []Change{
-				{Source: "No Pressure (2021) S1.E1.1080p.mkv", BaseDir: testDir, Target: "No Pressure (2022) S1.E1.1080p.mkv"},
-				{Source: "No Pressure (2021) S1.E2.1080p.mkv", BaseDir: testDir, Target: "No Pressure (2022) S1.E2.1080p.mkv"},
-				{Source: "No Pressure (2021) S1.E3.1080p.mkv", BaseDir: testDir, Target: "No Pressure (2022) S1.E3.1080p.mkv"},
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2022) S1.E1.1080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2022) S1.E2.1080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2022) S1.E3.1080p.mkv",
+				},
 			},
 			args: []string{"-f", "(2021)", "-r", "(2022)", "-s", testDir},
 		},
@@ -258,34 +397,54 @@ func TestFindReplace(t *testing.T) {
 		result, _ := action(args) // err will be nil
 
 		if len(result.conflicts) > 0 {
-			t.Fatalf("Test(%d) — Expected no conflicts but got some: %v", i+1, result.conflicts)
+			t.Fatalf(
+				"Test(%d) — Expected no conflicts but got some: %v",
+				i+1,
+				result.conflicts,
+			)
 		}
 
 		sortChanges(v.want)
 		sortChanges(result.changes)
 
 		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
-			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.changes)
+			t.Fatalf(
+				"Test(%d) — Expected: %+v, got: %+v\n",
+				i+1,
+				v.want,
+				result.changes,
+			)
 		}
 
 		// Test if the map file was written successfully
 		if result.outputFile != "" {
 			file, err := os.ReadFile(result.outputFile)
 			if err != nil {
-				t.Fatalf("Unexpected error when trying to read map file: %v\n", err)
+				t.Fatalf(
+					"Unexpected error when trying to read map file: %v\n",
+					err,
+				)
 			}
 
 			var mf mapFile
 			err = json.Unmarshal([]byte(file), &mf)
 			if err != nil {
-				t.Fatalf("Unexpected error when trying to unmarshal map file contents: %v\n", err)
+				t.Fatalf(
+					"Unexpected error when trying to unmarshal map file contents: %v\n",
+					err,
+				)
 			}
 			ch := mf.Operations
 
 			sortChanges(ch)
 
 			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
-				t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, ch)
+				t.Fatalf(
+					"Test(%d) — Expected: %+v, got: %+v\n",
+					i+1,
+					v.want,
+					ch,
+				)
 			}
 
 			err = os.Remove(result.outputFile)
@@ -331,7 +490,10 @@ func TestDetectConflicts(t *testing.T) {
 			want: map[conflict][]Conflict{
 				OVERWRITNG_NEW_PATH: []Conflict{
 					{
-						source: []string{filepath.Join(testDir, "abc.epub"), filepath.Join(testDir, "abc.pdf")},
+						source: []string{
+							filepath.Join(testDir, "abc.epub"),
+							filepath.Join(testDir, "abc.pdf"),
+						},
 						target: filepath.Join(testDir, "abc.mobi"),
 					},
 				},
@@ -352,8 +514,17 @@ func TestDetectConflicts(t *testing.T) {
 			t.Fatalf("Test(%d) — Expected some conflicts but got none", i+1)
 		}
 
-		if !cmp.Equal(v.want, result.conflicts, cmp.AllowUnexported(Conflict{})) {
-			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.conflicts)
+		if !cmp.Equal(
+			v.want,
+			result.conflicts,
+			cmp.AllowUnexported(Conflict{}),
+		) {
+			t.Fatalf(
+				"Test(%d) — Expected: %+v, got: %+v\n",
+				i+1,
+				v.want,
+				result.conflicts,
+			)
 		}
 	}
 }
@@ -369,29 +540,79 @@ func TestFixConflicts(t *testing.T) {
 	table := []Table{
 		{
 			want: []Change{
-				{Source: "abc.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "123 (2).txt"},
-				{Source: "xyz.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "123 (4).txt"},
+				{
+					Source:  "abc.txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "123 (2).txt",
+				},
+				{
+					Source:  "xyz.txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "123 (4).txt",
+				},
 			},
-			args: []string{"-f", "abc|xyz", "-r", "123", "-F", filepath.Join(testDir, "conflicts")},
+			args: []string{
+				"-f",
+				"abc|xyz",
+				"-r",
+				"123",
+				"-F",
+				filepath.Join(testDir, "conflicts"),
+			},
 		},
 		{
 			want: []Change{
-				{Source: "123.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "abc (2).txt"},
-				{Source: "123 (3).txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "abc (3).txt"},
+				{
+					Source:  "123.txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "abc (2).txt",
+				},
+				{
+					Source:  "123 (3).txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "abc (3).txt",
+				},
 			},
-			args: []string{"-f", "123", "-r", "abc", "-F", filepath.Join(testDir, "conflicts")},
+			args: []string{
+				"-f",
+				"123",
+				"-r",
+				"abc",
+				"-F",
+				filepath.Join(testDir, "conflicts"),
+			},
 		},
 		{
 			want: []Change{
-				{Source: "xyz.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "123 (2).txt"},
+				{
+					Source:  "xyz.txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "123 (2).txt",
+				},
 			},
-			args: []string{"-f", "xyz", "-r", "123", "-F", filepath.Join(testDir, "conflicts")},
+			args: []string{
+				"-f",
+				"xyz",
+				"-r",
+				"123",
+				"-F",
+				filepath.Join(testDir, "conflicts"),
+			},
 		},
 		{
 			want: []Change{
-				{Source: "xyz.txt", BaseDir: filepath.Join(testDir, "conflicts"), Target: "xyz.txt"},
+				{
+					Source:  "xyz.txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "xyz.txt",
+				},
 			},
-			args: []string{"-f", "xyz.txt", "-F", filepath.Join(testDir, "conflicts")},
+			args: []string{
+				"-f",
+				"xyz.txt",
+				"-F",
+				filepath.Join(testDir, "conflicts"),
+			},
 		},
 	}
 
@@ -408,7 +629,12 @@ func TestFixConflicts(t *testing.T) {
 		sortChanges(result.changes)
 
 		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
-			t.Fatalf("Test(%d) — Expected: %+v, got: %+v\n", i+1, v.want, result.changes)
+			t.Fatalf(
+				"Test(%d) — Expected: %+v, got: %+v\n",
+				i+1,
+				v.want,
+				result.changes,
+			)
 		}
 	}
 }
@@ -427,7 +653,15 @@ func TestApplyUndo(t *testing.T) {
 				{Source: "No Pressure (2021) S1.E2.1080p.mkv", Target: "2.mkv"},
 				{Source: "No Pressure (2021) S1.E3.1080p.mkv", Target: "3.mkv"},
 			},
-			exec: []string{"-f", ".*E(\\d+).*", "-r", "$1.mkv", "-o", "map.json", "-x"},
+			exec: []string{
+				"-f",
+				".*E(\\d+).*",
+				"-r",
+				"$1.mkv",
+				"-o",
+				"map.json",
+				"-x",
+			},
 			undo: []string{"-u", "map.json", "-x"},
 		},
 		{
@@ -437,7 +671,17 @@ func TestApplyUndo(t *testing.T) {
 				{Source: "pic-1.avif", Target: "image-1.avif"},
 				{Source: "pic-2.avif", Target: "image-2.avif"},
 			},
-			exec: []string{"-f", "pic", "-r", "image", "-d", "-R", "-o", "map.json", "-x"},
+			exec: []string{
+				"-f",
+				"pic",
+				"-r",
+				"image",
+				"-d",
+				"-R",
+				"-o",
+				"map.json",
+				"-x",
+			},
 			undo: []string{"-u", "map.json", "-x"},
 		},
 	}
@@ -456,11 +700,19 @@ func TestApplyUndo(t *testing.T) {
 		result, _ := action(args) // err will be nil
 
 		if len(result.conflicts) > 0 {
-			t.Fatalf("Test(%d) — Expected no conflicts but got some: %v", i+1, result.conflicts)
+			t.Fatalf(
+				"Test(%d) — Expected no conflicts but got some: %v",
+				i+1,
+				result.conflicts,
+			)
 		}
 
 		if result.applyError != nil {
-			t.Fatalf("Test(%d) — Unexpected apply error: %v\n", i+1, result.applyError)
+			t.Fatalf(
+				"Test(%d) — Unexpected apply error: %v\n",
+				i+1,
+				result.applyError,
+			)
 		}
 
 		// Test Undo function
@@ -485,6 +737,37 @@ func randate() time.Time {
 
 	sec := rand.Int63n(delta) + min
 	return time.Unix(sec, 0)
+}
+
+func TestReplaceFilenameVariables(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	for _, path := range fileSystem {
+		fullPath := filepath.Join(testDir, path)
+		base := filenameWithoutExtension(filepath.Base(path))
+		ext := filepath.Ext(path)
+		dir := filepath.Dir(path)
+		ch := Change{
+			BaseDir: filepath.Join(testDir, dir),
+			Source:  filepath.Base(path),
+		}
+
+		op := &Operation{}
+		got, err := op.handleVariables("{{p}}-{{f}}{{ext}}", ch)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		want := fmt.Sprintf(
+			"%s-%s%s",
+			filepath.Base(filepath.Dir(fullPath)),
+			base,
+			ext,
+		)
+		if got != want {
+			t.Fatalf("Expected: %s, but got: %s", want, got)
+		}
+	}
 }
 
 func TestReplaceDateVariables(t *testing.T) {
