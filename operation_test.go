@@ -18,6 +18,13 @@ import (
 	"gopkg.in/djherbis/times.v1"
 )
 
+type testCase struct {
+	name     string
+	want     []Change
+	args     []string
+	undoArgs []string
+}
+
 var fileSystem = []string{
 	"No Pressure (2021) S1.E1.1080p.mkv",
 	"No Pressure (2021) S1.E2.1080p.mkv",
@@ -139,16 +146,75 @@ func sortChanges(s []Change) {
 	})
 }
 
+func runFindReplace(t *testing.T, cases []testCase) {
+	for i, v := range cases {
+		args := os.Args[0:1]
+		args = append(args, v.args...)
+		result, _ := action(args) // err will be nil
+
+		if len(result.conflicts) > 0 {
+			t.Fatalf(
+				"Test(%d) — Expected no conflicts but got some: %v",
+				i+1,
+				result.conflicts,
+			)
+		}
+
+		sortChanges(v.want)
+		sortChanges(result.changes)
+
+		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
+			t.Fatalf(
+				"Test(%d) — Expected: %+v, got: %+v\n",
+				i+1,
+				v.want,
+				result.changes,
+			)
+		}
+
+		// Test if the map file was written successfully
+		if result.outputFile != "" {
+			file, err := os.ReadFile(result.outputFile)
+			if err != nil {
+				t.Fatalf(
+					"Unexpected error when trying to read map file: %v\n",
+					err,
+				)
+			}
+
+			var mf mapFile
+			err = json.Unmarshal([]byte(file), &mf)
+			if err != nil {
+				t.Fatalf(
+					"Unexpected error when trying to unmarshal map file contents: %v\n",
+					err,
+				)
+			}
+			ch := mf.Operations
+
+			sortChanges(ch)
+
+			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
+				t.Fatalf(
+					"Test(%d) — Expected: %+v, got: %+v\n",
+					i+1,
+					v.want,
+					ch,
+				)
+			}
+
+			err = os.Remove(result.outputFile)
+			if err != nil {
+				t.Log("Failed to remove output file")
+			}
+		}
+	}
+}
+
 func TestFindReplace(t *testing.T) {
 	testDir := setupFileSystem(t)
 
-	type Table struct {
-		Name string
-		want []Change
-		args []string
-	}
-
-	table := []Table{
+	cases := []testCase{
 		{
 			want: []Change{
 				{
@@ -291,45 +357,6 @@ func TestFindReplace(t *testing.T) {
 		{
 			want: []Change{
 				{
-					Source:  "a.jpg",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "a.jpeg",
-				},
-			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-s", testDir},
-		},
-		{
-			want: []Change{
-				{
-					Source:  "a.jpg",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "a.jpeg",
-				},
-				{
-					Source:  "b.jPg",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "b.jpeg",
-				},
-				{
-					Source:  "123.JPG",
-					BaseDir: filepath.Join(testDir, "images", "pics"),
-					Target:  "123.jpeg",
-				},
-			},
-			args: []string{
-				"-f",
-				"jpg",
-				"-r",
-				"jpeg",
-				"-R",
-				"-s",
-				"-i",
-				testDir,
-			},
-		},
-		{
-			want: []Change{
-				{
 					Source:  "pics",
 					IsDir:   true,
 					BaseDir: filepath.Join(testDir, "images"),
@@ -371,90 +398,9 @@ func TestFindReplace(t *testing.T) {
 			},
 			args: []string{"-f", "pic", "-r", "image", "-D", "-R", testDir},
 		},
-		{
-			want: []Change{
-				{
-					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Pressure (2022) S1.E1.1080p.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Pressure (2022) S1.E2.1080p.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Pressure (2022) S1.E3.1080p.mkv",
-				},
-			},
-			args: []string{"-f", "(2021)", "-r", "(2022)", "-s", testDir},
-		},
 	}
 
-	for i, v := range table {
-		args := os.Args[0:1]
-		args = append(args, v.args...)
-		result, _ := action(args) // err will be nil
-
-		if len(result.conflicts) > 0 {
-			t.Fatalf(
-				"Test(%d) — Expected no conflicts but got some: %v",
-				i+1,
-				result.conflicts,
-			)
-		}
-
-		sortChanges(v.want)
-		sortChanges(result.changes)
-
-		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
-			t.Fatalf(
-				"Test(%d) — Expected: %+v, got: %+v\n",
-				i+1,
-				v.want,
-				result.changes,
-			)
-		}
-
-		// Test if the map file was written successfully
-		if result.outputFile != "" {
-			file, err := os.ReadFile(result.outputFile)
-			if err != nil {
-				t.Fatalf(
-					"Unexpected error when trying to read map file: %v\n",
-					err,
-				)
-			}
-
-			var mf mapFile
-			err = json.Unmarshal([]byte(file), &mf)
-			if err != nil {
-				t.Fatalf(
-					"Unexpected error when trying to unmarshal map file contents: %v\n",
-					err,
-				)
-			}
-			ch := mf.Operations
-
-			sortChanges(ch)
-
-			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
-				t.Fatalf(
-					"Test(%d) — Expected: %+v, got: %+v\n",
-					i+1,
-					v.want,
-					ch,
-				)
-			}
-
-			err = os.Remove(result.outputFile)
-			if err != nil {
-				t.Log("Failed to remove output file")
-			}
-		}
-	}
+	runFindReplace(t, cases)
 }
 
 func TestDetectConflicts(t *testing.T) {
@@ -531,15 +477,79 @@ func TestDetectConflicts(t *testing.T) {
 	}
 }
 
+func TestStringMode(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Replace Pressure with Limits in string mode",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E1.1080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E2.1080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E3.1080p.mkv",
+				},
+			},
+			args: []string{"-f", "Pressure", "-r", "Limits", "-s", testDir},
+		},
+		{
+			want: []Change{
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-s", testDir},
+		},
+		{
+			want: []Change{
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+				{
+					Source:  "b.jPg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "b.jpeg",
+				},
+				{
+					Source:  "123.JPG",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "123.jpeg",
+				},
+			},
+			args: []string{
+				"-f",
+				"jpg",
+				"-r",
+				"jpeg",
+				"-R",
+				"-s",
+				"-i",
+				testDir,
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestFixConflicts(t *testing.T) {
 	testDir := setupFileSystem(t)
 
-	type Table struct {
-		want []Change
-		args []string
-	}
-
-	table := []Table{
+	table := []testCase{
 		{
 			want: []Change{
 				{
@@ -642,20 +652,14 @@ func TestFixConflicts(t *testing.T) {
 }
 
 func TestApplyUndo(t *testing.T) {
-	type Table struct {
-		want []Change
-		exec []string
-		undo []string
-	}
-
-	table := []Table{
+	table := []testCase{
 		{
 			want: []Change{
 				{Source: "No Pressure (2021) S1.E1.1080p.mkv", Target: "1.mkv"},
 				{Source: "No Pressure (2021) S1.E2.1080p.mkv", Target: "2.mkv"},
 				{Source: "No Pressure (2021) S1.E3.1080p.mkv", Target: "3.mkv"},
 			},
-			exec: []string{
+			args: []string{
 				"-f",
 				".*E(\\d+).*",
 				"-r",
@@ -664,7 +668,7 @@ func TestApplyUndo(t *testing.T) {
 				"map.json",
 				"-x",
 			},
-			undo: []string{"-u", "map.json", "-x"},
+			undoArgs: []string{"-u", "map.json", "-x"},
 		},
 		{
 			want: []Change{
@@ -673,7 +677,7 @@ func TestApplyUndo(t *testing.T) {
 				{Source: "pic-1.avif", Target: "image-1.avif"},
 				{Source: "pic-2.avif", Target: "image-2.avif"},
 			},
-			exec: []string{
+			args: []string{
 				"-f",
 				"pic",
 				"-r",
@@ -684,7 +688,7 @@ func TestApplyUndo(t *testing.T) {
 				"map.json",
 				"-x",
 			},
-			undo: []string{"-u", "map.json", "-x"},
+			undoArgs: []string{"-u", "map.json", "-x"},
 		},
 	}
 
@@ -695,10 +699,10 @@ func TestApplyUndo(t *testing.T) {
 			ch.BaseDir = testDir
 		}
 
-		v.exec = append(v.exec, testDir)
+		v.args = append(v.args, testDir)
 
 		args := os.Args[0:1]
-		args = append(args, v.exec...)
+		args = append(args, v.args...)
 		result, _ := action(args) // err will be nil
 
 		if len(result.conflicts) > 0 {
@@ -719,7 +723,7 @@ func TestApplyUndo(t *testing.T) {
 
 		// Test Undo function
 		args = os.Args[0:1]
-		args = append(args, v.undo...)
+		args = append(args, v.undoArgs...)
 		result, err := action(args)
 		if err != nil {
 			t.Fatalf("Test(%d) — Unexpected error in undo mode: %v\n", i+1, err)
@@ -744,7 +748,7 @@ func randate() time.Time {
 func TestAutoIncrementingNumber(t *testing.T) {
 	testDir := setupFileSystem(t)
 	op := &Operation{}
-	op.replaceString = "%03d{{ext}}"
+	op.replacement = "%03d{{ext}}"
 	op.searchRegex = regexp.MustCompile(".*")
 	slice := []int{4, 10, 100, 150, 44, 82, 1000, 321}
 	for _, start := range slice {

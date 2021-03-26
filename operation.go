@@ -87,7 +87,7 @@ type Operation struct {
 	matches       []Change
 	conflicts     map[conflict][]Conflict
 	findString    string
-	replaceString string
+	replacement   string
 	startNumber   int
 	exec          bool
 	fixConflicts  bool
@@ -615,6 +615,26 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	return str, nil
 }
 
+func (op *Operation) replaceString(fileName string) (str string) {
+	if op.stringMode {
+		if op.ignoreCase {
+			str = op.searchRegex.ReplaceAllString(
+				fileName,
+				op.replacement,
+			)
+		} else {
+			if op.findString == "" {
+				op.findString = fileName
+			}
+			str = strings.ReplaceAll(fileName, op.findString, op.replacement)
+		}
+	} else {
+		str = op.searchRegex.ReplaceAllString(fileName, op.replacement)
+	}
+
+	return str
+}
+
 // Replace replaces the matched text in each path with the
 // replacement string
 func (op *Operation) Replace() error {
@@ -625,19 +645,7 @@ func (op *Operation) Replace() error {
 			fileName = filenameWithoutExtension(fileName)
 		}
 
-		var str string
-		if op.stringMode {
-			if op.ignoreCase {
-				str = op.searchRegex.ReplaceAllString(
-					fileName,
-					op.replaceString,
-				)
-			} else {
-				str = strings.ReplaceAll(fileName, op.findString, op.replaceString)
-			}
-		} else {
-			str = op.searchRegex.ReplaceAllString(fileName, op.replaceString)
-		}
+		str := op.replaceString(fileName)
 
 		// handle variables
 		str, err := op.handleVariables(str, v)
@@ -689,6 +697,7 @@ func (op *Operation) FindMatches() {
 
 		if op.stringMode {
 			fs := op.findString
+
 			if op.ignoreCase {
 				f = strings.ToLower(f)
 				fs = strings.ToLower(fs)
@@ -758,7 +767,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op := &Operation{}
 	op.outputFile = c.String("output-file")
 	op.findString = c.String("find")
-	op.replaceString = c.String("replace")
+	op.replacement = c.String("replace")
 	op.exec = c.Bool("exec")
 	op.fixConflicts = c.Bool("fix-conflicts")
 	op.includeDir = c.Bool("include-dir")
