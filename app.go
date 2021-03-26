@@ -88,24 +88,29 @@ func GetApp() *cli.App {
 			&cli.StringFlag{
 				Name:    "find",
 				Aliases: []string{"f"},
-				Usage:   "Search `string` or regular expression.",
+				Usage:   "Search `<pattern>`. Treated as a regular expression by default. Use -s or --string-mode to opt out",
 			},
 			&cli.StringFlag{
 				Name:    "replace",
 				Aliases: []string{"r"},
-				Usage:   "Replacement `string`. If omitted, defaults to an empty string.",
+				Usage:   "Replacement `<string>`. If omitted, defaults to an empty string. Supports built-in and regex capture variables",
 			},
 			&cli.IntFlag{
 				Name:        "start-num",
 				Aliases:     []string{"n"},
-				Usage:       "Starting number when using numbering scheme in replacement string such as %03d",
+				Usage:       "When using an auto incrementing number in the replacement string such as %03d, start the count from `<number>`",
 				Value:       1,
 				DefaultText: "1",
+			},
+			&cli.StringSliceFlag{
+				Name:    "exclude",
+				Aliases: []string{"E"},
+				Usage:   "Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude `<pattern>`s can be specified.",
 			},
 			&cli.StringFlag{
 				Name:    "output-file",
 				Aliases: []string{"o"},
-				Usage:   "Output a map file for the current operation",
+				Usage:   "Output a map `<file>` for the current operation",
 			},
 			&cli.BoolFlag{
 				Name:    "exec",
@@ -118,9 +123,10 @@ func GetApp() *cli.App {
 				Usage:   "Rename files recursively",
 			},
 			&cli.StringFlag{
-				Name:    "undo",
-				Aliases: []string{"u"},
-				Usage:   "Undo a successful operation using a previously created map file",
+				Name:      "undo",
+				Aliases:   []string{"u"},
+				TakesFile: true,
+				Usage:     "Undo a successful operation using a previously created map `file`",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-case",
@@ -158,6 +164,7 @@ func GetApp() *cli.App {
 				Usage:   "Opt into string literal mode by treating find expressions as non-regex strings",
 			},
 		},
+		UseShortOptionHandling: true,
 		Action: func(c *cli.Context) error {
 			op, err := NewOperation(c)
 			if err != nil {

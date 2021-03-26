@@ -114,6 +114,13 @@ func action(args []string) (ActionResult, error) {
 
 		op.FindMatches()
 
+		if len(op.excludeFilter) != 0 {
+			err := op.filterMatches()
+			if err != nil {
+				return err
+			}
+		}
+
 		if op.includeDir {
 			op.SortMatches()
 		}
@@ -479,6 +486,65 @@ func TestDetectConflicts(t *testing.T) {
 	}
 }
 
+func TestExcludeFilter(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Exclude S1.E3 from matches",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E1.1080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E2.1080p.mkv",
+				},
+			},
+			args: []string{
+				"-f",
+				"Pressure",
+				"-r",
+				"Limits",
+				"-s",
+				"-E",
+				"S1.E3",
+				testDir,
+			},
+		},
+		{
+			name: "Exclude files that contain any number",
+			want: []Change{
+				{
+					Source:  "abc.txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "abc.md",
+				},
+				{
+					Source:  "xyz.txt",
+					BaseDir: filepath.Join(testDir, "conflicts"),
+					Target:  "xyz.md",
+				},
+			},
+			args: []string{
+				"-f",
+				"txt",
+				"-r",
+				"md",
+				"-R",
+				"-E",
+				"\\d+",
+				testDir,
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestStringMode(t *testing.T) {
 	testDir := setupFileSystem(t)
 
@@ -505,16 +571,35 @@ func TestStringMode(t *testing.T) {
 			args: []string{"-f", "Pressure", "-r", "Limits", "-s", testDir},
 		},
 		{
+			name: "Replace entire string if find pattern is empty",
 			want: []Change{
 				{
-					Source:  "a.jpg",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "a.jpeg",
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "001.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "002.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "003.mkv",
 				},
 			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-s", testDir},
+			args: []string{
+				"-r",
+				"%03d{{ext}}",
+				"-s",
+				"-E",
+				"abc|pics",
+				testDir,
+			},
 		},
 		{
+			name: "Respect case insensitive option",
 			want: []Change{
 				{
 					Source:  "a.jpg",

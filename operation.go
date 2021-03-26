@@ -103,6 +103,7 @@ type Operation struct {
 	outputFile    string
 	workingDir    string
 	stringMode    bool
+	excludeFilter []string
 }
 
 type mapFile struct {
@@ -616,17 +617,19 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 }
 
 func (op *Operation) replaceString(fileName string) (str string) {
+	findString := op.findString
 	if op.stringMode {
+		if findString == "" {
+			findString = fileName
+		}
+
 		if op.ignoreCase {
 			str = op.searchRegex.ReplaceAllString(
 				fileName,
 				op.replacement,
 			)
 		} else {
-			if op.findString == "" {
-				op.findString = fileName
-			}
-			str = strings.ReplaceAll(fileName, op.findString, op.replacement)
+			str = strings.ReplaceAll(fileName, findString, op.replacement)
 		}
 	} else {
 		str = op.searchRegex.ReplaceAllString(fileName, op.replacement)
@@ -716,6 +719,26 @@ func (op *Operation) FindMatches() {
 	}
 }
 
+// filterMatches excludes any files or directories that match
+// the find pattern in accordance with the provided exclude pattern
+func (op *Operation) filterMatches() error {
+	var filtered []Change
+	filters := strings.Join(op.excludeFilter, "|")
+	regex, err := regexp.Compile(filters)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range op.matches {
+		if !regex.MatchString(m.Source) {
+			filtered = append(filtered, m)
+		}
+	}
+
+	op.matches = filtered
+	return nil
+}
+
 // setPaths creates a Change struct for each path
 // and checks if its a directory or not
 func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
@@ -741,6 +764,13 @@ func (op *Operation) Run() error {
 	}
 
 	op.FindMatches()
+
+	if len(op.excludeFilter) != 0 {
+		err := op.filterMatches()
+		if err != nil {
+			return err
+		}
+	}
 
 	if op.includeDir {
 		op.SortMatches()
@@ -780,6 +810,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	op.undoFile = c.String("undo")
 	op.onlyDir = c.Bool("only-dir")
 	op.stringMode = c.Bool("string-mode")
+	op.excludeFilter = c.StringSlice("exclude")
 
 	if op.onlyDir {
 		op.includeDir = true
