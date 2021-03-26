@@ -32,14 +32,15 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 		f += " (" + strconv.Itoa(num) + ")"
 	}
 	// ignoring error from Sscanf. num will be set to 2 regardless
-	fmt.Sscanf(match[0], "(%d)", &num)
+	_, _ = fmt.Sscanf(match[0], "(%d)", &num)
 	for {
 		newPath := re.ReplaceAllString(f, "("+strconv.Itoa(num)+")")
-		newPath = newPath + filepath.Ext(target)
+		newPath += filepath.Ext(target)
 		fullPath := filepath.Join(baseDir, newPath)
 
 		// Ensure the new path does not exist on the filesystem
-		if _, err := os.Stat(fullPath); err != nil && errors.Is(err, os.ErrNotExist) {
+		if _, err := os.Stat(fullPath); err != nil &&
+			errors.Is(err, os.ErrNotExist) {
 			if m != nil {
 				// Check if newPath conflicts with another renamed file
 				for k := range m {
@@ -91,7 +92,10 @@ func filenameWithoutExtension(fileName string) string {
 	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }
 
-func walk(paths map[string][]os.DirEntry, includeHidden bool) (map[string][]os.DirEntry, error) {
+func walk(
+	paths map[string][]os.DirEntry,
+	includeHidden bool,
+) (map[string][]os.DirEntry, error) {
 	iterated := []string{}
 	var n = make(map[string][]os.DirEntry)
 

@@ -57,16 +57,20 @@ func init() {
 func setupFileSystem(t testing.TB) string {
 	testDir, err := ioutil.TempDir(".", "")
 	if err != nil {
-		os.RemoveAll(testDir)
 		t.Fatal(err)
 	}
+
+	t.Cleanup(func() {
+		if err := os.RemoveAll(testDir); err != nil {
+			t.Fatal(err)
+		}
+	})
 
 	directories := []string{"images/pics", "scripts", "morepics", "conflicts"}
 	for _, v := range directories {
 		filePath := filepath.Join(testDir, v)
 		err = os.MkdirAll(filePath, os.ModePerm)
 		if err != nil {
-			os.RemoveAll(testDir)
 			t.Fatal(err)
 		}
 	}
@@ -74,22 +78,14 @@ func setupFileSystem(t testing.TB) string {
 	for _, f := range fileSystem {
 		filePath := filepath.Join(testDir, f)
 		if err := ioutil.WriteFile(filePath, []byte{}, 0755); err != nil {
-			os.RemoveAll(testDir)
 			t.Fatal(err)
 		}
 	}
 
 	abs, err := filepath.Abs(testDir)
 	if err != nil {
-		os.RemoveAll(testDir)
 		t.Fatal(err)
 	}
-
-	t.Cleanup(func() {
-		if os.RemoveAll(testDir); err != nil {
-			t.Fatal(err)
-		}
-	})
 
 	return abs
 }
@@ -122,13 +118,19 @@ func action(args []string) (ActionResult, error) {
 			op.SortMatches()
 		}
 
-		op.Replace()
+		err = op.Replace()
+		if err != nil {
+			return err
+		}
 
 		result.changes = op.matches
 
 		if op.outputFile != "" {
 			result.outputFile = op.outputFile
-			op.WriteToFile()
+			err = op.WriteToFile()
+			if err != nil {
+				return err
+			}
 		}
 
 		result.applyError = op.Apply()
