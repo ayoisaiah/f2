@@ -34,8 +34,12 @@ var fileSystem = []string{
 	"images/abc.png",
 	"images/456.webp",
 	"images/pics/123.JPG",
+	"images/pics/free.jpg",
+	"images/pics/ios.mp4",
 	"morepics/pic-1.avif",
 	"morepics/pic-2.avif",
+	"morepics/nested/img.jpg",
+	"morepics/nested/linux.mp4",
 	"scripts/index.js",
 	"scripts/main.js",
 	"abc.pdf",
@@ -70,7 +74,7 @@ func setupFileSystem(t testing.TB) string {
 	directories := []string{
 		"images/pics",
 		"scripts",
-		"morepics",
+		"morepics/nested",
 		"conflicts",
 		".dir",
 	}
@@ -295,16 +299,6 @@ func TestFindReplace(t *testing.T) {
 		{
 			want: []Change{
 				{
-					Source:  "a.jpg",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "a.jpeg",
-				},
-			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", testDir},
-		},
-		{
-			want: []Change{
-				{
 					Source:  "index.js",
 					BaseDir: filepath.Join(testDir, "scripts"),
 					Target:  "index.ts",
@@ -361,6 +355,16 @@ func TestFindReplace(t *testing.T) {
 					Source:  "123.JPG",
 					BaseDir: filepath.Join(testDir, "images", "pics"),
 					Target:  "123.jpeg",
+				},
+				{
+					Source:  "free.jpg",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "free.jpeg",
+				},
+				{
+					Source:  "img.jpg",
+					BaseDir: filepath.Join(testDir, "morepics", "nested"),
+					Target:  "img.jpeg",
 				},
 			},
 			args: []string{
@@ -538,6 +542,115 @@ func TestHidden(t *testing.T) {
 	runFindReplace(t, cases)
 }
 
+func TestRecursive(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Recursively match jpg files without max depth specified",
+			want: []Change{
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+				{
+					Source:  "free.jpg",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "free.jpeg",
+				},
+				{
+					Source:  "img.jpg",
+					BaseDir: filepath.Join(testDir, "morepics", "nested"),
+					Target:  "img.jpeg",
+				},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", testDir},
+		},
+		{
+			name: "Recursively match jpg files with max depth set to zero",
+			want: []Change{
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+				{
+					Source:  "free.jpg",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "free.jpeg",
+				},
+				{
+					Source:  "img.jpg",
+					BaseDir: filepath.Join(testDir, "morepics", "nested"),
+					Target:  "img.jpeg",
+				},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-m", "0", testDir},
+		},
+		{
+			name: "Recursively match jpg files with max depth of 1",
+			want: []Change{
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-m", "1", testDir},
+		},
+		{
+			name: "Recursively match jpg files with max depth set to 2",
+			want: []Change{
+				{
+					Source:  "a.jpg",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "a.jpeg",
+				},
+				{
+					Source:  "free.jpg",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "free.jpeg",
+				},
+				{
+					Source:  "img.jpg",
+					BaseDir: filepath.Join(testDir, "morepics", "nested"),
+					Target:  "img.jpeg",
+				},
+			},
+			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-m", "2", testDir},
+		},
+		{
+			name: "Recursively rename with multiple paths",
+			want: []Change{
+				{
+					Source:  "ios.mp4",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "ios.mp4.bak",
+				},
+				{
+					Source:  "linux.mp4",
+					BaseDir: filepath.Join(testDir, "morepics", "nested"),
+					Target:  "linux.mp4.bak",
+				},
+			},
+			args: []string{
+				"-f",
+				"mp4",
+				"-r",
+				"mp4.bak",
+				"-R",
+				"-m",
+				"1",
+				filepath.Join(testDir, "images"),
+				filepath.Join(testDir, "morepics"),
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestExcludeFilter(t *testing.T) {
 	testDir := setupFileSystem(t)
 
@@ -668,6 +781,11 @@ func TestStringMode(t *testing.T) {
 					BaseDir: filepath.Join(testDir, "images", "pics"),
 					Target:  "123.jpeg",
 				},
+				{
+					Source:  "free.jpg",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "free.jpeg",
+				},
 			},
 			args: []string{
 				"-f",
@@ -675,9 +793,8 @@ func TestStringMode(t *testing.T) {
 				"-r",
 				"jpeg",
 				"-R",
-				"-s",
-				"-i",
-				testDir,
+				"-si",
+				filepath.Join(testDir, "images"),
 			},
 		},
 	}

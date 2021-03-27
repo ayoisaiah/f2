@@ -98,12 +98,17 @@ func filenameWithoutExtension(fileName string) string {
 	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }
 
+// walk is used to navigate directories recursively
+// and include their contents in the pool of paths in
+// which to find matches
 func walk(
 	paths map[string][]os.DirEntry,
 	includeHidden bool,
+	maxDepth int,
 ) (map[string][]os.DirEntry, error) {
-	iterated := []string{}
+	var iterated []string
 	var n = make(map[string][]os.DirEntry)
+	var counter int
 
 loop:
 	for k, v := range paths {
@@ -119,7 +124,6 @@ loop:
 			}
 		}
 
-		iterated = append(iterated, k)
 		for _, de := range v {
 			if de.IsDir() {
 				fp := filepath.Join(k, de.Name())
@@ -131,6 +135,8 @@ loop:
 				n[fp] = dirEntry
 			}
 		}
+
+		iterated = append(iterated, k)
 	}
 
 	if len(n) > 0 {
@@ -139,7 +145,10 @@ loop:
 			delete(n, k)
 		}
 
-		goto loop
+		counter++
+		if !(maxDepth > 0 && counter == maxDepth) {
+			goto loop
+		}
 	}
 
 	return paths, nil

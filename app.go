@@ -125,6 +125,13 @@ func GetApp() *cli.App {
 				Aliases: []string{"R"},
 				Usage:   "Rename files recursively",
 			},
+			&cli.IntFlag{
+				Name:        "max-depth",
+				Aliases:     []string{"m"},
+				Usage:       "positive `<integer>` indicating the maximum depth for a recursive search (set to 0 for no limit)",
+				Value:       0,
+				DefaultText: "0",
+			},
 			&cli.StringFlag{
 				Name:      "undo",
 				Aliases:   []string{"u"},

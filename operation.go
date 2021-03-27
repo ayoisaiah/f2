@@ -108,6 +108,7 @@ type Operation struct {
 	workingDir    string
 	stringMode    bool
 	excludeFilter []string
+	maxDepth      int
 }
 
 type mapFile struct {
@@ -825,6 +826,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.onlyDir = c.Bool("only-dir")
 	op.stringMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
+	op.maxDepth = c.Int("max-depth")
 
 	if op.onlyDir {
 		op.includeDir = true
@@ -886,7 +888,7 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	if op.recursive {
-		paths, err = walk(paths, op.includeHidden)
+		paths, err = walk(paths, op.includeHidden, op.maxDepth)
 		if err != nil {
 			return nil, err
 		}
