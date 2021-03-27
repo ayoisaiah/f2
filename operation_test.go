@@ -40,7 +40,8 @@ var fileSystem = []string{
 	"scripts/main.js",
 	"abc.pdf",
 	"abc.epub",
-	".pics",
+	".forbidden.pdf",
+	".dir/sample.pdf",
 	"conflicts/abc.txt",
 	"conflicts/xyz.txt",
 	"conflicts/123.txt",
@@ -66,7 +67,13 @@ func setupFileSystem(t testing.TB) string {
 		}
 	})
 
-	directories := []string{"images/pics", "scripts", "morepics", "conflicts"}
+	directories := []string{
+		"images/pics",
+		"scripts",
+		"morepics",
+		"conflicts",
+		".dir",
+	}
 	for _, v := range directories {
 		filePath := filepath.Join(testDir, v)
 		err = os.MkdirAll(filePath, os.ModePerm)
@@ -112,7 +119,10 @@ func action(args []string) (ActionResult, error) {
 			return op.Undo()
 		}
 
-		op.FindMatches()
+		err = op.findMatches()
+		if err != nil {
+			return err
+		}
 
 		if len(op.excludeFilter) != 0 {
 			err = op.filterMatches()
@@ -125,7 +135,7 @@ func action(args []string) (ActionResult, error) {
 			op.SortMatches()
 		}
 
-		err = op.Replace()
+		err = op.replace()
 		if err != nil {
 			return err
 		}
@@ -140,7 +150,7 @@ func action(args []string) (ActionResult, error) {
 			}
 		}
 
-		result.applyError = op.Apply()
+		result.applyError = op.apply()
 		result.conflicts = op.conflicts
 
 		return nil
@@ -486,6 +496,46 @@ func TestDetectConflicts(t *testing.T) {
 			)
 		}
 	}
+}
+
+func TestHidden(t *testing.T) {
+	testDir := setupFileSystem(t)
+	cases := []testCase{
+		{
+			name: "Hidden files are ignored by default",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  "abc.pdf.bak",
+				},
+			},
+			args: []string{"-f", "pdf", "-r", "pdf.bak", "-R", testDir},
+		},
+		{
+			name: "Hidden files are included",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  "abc.pdf.bak",
+				},
+				{
+					Source:  "sample.pdf",
+					BaseDir: filepath.Join(testDir, ".dir"),
+					Target:  "sample.pdf.bak",
+				},
+				{
+					Source:  ".forbidden.pdf",
+					BaseDir: testDir,
+					Target:  ".forbidden.pdf.bak",
+				},
+			},
+			args: []string{"-f", "pdf", "-r", "pdf.bak", "-H", "-R", testDir},
+		},
+	}
+
+	runFindReplace(t, cases)
 }
 
 func TestExcludeFilter(t *testing.T) {
@@ -853,7 +903,7 @@ func TestAutoIncrementingNumber(t *testing.T) {
 		}
 
 		op.SortMatches()
-		err := op.Replace()
+		err := op.replace()
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}

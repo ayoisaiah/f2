@@ -61,6 +61,10 @@ var dateTokens = map[string]string{
 type conflict int
 
 const (
+	dotCharacter = 46
+)
+
+const (
 	emptyFilename conflict = iota
 	fileExists
 	overwritingNewPath
@@ -204,7 +208,7 @@ func (op *Operation) Undo() error {
 		return op.matches[i].BaseDir < op.matches[j].BaseDir
 	})
 
-	return op.Apply()
+	return op.apply()
 }
 
 // PrintChanges displays the changes to be made in a
@@ -221,10 +225,10 @@ func (op *Operation) PrintChanges() {
 	printTable(data)
 }
 
-// Apply will check for conflicts and print the changes to be made
+// apply will check for conflicts and print the changes to be made
 // or apply them directly to the filesystem if in execute mode.
 // Conflicts will be ignored if indicated
-func (op *Operation) Apply() error {
+func (op *Operation) apply() error {
 	if len(op.matches) == 0 {
 		fmt.Println("Failed to match any files")
 		return nil
@@ -232,7 +236,7 @@ func (op *Operation) Apply() error {
 
 	op.DetectConflicts()
 	if len(op.conflicts) > 0 && !op.fixConflicts {
-		op.ReportConflicts()
+		op.reportConflicts()
 		fmt.Fprintln(
 			os.Stderr,
 			"conflict detected! please resolve before proceeding",
@@ -281,8 +285,8 @@ func (op *Operation) Apply() error {
 	return nil
 }
 
-// ReportConflicts prints any detected conflicts to the standard error
-func (op *Operation) ReportConflicts() {
+// reportConflicts prints any detected conflicts to the standard error
+func (op *Operation) reportConflicts() {
 	var data [][]string
 	if slice, exists := op.conflicts[emptyFilename]; exists {
 		for _, v := range slice {
@@ -647,9 +651,9 @@ func (op *Operation) replaceString(fileName string) (str string) {
 	return str
 }
 
-// Replace replaces the matched text in each path with the
+// replace replaces the matched text in each path with the
 // replacement string
-func (op *Operation) Replace() error {
+func (op *Operation) replace() error {
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.Source), filepath.Dir(v.Source)
 		fileExt := filepath.Ext(fileName)
@@ -683,9 +687,9 @@ func (op *Operation) Replace() error {
 	return nil
 }
 
-// FindMatches locates matches for the search pattern
+// findMatches locates matches for the search pattern
 // in each filename. Hidden files and directories are exempted
-func (op *Operation) FindMatches() {
+func (op *Operation) findMatches() error {
 	for _, v := range op.paths {
 		filename := filepath.Base(v.Source)
 
@@ -697,9 +701,15 @@ func (op *Operation) FindMatches() {
 			continue
 		}
 
-		// ignore dotfiles
-		if !op.includeHidden && filename[0] == 46 {
-			continue
+		// ignore dotfiles on unix and hidden files on windows
+		if !op.includeHidden {
+			r, err := isHidden(filename, v.BaseDir)
+			if err != nil {
+				return err
+			}
+			if r {
+				continue
+			}
 		}
 
 		var f = filename
@@ -726,6 +736,8 @@ func (op *Operation) FindMatches() {
 			op.matches = append(op.matches, v)
 		}
 	}
+
+	return nil
 }
 
 // filterMatches excludes any files or directories that match
@@ -770,10 +782,13 @@ func (op *Operation) Run() error {
 		return op.Undo()
 	}
 
-	op.FindMatches()
+	err := op.findMatches()
+	if err != nil {
+		return err
+	}
 
 	if len(op.excludeFilter) != 0 {
-		err := op.filterMatches()
+		err = op.filterMatches()
 		if err != nil {
 			return err
 		}
@@ -783,12 +798,12 @@ func (op *Operation) Run() error {
 		op.SortMatches()
 	}
 
-	err := op.Replace()
+	err = op.replace()
 	if err != nil {
 		return err
 	}
 
-	return op.Apply()
+	return op.apply()
 }
 
 // setOptions applies the command line arguments

@@ -12,10 +12,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-const (
-	dotCharacter = 46
-)
-
 // getNewPath returns a filename based on the target
 // which is not available due to it existing on the filesystem
 // or when another renamed file shares the same path.
@@ -57,13 +53,22 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 	}
 }
 
-func removeDotfiles(de []os.DirEntry) (ret []os.DirEntry) {
+func removeHidden(
+	de []os.DirEntry,
+	baseDir string,
+) (ret []os.DirEntry, err error) {
 	for _, e := range de {
-		if e.Name()[0] != dotCharacter {
+		r, err := isHidden(e.Name(), baseDir)
+		if err != nil {
+			return nil, err
+		}
+
+		if !r {
 			ret = append(ret, e)
 		}
 	}
-	return
+
+	return ret, nil
 }
 
 // contains checks if a string is present in
@@ -107,7 +112,11 @@ loop:
 		}
 
 		if !includeHidden {
-			v = removeDotfiles(v)
+			var err error
+			v, err = removeHidden(v, k)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		iterated = append(iterated, k)
