@@ -41,12 +41,9 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 		// Ensure the new path does not exist on the filesystem
 		if _, err := os.Stat(fullPath); err != nil &&
 			errors.Is(err, os.ErrNotExist) {
-			if m != nil {
-				// Check if newPath conflicts with another renamed file
-				for k := range m {
-					if k == fullPath {
-						goto out
-					}
+			for k := range m {
+				if k == fullPath {
+					goto out
 				}
 			}
 			return newPath
