@@ -129,25 +129,26 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.2.2
+   v1.3.0
 
 FLAGS:
-   --find string, -f string       Search string or regular expression.
-   --replace string, -r string    Replacement string. If omitted, defaults to an empty string.
-   --start-num value, -n value    Starting number when using numbering scheme in replacement string such as %03d (default: 1)
-   --output-file value, -o value  Output a map file for the current operation
-   --exec, -x                     Execute the batch renaming operation (default: false)
-   --recursive, -R                Rename files recursively (default: false)
-   --undo value, -u value         Undo a successful operation using a previously created map file
-   --ignore-case, -i              Ignore case (default: false)
-   --ignore-ext, -e               Ignore extension (default: false)
-   --include-dir, -d              Include directories (default: false)
-   --only-dir, -D                 Rename only directories (implies include-dir) (default: false)
-   --hidden, -H                   Include hidden files and directories (default: false)
-   --fix-conflicts, -F            Fix any detected conflicts with auto indexing (default: false)
-   --string-mode, -s              Opt into string literal mode by treating find expressions as non-regex strings (default: false)
-   --help, -h                     show help (default: false)
-   --version, -v                  print the version (default: false)
+   --find <pattern>, -f <pattern>     Search <pattern>. Treated as a regular expression by default. Use -s or --string-mode to opt out
+   --replace <string>, -r <string>    Replacement <string>. If omitted, defaults to an empty string. Supports built-in and regex capture variables
+   --start-num <number>, -n <number>  When using an auto incrementing number in the replacement string such as %03d, start the count from <number> (default: 1)
+   --exclude <pattern>, -E <pattern>  Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude <pattern>s can be specified.
+   --output-file <file>, -o <file>    Output a map <file> for the current operation
+   --exec, -x                         Execute the batch renaming operation (default: false)
+   --recursive, -R                    Rename files recursively (default: false)
+   --undo file, -u file               Undo a successful operation using a previously created map file
+   --ignore-case, -i                  Ignore case (default: false)
+   --ignore-ext, -e                   Ignore extension (default: false)
+   --include-dir, -d                  Include directories (default: false)
+   --only-dir, -D                     Rename only directories (implies include-dir) (default: false)
+   --hidden, -H                       Include hidden files and directories (default: false)
+   --fix-conflicts, -F                Fix any detected conflicts with auto indexing (default: false)
+   --string-mode, -s                  Opt into string literal mode by treating find expressions as non-regex strings (default: false)
+   --help, -h                         show help (default: false)
+   --version, -v                      print the version (default: false)
 
 DOCUMENTATION:
   https://github.com/ayoisaiah/f2#examples
@@ -163,6 +164,7 @@ WEBSITE:
 - To enforce the changes, include the `--exec` or `-x` flag.
 - The `-f` or `--find` flag supports regular expressions and string literals. If omitted, it matches the entire filename of each file.
 - The `-r` or `--replace` flag supports [variables](#use-a-variable).
+- Hidden files and directories are exempted by default but can be included with the `--hidden` or `-H` flag.
 
 ### Basic find and replace
 
