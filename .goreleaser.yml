@@ -11,14 +11,26 @@ builds:
       - linux
       - windows
       - darwin
+      - android
+    goarch:
+      - 386
+      - amd64
+      - arm64
+    ignore:
+      - goos: android
+        goarch: 386
+      - goos: windows
+        goarch: arm64
     main: ./cmd/f2
 archives:
   - replacements:
       darwin: darwin
       linux: linux
       windows: windows
+      android: android
       386: i386
       amd64: amd64
+      arm64: arm64
 checksum:
   name_template: 'checksums.txt'
 snapshot:

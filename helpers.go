@@ -23,7 +23,7 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 	index  int
 }) string {
 	f := filenameWithoutExtension(filepath.Base(target))
-	re := regexp.MustCompile("\\(\\d+\\)$")
+	re := regexp.MustCompile(`\(\d+\)$`)
 	// Extract the numbered index at the end of the filename (if any)
 	match := re.FindStringSubmatch(f)
 	num := 2
