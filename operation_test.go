@@ -61,7 +61,7 @@ func setupFileSystem(t testing.TB) string {
 	}
 
 	t.Cleanup(func() {
-		if err := os.RemoveAll(testDir); err != nil {
+		if err = os.RemoveAll(testDir); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -77,7 +77,7 @@ func setupFileSystem(t testing.TB) string {
 
 	for _, f := range fileSystem {
 		filePath := filepath.Join(testDir, f)
-		if err := ioutil.WriteFile(filePath, []byte{}, 0755); err != nil {
+		if err = ioutil.WriteFile(filePath, []byte{}, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -115,7 +115,7 @@ func action(args []string) (ActionResult, error) {
 		op.FindMatches()
 
 		if len(op.excludeFilter) != 0 {
-			err := op.filterMatches()
+			err = op.filterMatches()
 			if err != nil {
 				return err
 			}
@@ -156,15 +156,15 @@ func sortChanges(s []Change) {
 }
 
 func runFindReplace(t *testing.T, cases []testCase) {
-	for i, v := range cases {
+	for _, v := range cases {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
 		result, _ := action(args) // err will be nil
 
 		if len(result.conflicts) > 0 {
 			t.Fatalf(
-				"Test(%d) — Expected no conflicts but got some: %v",
-				i+1,
+				"Test (%s) — Expected no conflicts but got some: %v",
+				v.name,
 				result.conflicts,
 			)
 		}
@@ -174,8 +174,8 @@ func runFindReplace(t *testing.T, cases []testCase) {
 
 		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
 			t.Fatalf(
-				"Test(%d) — Expected: %+v, got: %+v\n",
-				i+1,
+				"Test (%s) — Expected: %+v, got: %+v\n",
+				v.name,
 				v.want,
 				result.changes,
 			)
@@ -186,16 +186,18 @@ func runFindReplace(t *testing.T, cases []testCase) {
 			file, err := os.ReadFile(result.outputFile)
 			if err != nil {
 				t.Fatalf(
-					"Unexpected error when trying to read map file: %v\n",
+					"Test (%s) — Unexpected error when trying to read map file: %v\n",
+					v.name,
 					err,
 				)
 			}
 
 			var mf mapFile
-			err = json.Unmarshal([]byte(file), &mf)
+			err = json.Unmarshal(file, &mf)
 			if err != nil {
 				t.Fatalf(
-					"Unexpected error when trying to unmarshal map file contents: %v\n",
+					"Test (%s) — Unexpected error when trying to unmarshal map file contents: %v\n",
+					v.name,
 					err,
 				)
 			}
@@ -205,8 +207,8 @@ func runFindReplace(t *testing.T, cases []testCase) {
 
 			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
 				t.Fatalf(
-					"Test(%d) — Expected: %+v, got: %+v\n",
-					i+1,
+					"Test (%s) — Expected: %+v, got: %+v\n",
+					v.name,
 					v.want,
 					ch,
 				)
@@ -423,7 +425,7 @@ func TestDetectConflicts(t *testing.T) {
 	table := []Table{
 		{
 			want: map[conflict][]Conflict{
-				fileExists: []Conflict{
+				fileExists: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, "abc.epub"),
@@ -434,7 +436,7 @@ func TestDetectConflicts(t *testing.T) {
 		},
 		{
 			want: map[conflict][]Conflict{
-				emptyFilename: []Conflict{
+				emptyFilename: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, ""),
@@ -445,7 +447,7 @@ func TestDetectConflicts(t *testing.T) {
 		},
 		{
 			want: map[conflict][]Conflict{
-				overwritingNewPath: []Conflict{
+				overwritingNewPath: {
 					{
 						source: []string{
 							filepath.Join(testDir, "abc.epub"),
@@ -857,7 +859,7 @@ func TestAutoIncrementingNumber(t *testing.T) {
 		}
 
 		sort.SliceStable(op.matches, func(i, j int) bool {
-			regex := regexp.MustCompile("[0-9]+")
+			regex := regexp.MustCompile(`\d+`)
 			inum, err := strconv.Atoi(regex.FindString(op.matches[i].Target))
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)

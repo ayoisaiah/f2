@@ -29,9 +29,9 @@ var (
 	filenameRegex  = regexp.MustCompile("{{f}}")
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
-	indexRegex     = regexp.MustCompile("%([0-9]?)+d")
+	indexRegex     = regexp.MustCompile(`%(\d?)+d`)
 	exifRegex      = regexp.MustCompile(
-		"{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}",
+		`{{exif\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}`,
 	)
 	dateRegex *regexp.Regexp
 )
@@ -175,7 +175,7 @@ func (op *Operation) WriteToFile() (err error) {
 func (op *Operation) Undo() error {
 	if op.undoFile == "" {
 		return fmt.Errorf(
-			"Please pass a previously created map file to continue",
+			"specify a previously created map file to continue",
 		)
 	}
 
@@ -185,7 +185,7 @@ func (op *Operation) Undo() error {
 	}
 
 	var mf mapFile
-	err = json.Unmarshal([]byte(file), &mf)
+	err = json.Unmarshal(file, &mf)
 	if err != nil {
 		return err
 	}
@@ -235,10 +235,10 @@ func (op *Operation) Apply() error {
 		op.ReportConflicts()
 		fmt.Fprintln(
 			os.Stderr,
-			"Conflict detected! Please resolve before proceeding",
+			"conflict detected! please resolve before proceeding",
 		)
 		return fmt.Errorf(
-			"Or append the %s flag to fix conflicts automatically",
+			"or append the %s flag to fix conflicts automatically",
 			yellow("-F"),
 		)
 	}
@@ -252,14 +252,14 @@ func (op *Operation) Apply() error {
 			// If target contains a slash, create all missing
 			// directories before renaming the file
 			execErr := fmt.Errorf(
-				"An error occurred while renaming '%s' to '%s'",
+				"an error occurred while renaming '%s' to '%s'",
 				source,
 				target,
 			)
 			if strings.Contains(ch.Target, "/") {
 				// No need to check if the `dir` exists since `os.MkdirAll` handles that
 				dir := filepath.Dir(ch.Target)
-				err := os.MkdirAll(dir, 0755)
+				err := os.MkdirAll(dir, 0750)
 				if err != nil {
 					return execErr
 				}
@@ -478,10 +478,10 @@ func replaceDateVariables(file, input string) (string, error) {
 	return input, nil
 }
 
-func replaceExifVariables(file, input string) (out string, err error) {
+func getExifData(file string) (*Exif, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	defer func() {
@@ -503,6 +503,10 @@ func replaceExifVariables(file, input string) (out string, err error) {
 		}
 	}
 
+	return exifData, nil
+}
+
+func replaceExifVariables(exifData *Exif, input string) (string, error) {
 	submatches := exifRegex.FindAllStringSubmatch(input, -1)
 	for _, submatch := range submatches {
 		regex, err := regexp.Compile(submatch[0])
@@ -606,7 +610,12 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 
 	if exifRegex.Match([]byte(str)) {
 		source := filepath.Join(ch.BaseDir, ch.Source)
-		out, err := replaceExifVariables(source, str)
+		exifData, err := getExifData(source)
+		if err != nil {
+			return "", err
+		}
+
+		out, err := replaceExifVariables(exifData, str)
 		if err != nil {
 			return "", err
 		}
@@ -741,7 +750,7 @@ func (op *Operation) filterMatches() error {
 
 // setPaths creates a Change struct for each path
 // and checks if its a directory or not
-func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
+func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 	for k, v := range paths {
 		for _, f := range v {
 			var change = Change{
@@ -753,8 +762,6 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) error {
 			op.paths = append(op.paths, change)
 		}
 	}
-
-	return nil
 }
 
 // Run executes the operation sequence
@@ -784,17 +791,9 @@ func (op *Operation) Run() error {
 	return op.Apply()
 }
 
-// NewOperation returns an Operation constructed
-// from command line flags & arguments
-func NewOperation(c *cli.Context) (*Operation, error) {
-	if c.String("find") == "" && c.String("replace") == "" &&
-		c.String("undo") == "" {
-		return nil, fmt.Errorf(
-			"Invalid arguments: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
-		)
-	}
-
-	op := &Operation{}
+// setOptions applies the command line arguments
+// onto the operation
+func setOptions(op *Operation, c *cli.Context) error {
 	op.outputFile = c.String("output-file")
 	op.findString = c.String("find")
 	op.replacement = c.String("replace")
@@ -816,10 +815,6 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 		op.includeDir = true
 	}
 
-	if op.undoFile != "" {
-		return op, nil
-	}
-
 	findPattern := c.String("find")
 	// Match entire string if find pattern is empty
 	if findPattern == "" {
@@ -832,12 +827,32 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 
 	re, err := regexp.Compile(findPattern)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"Malformed regular expression for search pattern %s",
-			findPattern,
-		)
+		return err
 	}
 	op.searchRegex = re
+
+	return nil
+}
+
+// NewOperation returns an Operation constructed
+// from command line flags & arguments
+func NewOperation(c *cli.Context) (*Operation, error) {
+	if c.String("find") == "" && c.String("replace") == "" &&
+		c.String("undo") == "" {
+		return nil, fmt.Errorf(
+			"invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
+		)
+	}
+
+	op := &Operation{}
+	err := setOptions(op, c)
+	if err != nil {
+		return nil, err
+	}
+
+	if op.undoFile != "" {
+		return op, nil
+	}
 
 	var paths = make(map[string][]os.DirEntry)
 	for _, v := range op.directories {
@@ -868,5 +883,6 @@ func NewOperation(c *cli.Context) (*Operation, error) {
 		return nil, err
 	}
 
-	return op, op.setPaths(paths)
+	op.setPaths(paths)
+	return op, nil
 }

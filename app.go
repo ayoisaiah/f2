@@ -49,6 +49,9 @@ func checkForUpdates(app *cli.App) {
 		fmt.Println("HTTP Error: Failed to check for update")
 		return
 	}
+
+	defer resp.Body.Close()
+
 	var version string
 	_, err = fmt.Sscanf(
 		resp.Request.URL.String(),

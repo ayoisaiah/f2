@@ -12,6 +12,10 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+const (
+	dotCharacter = 46
+)
+
 // getNewPath returns a filename based on the target
 // which is not available due to it existing on the filesystem
 // or when another renamed file shares the same path.
@@ -49,13 +53,13 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 			return newPath
 		}
 	out:
-		num += 1
+		num++
 	}
 }
 
 func removeDotfiles(de []os.DirEntry) (ret []os.DirEntry) {
 	for _, e := range de {
-		if e.Name()[0] != 46 {
+		if e.Name()[0] != dotCharacter {
 			ret = append(ret, e)
 		}
 	}
@@ -136,7 +140,8 @@ func exifDivision(slice []string) string {
 	if len(slice) > 0 {
 		str := slice[0]
 		strSlice := strings.Split(str, "/")
-		if len(strSlice) == 2 {
+		expectedLength := 2
+		if len(strSlice) == expectedLength {
 			numerator, err := strconv.Atoi(strSlice[0])
 			if err != nil {
 				return ""
