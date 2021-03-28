@@ -1,0 +1,11 @@
+{
+  "make": "samsung",
+  "model": "SM-G975F",
+  "width": 4032,
+  "height": 3024,
+  "dimensions": "4032x3024",
+  "iso": 50,
+  "exposure_time": "1_100",
+  "focal_length": "4.32",
+  "aperture": "2.4"
+}

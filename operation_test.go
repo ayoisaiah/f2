@@ -1145,3 +1145,104 @@ func TestReplaceDateVariables(t *testing.T) {
 		}
 	}
 }
+
+func TestReplaceExifVariables(t *testing.T) {
+	rootDir := filepath.Join("testdata", "images")
+
+	type FileExif struct {
+		Make         string `json:"make"`
+		Model        string `json:"model"`
+		ISO          int    `json:"iso"`
+		Width        int    `json:"width"`
+		Height       int    `json:"height"`
+		Dimensions   string `json:"dimensions"`
+		ExposureTime string `json:"exposure_time"`
+		FocalLength  string `json:"focal_length"`
+		Aperture     string `json:"aperture"`
+	}
+
+	cases := []testCase{
+		{
+			name: "Use EXIF data to rename CR2 file",
+			want: []Change{
+				{
+					Source:  "tractor-raw.cr2",
+					BaseDir: rootDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"tractor-raw.cr2",
+				"-r",
+				"{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
+				rootDir,
+			},
+		},
+		{
+			name: "Use EXIF data to rename JPEG file",
+			want: []Change{
+				{
+					Source:  "bike.jpeg",
+					BaseDir: rootDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"bike.jpeg",
+				"-r",
+				"{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
+				rootDir,
+			},
+		},
+		{
+			name: "Use EXIF data to rename DNG file",
+			want: []Change{
+				{
+					Source:  "proraw.dng",
+					BaseDir: rootDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"proraw.dng",
+				"-r",
+				"{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.h}}_h{{exif.w}}_{{exif.h}}x{{exif.w}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
+				rootDir,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		f := filenameWithoutExtension(c.want[0].Source)
+		ext := filepath.Ext(c.want[0].Source)
+
+		jsonFile, err := os.ReadFile(filepath.Join(rootDir, f+".json"))
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		var exif FileExif
+		err = json.Unmarshal(jsonFile, &exif)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		target := fmt.Sprintf(
+			"%s_%s_ISO%d_w%d_h%d_%s_%ss_%smm_f%s%s",
+			exif.Make,
+			exif.Model,
+			exif.ISO,
+			exif.Width,
+			exif.Height,
+			exif.Dimensions,
+			exif.ExposureTime,
+			exif.FocalLength,
+			exif.Aperture,
+			ext,
+		)
+
+		c.want[0].Target = target
+	}
+
+	runFindReplace(t, cases)
+}
