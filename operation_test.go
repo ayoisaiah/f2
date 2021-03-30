@@ -1150,6 +1150,7 @@ func TestReplaceExifVariables(t *testing.T) {
 	rootDir := filepath.Join("testdata", "images")
 
 	type FileExif struct {
+		Year         string `json:"year"`
 		Make         string `json:"make"`
 		Model        string `json:"model"`
 		ISO          int    `json:"iso"`
@@ -1174,7 +1175,7 @@ func TestReplaceExifVariables(t *testing.T) {
 				"-f",
 				"tractor-raw.cr2",
 				"-r",
-				"{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
+				"{{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
 				rootDir,
 			},
 		},
@@ -1190,7 +1191,7 @@ func TestReplaceExifVariables(t *testing.T) {
 				"-f",
 				"bike.jpeg",
 				"-r",
-				"{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
+				"{{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
 				rootDir,
 			},
 		},
@@ -1206,7 +1207,7 @@ func TestReplaceExifVariables(t *testing.T) {
 				"-f",
 				"proraw.dng",
 				"-r",
-				"{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.h}}_h{{exif.w}}_{{exif.h}}x{{exif.w}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
+				"{{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_{{exif.iso}}_w{{exif.h}}_h{{exif.w}}_{{exif.h}}x{{exif.w}}_{{exif.et}}_{{exif.fl}}_{{exif.fnum}}{{ext}}",
 				rootDir,
 			},
 		},
@@ -1228,7 +1229,8 @@ func TestReplaceExifVariables(t *testing.T) {
 		}
 
 		target := fmt.Sprintf(
-			"%s_%s_ISO%d_w%d_h%d_%s_%ss_%smm_f%s%s",
+			"%s_%s_%s_ISO%d_w%d_h%d_%s_%ss_%smm_f%s%s",
+			exif.Year,
 			exif.Make,
 			exif.Model,
 			exif.ISO,

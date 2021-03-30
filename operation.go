@@ -30,10 +30,8 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(`%(\d?)+d`)
-	exifRegex      = regexp.MustCompile(
-		`{{exif\.(iso|et|fl|w|h|wh|make|model|lens|fnum)}}`,
-	)
-	dateRegex *regexp.Regexp
+	exifRegex      *regexp.Regexp
+	dateRegex      *regexp.Regexp
 )
 
 var dateTokens = map[string]string{
@@ -118,15 +116,16 @@ type mapFile struct {
 
 // Exif represents exif information from an image file
 type Exif struct {
-	ISOSpeedRatings []int
-	Make            string
-	Model           string
-	ExposureTime    []string
-	FocalLength     []string
-	FNumber         []string
-	ImageWidth      []int
-	ImageLength     []int // the image height
-	LensModel       string
+	ISOSpeedRatings  []int
+	DateTimeOriginal string
+	Make             string
+	Model            string
+	ExposureTime     []string
+	FocalLength      []string
+	FNumber          []string
+	ImageWidth       []int
+	ImageLength      []int // the image height
+	LensModel        string
 }
 
 func init() {
@@ -138,6 +137,10 @@ func init() {
 	tokenString := strings.Join(tokens, "|")
 	dateRegex = regexp.MustCompile(
 		"{{(mtime|ctime|btime|atime|now)\\.(" + tokenString + ")}}",
+	)
+
+	exifRegex = regexp.MustCompile(
+		"{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)?(?:(dt)\\.(" + tokenString + "))?}}",
 	)
 }
 
@@ -519,7 +522,25 @@ func replaceExifVariables(exifData *Exif, input string) (string, error) {
 			return "", err
 		}
 
+		if strings.Contains(submatch[0], "exif.dt") {
+			submatch = append(submatch[:1], submatch[1+1:]...)
+		}
+
 		switch submatch[1] {
+		case "dt":
+			date := exifData.DateTimeOriginal
+			arr := strings.Split(date, " ")
+			var dt time.Time
+			d := strings.ReplaceAll(arr[0], ":", "-")
+			t := arr[1]
+			var err error
+			dt, err = time.Parse(time.RFC3339, d+"T"+t+"Z")
+			if err != nil {
+				return "", err
+			}
+
+			timeStr := dt.Format(dateTokens[submatch[2]])
+			input = regex.ReplaceAllString(input, timeStr)
 		case "model":
 			cmodel := exifData.Model
 			cmodel = strings.ReplaceAll(cmodel, "/", "_")
