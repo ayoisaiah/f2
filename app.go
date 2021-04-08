@@ -176,12 +176,12 @@ func GetApp() *cli.App {
 		},
 		UseShortOptionHandling: true,
 		Action: func(c *cli.Context) error {
-			op, err := NewOperation(c)
+			op, err := newOperation(c)
 			if err != nil {
 				return err
 			}
 
-			return op.Run()
+			return op.run()
 		},
 	}
 }

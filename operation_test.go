@@ -113,14 +113,14 @@ func action(args []string) (ActionResult, error) {
 
 	app := GetApp()
 	app.Action = func(c *cli.Context) error {
-		op, err := NewOperation(c)
+		op, err := newOperation(c)
 		if err != nil {
 			return err
 		}
 
 		if op.undoFile != "" {
 			result.outputFile = op.undoFile
-			return op.Undo()
+			return op.undo()
 		}
 
 		err = op.findMatches()
@@ -136,7 +136,7 @@ func action(args []string) (ActionResult, error) {
 		}
 
 		if op.includeDir {
-			op.SortMatches()
+			op.sortMatches()
 		}
 
 		err = op.replace()
@@ -1019,7 +1019,7 @@ func TestAutoIncrementingNumber(t *testing.T) {
 			op.matches = append(op.matches, ch)
 		}
 
-		op.SortMatches()
+		op.sortMatches()
 		err := op.replace()
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)

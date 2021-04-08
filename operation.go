@@ -178,9 +178,9 @@ func (op *Operation) WriteToFile() (err error) {
 	return writer.Flush()
 }
 
-// Undo reverses the a successful renaming operation indicated
+// undo reverses a successful renaming operation indicated
 // in the specified map file
-func (op *Operation) Undo() error {
+func (op *Operation) undo() error {
 	if op.undoFile == "" {
 		return fmt.Errorf(
 			"specify a previously created map file to continue",
@@ -215,9 +215,9 @@ func (op *Operation) Undo() error {
 	return op.apply()
 }
 
-// PrintChanges displays the changes to be made in a
+// printChanges displays the changes to be made in a
 // table format
-func (op *Operation) PrintChanges() {
+func (op *Operation) printChanges() {
 	var data = make([][]string, len(op.matches))
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
@@ -238,7 +238,7 @@ func (op *Operation) apply() error {
 		return nil
 	}
 
-	op.DetectConflicts()
+	op.detectConflicts()
 	if len(op.conflicts) > 0 && !op.fixConflicts {
 		op.reportConflicts()
 		fmt.Fprintln(
@@ -282,7 +282,7 @@ func (op *Operation) apply() error {
 	if op.exec && len(op.matches) > 0 && op.outputFile != "" {
 		return op.WriteToFile()
 	} else if !op.exec && len(op.matches) > 0 {
-		op.PrintChanges()
+		op.printChanges()
 		fmt.Printf("Append the %s flag to apply the above changes\n", yellow("-x"))
 	}
 
@@ -330,10 +330,10 @@ func (op *Operation) reportConflicts() {
 	printTable(data)
 }
 
-// DetectConflicts detects any conflicts that occur
+// detectConflicts detects any conflicts that occur
 // after renaming a file. Conflicts are automatically
 // fixed if specified
-func (op *Operation) DetectConflicts() {
+func (op *Operation) detectConflicts() {
 	op.conflicts = make(map[conflict][]Conflict)
 	m := make(map[string][]struct {
 		source string
@@ -430,9 +430,9 @@ func (op *Operation) DetectConflicts() {
 	}
 }
 
-// SortMatches is used to sort files before directories
+// sortMatches is used to sort files before directories
 // and child directories before their parents
-func (op *Operation) SortMatches() {
+func (op *Operation) sortMatches() {
 	sort.SliceStable(op.matches, func(i, j int) bool {
 		if !op.matches[i].IsDir {
 			return true
@@ -798,10 +798,10 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 	}
 }
 
-// Run executes the operation sequence
-func (op *Operation) Run() error {
+// run executes the operation sequence
+func (op *Operation) run() error {
 	if op.undoFile != "" {
-		return op.Undo()
+		return op.undo()
 	}
 
 	err := op.findMatches()
@@ -817,7 +817,7 @@ func (op *Operation) Run() error {
 	}
 
 	if op.includeDir {
-		op.SortMatches()
+		op.sortMatches()
 	}
 
 	err = op.replace()
@@ -872,9 +872,9 @@ func setOptions(op *Operation, c *cli.Context) error {
 	return nil
 }
 
-// NewOperation returns an Operation constructed
+// newOperation returns an Operation constructed
 // from command line flags & arguments
-func NewOperation(c *cli.Context) (*Operation, error) {
+func newOperation(c *cli.Context) (*Operation, error) {
 	if c.String("find") == "" && c.String("replace") == "" &&
 		c.String("undo") == "" {
 		return nil, fmt.Errorf(
