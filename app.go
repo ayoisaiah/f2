@@ -69,7 +69,7 @@ func checkForUpdates(app *cli.App) {
 			app.Name,
 		)
 	} else {
-		fmt.Printf("%s: %s at %s\n", green("Update available"), version, resp.Request.URL.String())
+		fmt.Printf("%s: %s at %s\n", green.Sprint("Update available"), version, resp.Request.URL.String())
 	}
 }
 

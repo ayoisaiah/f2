@@ -14,16 +14,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gookit/color"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/djherbis/times.v1"
-	"gopkg.in/gookit/color.v1"
 )
 
 var (
-	red    = color.FgRed.Render
-	green  = color.FgGreen.Render
-	yellow = color.FgYellow.Render
+	red    = color.HEX("#FF2F2F")
+	green  = color.HEX("#23D160")
+	yellow = color.HEX("#FFAB00")
 )
 
 var (
@@ -223,7 +223,7 @@ func (op *Operation) printChanges() {
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
-		d := []string{source, target, green("ok")}
+		d := []string{source, target, green.Sprint("ok")}
 		data[i] = d
 	}
 
@@ -283,7 +283,7 @@ func (op *Operation) apply() error {
 		)
 		return fmt.Errorf(
 			"or append the %s flag to fix conflicts automatically",
-			yellow("-F"),
+			yellow.Sprint("-F"),
 		)
 	}
 
@@ -296,7 +296,7 @@ func (op *Operation) apply() error {
 		return op.WriteToFile()
 	} else if !op.exec && len(op.matches) > 0 {
 		op.printChanges()
-		fmt.Printf("Append the %s flag to apply the above changes\n", yellow("-x"))
+		fmt.Printf("Append the %s flag to apply the above changes\n", yellow.Sprint("-x"))
 	}
 
 	return nil
@@ -310,7 +310,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				"",
-				red("❌ [Empty filename]"),
+				red.Sprint("❌ [Empty filename]"),
 			}
 			data = append(data, slice)
 		}
@@ -321,7 +321,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				v.target,
-				red("❌ [Path already exists]"),
+				red.Sprint("❌ [Path already exists]"),
 			}
 			data = append(data, slice)
 		}
@@ -333,7 +333,7 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					red("❌ [Overwriting newly renamed path]"),
+					red.Sprint("❌ [Overwriting newly renamed path]"),
 				}
 				data = append(data, slice)
 			}
