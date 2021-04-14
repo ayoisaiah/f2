@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -229,6 +230,41 @@ func (op *Operation) printChanges() {
 	printTable(data)
 }
 
+// rename iterates over all the matches and renames them on the filesystem
+// directories are auto-created if necessary
+func (op *Operation) rename() error {
+	for _, ch := range op.matches {
+		var source, target = ch.Source, ch.Target
+		source = filepath.Join(ch.BaseDir, source)
+		target = filepath.Join(ch.BaseDir, target)
+
+		if op.exec {
+			renameErr := fmt.Errorf(
+				"an error occurred while renaming '%s' to '%s'",
+				source,
+				target,
+			)
+			// If target contains a slash, create all missing
+			// directories before renaming the file
+			if strings.Contains(ch.Target, "/") ||
+				strings.Contains(ch.Target, `\`) && runtime.GOOS == "windows" {
+				// No need to check if the `dir` exists since `os.MkdirAll` handles that
+				dir := filepath.Dir(ch.Target)
+				err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
+				if err != nil {
+					return renameErr
+				}
+			}
+
+			if err := os.Rename(source, target); err != nil {
+				return renameErr
+			}
+		}
+	}
+
+	return nil
+}
+
 // apply will check for conflicts and print the changes to be made
 // or apply them directly to the filesystem if in execute mode.
 // Conflicts will be ignored if indicated
@@ -251,32 +287,9 @@ func (op *Operation) apply() error {
 		)
 	}
 
-	for _, ch := range op.matches {
-		var source, target = ch.Source, ch.Target
-		source = filepath.Join(ch.BaseDir, source)
-		target = filepath.Join(ch.BaseDir, target)
-
-		if op.exec {
-			// If target contains a slash, create all missing
-			// directories before renaming the file
-			execErr := fmt.Errorf(
-				"an error occurred while renaming '%s' to '%s'",
-				source,
-				target,
-			)
-			if strings.Contains(ch.Target, "/") {
-				// No need to check if the `dir` exists since `os.MkdirAll` handles that
-				dir := filepath.Dir(ch.Target)
-				err := os.MkdirAll(dir, 0750)
-				if err != nil {
-					return execErr
-				}
-			}
-
-			if err := os.Rename(source, target); err != nil {
-				return execErr
-			}
-		}
+	err := op.rename()
+	if err != nil {
+		return err
 	}
 
 	if op.exec && len(op.matches) > 0 && op.outputFile != "" {

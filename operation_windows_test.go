@@ -22,6 +22,46 @@ func setHidden(path string) error {
 	return nil
 }
 
+func TestAutoDirWindows(t *testing.T) {
+	testDir := setupFileSystem(t)
+	cases := []testCase{
+		{
+			name: "Auto create necessary dir1 and dir2 directories (backward slash)",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  `dir1\dir2\abc.pdf`,
+				},
+				{
+					Source:  "abc.epub",
+					BaseDir: testDir,
+					Target:  `dir1\dir2\abc.epub`,
+				},
+			},
+			args: []string{"-f", "(abc)", "-r", "dir1/dir2/$1", "-x", testDir},
+		},
+		{
+			name: "Auto create necessary dir1 and dir2 directories (backward slash)",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  `dir1\dir2\abc.pdf`,
+				},
+				{
+					Source:  "abc.epub",
+					BaseDir: testDir,
+					Target:  `dir1\dir2\abc.epub`,
+				},
+			},
+			args: []string{"-f", "(abc)", "-r", `dir1\dir2\$1`, "-x", testDir},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestHiddenWindows(t *testing.T) {
 	testDir := setupFileSystem(t)
 	err := setHidden(filepath.Join(testDir, "images"))
