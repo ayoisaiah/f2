@@ -132,23 +132,24 @@ VERSION:
    v1.4.0
 
 FLAGS:
-   --find <pattern>, -f <pattern>     Search <pattern>. Treated as a regular expression by default. Use -s or --string-mode to opt out
-   --replace <string>, -r <string>    Replacement <string>. If omitted, defaults to an empty string. Supports built-in and regex capture variables
-   --start-num <number>, -n <number>  When using an auto incrementing number in the replacement string such as %03d, start the count from <number> (default: 1)
-   --exclude <pattern>, -E <pattern>  Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude <pattern>s can be specified.
-   --output-file <file>, -o <file>    Output a map <file> for the current operation
-   --exec, -x                         Execute the batch renaming operation (default: false)
-   --recursive, -R                    Rename files recursively (default: false)
-   --undo file, -u file               Undo a successful operation using a previously created map file
-   --ignore-case, -i                  Ignore case (default: false)
-   --ignore-ext, -e                   Ignore extension (default: false)
-   --include-dir, -d                  Include directories (default: false)
-   --only-dir, -D                     Rename only directories (implies include-dir) (default: false)
-   --hidden, -H                       Include hidden files and directories (default: false)
-   --fix-conflicts, -F                Fix any detected conflicts with auto indexing (default: false)
-   --string-mode, -s                  Opt into string literal mode by treating find expressions as non-regex strings (default: false)
-   --help, -h                         show help (default: false)
-   --version, -v                      print the version (default: false)
+   --find <pattern>, -f <pattern>       Search <pattern>. Treated as a regular expression by default. Use -s or --string-mode to opt out
+   --replace <string>, -r <string>      Replacement <string>. If omitted, defaults to an empty string. Supports built-in and regex capture variables
+   --start-num <number>, -n <number>    When using an auto incrementing number in the replacement string such as %03d, start the count from <number> (default: 1)
+   --exclude <pattern>, -E <pattern>    Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude <pattern>s can be specified.
+   --output-file <file>, -o <file>      Output a map <file> for the current operation
+   --exec, -x                           Execute the batch renaming operation (default: false)
+   --recursive, -R                      Rename files recursively (default: false)
+   --max-depth <integer>, -m <integer>  positive <integer> indicating the maximum depth for a recursive search (set to 0 for no limit) (default: 0)
+   --undo file, -u file                 Undo a successful operation using a previously created map file
+   --ignore-case, -i                    Ignore case (default: false)
+   --ignore-ext, -e                     Ignore extension (default: false)
+   --include-dir, -d                    Include directories (default: false)
+   --only-dir, -D                       Rename only directories (implies include-dir) (default: false)
+   --hidden, -H                         Include hidden files and directories (default: false)
+   --fix-conflicts, -F                  Fix any detected conflicts with auto indexing (default: false)
+   --string-mode, -s                    Opt into string literal mode by treating find expressions as non-regex strings (default: false)
+   --help, -h                           show help (default: false)
+   --version, -v                        print the version (default: false)
 
 DOCUMENTATION:
   https://github.com/ayoisaiah/f2#examples
@@ -211,7 +212,7 @@ $ f2 -f '(2021)' -r '[2022]' -s
 
 ### Recursive find and replace
 
-Replace all instances of `js` to `ts` in the current directory and all sub directories (no depth limit).
+Replace all instances of `js` to `ts` in the current directory and all sub directories (no depth limit by default). Use the `--max-depth` or `-m` flag to provide a maximum depth limit.
 
 ```bash
 $ f2 -f 'js' -r 'ts' -R
@@ -502,6 +503,45 @@ $ f2 -f 'screenshot' -r '{{mtime.MMM}}-{{mtime.DD}}-{{mtime.YYYY}}-screenshot'
 | screenshot.jpg | Nov-08-2020-screenshot.jpg | ok     |
 | screenshot.png | Mar-04-2021-screenshot.png | ok     |
 +----------------+----------------------------+--------+
+```
+
+#### Exif variables
+
+**Important**: this feature only works for **jpeg**, **dng**, and **cr2** image
+formats. Other formats may work, but they are not currently tested against.
+**Heic** does not work at the moment.
+
+The exif attributes of an image file can be used in its replacement string. F2
+provides variables that enable you to access the ISO, width, height, created
+date, aperture, model, make, dimensions, focal length and exposure time for
+images. Each variable can be used like this: `{{exif.<var>}}` as in
+`{{exif.iso}}`. If the exif attribute is not present in the image file, the
+corresponding variable will be replaced with an empty string.
+
+Currently supported variables:
+
+- `iso`: The image ISO.
+- `w`: The image width.
+- `h`: The image height.
+- `model`: The camera model (e.g. Canon EOS 5D Mark III).
+- `make`: The camera maker (e.g. Canon).
+- `lens`: The lens model.
+- `et`: The exposure time (e.g. 1/400s).
+- `wh`: The image dimensions (e.g 4032x3024).
+- `fnum`: The aperture (e.g. f/1.6).
+- `fl`: The focal length of the lens (e.g 52mm)
+- `dt`: The image creation date. This must be combined with a date token
+(e.g `{{exif.dt.YYYY}}`).
+
+**Example**
+
+```bash
+f2 -f "proraw.dng" -r "{{exif.model}}_{{exif.fl}}_{{exif.et}}_{{exif.wh}}_{{f}}{{ext}}"
++------------+-----------------------------------------------------+--------+
+|   INPUT    |                       OUTPUT                        | STATUS |
++------------+-----------------------------------------------------+--------+
+| proraw.dng | iPhone 12 Pro Max_5.1mm_1_121s_4032x3024_proraw.dng | ok     |
++------------+-----------------------------------------------------+--------+
 ```
 
 *More variables coming soon*
