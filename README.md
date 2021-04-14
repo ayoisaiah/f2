@@ -212,7 +212,7 @@ $ f2 -f '(2021)' -r '[2022]' -s
 
 ### Recursive find and replace
 
-Replace all instances of `js` to `ts` in the current directory and all sub directories (no depth limit by default). Use the `--max-depth` or `-m` flag to provide a maximum depth limit.
+Replace all instances of `js` to `ts` in the current directory and all sub directories (no depth limit by default).
 
 ```bash
 $ f2 -f 'js' -r 'ts' -R
@@ -225,6 +225,20 @@ $ f2 -f 'js' -r 'ts' -R
 | one/index-04.js     | one/index-04.ts     | ok     |
 | one/two/index-05.js | one/two/index-05.ts | ok     |
 | one/two/index-06.js | one/two/index-06.ts | ok     |
++---------------------+---------------------+--------+
+```
+
+Use the `--max-depth` or `-m` flag to provide a maximum depth limit:
+
+```bash
+$ f2 -f 'js' -r 'ts' -R -m 1
++---------------------+---------------------+--------+
+|        INPUT        |       OUTPUT        | STATUS |
++---------------------+---------------------+--------+
+| index-01.js         | index-01.ts         | ok     |
+| index-02.js         | index-02.ts         | ok     |
+| one/index-03.js     | one/index-03.ts     | ok     |
+| one/index-04.js     | one/index-04.ts     | ok     |
 +---------------------+---------------------+--------+
 ```
 
@@ -425,6 +439,17 @@ $ f2 -f '-' -r '/' -x
         └── z.pdf
 ```
 
+Also supports the backslash character for separating paths in Windows only.
+
+```bash
+$ ls
+x-y-z.pdf
+```
+
+```bash
+$ f2 -f '-' -r '\' -x
+```
+
 ### Use a variable
 
 The replacement string can contain several variables will be replaced with their corresponding value.
@@ -507,20 +532,20 @@ $ f2 -f 'screenshot' -r '{{mtime.MMM}}-{{mtime.DD}}-{{mtime.YYYY}}-screenshot'
 
 #### Exif variables
 
-**Important**: this feature only works for **jpeg**, **dng**, and **cr2** image
-formats. Other formats may work, but they are not currently tested against.
-**Heic** does not work at the moment.
+**Important**: this feature only works for JPEG, DNG, and most other RAW
+image formats (CR2, NEF, RAF, ARW, e.t.c.). HEIC/HEIF is not supported at the
+moment.
 
 The exif attributes of an image file can be used in its replacement string. F2
 provides variables that enable you to access the ISO, width, height, created
 date, aperture, model, make, dimensions, focal length and exposure time for
 images. Each variable can be used like this: `{{exif.<var>}}` as in
-`{{exif.iso}}`. If the exif attribute is not present in the image file, the
+`{{exif.iso}}`. If an exif attribute is not present in the image file, the
 corresponding variable will be replaced with an empty string.
 
 Currently supported variables:
 
-- `iso`: The image ISO.
+- `iso`: The ISO at which the image was captured.
 - `w`: The image width.
 - `h`: The image height.
 - `model`: The camera model (e.g. Canon EOS 5D Mark III).
@@ -675,6 +700,7 @@ F2 relies on other open source software listed below:
 - [urfave/cli](https://github.com/urfave/cli)
 - [gookit/color](https://github.com/gookit/color)
 - [olekukonko/tablewriter](https://github.com/olekukonko/tablewriter)
+- [rwcarlsen/goexif](https://github.com/rwcarlsen/goexif)
 
 ## Contribute
 
