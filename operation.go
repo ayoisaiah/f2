@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -69,6 +70,14 @@ const (
 	overwritingNewPath
 )
 
+const (
+	modTime     = "mtime"
+	accessTime  = "atime"
+	birthTime   = "btime"
+	changeTime  = "ctime"
+	currentTime = "now"
+)
+
 // Conflict represents a renaming operation conflict
 // such as duplicate targets or empty filenames
 type Conflict struct {
@@ -108,6 +117,8 @@ type Operation struct {
 	stringMode    bool
 	excludeFilter []string
 	maxDepth      int
+	sort          string
+	reverseSort   bool
 }
 
 type mapFile struct {
@@ -137,7 +148,7 @@ func init() {
 
 	tokenString := strings.Join(tokens, "|")
 	dateRegex = regexp.MustCompile(
-		"{{(mtime|ctime|btime|atime|now)\\.(" + tokenString + ")}}",
+		"{{(" + modTime + "|" + changeTime + "|" + birthTime + "|" + accessTime + "|" + currentTime + ")\\.(" + tokenString + ")}}",
 	)
 
 	exifRegex = regexp.MustCompile(
@@ -216,6 +227,98 @@ func (op *Operation) undo() error {
 	return op.apply()
 }
 
+// sortBySize sorts the matches according to their file size
+func (op *Operation) sortBySize() (err error) {
+	sort.SliceStable(op.matches, func(i, j int) bool {
+		ipath := filepath.Join(op.matches[i].BaseDir, op.matches[i].Source)
+		jpath := filepath.Join(op.matches[j].BaseDir, op.matches[j].Source)
+
+		var ifile, jfile fs.FileInfo
+		ifile, err = os.Stat(ipath)
+		jfile, err = os.Stat(jpath)
+
+		isize := ifile.Size()
+		jsize := jfile.Size()
+
+		if op.reverseSort {
+			return isize < jsize
+		}
+
+		return isize > jsize
+	})
+
+	return err
+}
+
+// sortByTime sorts the matches by the specified file attribute
+// (mtime, atime, btime or ctime)
+func (op *Operation) sortByTime() (err error) {
+	sort.SliceStable(op.matches, func(i, j int) bool {
+		ipath := filepath.Join(op.matches[i].BaseDir, op.matches[i].Source)
+		jpath := filepath.Join(op.matches[j].BaseDir, op.matches[j].Source)
+
+		var ifile, jfile times.Timespec
+		ifile, err = times.Stat(ipath)
+		jfile, err = times.Stat(jpath)
+
+		var itime, jtime time.Time
+		switch op.sort {
+		case modTime:
+			itime = ifile.ModTime()
+			jtime = jfile.ModTime()
+		case birthTime:
+			itime = ifile.ModTime()
+			jtime = jfile.ModTime()
+			if ifile.HasBirthTime() {
+				itime = ifile.BirthTime()
+			}
+			if jfile.HasBirthTime() {
+				jtime = jfile.BirthTime()
+			}
+		case accessTime:
+			itime = ifile.AccessTime()
+			jtime = jfile.AccessTime()
+		case changeTime:
+			itime = ifile.ModTime()
+			jtime = jfile.ModTime()
+			if ifile.HasChangeTime() {
+				itime = ifile.ChangeTime()
+			}
+			if jfile.HasChangeTime() {
+				jtime = jfile.ChangeTime()
+			}
+		}
+
+		it, jt := itime.UnixNano(), jtime.UnixNano()
+
+		if op.reverseSort {
+			return it < jt
+		}
+
+		return it > jt
+	})
+
+	return err
+}
+
+// sortBy delegates the sorting of matches to the appropriate method
+func (op *Operation) sortBy() (err error) {
+	sortOptions := []string{"size", accessTime, modTime, birthTime, changeTime}
+
+	switch op.sort {
+	case "size":
+		return op.sortBySize()
+	case accessTime, modTime, birthTime, changeTime:
+		return op.sortByTime()
+	}
+
+	return fmt.Errorf(
+		"invalid sort option '%s'. valid options include: %s",
+		red.Sprint(op.sort),
+		green.Sprint(strings.Join(sortOptions, ", ")),
+	)
+}
+
 // printChanges displays the changes to be made in a
 // table format
 func (op *Operation) printChanges() {
@@ -238,27 +341,25 @@ func (op *Operation) rename() error {
 		source = filepath.Join(ch.BaseDir, source)
 		target = filepath.Join(ch.BaseDir, target)
 
-		if op.exec {
-			renameErr := fmt.Errorf(
-				"an error occurred while renaming '%s' to '%s'",
-				source,
-				target,
-			)
-			// If target contains a slash, create all missing
-			// directories before renaming the file
-			if strings.Contains(ch.Target, "/") ||
-				strings.Contains(ch.Target, `\`) && runtime.GOOS == "windows" {
-				// No need to check if the `dir` exists since `os.MkdirAll` handles that
-				dir := filepath.Dir(ch.Target)
-				err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
-				if err != nil {
-					return renameErr
-				}
-			}
-
-			if err := os.Rename(source, target); err != nil {
+		renameErr := fmt.Errorf(
+			"an error occurred while renaming '%s' to '%s'",
+			source,
+			target,
+		)
+		// If target contains a slash, create all missing
+		// directories before renaming the file
+		if strings.Contains(ch.Target, "/") ||
+			strings.Contains(ch.Target, `\`) && runtime.GOOS == "windows" {
+			// No need to check if the `dir` exists since `os.MkdirAll` handles that
+			dir := filepath.Dir(ch.Target)
+			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
+			if err != nil {
 				return renameErr
 			}
+		}
+
+		if err := os.Rename(source, target); err != nil {
+			return renameErr
 		}
 	}
 
@@ -287,14 +388,22 @@ func (op *Operation) apply() error {
 		)
 	}
 
-	err := op.rename()
-	if err != nil {
-		return err
-	}
+	if op.exec {
+		err := op.rename()
+		if err != nil {
+			return err
+		}
 
-	if op.exec && len(op.matches) > 0 && op.outputFile != "" {
-		return op.WriteToFile()
-	} else if !op.exec && len(op.matches) > 0 {
+		if op.outputFile != "" {
+			return op.WriteToFile()
+		}
+	} else {
+		if op.sort != "" {
+			err := op.sortBy()
+			if err != nil {
+				return err
+			}
+		}
 		op.printChanges()
 		fmt.Printf("Append the %s flag to apply the above changes\n", yellow.Sprint("-x"))
 	}
@@ -470,25 +579,25 @@ func replaceDateVariables(file, input string) (string, error) {
 
 		var timeStr string
 		switch submatch[1] {
-		case "mtime":
+		case modTime:
 			modTime := t.ModTime()
 			timeStr = modTime.Format(dateTokens[submatch[2]])
-		case "btime":
+		case birthTime:
 			birthTime := t.ModTime()
 			if t.HasBirthTime() {
 				birthTime = t.BirthTime()
 			}
 			timeStr = birthTime.Format(dateTokens[submatch[2]])
-		case "atime":
+		case accessTime:
 			accessTime := t.AccessTime()
 			timeStr = accessTime.Format(dateTokens[submatch[2]])
-		case "ctime":
+		case changeTime:
 			changeTime := t.ModTime()
 			if t.HasChangeTime() {
 				changeTime = t.ChangeTime()
 			}
 			timeStr = changeTime.Format(dateTokens[submatch[2]])
-		case "now":
+		case currentTime:
 			currentTime := time.Now()
 			timeStr = currentTime.Format(dateTokens[submatch[2]])
 		}
@@ -753,14 +862,14 @@ func (op *Operation) findMatches() error {
 		}
 
 		if op.stringMode {
-			fs := op.findString
+			findStr := op.findString
 
 			if op.ignoreCase {
 				f = strings.ToLower(f)
-				fs = strings.ToLower(fs)
+				findStr = strings.ToLower(findStr)
 			}
 
-			if strings.Contains(f, fs) {
+			if strings.Contains(f, findStr) {
 				op.matches = append(op.matches, v)
 			}
 			continue
@@ -861,6 +970,14 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.stringMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
 	op.maxDepth = c.Int("max-depth")
+
+	// Sorting
+	if c.String("sort") != "" {
+		op.sort = c.String("sort")
+	} else if c.String("sortr") != "" {
+		op.sort = c.String("sortr")
+		op.reverseSort = true
+	}
 
 	if op.onlyDir {
 		op.includeDir = true

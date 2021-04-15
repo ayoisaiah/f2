@@ -138,6 +138,14 @@ func GetApp() *cli.App {
 				TakesFile: true,
 				Usage:     "Undo a successful operation using a previously created map `file`",
 			},
+			&cli.StringFlag{
+				Name:  "sort",
+				Usage: "Sort the matches according to the provided `<sort>`",
+			},
+			&cli.StringFlag{
+				Name:  "sortr",
+				Usage: "Same as `<sort>` but presents the matches in the reverse order",
+			},
 			&cli.BoolFlag{
 				Name:    "ignore-case",
 				Aliases: []string{"i"},
