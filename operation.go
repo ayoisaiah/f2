@@ -451,7 +451,7 @@ func (op *Operation) sortMatches() {
 			return true
 		}
 
-		return op.matches[i].BaseDir > op.matches[j].BaseDir
+		return len(op.matches[i].BaseDir) > len(op.matches[j].BaseDir)
 	})
 }
 
