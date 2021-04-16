@@ -153,13 +153,13 @@ func init() {
 	)
 
 	exifRegex = regexp.MustCompile(
-		"{{exif\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)?(?:(dt)\\.(" + tokenString + "))?}}",
+		"{{(?:exif|x)\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)?(?:(dt)\\.(" + tokenString + "))?}}",
 	)
 }
 
-// WriteToFile writes the details of a successful operation
+// writeToFile writes the details of a successful operation
 // to the specified file so that it may be reversed if necessary
-func (op *Operation) WriteToFile() (err error) {
+func (op *Operation) writeToFile() (err error) {
 	// Create or truncate file
 	file, err := os.Create(op.outputFile)
 	if err != nil {
@@ -397,7 +397,7 @@ func (op *Operation) apply() error {
 		}
 
 		if op.outputFile != "" {
-			return op.WriteToFile()
+			return op.writeToFile()
 		}
 	} else {
 		if op.quiet {
@@ -781,21 +781,33 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 
 func (op *Operation) replaceString(fileName string) (str string) {
 	findString := op.findString
-	if op.stringMode {
-		if findString == "" {
-			findString = fileName
-		}
+	if findString == "" {
+		findString = fileName
+	}
+	replacement := op.replacement
 
+	if strings.HasPrefix(replacement, `\`) {
+		matches := op.searchRegex.FindAllString(fileName, -1)
+		str = fileName
+		for _, v := range matches {
+			switch replacement {
+			case `\C`:
+				str = strings.ReplaceAll(str, v, strings.ToUpper(v))
+			case `\c`:
+				str = strings.ReplaceAll(str, v, strings.ToLower(v))
+			}
+		}
+		return
+	}
+
+	if op.stringMode {
 		if op.ignoreCase {
-			str = op.searchRegex.ReplaceAllString(
-				fileName,
-				op.replacement,
-			)
+			str = op.searchRegex.ReplaceAllString(fileName, replacement)
 		} else {
-			str = strings.ReplaceAll(fileName, findString, op.replacement)
+			str = strings.ReplaceAll(fileName, findString, replacement)
 		}
 	} else {
-		str = op.searchRegex.ReplaceAllString(fileName, op.replacement)
+		str = op.searchRegex.ReplaceAllString(fileName, replacement)
 	}
 
 	return str

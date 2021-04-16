@@ -118,6 +118,7 @@ func action(args []string) (ActionResult, error) {
 			return err
 		}
 
+		op.quiet = true
 		if op.undoFile != "" {
 			result.outputFile = op.undoFile
 			return op.undo()
@@ -148,7 +149,7 @@ func action(args []string) (ActionResult, error) {
 
 		if op.outputFile != "" {
 			result.outputFile = op.outputFile
-			err = op.WriteToFile()
+			err = op.writeToFile()
 			if err != nil {
 				return err
 			}
@@ -167,6 +168,11 @@ func sortChanges(s []Change) {
 	sort.Slice(s, func(i, j int) bool {
 		return s[i].Source < s[j].Source
 	})
+}
+
+func prettyPrint(i interface{}) string {
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
 }
 
 func runFindReplace(t *testing.T, cases []testCase) {
@@ -190,8 +196,8 @@ func runFindReplace(t *testing.T, cases []testCase) {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
 				v.name,
-				v.want,
-				result.changes,
+				prettyPrint(v.want),
+				prettyPrint(result.changes),
 			)
 		}
 
@@ -223,8 +229,8 @@ func runFindReplace(t *testing.T, cases []testCase) {
 				t.Fatalf(
 					"Test (%s) — Expected: %+v, got: %+v\n",
 					v.name,
-					v.want,
-					ch,
+					prettyPrint(v.want),
+					prettyPrint(ch),
 				)
 			}
 
@@ -536,6 +542,42 @@ func TestHidden(t *testing.T) {
 				},
 			},
 			args: []string{"-f", "pdf", "-r", "pdf.bak", "-H", "-R", testDir},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
+func TestCaseConversion(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Convert pdf or epub to uppercase",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  "abc.PDF",
+				},
+				{
+					Source:  "abc.epub",
+					BaseDir: testDir,
+					Target:  "abc.EPUB",
+				},
+			},
+			args: []string{"-f", "pdf|epub", "-r", `\C`, testDir},
+		},
+		{
+			name: "Convert JPG to lowercase",
+			want: []Change{
+				{
+					Source:  "123.JPG",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "123.jpg",
+				},
+			},
+			args: []string{"-f", "JPG", "-r", `\c`, "-R", testDir},
 		},
 	}
 
