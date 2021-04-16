@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"testing"
@@ -549,6 +550,11 @@ func TestHidden(t *testing.T) {
 }
 
 func TestCaseConversion(t *testing.T) {
+	// windows and macOS are case insensitive by default
+	if runtime.GOOS != "linux" {
+		return
+	}
+
 	testDir := setupFileSystem(t)
 
 	cases := []testCase{
