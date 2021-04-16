@@ -3,6 +3,7 @@ package f2
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -70,6 +71,12 @@ func checkForUpdates(app *cli.App) {
 		)
 	} else {
 		fmt.Printf("%s: %s at %s\n", green.Sprint("Update available"), version, resp.Request.URL.String())
+	}
+}
+
+func printError(silent bool, err error) {
+	if !silent {
+		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
@@ -152,6 +159,11 @@ func GetApp() *cli.App {
 				Usage:   "Ignore case",
 			},
 			&cli.BoolFlag{
+				Name:    "quiet",
+				Aliases: []string{"q"},
+				Usage:   "Don't print out any information including errors",
+			},
+			&cli.BoolFlag{
 				Name:    "ignore-ext",
 				Aliases: []string{"e"},
 				Usage:   "Ignore extension",
@@ -186,10 +198,16 @@ func GetApp() *cli.App {
 		Action: func(c *cli.Context) error {
 			op, err := newOperation(c)
 			if err != nil {
+				printError(op.quiet, err)
 				return err
 			}
 
-			return op.run()
+			err = op.run()
+			if err != nil {
+				printError(op.quiet, err)
+			}
+
+			return err
 		},
 	}
 }

@@ -119,6 +119,7 @@ type Operation struct {
 	maxDepth      int
 	sort          string
 	reverseSort   bool
+	quiet         bool
 }
 
 type mapFile struct {
@@ -371,19 +372,20 @@ func (op *Operation) rename() error {
 // Conflicts will be ignored if indicated
 func (op *Operation) apply() error {
 	if len(op.matches) == 0 {
-		fmt.Println("Failed to match any files")
+		if !op.quiet {
+			fmt.Println("Failed to match any files")
+		}
 		return nil
 	}
 
 	op.detectConflicts()
 	if len(op.conflicts) > 0 && !op.fixConflicts {
-		op.reportConflicts()
-		fmt.Fprintln(
-			os.Stderr,
-			"conflict detected! please resolve before proceeding",
-		)
+		if !op.quiet {
+			op.reportConflicts()
+		}
+
 		return fmt.Errorf(
-			"or append the %s flag to fix conflicts automatically",
+			"conflict detected! please resolve before proceeding\nor append the %s flag to fix conflicts automatically",
 			yellow.Sprint("-F"),
 		)
 	}
@@ -398,6 +400,10 @@ func (op *Operation) apply() error {
 			return op.WriteToFile()
 		}
 	} else {
+		if op.quiet {
+			return nil
+		}
+
 		if op.sort != "" {
 			err := op.sortBy()
 			if err != nil {
@@ -970,6 +976,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.stringMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
 	op.maxDepth = c.Int("max-depth")
+	op.quiet = c.Bool("quiet")
 
 	// Sorting
 	if c.String("sort") != "" {
