@@ -450,101 +450,42 @@ x-y-z.pdf
 $ f2 -f '-' -r '\' -x
 ```
 
-### Use a variable
+### Built-in variables
 
-The replacement string can contain several variables will be replaced with their corresponding value.
+F2 supports several built-in variables that can be used in the replacement
+string. You can include any combination of these variables in the replacement
+string and they will all be replaced with their corresponding values. Some
+variables are specific to certain file types (e.g exif variables for images and
+id3 variables for audio files).
 
-#### File name and extension
+#### Supported variables
 
-- `{{f}}` is the original filename (excluding the extension)
-- `{{p}}` is the parent directory name
-- `{{ext}}` is the file extension
+- `{{f}}`: The original name of the file or directory (excluding the
+extension).
+- `{{p}}`: The parent directory name.
+- `{{ext}}`: The file extension.
 
-This is helpful if you want to add a prefix or a suffix to a set of files:
+**[Date
+variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables#date-variables)**
+for accessing attributes such as file creation time, last modification time,
+access time, and more. They must be combined with a [date
+token](https://github.com/ayoisaiah/f2/wiki/Built-in-variables#date-tokens).
 
-```bash
-$ f2 -r '{{f}}_journal{{ext}}' # suffix
-+-------------------+---------------------------+--------+
-|       INPUT       |          OUTPUT           | STATUS |
-+-------------------+---------------------------+--------+
-| 2021-02-20.md     | 2021-02-20_journal.md     | ok     |
-| 2021-02-21.md     | 2021-02-21_journal.md     | ok     |
-| 2021-02-22.md     | 2021-02-22_journal.md     | ok     |
-+-------------------+---------------------------+--------+
-```
-
-```bash
-$ f2 -r 'journal_{{f}}{{ext}}' # prefix
-+-------------------+---------------------------+--------+
-|       INPUT       |          OUTPUT           | STATUS |
-+-------------------+---------------------------+--------+
-| 2021-02-20.md     | journal_2021-02-20.md     | ok     |
-| 2021-02-21.md     | journal_2021-02-21.md     | ok     |
-| 2021-02-22.md     | journal_2021-02-22.md     | ok     |
-+-------------------+---------------------------+--------+
-```
-
-#### Date variables
-
-The time attributes of a file can be used in the replacement string. F2 provides variables that enable you to access the file creation time, modification time, access time and more.
-
+Available date variables include:
 - `ctime`: The time at which file metadata was changed.
 - `btime`: File birth time (Windows and macOS only).
 - `atime`: The last time the file was accessed or read.
 - `mtime`: The last time the contents of the file was modified.
 - `now`: The current time.
 
-The above variables must be combined with any of the following date tokens:
+**[Exif
+variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables#exif-variables)**
+for accessing attributes of an image file such as the ISO, width, height,
+created date, aperture, model, make, dimensions, focal length, exposure time
+e.t.c. Each variable can be used like this: `{{exif.<var>}}` or `{{x.<var>}}` as
+in `{{exif.iso}}` or `{{x.lens}}`.
 
-| Token  |  Explanation | Output |
-| ------------- | ------------- | ------------- |
-| YYYY | Year represented by a full four digits | 1970 1971 ... 2029 2030 |
-| YY | Year represented only by the last two digits | 70 71 ... 29 30 |
-| MMMM | Name of the month | January February ... November December |
-| MMM | Abbreviated name of the month | Jan Feb ... Nov Dec |
-| MM | Month as digits with leading zeros for single-digit months | 01 02 ... 11 12 |
-| M | Month as digits without leading zeros for single-digit months | 1 2 ... 11 12 |
-| DDDD | Name of the day of the week | Monday Tuesday ... Saturday Sunday |
-| DDD | Abbreviated name of the day of the week | Mon Tue ... Sat Sun |
-| DD | Day of the week as digit with leading zeros | 01 02 ... 06 07 |
-| D | Day of the week as digit without leading zeros | 1 2 ... 6 7 |
-| H | 24 Hours clock | 01 02 ... 22 23 |
-| hh | Hours with leading zeros for single-digit hours | 01 02 ... 11 12 |
-| h | Hours without leading zeros for single-digit hours | 1 2 ... 11 12 |
-| mm | Minutes with leading zeros for single-digit minutes | 01 02 ... 58 59 |
-| m | Minutes without leading zeros for single-digit minutes | 1 2 ... 58 59 |
-| ss | Seconds with leading zeros for single-digit seconds | 01 02 ... 58 59 |
-| s | Seconds without leading zeros for single-digit seconds | 1 2 ... 58 59 |
-| A | AM PM | AM PM |
-| a | am pm | am pm |
-
-**Example**
-
-```bash
-$ f2 -f 'screenshot' -r '{{mtime.MMM}}-{{mtime.DD}}-{{mtime.YYYY}}-screenshot'
-+----------------+----------------------------+--------+
-|     INPUT      |           OUTPUT           | STATUS |
-+----------------+----------------------------+--------+
-| screenshot.jpg | Nov-08-2020-screenshot.jpg | ok     |
-| screenshot.png | Mar-04-2021-screenshot.png | ok     |
-+----------------+----------------------------+--------+
-```
-
-#### Exif variables
-
-**Important**: this feature only works for JPEG, DNG, and most other RAW
-image formats (CR2, NEF, RAF, ARW, e.t.c.). HEIC/HEIF is not supported at the
-moment.
-
-The exif attributes of an image file can be used in its replacement string. F2
-provides variables that enable you to access the ISO, width, height, created
-date, aperture, model, make, dimensions, focal length and exposure time for
-images. Each variable can be used like this: `{{exif.<var>}}` as in
-`{{exif.iso}}`. If an exif attribute is not present in the image file, the
-corresponding variable will be replaced with an empty string.
-
-Currently supported variables:
-
+Currently supported Exif variables:
 - `iso`: The ISO at which the image was captured.
 - `w`: The image width.
 - `h`: The image height.
@@ -555,21 +496,29 @@ Currently supported variables:
 - `wh`: The image dimensions (e.g 4032x3024).
 - `fnum`: The aperture (e.g. f/1.6).
 - `fl`: The focal length of the lens (e.g 52mm)
-- `dt`: The image creation date. This must be combined with a date token
+- `dt`: The image creation date. This must be combined with a [date token](https://github.com/ayoisaiah/f2/wiki/Built-in-variables#date-tokens)
 (e.g `{{exif.dt.YYYY}}`).
 
-**Example**
+**ID3 variables** for accessing attributes of an audio file such as the album,
+artist, title, format, track number, release year e.t.c. Each variable can be
+used like this: `{{id3.<var>}}` as in `{{id3.title}}`.
 
-```bash
-f2 -f "proraw.dng" -r "{{exif.model}}_{{exif.fl}}_{{exif.et}}_{{exif.wh}}_{{f}}{{ext}}"
-+------------+-----------------------------------------------------+--------+
-|   INPUT    |                       OUTPUT                        | STATUS |
-+------------+-----------------------------------------------------+--------+
-| proraw.dng | iPhone 12 Pro Max_5.1mm_1_121s_4032x3024_proraw.dng | ok     |
-+------------+-----------------------------------------------------+--------+
-```
+Currently supported ID3 variables:
+- `title`: The title of the track.
+- `artist`: The track artist.
+- `album_artist`: The album artist.
+- `album`: The album name.
+- `format`: The file format (e.g VORBIS, ID3v2.3).
+- `type`: The file type (e.g MP3, OGG, FLAC).
+- `year`: The release year.
+- `track`: The track number.
+- `total_tracks`: The total number of tracks in the album.
+- `disc`: The disc number.
+- `total_discs`: The total number of discs in the album.
 
-*More variables coming soon*
+For more information, examples and a full demonstration of the power of
+variables, do consult the [relevant wiki
+page](https://github.com/ayoisaiah/f2/wiki/Built-in-variables).
 
 ### Conflict detection
 
