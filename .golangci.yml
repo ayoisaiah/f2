@@ -73,6 +73,9 @@ issues:
     - linters:
       - gocyclo
       text: "replaceExifVariables"
+    - linters:
+      - gocyclo
+      text: "replaceID3Variables"
 rules:
   - linters:
     - gosec
