@@ -1,0 +1,15 @@
+{
+  "year": 2000,
+  "title": "Test Title",
+  "album": "Test Album",
+  "artist": "Test Artist",
+  "album_artist": "Test AlbumArtist",
+  "file_type": "MP3",
+  "format": "ID3v2.3",
+  "track": 3,
+  "total_tracks": 6,
+  "disc": 2,
+  "total_discs": 0,
+  "genre": "Jazz",
+  "composer": "Test Composer"
+}

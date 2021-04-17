@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dhowden/tag"
 	"github.com/gookit/color"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/urfave/cli/v2"
@@ -32,6 +33,7 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(`%(\d?)+d`)
+	id3Regex       *regexp.Regexp
 	exifRegex      *regexp.Regexp
 	dateRegex      *regexp.Regexp
 )
@@ -141,6 +143,22 @@ type Exif struct {
 	LensModel        string
 }
 
+type ID3 struct {
+	Format      string
+	FileType    string
+	Title       string
+	Album       string
+	Artist      string
+	AlbumArtist string
+	Genre       string
+	Composer    string
+	Year        int
+	Track       int
+	TotalTracks int
+	Disc        int
+	TotalDiscs  int
+}
+
 func init() {
 	tokens := make([]string, 0, len(dateTokens))
 	for key := range dateTokens {
@@ -154,6 +172,10 @@ func init() {
 
 	exifRegex = regexp.MustCompile(
 		"{{(?:exif|x)\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)?(?:(dt)\\.(" + tokenString + "))?}}",
+	)
+
+	id3Regex = regexp.MustCompile(
+		`{{id3\.(format|type|title|album|album_artist|artist|genre|year|composer|track|disc|total_tracks|total_discs)}}`,
 	)
 }
 
@@ -614,6 +636,90 @@ func replaceDateVariables(file, input string) (string, error) {
 	return input, nil
 }
 
+// getID3Tags retrieves the id3 tags in an audi file (such as mp3)
+// errors while reading the id3 tags are ignored since the corresponding
+// variable will be replaced with an empty string
+func getID3Tags(file string) (*ID3, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := tag.ReadFrom(f)
+	if err != nil {
+		return &ID3{}, nil
+	}
+
+	trackNum, totalTracks := m.Track()
+	discNum, totalDiscs := m.Disc()
+
+	return &ID3{
+		Format:      string(m.Format()),
+		FileType:    string(m.FileType()),
+		Title:       m.Title(),
+		Album:       m.Album(),
+		Artist:      m.Artist(),
+		AlbumArtist: m.AlbumArtist(),
+		Track:       trackNum,
+		TotalTracks: totalTracks,
+		Disc:        discNum,
+		TotalDiscs:  totalDiscs,
+		Composer:    m.Composer(),
+		Year:        m.Year(),
+		Genre:       m.Genre(),
+	}, nil
+}
+
+// replaceID3Variables replaces an id3 variable in the input string
+// with the corresponding id3 value
+func replaceID3Variables(tags *ID3, input string) (string, error) {
+	submatches := id3Regex.FindAllStringSubmatch(input, -1)
+	for _, submatch := range submatches {
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return "", err
+		}
+
+		switch submatch[1] {
+		case "format":
+			input = regex.ReplaceAllString(input, tags.Format)
+		case "type":
+			input = regex.ReplaceAllString(input, tags.FileType)
+		case "title":
+			input = regex.ReplaceAllString(input, tags.Title)
+		case "album":
+			input = regex.ReplaceAllString(input, tags.Album)
+		case "artist":
+			input = regex.ReplaceAllString(input, tags.Artist)
+		case "album_artist":
+			input = regex.ReplaceAllString(input, tags.AlbumArtist)
+		case "genre":
+			input = regex.ReplaceAllString(input, tags.Genre)
+		case "composer":
+			input = regex.ReplaceAllString(input, tags.Composer)
+		case "track":
+			input = regex.ReplaceAllString(input, strconv.Itoa(tags.Track))
+		case "total_tracks":
+			input = regex.ReplaceAllString(
+				input,
+				strconv.Itoa(tags.TotalTracks),
+			)
+		case "disc":
+			input = regex.ReplaceAllString(input, strconv.Itoa(tags.Disc))
+		case "total_discs":
+			input = regex.ReplaceAllString(input, strconv.Itoa(tags.TotalDiscs))
+		case "year":
+			input = regex.ReplaceAllString(input, strconv.Itoa(tags.Year))
+		}
+	}
+
+	return input, nil
+}
+
+// getExifData retrieves the exif data embedded in an image file.
+// Errors in decoding the exif data are ignored intentionally since
+// the corresponding exif variable will be replaced by an empty
+// string
 func getExifData(file string) (*Exif, error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -628,9 +734,6 @@ func getExifData(file string) (*Exif, error) {
 	}()
 
 	exifData := &Exif{}
-	// Errors in decoding the exif data are ignored intentionally
-	// The corresponding exif variable will be replaced by an empty
-	// string
 	x, err := exif.Decode(f)
 	if err == nil {
 		b, err := x.MarshalJSON()
@@ -642,6 +745,7 @@ func getExifData(file string) (*Exif, error) {
 	return exifData, nil
 }
 
+// replaceExifVariables replaces the exif variables in an input string
 func replaceExifVariables(exifData *Exif, input string) (string, error) {
 	submatches := exifRegex.FindAllStringSubmatch(input, -1)
 	for _, submatch := range submatches {
@@ -724,6 +828,9 @@ func replaceExifVariables(exifData *Exif, input string) (string, error) {
 	return input, nil
 }
 
+// handleVariables checks if any variables are present in the replacement
+// string and delegates the variable replacement to the appropriate
+// function
 func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	fileName := filepath.Base(ch.Source)
 	fileExt := filepath.Ext(fileName)
@@ -770,6 +877,20 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 		}
 
 		out, err := replaceExifVariables(exifData, str)
+		if err != nil {
+			return "", err
+		}
+		str = out
+	}
+
+	if id3Regex.Match([]byte(str)) {
+		source := filepath.Join(ch.BaseDir, ch.Source)
+		tags, err := getID3Tags(source)
+		if err != nil {
+			return "", err
+		}
+
+		out, err := replaceID3Variables(tags, str)
 		if err != nil {
 			return "", err
 		}

@@ -1296,3 +1296,107 @@ func TestReplaceExifVariables(t *testing.T) {
 
 	runFindReplace(t, cases)
 }
+
+func TestReplaceID3Variables(t *testing.T) {
+	rootDir := filepath.Join("testdata", "audio")
+
+	type FileID3 struct {
+		Format      string `json:"format"`
+		FileType    string `json:"file_type"`
+		Title       string `json:"title"`
+		Album       string `json:"album"`
+		Artist      string `json:"artist"`
+		AlbumArtist string `json:"album_artist"`
+		Genre       string `json:"genre"`
+		Year        int    `json:"year"`
+		Track       int    `json:"track"`
+		TotalTracks int    `json:"total_tracks"`
+		Disc        int    `json:"disc"`
+		TotalDiscs  int    `json:"total_discs"`
+	}
+
+	cases := []testCase{
+		{
+			name: "Use ID3 tags to rename an mp3 file",
+			want: []Change{
+				{
+					Source:  "sample_mp3.mp3",
+					BaseDir: rootDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"sample_mp3.mp3",
+				"-r",
+				"{{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
+				rootDir,
+			},
+		},
+		{
+			name: "Use ID3 tags to rename an ogg file",
+			want: []Change{
+				{
+					Source:  "sample_ogg.ogg",
+					BaseDir: rootDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"sample_ogg.ogg",
+				"-r",
+				"{{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
+				rootDir,
+			},
+		},
+		{
+			name: "Use ID3 tags to rename a flac file",
+			want: []Change{
+				{
+					Source:  "sample_flac.flac",
+					BaseDir: rootDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"sample_flac.flac",
+				"-r",
+				"{{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
+				rootDir,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		f := filenameWithoutExtension(c.want[0].Source)
+
+		jsonFile, err := os.ReadFile(filepath.Join(rootDir, f+".json"))
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		var id3 FileID3
+		err = json.Unmarshal(jsonFile, &id3)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		target := fmt.Sprintf(
+			"%s_%s_%s_%s_%s_%s_%d_%d_%d_%d_%d",
+			id3.Title,
+			id3.Artist,
+			id3.Format,
+			id3.FileType,
+			id3.Album,
+			id3.AlbumArtist,
+			id3.Track,
+			id3.TotalTracks,
+			id3.Disc,
+			id3.TotalDiscs,
+			id3.Year,
+		)
+
+		c.want[0].Target = target
+	}
+
+	runFindReplace(t, cases)
+}
