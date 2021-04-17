@@ -701,6 +701,8 @@ F2 relies on other open source software listed below:
 - [gookit/color](https://github.com/gookit/color)
 - [olekukonko/tablewriter](https://github.com/olekukonko/tablewriter)
 - [rwcarlsen/goexif](https://github.com/rwcarlsen/goexif)
+- [djherbis/times](https://github.com/djherbis/times)
+- [dhowden/tag](https://github.com/dhowden/tag)
 
 ## Contribute
 
