@@ -698,18 +698,35 @@ func replaceID3Variables(tags *ID3, input string) (string, error) {
 		case "composer":
 			input = regex.ReplaceAllString(input, tags.Composer)
 		case "track":
-			input = regex.ReplaceAllString(input, strconv.Itoa(tags.Track))
+			var track string
+			if tags.Track != 0 {
+				track = strconv.Itoa(tags.Track)
+			}
+			input = regex.ReplaceAllString(input, track)
 		case "total_tracks":
-			input = regex.ReplaceAllString(
-				input,
-				strconv.Itoa(tags.TotalTracks),
-			)
+			var total string
+			if tags.TotalTracks != 0 {
+				total = strconv.Itoa(tags.TotalTracks)
+			}
+			input = regex.ReplaceAllString(input, total)
 		case "disc":
-			input = regex.ReplaceAllString(input, strconv.Itoa(tags.Disc))
+			var disc string
+			if tags.Disc != 0 {
+				disc = strconv.Itoa(tags.Disc)
+			}
+			input = regex.ReplaceAllString(input, disc)
 		case "total_discs":
-			input = regex.ReplaceAllString(input, strconv.Itoa(tags.TotalDiscs))
+			var total string
+			if tags.TotalDiscs != 0 {
+				total = strconv.Itoa(tags.TotalDiscs)
+			}
+			input = regex.ReplaceAllString(input, total)
 		case "year":
-			input = regex.ReplaceAllString(input, strconv.Itoa(tags.Year))
+			var year string
+			if tags.Year != 0 {
+				year = strconv.Itoa(tags.Year)
+			}
+			input = regex.ReplaceAllString(input, year)
 		}
 	}
 

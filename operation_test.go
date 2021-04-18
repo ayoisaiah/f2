@@ -1308,11 +1308,11 @@ func TestReplaceID3Variables(t *testing.T) {
 		Artist      string `json:"artist"`
 		AlbumArtist string `json:"album_artist"`
 		Genre       string `json:"genre"`
-		Year        int    `json:"year"`
-		Track       int    `json:"track"`
-		TotalTracks int    `json:"total_tracks"`
-		Disc        int    `json:"disc"`
-		TotalDiscs  int    `json:"total_discs"`
+		Year        string `json:"year"`
+		Track       string `json:"track"`
+		TotalTracks string `json:"total_tracks"`
+		Disc        string `json:"disc"`
+		TotalDiscs  string `json:"total_discs"`
 	}
 
 	cases := []testCase{
@@ -1381,7 +1381,7 @@ func TestReplaceID3Variables(t *testing.T) {
 		}
 
 		target := fmt.Sprintf(
-			"%s_%s_%s_%s_%s_%s_%d_%d_%d_%d_%d",
+			"%s_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s",
 			id3.Title,
 			id3.Artist,
 			id3.Format,
