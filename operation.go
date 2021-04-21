@@ -25,11 +25,22 @@ var (
 	yellow = color.HEX("#FFAB00")
 )
 
-type conflict int
+var (
+	errInvalidArgument = errors.New(
+		"invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
+	)
+
+	errConflictDetected = fmt.Errorf(
+		"conflict detected! please resolve before proceeding\nor append the %s flag to fix conflicts automatically",
+		yellow.Sprint("-F"),
+	)
+)
 
 const (
 	dotCharacter = 46
 )
+
+type conflict int
 
 const (
 	emptyFilename conflict = iota
@@ -123,12 +134,6 @@ func (op *Operation) writeToFile() (err error) {
 // undo reverses a successful renaming operation indicated
 // in the specified map file
 func (op *Operation) undo() error {
-	if op.undoFile == "" {
-		return fmt.Errorf(
-			"specify a previously created map file to continue",
-		)
-	}
-
 	file, err := os.ReadFile(op.undoFile)
 	if err != nil {
 		return err
@@ -149,10 +154,12 @@ func (op *Operation) undo() error {
 		op.matches[i] = ch
 	}
 
-	// sort parent directories before child directories
-	sort.SliceStable(op.matches, func(i, j int) bool {
-		return op.matches[i].BaseDir < op.matches[j].BaseDir
-	})
+	if !op.exec && op.sort != "" {
+		err = op.sortBy()
+		if err != nil {
+			return err
+		}
+	}
 
 	return op.apply()
 }
@@ -233,20 +240,14 @@ func (op *Operation) sortByTime() (err error) {
 
 // sortBy delegates the sorting of matches to the appropriate method
 func (op *Operation) sortBy() (err error) {
-	sortOptions := []string{"size", accessTime, modTime, birthTime, changeTime}
-
 	switch op.sort {
 	case "size":
 		return op.sortBySize()
 	case accessTime, modTime, birthTime, changeTime:
 		return op.sortByTime()
+	default:
+		return nil
 	}
-
-	return fmt.Errorf(
-		"invalid sort option '%s'. valid options include: %s",
-		red.Sprint(op.sort),
-		green.Sprint(strings.Join(sortOptions, ", ")),
-	)
 }
 
 // printChanges displays the changes to be made in a
@@ -313,13 +314,14 @@ func (op *Operation) apply() error {
 			op.reportConflicts()
 		}
 
-		return fmt.Errorf(
-			"conflict detected! please resolve before proceeding\nor append the %s flag to fix conflicts automatically",
-			yellow.Sprint("-F"),
-		)
+		return errConflictDetected
 	}
 
 	if op.exec {
+		if op.includeDir || op.undoFile != "" {
+			op.sortMatches()
+		}
+
 		err := op.rename()
 		if err != nil {
 			return err
@@ -331,13 +333,6 @@ func (op *Operation) apply() error {
 	} else {
 		if op.quiet {
 			return nil
-		}
-
-		if op.sort != "" {
-			err := op.sortBy()
-			if err != nil {
-				return err
-			}
 		}
 		op.printChanges()
 		fmt.Printf("Append the %s flag to apply the above changes\n", yellow.Sprint("-x"))
@@ -487,14 +482,20 @@ func (op *Operation) detectConflicts() {
 	}
 }
 
-// sortMatches is used to sort files before directories
-// and child directories before their parents
+// sortMatches is used to sort files to avoid renaming conflicts
 func (op *Operation) sortMatches() {
 	sort.SliceStable(op.matches, func(i, j int) bool {
+		// sort parent directories before child directories in undo mode
+		if op.undoFile != "" {
+			return len(op.matches[i].BaseDir) < len(op.matches[j].BaseDir)
+		}
+
+		// sort files before directories
 		if !op.matches[i].IsDir {
 			return true
 		}
 
+		// sort child directories before parent directories
 		return len(op.matches[i].BaseDir) > len(op.matches[j].BaseDir)
 	})
 }
@@ -535,7 +536,7 @@ func (op *Operation) replaceString(fileName string) (str string) {
 
 // replace replaces the matched text in each path with the
 // replacement string
-func (op *Operation) replace() error {
+func (op *Operation) replace() (err error) {
 	for i, v := range op.matches {
 		fileName, dir := filepath.Base(v.Source), filepath.Dir(v.Source)
 		fileExt := filepath.Ext(fileName)
@@ -546,16 +547,17 @@ func (op *Operation) replace() error {
 		str := op.replaceString(fileName)
 
 		// handle variables
-		str, err := op.handleVariables(str, v)
+		str, err = op.handleVariables(str, v)
 		if err != nil {
 			return err
 		}
 
 		// If numbering scheme is present
 		if indexRegex.Match([]byte(str)) {
-			b := indexRegex.Find([]byte(str))
-			r := fmt.Sprintf(string(b), op.startNumber+i)
-			str = indexRegex.ReplaceAllString(str, r)
+			str, err = op.replaceIndex(str, i)
+			if err != nil {
+				return err
+			}
 		}
 
 		if op.ignoreExt {
@@ -676,8 +678,11 @@ func (op *Operation) run() error {
 		}
 	}
 
-	if op.includeDir {
-		op.sortMatches()
+	if op.sort != "" {
+		err = op.sortBy()
+		if err != nil {
+			return err
+		}
 	}
 
 	err = op.replace()
@@ -697,7 +702,6 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.exec = c.Bool("exec")
 	op.fixConflicts = c.Bool("fix-conflicts")
 	op.includeDir = c.Bool("include-dir")
-	op.startNumber = c.Int("start-num")
 	op.includeHidden = c.Bool("hidden")
 	op.ignoreCase = c.Bool("ignore-case")
 	op.ignoreExt = c.Bool("ignore-ext")
@@ -746,9 +750,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 func newOperation(c *cli.Context) (*Operation, error) {
 	if c.String("find") == "" && c.String("replace") == "" &&
 		c.String("undo") == "" {
-		return nil, fmt.Errorf(
-			"invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
-		)
+		return nil, errInvalidArgument
 	}
 
 	op := &Operation{}

@@ -2,6 +2,7 @@ package f2
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,7 +19,7 @@ var (
 	filenameRegex  = regexp.MustCompile("{{f}}")
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
-	indexRegex     = regexp.MustCompile(`%(\d?)+d`)
+	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?`)
 	id3Regex       *regexp.Regexp
 	exifRegex      *regexp.Regexp
 	dateRegex      *regexp.Regexp
@@ -103,6 +104,38 @@ func init() {
 	id3Regex = regexp.MustCompile(
 		`{{id3\.(format|type|title|album|album_artist|artist|genre|year|composer|track|disc|total_tracks|total_discs)}}`,
 	)
+}
+
+// itor converts an integer to a roman numeral
+func itor(number int) string {
+	conversions := []struct {
+		value int
+		digit string
+	}{
+		{1000, "M"},
+		{900, "CM"},
+		{500, "D"},
+		{400, "CD"},
+		{100, "C"},
+		{90, "XC"},
+		{50, "L"},
+		{40, "XL"},
+		{10, "X"},
+		{9, "IX"},
+		{5, "V"},
+		{4, "IV"},
+		{1, "I"},
+	}
+
+	var roman strings.Builder
+	for _, conversion := range conversions {
+		for number >= conversion.value {
+			roman.WriteString(conversion.digit)
+			number -= conversion.value
+		}
+	}
+
+	return roman.String()
 }
 
 func replaceDateVariables(file, input string) (string, error) {
@@ -356,6 +389,44 @@ func replaceExifVariables(exifData *Exif, input string) (string, error) {
 	}
 
 	return input, nil
+}
+
+// replaceIndex deals with sequential numbering in various formats
+func (op *Operation) replaceIndex(str string, count int) (string, error) {
+	submatches := indexRegex.FindAllStringSubmatch(str, -1)
+
+	if submatches[0][1] != "" {
+		startNumber, err := strconv.Atoi(submatches[0][1])
+		if err != nil {
+			return "", err
+		}
+		op.startNumber = startNumber
+	} else {
+		op.startNumber = 1
+	}
+
+	index := submatches[0][2]
+	format := submatches[0][4]
+
+	num := op.startNumber + count
+	var r string
+	switch format {
+	case "r":
+		r = itor(num)
+	case "h":
+		n := int64(num)
+		r = strconv.FormatInt(n, 16)
+	case "o":
+		n := int64(num)
+		r = strconv.FormatInt(n, 8)
+	case "b":
+		n := int64(num)
+		r = strconv.FormatInt(n, 2)
+	default:
+		r = fmt.Sprintf(index, num)
+	}
+
+	return indexRegex.ReplaceAllString(str, r), nil
 }
 
 // handleVariables checks if any variables are present in the replacement

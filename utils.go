@@ -1,6 +1,7 @@
 package f2
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -181,4 +182,9 @@ func exifDivision(slice []string) string {
 	}
 
 	return ""
+}
+
+func prettyPrint(i interface{}) string {
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
 }

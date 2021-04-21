@@ -105,13 +105,6 @@ func GetApp() *cli.App {
 				Aliases: []string{"r"},
 				Usage:   "Replacement `<string>`. If omitted, defaults to an empty string. Supports built-in and regex capture variables",
 			},
-			&cli.IntFlag{
-				Name:        "start-num",
-				Aliases:     []string{"n"},
-				Usage:       "When using an auto incrementing number in the replacement string such as %03d, start the count from `<number>`",
-				Value:       1,
-				DefaultText: "1",
-			},
 			&cli.StringSliceFlag{
 				Name:    "exclude",
 				Aliases: []string{"E"},
@@ -198,7 +191,7 @@ func GetApp() *cli.App {
 		Action: func(c *cli.Context) error {
 			op, err := newOperation(c)
 			if err != nil {
-				printError(op.quiet, err)
+				printError(false, err)
 				return err
 			}
 
