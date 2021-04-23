@@ -76,6 +76,12 @@ issues:
     - linters:
       - gocyclo
       text: "replaceID3Variables"
+    - linters:
+      - golint
+      text: "error strings should not be capitalized"
+    - linters:
+      - stylecheck
+      text: "error strings should not be capitalized"
 rules:
   - linters:
     - gosec

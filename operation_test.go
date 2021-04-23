@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"testing"
 	"time"
@@ -424,80 +423,6 @@ func TestFindReplace(t *testing.T) {
 	runFindReplace(t, cases)
 }
 
-func TestDetectConflicts(t *testing.T) {
-	testDir := setupFileSystem(t)
-
-	type Table struct {
-		want map[conflict][]Conflict
-		args []string
-	}
-
-	table := []Table{
-		{
-			want: map[conflict][]Conflict{
-				fileExists: {
-					{
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(testDir, "abc.epub"),
-					},
-				},
-			},
-			args: []string{"-f", "pdf", "-r", "epub", testDir},
-		},
-		{
-			want: map[conflict][]Conflict{
-				emptyFilename: {
-					{
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(testDir, ""),
-					},
-				},
-			},
-			args: []string{"-f", "abc.pdf", "-r", "", testDir},
-		},
-		{
-			want: map[conflict][]Conflict{
-				overwritingNewPath: {
-					{
-						source: []string{
-							filepath.Join(testDir, "abc.epub"),
-							filepath.Join(testDir, "abc.pdf"),
-						},
-						target: filepath.Join(testDir, "abc.mobi"),
-					},
-				},
-			},
-			args: []string{"-f", "pdf|epub", "-r", "mobi", testDir},
-		},
-	}
-
-	for i, v := range table {
-		args := os.Args[0:1]
-		args = append(args, v.args...)
-		result, err := action(args)
-		if err != nil {
-			t.Fatalf("Test(%d) — Unexpected error: %v\n", i+1, err)
-		}
-
-		if len(result.conflicts) == 0 {
-			t.Fatalf("Test(%d) — Expected some conflicts but got none", i+1)
-		}
-
-		if !cmp.Equal(
-			v.want,
-			result.conflicts,
-			cmp.AllowUnexported(Conflict{}),
-		) {
-			t.Fatalf(
-				"Test(%d) — Expected: %+v, got: %+v\n",
-				i+1,
-				v.want,
-				result.conflicts,
-			)
-		}
-	}
-}
-
 func TestHidden(t *testing.T) {
 	testDir := setupFileSystem(t)
 	cases := []testCase{
@@ -532,47 +457,6 @@ func TestHidden(t *testing.T) {
 				},
 			},
 			args: []string{"-f", "pdf", "-r", "pdf.bak", "-H", "-R", testDir},
-		},
-	}
-
-	runFindReplace(t, cases)
-}
-
-func TestCaseConversion(t *testing.T) {
-	// windows and macOS are case insensitive by default
-	if runtime.GOOS != "linux" {
-		return
-	}
-
-	testDir := setupFileSystem(t)
-
-	cases := []testCase{
-		{
-			name: "Convert pdf or epub to uppercase",
-			want: []Change{
-				{
-					Source:  "abc.pdf",
-					BaseDir: testDir,
-					Target:  "abc.PDF",
-				},
-				{
-					Source:  "abc.epub",
-					BaseDir: testDir,
-					Target:  "abc.EPUB",
-				},
-			},
-			args: []string{"-f", "pdf|epub", "-r", `\C`, testDir},
-		},
-		{
-			name: "Convert JPG to lowercase",
-			want: []Change{
-				{
-					Source:  "123.JPG",
-					BaseDir: filepath.Join(testDir, "images", "pics"),
-					Target:  "123.jpg",
-				},
-			},
-			args: []string{"-f", "JPG", "-r", `\c`, "-R", testDir},
 		},
 	}
 
@@ -837,111 +721,6 @@ func TestStringMode(t *testing.T) {
 	}
 
 	runFindReplace(t, cases)
-}
-
-func TestFixConflicts(t *testing.T) {
-	testDir := setupFileSystem(t)
-
-	table := []testCase{
-		{
-			want: []Change{
-				{
-					Source:  "abc.txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "123 (2).txt",
-				},
-				{
-					Source:  "xyz.txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "123 (4).txt",
-				},
-			},
-			args: []string{
-				"-f",
-				"abc|xyz",
-				"-r",
-				"123",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
-		},
-		{
-			want: []Change{
-				{
-					Source:  "123.txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "abc (2).txt",
-				},
-				{
-					Source:  "123 (3).txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "abc (3).txt",
-				},
-			},
-			args: []string{
-				"-f",
-				"123",
-				"-r",
-				"abc",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
-		},
-		{
-			want: []Change{
-				{
-					Source:  "xyz.txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "123 (2).txt",
-				},
-			},
-			args: []string{
-				"-f",
-				"xyz",
-				"-r",
-				"123",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
-		},
-		{
-			want: []Change{
-				{
-					Source:  "xyz.txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "xyz.txt",
-				},
-			},
-			args: []string{
-				"-f",
-				"xyz.txt",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
-		},
-	}
-
-	for i, v := range table {
-		args := os.Args[0:1]
-		args = append(args, v.args...)
-		result, _ := action(args) // err will be nil
-
-		if len(result.conflicts) == 0 {
-			t.Fatalf("Test(%d) — Expected some conflicts but got none", i+1)
-		}
-
-		sortChanges(v.want)
-		sortChanges(result.changes)
-
-		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
-			t.Fatalf(
-				"Test(%d) — Expected: %+v, got: %+v\n",
-				i+1,
-				v.want,
-				result.changes,
-			)
-		}
-	}
 }
 
 func TestApplyUndo(t *testing.T) {

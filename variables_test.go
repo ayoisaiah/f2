@@ -58,6 +58,7 @@ func TestReplaceFilenameVariables(t *testing.T) {
 }
 
 func TestReplaceDateVariables(t *testing.T) {
+	// TODO: Noticed some intermittent failures
 	testDir := setupFileSystem(t)
 
 	for _, file := range fileSystem {

@@ -3,7 +3,6 @@ package f2
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -71,12 +70,6 @@ func checkForUpdates(app *cli.App) {
 		)
 	} else {
 		fmt.Printf("%s: %s at %s\n", green.Sprint("Update available"), version, resp.Request.URL.String())
-	}
-}
-
-func printError(silent bool, err error) {
-	if !silent {
-		fmt.Fprintln(os.Stderr, err)
 	}
 }
 

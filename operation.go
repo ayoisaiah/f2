@@ -27,33 +27,23 @@ var (
 
 var (
 	errInvalidArgument = errors.New(
-		"invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
+		"Invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
 	)
 
 	errConflictDetected = fmt.Errorf(
-		"conflict detected! please resolve before proceeding\nor append the %s flag to fix conflicts automatically",
+		"Conflict detected! Please resolve before proceeding or append the %s flag to fix conflicts automatically",
 		yellow.Sprint("-F"),
 	)
 )
 
 const (
-	dotCharacter = 46
+	windows = "windows"
+	darwin  = "darwin"
 )
-
-type conflict int
 
 const (
-	emptyFilename conflict = iota
-	fileExists
-	overwritingNewPath
+	dotCharacter = 46
 )
-
-// Conflict represents a renaming operation conflict
-// such as duplicate targets or empty filenames
-type Conflict struct {
-	source []string
-	target string
-}
 
 // Change represents a single filename change
 type Change struct {
@@ -280,7 +270,7 @@ func (op *Operation) rename() error {
 		// If target contains a slash, create all missing
 		// directories before renaming the file
 		if strings.Contains(ch.Target, "/") ||
-			strings.Contains(ch.Target, `\`) && runtime.GOOS == "windows" {
+			strings.Contains(ch.Target, `\`) && runtime.GOOS == windows {
 			// No need to check if the `dir` exists since `os.MkdirAll` handles that
 			dir := filepath.Dir(ch.Target)
 			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
@@ -308,7 +298,7 @@ func (op *Operation) apply() error {
 		return nil
 	}
 
-	op.detectConflicts()
+	op.validate()
 	if len(op.conflicts) > 0 && !op.fixConflicts {
 		if !op.quiet {
 			op.reportConflicts()
@@ -341,147 +331,6 @@ func (op *Operation) apply() error {
 	return nil
 }
 
-// reportConflicts prints any detected conflicts to the standard error
-func (op *Operation) reportConflicts() {
-	var data [][]string
-	if slice, exists := op.conflicts[emptyFilename]; exists {
-		for _, v := range slice {
-			slice := []string{
-				strings.Join(v.source, ""),
-				"",
-				red.Sprint("❌ [Empty filename]"),
-			}
-			data = append(data, slice)
-		}
-	}
-
-	if slice, exists := op.conflicts[fileExists]; exists {
-		for _, v := range slice {
-			slice := []string{
-				strings.Join(v.source, ""),
-				v.target,
-				red.Sprint("❌ [Path already exists]"),
-			}
-			data = append(data, slice)
-		}
-	}
-
-	if slice, exists := op.conflicts[overwritingNewPath]; exists {
-		for _, v := range slice {
-			for _, s := range v.source {
-				slice := []string{
-					s,
-					v.target,
-					red.Sprint("❌ [Overwriting newly renamed path]"),
-				}
-				data = append(data, slice)
-			}
-		}
-	}
-
-	printTable(data)
-}
-
-// detectConflicts detects any conflicts that occur
-// after renaming a file. Conflicts are automatically
-// fixed if specified
-func (op *Operation) detectConflicts() {
-	op.conflicts = make(map[conflict][]Conflict)
-	m := make(map[string][]struct {
-		source string
-		index  int
-	})
-
-	for i, ch := range op.matches {
-		var source, target = ch.Source, ch.Target
-		source = filepath.Join(ch.BaseDir, source)
-		target = filepath.Join(ch.BaseDir, target)
-
-		// Report if replacement operation results in
-		// an empty string for the new filename
-		if ch.Target == "." {
-			op.conflicts[emptyFilename] = append(
-				op.conflicts[emptyFilename],
-				Conflict{
-					source: []string{source},
-					target: target,
-				},
-			)
-
-			if op.fixConflicts {
-				// The file is left unchanged
-				op.matches[i].Target = ch.Source
-			}
-
-			continue
-		}
-
-		// Report if target file exists on the filesystem
-		if _, err := os.Stat(target); err == nil ||
-			!errors.Is(err, os.ErrNotExist) {
-			op.conflicts[fileExists] = append(
-				op.conflicts[fileExists],
-				Conflict{
-					source: []string{source},
-					target: target,
-				},
-			)
-
-			if op.fixConflicts {
-				str := getNewPath(target, ch.BaseDir, nil)
-				fullPath := filepath.Join(ch.BaseDir, str)
-				op.matches[i].Target = str
-				target = fullPath
-			}
-		}
-
-		// For detecting duplicates after renaming paths
-		m[target] = append(m[target], struct {
-			source string
-			index  int
-		}{
-			source: source,
-			index:  i,
-		})
-	}
-
-	// Report duplicate targets if any
-	for k, v := range m {
-		if len(v) > 1 {
-			var sources []string
-			for _, s := range v {
-				sources = append(sources, s.source)
-			}
-
-			op.conflicts[overwritingNewPath] = append(
-				op.conflicts[overwritingNewPath],
-				Conflict{
-					source: sources,
-					target: k,
-				},
-			)
-
-			if op.fixConflicts {
-				for i, item := range v {
-					if i == 0 {
-						continue
-					}
-
-					str := getNewPath(k, op.matches[item.index].BaseDir, m)
-					pt := filepath.Join(op.matches[item.index].BaseDir, str)
-					if _, ok := m[pt]; !ok {
-						m[pt] = []struct {
-							source string
-							index  int
-						}{}
-					}
-					op.matches[item.index].Target = str
-				}
-			}
-		}
-	}
-}
-
 // sortMatches is used to sort files to avoid renaming conflicts
 func (op *Operation) sortMatches() {
 	sort.SliceStable(op.matches, func(i, j int) bool {
@@ -507,15 +356,21 @@ func (op *Operation) replaceString(fileName string) (str string) {
 	}
 	replacement := op.replacement
 
-	if strings.HasPrefix(replacement, `\`) {
+	if strings.HasPrefix(replacement, `\C`) && len(replacement) == 3 {
 		matches := op.searchRegex.FindAllString(fileName, -1)
 		str = fileName
 		for _, v := range matches {
 			switch replacement {
-			case `\C`:
+			case `\Cu`:
 				str = strings.ReplaceAll(str, v, strings.ToUpper(v))
-			case `\c`:
+			case `\Cl`:
 				str = strings.ReplaceAll(str, v, strings.ToLower(v))
+			case `\Ct`:
+				str = strings.ReplaceAll(
+					str,
+					v,
+					strings.Title(strings.ToLower(v)),
+				)
 			}
 		}
 		return
