@@ -53,6 +53,13 @@ type Change struct {
 	IsDir   bool   `json:"is_dir"`
 }
 
+// renameError represents an error that occurs when
+// renaming a file
+type renameError struct {
+	entry Change
+	err   error
+}
+
 // Operation represents a batch renaming operation
 type Operation struct {
 	paths         []Change
@@ -80,6 +87,7 @@ type Operation struct {
 	sort          string
 	reverseSort   bool
 	quiet         bool
+	errors        []renameError
 }
 
 type mapFile struct {
@@ -88,10 +96,10 @@ type mapFile struct {
 }
 
 // writeToFile writes the details of a successful operation
-// to the specified file so that it may be reversed if necessary
-func (op *Operation) writeToFile() (err error) {
+// to the specified output file, creating it if necessary.
+func (op *Operation) writeToFile(outputFile string) (err error) {
 	// Create or truncate file
-	file, err := os.Create(op.outputFile)
+	file, err := os.Create(outputFile)
 	if err != nil {
 		return err
 	}
@@ -255,36 +263,107 @@ func (op *Operation) printChanges() {
 }
 
 // rename iterates over all the matches and renames them on the filesystem
-// directories are auto-created if necessary
-func (op *Operation) rename() error {
+// directories are auto-created if necessary.
+// Errors are aggregated instead of being reported one by one
+func (op *Operation) rename() {
+	var errs []renameError
 	for _, ch := range op.matches {
 		var source, target = ch.Source, ch.Target
 		source = filepath.Join(ch.BaseDir, source)
 		target = filepath.Join(ch.BaseDir, target)
 
-		renameErr := fmt.Errorf(
-			"an error occurred while renaming '%s' to '%s'",
-			source,
-			target,
-		)
+		renameErr := renameError{
+			entry: ch,
+		}
+
 		// If target contains a slash, create all missing
 		// directories before renaming the file
 		if strings.Contains(ch.Target, "/") ||
 			strings.Contains(ch.Target, `\`) && runtime.GOOS == windows {
-			// No need to check if the `dir` exists since `os.MkdirAll` handles that
+			// No need to check if the `dir` exists or if there are several
+			// consecutive slashes since `os.MkdirAll` handles that
 			dir := filepath.Dir(ch.Target)
 			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
 			if err != nil {
-				return renameErr
+				renameErr.err = err
+				errs = append(errs, renameErr)
+				continue
 			}
 		}
 
 		if err := os.Rename(source, target); err != nil {
-			return renameErr
+			renameErr.err = err
+			errs = append(errs, renameErr)
 		}
 	}
 
-	return nil
+	op.errors = errs
+}
+
+// reportErrors displays the errors that occur during a renaming operation
+func (op *Operation) reportErrors() {
+	var data = make([][]string, len(op.errors)+len(op.matches))
+	for i, v := range op.matches {
+		source := filepath.Join(v.BaseDir, v.Source)
+		target := filepath.Join(v.BaseDir, v.Target)
+		d := []string{source, target, green.Sprint("success")}
+		data[i] = d
+	}
+
+	for i, v := range op.errors {
+		source := filepath.Join(v.entry.BaseDir, v.entry.Source)
+		target := filepath.Join(v.entry.BaseDir, v.entry.Target)
+
+		msg := v.err.Error()
+		msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
+		d := []string{
+			source,
+			target,
+			red.Sprintf("%s", strings.TrimPrefix(msg, ": ")),
+		}
+		data[i+len(op.matches)] = d
+	}
+
+	printTable(data)
+}
+
+// handleErrors is used to report the errors and write any successful
+// operations to a file
+func (op *Operation) handleErrors() error {
+	// first remove the error entries from the matches so they are not confused
+	// with successful operations
+	for _, v := range op.errors {
+		target := v.entry.Target
+		for j := len(op.matches) - 1; j >= 0; j-- {
+			if target == op.matches[j].Target {
+				op.matches = append(op.matches[:j], op.matches[j+1:]...)
+			}
+		}
+	}
+
+	op.reportErrors()
+
+	file := fmt.Sprintf(
+		".f2_%s.json",
+		time.Now().Format("2006-01-2T15-04-05PM"),
+	)
+
+	var err error
+	if len(op.matches) > 0 {
+		err = op.writeToFile(file)
+	}
+
+	if err == nil && len(op.matches) > 0 {
+		return fmt.Errorf(
+			"Some files could not be renamed. The successful operations have been written to %s. To revert the changes, pass this file to the %s flag",
+			yellow.Sprint(file),
+			yellow.Sprint("--undo"),
+		)
+	} else if err != nil && len(op.matches) > 0 {
+		return fmt.Errorf("The above files could not be renamed")
+	}
+
+	return fmt.Errorf("The renaming operation failed due to the above errors")
 }
 
 // apply will check for conflicts and print the changes to be made
@@ -312,13 +391,14 @@ func (op *Operation) apply() error {
 			op.sortMatches()
 		}
 
-		err := op.rename()
-		if err != nil {
-			return err
+		op.rename()
+
+		if len(op.errors) > 0 {
+			return op.handleErrors()
 		}
 
 		if op.outputFile != "" {
-			return op.writeToFile()
+			return op.writeToFile(op.outputFile)
 		}
 	} else {
 		if op.quiet {

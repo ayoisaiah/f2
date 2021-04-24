@@ -13,9 +13,9 @@ import (
 
 var (
 	// windowsForbiddenRegex is used to match the strings that contain forbidden
-	// characters in Windows' file names. This does not include forward and back
-	// slash because it is assumed that the inclusion of those characters will
-	// cause a new directory to be created
+	// characters in Windows' file names. This does not include also forbidden
+	// forward and back slash characters because their presence will cause a new
+	// directory to be created
 	windowsForbiddenRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*`)
 )
 

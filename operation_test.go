@@ -145,7 +145,7 @@ func action(args []string) (ActionResult, error) {
 
 		if op.outputFile != "" {
 			result.outputFile = op.outputFile
-			err = op.writeToFile()
+			err = op.writeToFile(op.outputFile)
 			if err != nil {
 				return err
 			}
