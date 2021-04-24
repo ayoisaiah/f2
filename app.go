@@ -129,7 +129,7 @@ func GetApp() *cli.App {
 				Name:      "undo",
 				Aliases:   []string{"u"},
 				TakesFile: true,
-				Usage:     "Undo a successful operation using a previously created map `file`",
+				Usage:     "Undo a successful operation using a previously created map `file`. Deletes the map file if the operation is reverted successfully",
 			},
 			&cli.StringFlag{
 				Name:  "sort",

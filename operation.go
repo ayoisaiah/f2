@@ -130,7 +130,8 @@ func (op *Operation) writeToFile(outputFile string) (err error) {
 }
 
 // undo reverses a successful renaming operation indicated
-// in the specified map file
+// in the specified map file. The undo file is deleted
+// if the operation is successfully reverted
 func (op *Operation) undo() error {
 	file, err := os.ReadFile(op.undoFile)
 	if err != nil {
@@ -159,7 +160,19 @@ func (op *Operation) undo() error {
 		}
 	}
 
-	return op.apply()
+	err = op.apply()
+	if err != nil {
+		return err
+	}
+
+	if err = os.Remove(op.undoFile); err != nil {
+		fmt.Printf(
+			"Unable to remove redundant undo file '%s' after successful operation.",
+			yellow.Sprint(op.undoFile),
+		)
+	}
+
+	return nil
 }
 
 // sortBySize sorts the matches according to their file size
