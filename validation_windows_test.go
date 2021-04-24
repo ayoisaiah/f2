@@ -14,7 +14,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 		{
 			name: "File name must not contain < or > characters",
 			want: map[conflict][]Conflict{
-				invalidFilenameCharacters: {
+				invalidCharacters: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, "<>.pdf"),
@@ -26,7 +26,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 		{
 			name: "File names must not contain :, |, or ? characters",
 			want: map[conflict][]Conflict{
-				invalidFilenameCharacters: {
+				invalidCharacters: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, ":|?.pdf"),
