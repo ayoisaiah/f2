@@ -18,7 +18,7 @@ func TestDarwinSpecificConflicts(t *testing.T) {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, ":::.pdf"),
-						cause:  "a file name cannot contain the colon character",
+						cause:  ":",
 					},
 				},
 			},

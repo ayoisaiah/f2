@@ -18,6 +18,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, "<>.pdf"),
+						cause:  "<,>",
 					},
 				},
 			},
@@ -30,6 +31,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(testDir, ":|?.pdf"),
+						cause:  ":,|,?",
 					},
 				},
 			},
@@ -40,6 +42,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 			want: map[conflict][]Conflict{
 				maxLengthExceeded: {
 					{
+						cause:  "260 characters",
 						source: []string{filepath.Join(testDir, "abc.pdf")},
 						target: filepath.Join(
 							testDir,

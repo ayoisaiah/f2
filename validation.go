@@ -272,9 +272,7 @@ func checkForbiddenCharacters(path string) error {
 
 	if runtime.GOOS == darwin {
 		if strings.Contains(path, ":") {
-			return fmt.Errorf(
-				"a file name cannot contain the colon character",
-			)
+			return fmt.Errorf("%s", ":")
 		}
 	}
 

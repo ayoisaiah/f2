@@ -15,10 +15,11 @@ import (
 )
 
 type testCase struct {
-	name     string
-	want     []Change
-	args     []string
-	undoArgs []string
+	name           string
+	want           []Change
+	args           []string
+	undoArgs       []string
+	expectedErrors []renameError
 }
 
 var fileSystem = []string{
@@ -98,10 +99,11 @@ func setupFileSystem(t testing.TB) string {
 }
 
 type ActionResult struct {
-	changes    []Change
-	conflicts  map[conflict][]Conflict
-	outputFile string
-	applyError error
+	changes         []Change
+	conflicts       map[conflict][]Conflict
+	outputFile      string
+	applyError      error
+	operationErrors []renameError
 }
 
 func action(args []string) (ActionResult, error) {
@@ -153,6 +155,7 @@ func action(args []string) (ActionResult, error) {
 
 		result.applyError = op.apply()
 		result.conflicts = op.conflicts
+		result.operationErrors = op.errors
 
 		return nil
 	}
@@ -170,7 +173,20 @@ func runFindReplace(t *testing.T, cases []testCase) {
 	for _, v := range cases {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
-		result, _ := action(args) // err will be nil
+		result, err := action(args) // err will be nil
+		if err != nil {
+			t.Fatalf("Test (%s) — Unexpected error: %v", v.name, err)
+		}
+
+		if len(v.expectedErrors) != len(result.operationErrors) {
+			t.Fatalf(
+				"Test (%s) — Expected %d errors but got %d errors: %v",
+				v.name,
+				len(v.expectedErrors),
+				len(result.operationErrors),
+				result.operationErrors,
+			)
+		}
 
 		if len(result.conflicts) > 0 {
 			t.Fatalf(
