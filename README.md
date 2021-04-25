@@ -19,82 +19,66 @@
 
 <img src="https://ik.imagekit.io/turnupdev/f2_EsdXrHHKt.png?tr:q-100" alt="Screenshot of F2 in action">
 
-## Table of Contents
+## Why should I use F2?
 
-- [Features](#features)
-- [Benchmarks](#benchmarks)
-- [Installation](#installation)
-- [Command-line options](#command-line-options)
-- [Examples](#examples)
-   - [Basic find and replace](#basic-find-and-replace)
-   - [Recursive find and replace](#recursive-find-and-replace)
-   - [Include directories](#include-directories)
-   - [Ignore extensions](#ignore-extensions)
-   - [Strip out unwanted text](#strip-out-unwanted-text)
-   - [Rename using an auto incrementing number](#rename-using-an-auto-incrementing-number)
-   - [Replace spaces with underscores](#replace-spaces-with-underscores)
-   - [Use regex capture variables](#use-regex-capture-variables)
-   - [Use a variable](#use-a-variable)
-   - [Directories are auto created if necessary](#directories-are-auto-created-if-necessary)
-   - [Conflict detection](#conflict-detection)
-   - [Undoing changes](#undoing-changes)
-- [Credits](#credits)
-- [Contribute](#contribute)
-- [Licence](#licence)
+- F2 helps you organise your filesystem through batch renaming so that your files and directories can have a consistent naming scheme.
+- It offers a comprehensive set of renaming options and scales well from trivial string replacements to more complex operations involving regular expressions.
+- F2 prioritises correctness and safety by ensuring that a renaming operation does not result in conflicts or errors. It runs several [validations](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) before carrying out a renaming operation and provides an easy way to automatically [fix any detected conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection#auto-fixing-conflicts).
+- F2 supports all the standard renaming recipes including (but not limited to) string replacement, insertion of text as a prefix, suffix or other position in the filename, stripping a set of characters, changing the case of a set of letters, using auto incrementing numbers, swapping parts of the file name, e.t.c.
+- F2 provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for added flexibility in the renaming process. These variables are based on file attributes such as Exif information for images and ID3 tags for audio files.
+- F2 is very fast and won't waste your time. See [benchmarks](#benchmarks).
+- F2 allows you to revert any renaming operation performed with the program. This means you don't have to worry about making a mistake because you can always get back to the previous state without breaking a sweat.
+- F2 has good test coverage with equal attention paid to all supported platforms (Linux, Windows and macOS).
+- F2 is [well documented](https://github.com/ayoisaiah/f2/wiki) so that you won't have to scratch your head while figuring out what you can do with it. Lots of examples are provided to aid comprehension.
 
-## Features
+## Main features
 
-- Extremely fast (see [benchmarks](#benchmarks)).
-- Supports Linux, macOS, and Windows.
-- Supports filtering files using regular expression, including capture groups.
+- Safe and transparent. F2 uses a dry run mode by default so you can review the exact changes that will be made to your filesystem before making them.
+- Cross-platform with full support for Linux, macOS, and Windows. It also runs on less commonly-used platforms, like Termux (Android).
+- Extremely fast, even when working with a large amount of files.
+- Automatically detects potential conflicts such as file collisions, or overrides and reports them to you.
+- Provides several built-in variables for the easier renaming of certain file types. At the moment, Exif data for images and ID3 data for audio files are supported.
+- Supports find and replace using regular expressions, including capture groups.
 - Ignores hidden directories and files by default.
-- Safe. F2 will not modify any file names until you tell it to.
-- Detects potential conflicts such as file collisions, or overwrites.
-- Supports recursive renaming of both files and directories.
+- Supports recursive renaming for both files and directories.
 - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
 - Supports undoing an operation from a map file.
-- Extensive unit testing.
+- Extensive documentation and examples for each and every option that is provided.
+- Extensive unit testing with close to 100% coverage.
 
 ## Benchmarks
 
-Recursive batch renaming of 10,000 files from pic-{n}.png to {n}.png.
-
-**Versions**:
-- [f2](https://github.com/ayoisaiah/f2) (Go) — v1.0.0
-- [rnm](https://github.com/neurobin/rnm) (C++) — v4.0.9
-- [rnr](https://github.com/ChuckDaniels87/rnr) (Rust) — v0.3.0
-- [brename](https://github.com/shenwei356/brename) (Go) — v2.11.0
-
-**Environment**:
+**Environment**
 - **OS**: Ubuntu 20.04.2 LTS on Windows 10 x86_64
 - **CPU**: Intel i7-7560U (4) @ 2.400GHz
 - **Kernel**:  4.19.128-microsoft-standard
 
-Preparation script: [prepare-script.sh](https://gist.github.com/ayoisaiah/868437602e73084ebc11efcec262e92c).
+Renaming **10,000** MP3 files using their ID3 attributes (~1.6 seconds):
 
 ```bash
-$ hyperfine --warmup 3 --prepare "./prepare-script.sh" 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/' 'f2 -f "pic-(\d+).*" -r \$1.png -x -R' 'brename -p "pic-(\d+).*" -r \$1.png -q -R' 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1'
-Benchmark #1: rnr -sfr "pic-(\d+).*" "\$1.png" dir1/
-  Time (mean ± σ):     944.1 ms ±  20.2 ms    [User: 238.5 ms, System: 666.5 ms]
-  Range (min … max):   916.0 ms … 982.2 ms    10 runs
+$ hyperfine --warmup 3 'f2 -f ".*" -r "{{id3.artist}}_{{id3.album}}_{{id3.track}}_{{r}
+}.mp3" -x'
+Benchmark #1: f2 -f ".*" -r "{{id3.artist}}_{{id3.album}}_{{id3.track}}_{{r}}.mp3" -x
+  Time (mean ± σ):      1.691 s ±  0.031 s    [User: 1.326 s, System: 0.744 s]
+  Range (min … max):    1.634 s …  1.736 s    10 runs
+```
 
-Benchmark #2: f2 -f "pic-(\d+).*" -r \$1.png -x -R
-  Time (mean ± σ):     292.4 ms ±  11.8 ms    [User: 141.8 ms, System: 217.4 ms]
-  Range (min … max):   276.4 ms … 311.0 ms    10 runs
+Renaming **100,000** files in a single operation using random names (~5 seconds):
 
-Benchmark #3: brename -p "pic-(\d+).*" -r \$1.png -q -R
-  Time (mean ± σ):     602.3 ms ±  10.8 ms    [User: 202.1 ms, System: 311.7 ms]
-  Range (min … max):   587.2 ms … 626.9 ms    10 runs
+```bash
+$ hyperfine --warmup 3 'f2 -f ".*" -r "{{r}}_%03d" -x'
+Benchmark #1: f2 -f ".*" -r "{{r}}_%03d" -x
+  Time (mean ± σ):      4.938 s ±  0.328 s    [User: 2.792 s, System: 2.770 s]
+  Range (min … max):    4.421 s …  5.474 s    10 runs
+```
 
-Benchmark #4: rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1
-  Time (mean ± σ):     821.0 ms ±  43.2 ms    [User: 564.6 ms, System: 254.7 ms]
-  Range (min … max):   783.9 ms … 926.2 ms    10 runs
+Renaming **100,000** JPEG files using their Exif attributes (~30 seconds):
 
-Summary
-  'f2 -f "pic-(\d+).*" -r \$1.png -x -R' ran
-    2.06 ± 0.09 times faster than 'brename -p "pic-(\d+).*" -r \$1.png -q -R'
-    2.81 ± 0.19 times faster than 'rnm -q -rs "/pic-(\d+).*$/\1.png/" dir1/ -dp -1'
-    3.23 ± 0.15 times faster than 'rnr -sfr "pic-(\d+).*" "\$1.png" dir1/'
+```bash
+$ hyperfine --warmup 3 'f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03d.jpg" -x'
+Benchmark #1: f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03d.jpg" -x
+  Time (mean ± σ):     31.143 s ±  1.691 s    [User: 34.792 s, System: 4.779 s]
+  Range (min … max):   29.317 s … 33.355 s    10 runs
 ```
 
 ## Installation
@@ -520,92 +504,6 @@ For more information, examples and a full demonstration of the power of
 variables, do consult the [relevant wiki
 page](https://github.com/ayoisaiah/f2/wiki/Built-in-variables).
 
-### Conflict detection
-
-F2 detects any conflicts that may arise during a renaming operation. If you append the `-F` or `--fix-conflicts` flag, it can auto fix the conflicts for you. Here are three examples:
-
-#### 1. File already exists
-
-```bash
-$ ls
-a.txt b.txt
-```
-
-```bash
-$ f2 -f 'a' -r 'b'
-+-------+--------+--------------------------+
-| INPUT | OUTPUT |          STATUS          |
-+-------+--------+--------------------------+
-| a.txt | b.txt  | ❌ [Path already exists] |
-+-------+--------+--------------------------+
-```
-
-You can append the `-F` flag to fix the conflict. This will add a number to the target file to differentiate it from the existing one.
-
-```bash
-$ f2 -f "a" -r "b" -F
-+-------+-----------+--------+
-| INPUT |  OUTPUT   | STATUS |
-+-------+-----------+--------+
-| a.txt | b (2).txt | ok     |
-+-------+-----------+--------+
-```
-
-#### 2. Overwriting newly renamed path
-
-```bash
-$ ls
-a.txt b.txt
-```
-
-```bash
-$ f2 -f 'a|b' -r 'c'
-+-------+--------+-------------------------------------+
-| INPUT | OUTPUT |               STATUS                |
-+-------+--------+-------------------------------------+
-| a.txt | c.txt  | ❌ [Overwriting newly renamed path] |
-| b.txt | c.txt  | ❌ [Overwriting newly renamed path] |
-+-------+--------+-------------------------------------+
-```
-
-You can append the `-F` flag to fix the conflict. This will add a number to the target path to differentiate it from the other renamed files:
-
-```bash
-$ f2 -f 'a|b' -r 'c' -F
-+-------+-----------+--------+
-| INPUT |  OUTPUT   | STATUS |
-+-------+-----------+--------+
-| a.txt | c.txt     | ok     |
-| b.txt | c (2).txt | ok     |
-+-------+-----------+--------+
-```
-
-#### 3. Empty filename
-
-```bash
-$ ls
-a.txt b.txt
-```
-
-```bash
-$ f2 -f 'a.txt'
-+-------+--------+---------------------+
-| INPUT | OUTPUT |       STATUS        |
-+-------+--------+---------------------+
-| a.txt |        | ❌ [Empty filename] |
-+-------+--------+---------------------+
-```
-
-You can append the `-F` flag to fix the conflict. The filename will not be changed in this context.
-
-```bash
-$ f2 -f 'a.txt' -F
-+-------+--------+--------+
-| INPUT | OUTPUT | STATUS |
-+-------+--------+--------+
-| a.txt | a.txt  | ok     |
-+-------+--------+--------+
-```
 
 ### Undoing changes
 
