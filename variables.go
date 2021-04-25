@@ -3,6 +3,7 @@ package f2
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,6 +21,7 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?`)
+	randomRegex    = regexp.MustCompile(`{{(\d+)?r(\\l|\\d|\\ld|.*)?}}`)
 	id3Regex       *regexp.Regexp
 	exifRegex      *regexp.Regexp
 	dateRegex      *regexp.Regexp
@@ -54,6 +56,13 @@ const (
 	changeTime  = "ctime"
 	currentTime = "now"
 )
+
+const (
+	letterBytes = "abcdefghijklmnopqrstuvwxyz"
+	numberBytes = "0123456789"
+)
+
+var lettersAndNumbers = letterBytes + numberBytes
 
 // Exif represents exif information from an image file
 type Exif struct {
@@ -104,6 +113,51 @@ func init() {
 	id3Regex = regexp.MustCompile(
 		`{{id3\.(format|type|title|album|album_artist|artist|genre|year|composer|track|disc|total_tracks|total_discs)}}`,
 	)
+
+	rand.Seed(time.Now().UnixNano())
+}
+
+func randString(n int, characterSet string) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = characterSet[rand.Intn(len(characterSet))]
+	}
+	return string(b)
+}
+
+func randomize(str string) (string, error) {
+	submatches := randomRegex.FindAllStringSubmatch(str, -1)
+
+	length := 10
+	var characters string
+	for _, submatch := range submatches {
+		var err error
+		strLen := submatch[1]
+		if strLen != "" {
+			length, err = strconv.Atoi(strLen)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		characters = submatch[2]
+
+		switch characters {
+		case "":
+			characters = letterBytes
+		case `\d`:
+			characters = numberBytes
+		case `\l`:
+			characters = letterBytes
+		case `\ld`:
+			characters = lettersAndNumbers
+		}
+	}
+
+	return randomRegex.ReplaceAllString(
+		str,
+		randString(length, characters),
+	), nil
 }
 
 // itor converts an integer to a roman numeral
@@ -492,6 +546,14 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 		}
 
 		out, err := replaceID3Variables(tags, str)
+		if err != nil {
+			return "", err
+		}
+		str = out
+	}
+
+	if randomRegex.Match([]byte(str)) {
+		out, err := randomize(str)
 		if err != nil {
 			return "", err
 		}

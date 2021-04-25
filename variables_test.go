@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -326,4 +327,41 @@ func TestReplaceID3Variables(t *testing.T) {
 	}
 
 	runFindReplace(t, cases)
+}
+
+func TestRandomize(t *testing.T) {
+	slice := []string{
+		`{{10r\l}}`,
+		`{{8r\d}}`,
+		`{{9r\l}}`,
+		`{{5r\ld}}`,
+		`{{r}}`,
+	}
+
+	for _, v := range slice {
+		submatches := randomRegex.FindAllStringSubmatch(v, -1)
+		strLen := submatches[0][1]
+		length := 10
+		var err error
+		if strLen != "" {
+			length, err = strconv.Atoi(strLen)
+			if err != nil {
+				t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
+			}
+		}
+
+		str, err := randomize(v)
+		if err != nil {
+			t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
+		}
+
+		if len(str) != length {
+			t.Fatalf(
+				"Test (%s) — Expected length of random string to be %d, got: %d",
+				v,
+				length,
+				len(str),
+			)
+		}
+	}
 }
