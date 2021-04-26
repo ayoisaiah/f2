@@ -233,6 +233,8 @@ func getHash(file, hashFn string) (string, error) {
 		h = sha512.New()
 	case md5Hash:
 		h = md5.New()
+	default:
+		return "", nil
 	}
 
 	if _, err := io.Copy(h, f); err != nil {
