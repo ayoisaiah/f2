@@ -113,7 +113,7 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.5.0
+   v1.5.1
 
 FLAGS:
    --find <pattern>, -f <pattern>       Search <pattern>. Treated as a regular expression by default. Use -s or --string-mode to opt out
