@@ -409,3 +409,23 @@ func TestReplaceRandomVariable(t *testing.T) {
 		}
 	}
 }
+
+func TestItor(t *testing.T) {
+	testCases := []struct {
+		input  int
+		output string
+	}{
+		{463, "CDLXIII"},
+		{464, "CDLXIV"},
+		{1386, "MCCCLXXXVI"},
+		{1838, "MDCCCXXXVIII"},
+		{4000, "4000"},
+		{7070, "7070"},
+	}
+	for _, v := range testCases {
+		str := itor(v.input)
+		if str != v.output {
+			t.Fatalf("Roman(%v) = %v, want %v.", v.input, str, v.output)
+		}
+	}
+}

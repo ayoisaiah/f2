@@ -190,6 +190,11 @@ func replaceRandomVariables(str string) (string, error) {
 
 // itor converts an integer to a roman numeral
 func itor(number int) string {
+	maxRomanNumber := 3999
+	if number > maxRomanNumber {
+		return strconv.Itoa(number)
+	}
+
 	conversions := []struct {
 		value int
 		digit string
