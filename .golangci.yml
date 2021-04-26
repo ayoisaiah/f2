@@ -14,7 +14,7 @@ linters-settings:
     disabled-checks:
       - whyNoLint
   gocyclo:
-    min-complexity: 15
+    min-complexity: 25
   goimports:
     local-prefixes: github.com/ayoisaiah/f2
   golint:
@@ -71,11 +71,11 @@ issues:
       text: "G404:"
 
     - linters:
-      - gocyclo
-      text: "replaceExifVariables"
+      - gosec
+      text: "weak cryptographic primitive"
     - linters:
       - gocyclo
-      text: "replaceID3Variables"
+      text: "cyclomatic complexity"
     - linters:
       - golint
       text: "error strings should not be capitalized"

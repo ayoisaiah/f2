@@ -329,6 +329,49 @@ func TestReplaceID3Variables(t *testing.T) {
 	runFindReplace(t, cases)
 }
 
+func TestFileHash(t *testing.T) {
+	testDir := filepath.Join("testdata", "images")
+
+	cases := []testCase{
+		{
+			name: "Replace md5 and sha1 hash",
+			want: []Change{
+				{
+					Source:  "bike.jpeg",
+					BaseDir: testDir,
+					Target:  "6801e3de5f584028b8cd4292c6eca7ba_5b97fd595c700277315742bc91ac0ae67e5eb7a3",
+				},
+			},
+			args: []string{
+				"-f",
+				"bike.jpeg",
+				"-r",
+				"{{hash.md5}}_{{hash.sha1}}",
+				testDir,
+			},
+		},
+		{
+			name: "Replace sha256 and sha512 hash",
+			want: []Change{
+				{
+					Source:  "proraw.dng",
+					BaseDir: testDir,
+					Target:  "55195ff447785e9af9dea2b0e4f3dc1e991f19dc224413f7a3e5718efb980d99_d53831330e6a70899ad36cbde793284d2cd0332ef090cf20dae86299ec9b8f5b50e06becd8bfadb65fce001d3fedb811d02d751cd9a8279cbaf88b46d25b6408",
+				},
+			},
+			args: []string{
+				"-f",
+				"proraw.dng",
+				"-r",
+				"{{hash.sha256}}_{{hash.sha512}}",
+				testDir,
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestRandomize(t *testing.T) {
 	slice := []string{
 		`{{10r\l}}`,

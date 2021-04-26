@@ -1,8 +1,15 @@
 package f2
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash"
+	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -22,9 +29,17 @@ var (
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?`)
 	randomRegex    = regexp.MustCompile(`{{(\d+)?r(\\l|\\d|\\ld|.*)?}}`)
+	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
 	id3Regex       *regexp.Regexp
 	exifRegex      *regexp.Regexp
 	dateRegex      *regexp.Regexp
+)
+
+const (
+	sha1Hash   = "sha1"
+	sha256Hash = "sha256"
+	sha512Hash = "sha512"
+	md5Hash    = "md5"
 )
 
 var dateTokens = map[string]string{
@@ -192,6 +207,59 @@ func itor(number int) string {
 	return roman.String()
 }
 
+func getHash(file, hashFn string) (string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+
+	defer f.Close()
+
+	var h hash.Hash
+
+	switch hashFn {
+	case sha1Hash:
+		h = sha1.New()
+	case sha256Hash:
+		h = sha256.New()
+	case sha512Hash:
+		h = sha512.New()
+	case md5Hash:
+		h = md5.New()
+	}
+
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// replaceFileHash replaces a hash variable with the corresponding
+// hash value
+func replaceFileHash(file, input string) (string, error) {
+	submatches := hashRegex.FindAllStringSubmatch(input, -1)
+
+	for _, submatch := range submatches {
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return "", err
+		}
+
+		hashFn := submatch[1]
+		hashValue, err := getHash(file, hashFn)
+		if err != nil {
+			return "", err
+		}
+
+		input = regex.ReplaceAllString(input, hashValue)
+	}
+
+	return input, nil
+}
+
+// replaceDateVariables replaces a date variable with the corresponding
+// date value
 func replaceDateVariables(file, input string) (string, error) {
 	t, err := times.Stat(file)
 	if err != nil {
@@ -490,6 +558,8 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	fileName := filepath.Base(ch.Source)
 	fileExt := filepath.Ext(fileName)
 	parentDir := filepath.Base(ch.BaseDir)
+	source := filepath.Join(ch.BaseDir, ch.Source)
+
 	if parentDir == "." {
 		// Set to base folder of current working directory
 		parentDir = filepath.Base(op.workingDir)
@@ -497,7 +567,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 
 	// replace `{{f}}` in the replacement string with the original
 	// filename (without the extension)
-	if filenameRegex.Match([]byte(str)) {
+	if filenameRegex.MatchString(str) {
 		str = filenameRegex.ReplaceAllString(
 			str,
 			filenameWithoutExtension(fileName),
@@ -505,18 +575,17 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	}
 
 	// replace `{{ext}}` in the replacement string with the file extension
-	if extensionRegex.Match([]byte(str)) {
+	if extensionRegex.MatchString(str) {
 		str = extensionRegex.ReplaceAllString(str, fileExt)
 	}
 
 	// replace `{{p}}` in the replacement string with the parent directory name
-	if parentDirRegex.Match([]byte(str)) {
+	if parentDirRegex.MatchString(str) {
 		str = parentDirRegex.ReplaceAllString(str, parentDir)
 	}
 
 	// handle date variables (e.g {{mtime.DD}})
-	if dateRegex.Match([]byte(str)) {
-		source := filepath.Join(ch.BaseDir, ch.Source)
+	if dateRegex.MatchString(str) {
 		out, err := replaceDateVariables(source, str)
 		if err != nil {
 			return "", err
@@ -524,8 +593,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 		str = out
 	}
 
-	if exifRegex.Match([]byte(str)) {
-		source := filepath.Join(ch.BaseDir, ch.Source)
+	if exifRegex.MatchString(str) {
 		exifData, err := getExifData(source)
 		if err != nil {
 			return "", err
@@ -538,14 +606,21 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 		str = out
 	}
 
-	if id3Regex.Match([]byte(str)) {
-		source := filepath.Join(ch.BaseDir, ch.Source)
+	if id3Regex.MatchString(str) {
 		tags, err := getID3Tags(source)
 		if err != nil {
 			return "", err
 		}
 
 		out, err := replaceID3Variables(tags, str)
+		if err != nil {
+			return "", err
+		}
+		str = out
+	}
+
+	if hashRegex.MatchString(str) {
+		out, err := replaceFileHash(source, str)
 		if err != nil {
 			return "", err
 		}
