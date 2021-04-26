@@ -24,10 +24,10 @@
 - F2 helps you organise your filesystem through batch renaming so that your files and directories can have a consistent naming scheme.
 - It offers a comprehensive set of renaming options and scales well from trivial string replacements to more complex operations involving regular expressions.
 - F2 prioritises correctness and safety by ensuring that a renaming operation does not result in conflicts or errors. It runs several [validations](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) before carrying out a renaming operation and provides an easy way to automatically [fix any detected conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection#auto-fixing-conflicts).
-- F2 supports all the standard renaming recipes including (but not limited to) string replacement, insertion of text as a prefix, suffix or other position in the filename, stripping a set of characters, changing the case of a set of letters, using auto incrementing numbers, swapping parts of the file name, e.t.c.
+- F2 supports all the standard renaming recipes including (but not limited to) string replacement, insertion of text as a prefix, suffix or other position in the file name, stripping a set of characters, changing the case of a set of letters, using auto incrementing numbers, swapping parts of the file name, e.t.c.
 - F2 provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for added flexibility in the renaming process. These variables are based on file attributes such as Exif information for images and ID3 tags for audio files.
 - F2 is very fast and won't waste your time. See [benchmarks](#benchmarks).
-- F2 allows you to revert any renaming operation performed with the program. This means you don't have to worry about making a mistake because you can always get back to the previous state without breaking a sweat.
+- F2 allows you to [revert any renaming operation](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) performed with the program. This means you don't have to worry about making a mistake because you can always get back to the previous state without breaking a sweat.
 - F2 has good test coverage with equal attention paid to all supported platforms (Linux, Windows and macOS).
 - F2 is [well documented](https://github.com/ayoisaiah/f2/wiki) so that you won't have to scratch your head while figuring out what you can do with it. Lots of examples are provided to aid comprehension.
 
@@ -113,19 +113,20 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.4.0
+   v1.5.0
 
 FLAGS:
    --find <pattern>, -f <pattern>       Search <pattern>. Treated as a regular expression by default. Use -s or --string-mode to opt out
    --replace <string>, -r <string>      Replacement <string>. If omitted, defaults to an empty string. Supports built-in and regex capture variables
-   --start-num <number>, -n <number>    When using an auto incrementing number in the replacement string such as %03d, start the count from <number> (default: 1)
    --exclude <pattern>, -E <pattern>    Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude <pattern>s can be specified.
-   --output-file <file>, -o <file>      Output a map <file> for the current operation
    --exec, -x                           Execute the batch renaming operation (default: false)
    --recursive, -R                      Rename files recursively (default: false)
    --max-depth <integer>, -m <integer>  positive <integer> indicating the maximum depth for a recursive search (set to 0 for no limit) (default: 0)
-   --undo file, -u file                 Undo a successful operation using a previously created map file
+   --undo, -u                           Undo the last operation performed in the current working directory. (default: false)
+   --sort <sort>                        Sort the matches according to the provided <sort>
+   --sortr <sort>                       Same as <sort> but presents the matches in the reverse order
    --ignore-case, -i                    Ignore case (default: false)
+   --quiet, -q                          Don't print out any information including errors (default: false)
    --ignore-ext, -e                     Ignore extension (default: false)
    --include-dir, -d                    Include directories (default: false)
    --only-dir, -D                       Rename only directories (implies include-dir) (default: false)
@@ -504,41 +505,6 @@ For more information, examples and a full demonstration of the power of
 variables, do consult the [relevant wiki
 page](https://github.com/ayoisaiah/f2/wiki/Built-in-variables).
 
-
-### Undoing changes
-
-Before you can undo a change, you must create a map file while making the
-change:
-
-```bash
-$ ls
-a.txt b.txt
-```
-
-```bash
-$ f2 -f 'txt' -r 'md' -o map.json -x
-+-------+--------+--------+
-| INPUT | OUTPUT | STATUS |
-+-------+--------+--------+
-| a.txt | a.md   | ok     |
-| b.txt | b.md   | ok     |
-+-------+--------+--------+
-```
-
-```bash
-$ ls
-a.md b.md map.json
-```
-
-```bash
-$ f2 -u map.json
-+-------+--------+--------+
-| INPUT | OUTPUT | STATUS |
-+-------+--------+--------+
-| a.md  | a.txt  | ok     |
-| b.md  | b.txt  | ok     |
-+-------+--------+--------+
-```
 
 ## Credits
 
