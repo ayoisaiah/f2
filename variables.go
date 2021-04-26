@@ -28,7 +28,7 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?`)
-	randomRegex    = regexp.MustCompile(`{{(\d+)?r(\\l|\\d|\\ld|.*)?}}`)
+	randomRegex    = regexp.MustCompile(`{{(\d+)?r(_l|_d|_ld|_.*)?}}`)
 	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
 	id3Regex       *regexp.Regexp
 	exifRegex      *regexp.Regexp
@@ -132,6 +132,8 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// randString returns a random string of the specified length
+// using the specified characterSet
 func randString(n int, characterSet string) string {
 	b := make([]byte, n)
 	for i := range b {
@@ -140,13 +142,19 @@ func randString(n int, characterSet string) string {
 	return string(b)
 }
 
-func randomize(str string) (string, error) {
+// replaceRandomVariable reolaces `{{r}}` in the string with a generated
+// random string
+func replaceRandomVariable(str string) (string, error) {
 	submatches := randomRegex.FindAllStringSubmatch(str, -1)
 
-	length := 10
-	var characters string
 	for _, submatch := range submatches {
-		var err error
+		length := 10
+		var characters string
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return "", err
+		}
+
 		strLen := submatch[1]
 		if strLen != "" {
 			length, err = strconv.Atoi(strLen)
@@ -160,19 +168,18 @@ func randomize(str string) (string, error) {
 		switch characters {
 		case "":
 			characters = letterBytes
-		case `\d`:
+		case `_d`:
 			characters = numberBytes
-		case `\l`:
+		case `_l`:
 			characters = letterBytes
-		case `\ld`:
+		case `_ld`:
 			characters = lettersAndNumbers
 		}
+
+		str = regex.ReplaceAllString(str, randString(length, characters))
 	}
 
-	return randomRegex.ReplaceAllString(
-		str,
-		randString(length, characters),
-	), nil
+	return str, nil
 }
 
 // itor converts an integer to a roman numeral
@@ -628,7 +635,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	}
 
 	if randomRegex.Match([]byte(str)) {
-		out, err := randomize(str)
+		out, err := replaceRandomVariable(str)
 		if err != nil {
 			return "", err
 		}
