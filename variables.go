@@ -28,11 +28,13 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?`)
-	randomRegex    = regexp.MustCompile(`{{(\d+)?r(_l|_d|_ld|_.*)?}}`)
-	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
-	id3Regex       *regexp.Regexp
-	exifRegex      *regexp.Regexp
-	dateRegex      *regexp.Regexp
+	randomRegex    = regexp.MustCompile(
+		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
+	)
+	hashRegex = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
+	id3Regex  *regexp.Regexp
+	exifRegex *regexp.Regexp
+	dateRegex *regexp.Regexp
 )
 
 const (
@@ -142,9 +144,9 @@ func randString(n int, characterSet string) string {
 	return string(b)
 }
 
-// replaceRandomVariable reolaces `{{r}}` in the string with a generated
+// replaceRandomVariables reolaces `{{r}}` in the string with a generated
 // random string
-func replaceRandomVariable(str string) (string, error) {
+func replaceRandomVariables(str string) (string, error) {
 	submatches := randomRegex.FindAllStringSubmatch(str, -1)
 
 	for _, submatch := range submatches {
@@ -174,6 +176,10 @@ func replaceRandomVariable(str string) (string, error) {
 			characters = letterBytes
 		case `_ld`:
 			characters = lettersAndNumbers
+		}
+
+		if submatch[3] != "" {
+			characters = submatch[3]
 		}
 
 		str = regex.ReplaceAllString(str, randString(length, characters))
@@ -637,7 +643,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	}
 
 	if randomRegex.Match([]byte(str)) {
-		out, err := replaceRandomVariable(str)
+		out, err := replaceRandomVariables(str)
 		if err != nil {
 			return "", err
 		}

@@ -372,12 +372,13 @@ func TestFileHash(t *testing.T) {
 	runFindReplace(t, cases)
 }
 
-func TestRepalceRandomVariable(t *testing.T) {
+func TestReplaceRandomVariable(t *testing.T) {
 	slice := []string{
 		`{{10r_l}}`,
 		`{{8r_d}}`,
 		`{{9r_l}}`,
 		`{{5r_ld}}`,
+		`{{15r<12345>}}`,
 		`{{r}}`,
 	}
 
@@ -393,7 +394,7 @@ func TestRepalceRandomVariable(t *testing.T) {
 			}
 		}
 
-		str, err := replaceRandomVariable(v)
+		str, err := replaceRandomVariables(v)
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
 		}
