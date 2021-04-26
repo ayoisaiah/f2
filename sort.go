@@ -13,8 +13,8 @@ import (
 // sortMatches is used to sort files to avoid renaming conflicts
 func (op *Operation) sortMatches() {
 	sort.SliceStable(op.matches, func(i, j int) bool {
-		// sort parent directories before child directories in undo mode
-		if op.undoFile != "" {
+		// sort parent directories before child directories in revert mode
+		if op.revert {
 			return len(op.matches[i].BaseDir) < len(op.matches[j].BaseDir)
 		}
 

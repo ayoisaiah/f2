@@ -2,11 +2,15 @@ package f2
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,6 +25,10 @@ type testCase struct {
 	undoArgs       []string
 	expectedErrors []renameError
 }
+
+var (
+	backupFilePath string
+)
 
 var fileSystem = []string{
 	"No Pressure (2021) S1.E1.1080p.mkv",
@@ -50,6 +58,29 @@ var fileSystem = []string{
 }
 
 func init() {
+	workingDir, err := filepath.Abs(".")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	userhomeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	workingDir = strings.ReplaceAll(workingDir, "/", "_")
+	if runtime.GOOS == windows {
+		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
+		workingDir = strings.ReplaceAll(workingDir, ":", "_")
+	}
+
+	backupFilePath = filepath.Join(
+		userhomeDir,
+		".f2",
+		"backups",
+		workingDir+".json",
+	)
+
 	rand.Seed(time.Now().UnixNano())
 }
 
@@ -101,7 +132,7 @@ func setupFileSystem(t testing.TB) string {
 type ActionResult struct {
 	changes         []Change
 	conflicts       map[conflict][]Conflict
-	outputFile      string
+	backupFile      string
 	applyError      error
 	operationErrors []renameError
 }
@@ -117,9 +148,8 @@ func action(args []string) (ActionResult, error) {
 		}
 
 		op.quiet = true
-		if op.undoFile != "" {
-			result.outputFile = op.undoFile
-			return op.undo()
+		if op.revert {
+			return op.undo(backupFilePath)
 		}
 
 		err = op.findMatches()
@@ -145,15 +175,8 @@ func action(args []string) (ActionResult, error) {
 
 		result.changes = op.matches
 
-		if op.outputFile != "" {
-			result.outputFile = op.outputFile
-			err = op.writeToFile(op.outputFile)
-			if err != nil {
-				return err
-			}
-		}
-
 		result.applyError = op.apply()
+		result.backupFile = backupFilePath
 		result.conflicts = op.conflicts
 		result.operationErrors = op.errors
 
@@ -207,45 +230,6 @@ func runFindReplace(t *testing.T, cases []testCase) {
 				prettyPrint(result.changes),
 			)
 		}
-
-		// Test if the map file was written successfully
-		if result.outputFile != "" {
-			file, err := os.ReadFile(result.outputFile)
-			if err != nil {
-				t.Fatalf(
-					"Test (%s) — Unexpected error when trying to read map file: %v\n",
-					v.name,
-					err,
-				)
-			}
-
-			var mf mapFile
-			err = json.Unmarshal(file, &mf)
-			if err != nil {
-				t.Fatalf(
-					"Test (%s) — Unexpected error when trying to unmarshal map file contents: %v\n",
-					v.name,
-					err,
-				)
-			}
-			ch := mf.Operations
-
-			sortChanges(ch)
-
-			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
-				t.Fatalf(
-					"Test (%s) — Expected: %+v, got: %+v\n",
-					v.name,
-					prettyPrint(v.want),
-					prettyPrint(ch),
-				)
-			}
-
-			err = os.Remove(result.outputFile)
-			if err != nil {
-				t.Log("Failed to remove output file")
-			}
-		}
 	}
 }
 
@@ -276,8 +260,6 @@ func TestFindReplace(t *testing.T) {
 				".*E(\\d+).*",
 				"-r",
 				"$1.mkv",
-				"-o",
-				"map.json",
 				testDir,
 			},
 		},
@@ -385,8 +367,6 @@ func TestFindReplace(t *testing.T) {
 				"jpeg",
 				"-R",
 				"-i",
-				"-o",
-				"map.json",
 				testDir,
 			},
 		},
@@ -752,18 +732,13 @@ func TestApplyUndo(t *testing.T) {
 				".*E(\\d+).*",
 				"-r",
 				"$1.mkv",
-				"-o",
-				"map.json",
 				"-x",
 			},
-			undoArgs: []string{"-u", "map.json", "-x"},
+			undoArgs: []string{"-u", "-x"},
 		},
 		{
 			want: []Change{
-				{Source: "pics", IsDir: true, Target: "images"},
 				{Source: "morepics", IsDir: true, Target: "moreimages"},
-				{Source: "pic-1.avif", Target: "image-1.avif"},
-				{Source: "pic-2.avif", Target: "image-2.avif"},
 			},
 			args: []string{
 				"-f",
@@ -771,20 +746,17 @@ func TestApplyUndo(t *testing.T) {
 				"-r",
 				"image",
 				"-d",
-				"-R",
-				"-o",
-				"map.json",
 				"-x",
 			},
-			undoArgs: []string{"-u", "map.json", "-x"},
+			undoArgs: []string{"-u", "-x"},
 		},
 	}
 
 	for i, v := range table {
 		testDir := setupFileSystem(t)
 
-		for _, ch := range v.want {
-			ch.BaseDir = testDir
+		for i := range v.want {
+			v.want[i].BaseDir = testDir
 		}
 
 		v.args = append(v.args, testDir)
@@ -809,6 +781,40 @@ func TestApplyUndo(t *testing.T) {
 			)
 		}
 
+		// Test if the backup file was written successfully
+		if result.backupFile != "" {
+			file, err := os.ReadFile(result.backupFile)
+			if err != nil {
+				t.Fatalf(
+					"Test (%s) — Unexpected error when trying to read backup file: %v\n",
+					v.name,
+					err,
+				)
+			}
+
+			var bf backupFile
+			err = json.Unmarshal(file, &bf)
+			if err != nil {
+				t.Fatalf(
+					"Test (%s) — Unexpected error when trying to unmarshal map file contents: %v\n",
+					v.name,
+					err,
+				)
+			}
+			ch := bf.Operations
+
+			sortChanges(ch)
+
+			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
+				t.Fatalf(
+					"Test (%s) — Expected: %+v, got: %+v\n",
+					v.name,
+					prettyPrint(v.want),
+					prettyPrint(ch),
+				)
+			}
+		}
+
 		// Test Undo function
 		args = os.Args[0:1]
 		args = append(args, v.undoArgs...)
@@ -817,9 +823,13 @@ func TestApplyUndo(t *testing.T) {
 			t.Fatalf("Test(%d) — Unexpected error in undo mode: %v\n", i+1, err)
 		}
 
-		err = os.Remove(result.outputFile)
-		if err != nil {
-			t.Log("Failed to remove output file")
+		if _, err := os.Stat(result.backupFile); err == nil ||
+			errors.Is(err, os.ErrExist) {
+			t.Fatalf(
+				"Test (%d) - Backup file was not removed after undo operation: %v",
+				i+1,
+				err,
+			)
 		}
 	}
 }

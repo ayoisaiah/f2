@@ -85,7 +85,7 @@ func GetApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.4.0",
+		Version:              "v1.5.0",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -102,11 +102,6 @@ func GetApp() *cli.App {
 				Name:    "exclude",
 				Aliases: []string{"E"},
 				Usage:   "Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude `<pattern>`s can be specified.",
-			},
-			&cli.StringFlag{
-				Name:    "output-file",
-				Aliases: []string{"o"},
-				Usage:   "Output a map `<file>` for the current operation",
 			},
 			&cli.BoolFlag{
 				Name:    "exec",
@@ -125,11 +120,10 @@ func GetApp() *cli.App {
 				Value:       0,
 				DefaultText: "0",
 			},
-			&cli.StringFlag{
-				Name:      "undo",
-				Aliases:   []string{"u"},
-				TakesFile: true,
-				Usage:     "Undo a successful operation using a previously created map `file`. Deletes the map file if the operation is reverted successfully",
+			&cli.BoolFlag{
+				Name:    "undo",
+				Aliases: []string{"u"},
+				Usage:   "Undo the last operation performed in the current working directory.",
 			},
 			&cli.StringFlag{
 				Name:  "sort",

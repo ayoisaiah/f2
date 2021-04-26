@@ -3,6 +3,7 @@ module github.com/ayoisaiah/f2
 go 1.16
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63
 	github.com/google/go-cmp v0.5.4
 	github.com/gookit/color v1.4.2

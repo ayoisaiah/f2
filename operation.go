@@ -33,6 +33,8 @@ var (
 	)
 )
 
+var pathSeperator = "/"
+
 const (
 	windows = "windows"
 	darwin  = "darwin"
@@ -75,8 +77,6 @@ type Operation struct {
 	searchRegex   *regexp.Regexp
 	directories   []string
 	recursive     bool
-	undoFile      string
-	outputFile    string
 	workingDir    string
 	stringMode    bool
 	excludeFilter []string
@@ -85,11 +85,30 @@ type Operation struct {
 	reverseSort   bool
 	quiet         bool
 	errors        []renameError
+	revert        bool
 }
 
-type mapFile struct {
+type backupFile struct {
+	WorkingDir string   `json:"working_dir"`
 	Date       string   `json:"date"`
 	Operations []Change `json:"operations"`
+}
+
+func init() {
+	if runtime.GOOS == windows {
+		pathSeperator = `\`
+	}
+}
+
+// createBackupDir creates the directory for backups
+// if it doesn't exist already
+func createBackupDir(dir string) (string, error) {
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return dirname, os.MkdirAll(filepath.Join(dirname, ".f2", dir), os.ModePerm)
 }
 
 // writeToFile writes the details of a successful operation
@@ -108,7 +127,8 @@ func (op *Operation) writeToFile(outputFile string) (err error) {
 		}
 	}()
 
-	mf := mapFile{
+	mf := backupFile{
+		WorkingDir: op.workingDir,
 		Date:       time.Now().Format(time.RFC3339),
 		Operations: op.matches,
 	}
@@ -129,18 +149,18 @@ func (op *Operation) writeToFile(outputFile string) (err error) {
 // undo reverses a successful renaming operation indicated
 // in the specified map file. The undo file is deleted
 // if the operation is successfully reverted
-func (op *Operation) undo() error {
-	file, err := os.ReadFile(op.undoFile)
+func (op *Operation) undo(path string) error {
+	file, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	var mf mapFile
-	err = json.Unmarshal(file, &mf)
+	var bf backupFile
+	err = json.Unmarshal(file, &bf)
 	if err != nil {
 		return err
 	}
-	op.matches = mf.Operations
+	op.matches = bf.Operations
 
 	for i, v := range op.matches {
 		ch := v
@@ -162,11 +182,13 @@ func (op *Operation) undo() error {
 		return err
 	}
 
-	if err = os.Remove(op.undoFile); err != nil {
-		fmt.Printf(
-			"Unable to remove redundant undo file '%s' after successful operation.",
-			yellow.Sprint(op.undoFile),
-		)
+	if op.exec {
+		if err = os.Remove(path); err != nil {
+			fmt.Printf(
+				"Unable to remove redundant undo file '%s' after successful operation.",
+				yellow.Sprint(path),
+			)
+		}
 	}
 
 	return nil
@@ -267,27 +289,41 @@ func (op *Operation) handleErrors() error {
 
 	op.reportErrors()
 
-	file := fmt.Sprintf(
-		".f2_%s.json",
-		time.Now().Format("2006-01-2T15-04-05PM"),
-	)
-
 	var err error
-	if len(op.matches) > 0 {
-		err = op.writeToFile(file)
+	if len(op.matches) > 0 && !op.revert {
+		err = op.backup()
 	}
 
 	if err == nil && len(op.matches) > 0 {
 		return fmt.Errorf(
-			"Some files could not be renamed. The successful operations have been written to %s. To revert the changes, pass this file to the %s flag",
-			yellow.Sprint(file),
-			yellow.Sprint("--undo"),
+			"Some files could not be renamed. To revert the changes, run %s",
+			yellow.Sprint("f2 -u"),
 		)
 	} else if err != nil && len(op.matches) > 0 {
 		return fmt.Errorf("The above files could not be renamed")
 	}
 
 	return fmt.Errorf("The renaming operation failed due to the above errors")
+}
+
+// backup creates the path where the backup file
+// will be written to
+func (op *Operation) backup() error {
+	workingDir := strings.ReplaceAll(op.workingDir, pathSeperator, "_")
+	if runtime.GOOS == windows {
+		workingDir = strings.ReplaceAll(workingDir, ":", "_")
+	}
+
+	dirname, err := createBackupDir("backups")
+	if err != nil {
+		return err
+	}
+
+	file := workingDir + ".json"
+
+	return op.writeToFile(
+		filepath.Join(dirname, ".f2", "backups", file),
+	)
 }
 
 // apply will check for conflicts and print the changes to be made
@@ -311,7 +347,7 @@ func (op *Operation) apply() error {
 	}
 
 	if op.exec {
-		if op.includeDir || op.undoFile != "" {
+		if op.includeDir || op.revert {
 			op.sortMatches()
 		}
 
@@ -321,16 +357,17 @@ func (op *Operation) apply() error {
 			return op.handleErrors()
 		}
 
-		if op.outputFile != "" {
-			return op.writeToFile(op.outputFile)
-		}
-	} else {
-		if op.quiet {
-			return nil
-		}
-		op.printChanges()
-		fmt.Printf("Append the %s flag to apply the above changes\n", yellow.Sprint("-x"))
+		return op.backup()
 	}
+
+	if op.quiet {
+		return nil
+	}
+	op.printChanges()
+	fmt.Printf(
+		"Append the %s flag to apply the above changes\n",
+		yellow.Sprint("-x"),
+	)
 
 	return nil
 }
@@ -501,10 +538,39 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 	}
 }
 
+// retrieveBackupFile retrieves the path to a previously created
+// backup file for the current directory
+func (op *Operation) retrieveBackupFile() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	dir := strings.ReplaceAll(op.workingDir, pathSeperator, "_")
+	if runtime.GOOS == windows {
+		dir = strings.ReplaceAll(dir, ":", "_")
+	}
+
+	fullPath := filepath.Join(homeDir, ".f2", "backups", dir+".json")
+
+	if _, err := os.Stat(fullPath); err != nil {
+		return "", err
+	}
+
+	return fullPath, nil
+}
+
 // run executes the operation sequence
 func (op *Operation) run() error {
-	if op.undoFile != "" {
-		return op.undo()
+	if op.revert {
+		path, err := op.retrieveBackupFile()
+		if err != nil {
+			return fmt.Errorf(
+				"Failed to retrieve backup file for the current directory: %w",
+				err,
+			)
+		}
+		return op.undo(path)
 	}
 
 	err := op.findMatches()
@@ -537,7 +603,6 @@ func (op *Operation) run() error {
 // setOptions applies the command line arguments
 // onto the operation
 func setOptions(op *Operation, c *cli.Context) error {
-	op.outputFile = c.String("output-file")
 	op.findString = c.String("find")
 	op.replacement = c.String("replace")
 	op.exec = c.Bool("exec")
@@ -548,12 +613,12 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.ignoreExt = c.Bool("ignore-ext")
 	op.recursive = c.Bool("recursive")
 	op.directories = c.Args().Slice()
-	op.undoFile = c.String("undo")
 	op.onlyDir = c.Bool("only-dir")
 	op.stringMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
 	op.maxDepth = c.Int("max-depth")
 	op.quiet = c.Bool("quiet")
+	op.revert = c.Bool("undo")
 
 	// Sorting
 	if c.String("sort") != "" {
@@ -589,8 +654,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 // newOperation returns an Operation constructed
 // from command line flags & arguments
 func newOperation(c *cli.Context) (*Operation, error) {
-	if c.String("find") == "" && c.String("replace") == "" &&
-		c.String("undo") == "" {
+	if c.String("find") == "" && c.String("replace") == "" && !c.Bool("undo") {
 		return nil, errInvalidArgument
 	}
 
@@ -600,7 +664,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 		return nil, err
 	}
 
-	if op.undoFile != "" {
+	if op.revert {
 		return op, nil
 	}
 
