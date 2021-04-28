@@ -41,7 +41,13 @@ func TestReplaceFilenameVariables(t *testing.T) {
 		}
 
 		op := &Operation{}
-		got, err := op.handleVariables("{{p}}-{{f}}{{ext}}", ch)
+		op.replacement = "{{p}}-{{f}}{{ext}}"
+		v, err := getAllVariables(op.replacement)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		got, err := op.handleVariables(op.replacement, ch, &v)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -108,7 +114,12 @@ func TestReplaceDateVariables(t *testing.T) {
 
 			for key, token := range dateTokens {
 				want[v+"."+key] = timeValue.Format(token)
-				out, err := replaceDateVariables(path, "{{"+v+"."+key+"}}")
+				dv, err := getDateVar("{{" + v + "." + key + "}}")
+				if err != nil {
+					t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
+				}
+
+				out, err := replaceDateVariables(path, "{{"+v+"."+key+"}}", dv)
 				if err != nil {
 					t.Fatalf("Expected no errors, but got one: %v\n", err)
 				}
@@ -394,11 +405,12 @@ func TestReplaceRandomVariable(t *testing.T) {
 			}
 		}
 
-		str, err := replaceRandomVariables(v)
+		rv, err := getRandomVar(v)
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
 		}
 
+		str := replaceRandomVariables(v, rv)
 		if len(str) != length {
 			t.Fatalf(
 				"Test (%s) — Expected length of random string to be %d, got: %d",
@@ -423,7 +435,7 @@ func TestItor(t *testing.T) {
 		{7070, "7070"},
 	}
 	for _, v := range testCases {
-		str := itor(v.input)
+		str := integerToRoman(v.input)
 		if str != v.output {
 			t.Fatalf("Roman(%v) = %v, want %v.", v.input, str, v.output)
 		}

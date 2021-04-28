@@ -27,7 +27,7 @@ var (
 	filenameRegex  = regexp.MustCompile("{{f}}")
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
-	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?`)
+	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?(\d+)?`)
 	randomRegex    = regexp.MustCompile(
 		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
 	)
@@ -146,26 +146,10 @@ func randString(n int, characterSet string) string {
 
 // replaceRandomVariables reolaces `{{r}}` in the string with a generated
 // random string
-func replaceRandomVariables(str string) (string, error) {
-	submatches := randomRegex.FindAllStringSubmatch(str, -1)
-
-	for _, submatch := range submatches {
-		length := 10
-		var characters string
-		regex, err := regexp.Compile(submatch[0])
-		if err != nil {
-			return "", err
-		}
-
-		strLen := submatch[1]
-		if strLen != "" {
-			length, err = strconv.Atoi(strLen)
-			if err != nil {
-				return "", err
-			}
-		}
-
-		characters = submatch[2]
+func replaceRandomVariables(str string, rv randomVar) string {
+	for i := range rv.submatches {
+		r := rv.values[i]
+		characters := r.characters
 
 		switch characters {
 		case "":
@@ -178,18 +162,14 @@ func replaceRandomVariables(str string) (string, error) {
 			characters = lettersAndNumbers
 		}
 
-		if submatch[3] != "" {
-			characters = submatch[3]
-		}
-
-		str = regex.ReplaceAllString(str, randString(length, characters))
+		str = r.regex.ReplaceAllString(str, randString(r.length, characters))
 	}
 
-	return str, nil
+	return str
 }
 
-// itor converts an integer to a roman numeral
-func itor(number int) string {
+// integerToRoman converts an integer to a roman numeral
+func integerToRoman(number int) string {
 	maxRomanNumber := 3999
 	if number > maxRomanNumber {
 		return strconv.Itoa(number)
@@ -257,22 +237,16 @@ func getHash(file, hashFn string) (string, error) {
 
 // replaceFileHash replaces a hash variable with the corresponding
 // hash value
-func replaceFileHash(file, input string) (string, error) {
-	submatches := hashRegex.FindAllStringSubmatch(input, -1)
+func replaceFileHash(file, input string, hv hashVar) (string, error) {
+	for i := range hv.submatches {
+		h := hv.values[i]
 
-	for _, submatch := range submatches {
-		regex, err := regexp.Compile(submatch[0])
+		hashValue, err := getHash(file, h.hashFn)
 		if err != nil {
 			return "", err
 		}
 
-		hashFn := submatch[1]
-		hashValue, err := getHash(file, hashFn)
-		if err != nil {
-			return "", err
-		}
-
-		input = regex.ReplaceAllString(input, hashValue)
+		input = h.regex.ReplaceAllString(input, hashValue)
 	}
 
 	return input, nil
@@ -280,42 +254,40 @@ func replaceFileHash(file, input string) (string, error) {
 
 // replaceDateVariables replaces a date variable with the corresponding
 // date value
-func replaceDateVariables(file, input string) (string, error) {
+func replaceDateVariables(file, input string, dv dateVar) (string, error) {
 	t, err := times.Stat(file)
 	if err != nil {
 		return "", err
 	}
 
-	submatches := dateRegex.FindAllStringSubmatch(input, -1)
-	for _, submatch := range submatches {
-		regex, err := regexp.Compile(submatch[0])
-		if err != nil {
-			return "", err
-		}
+	for i := range dv.submatches {
+		current := dv.values[i]
+		regex := current.regex
+		token := current.token
 
 		var timeStr string
-		switch submatch[1] {
+		switch current.attr {
 		case modTime:
 			modTime := t.ModTime()
-			timeStr = modTime.Format(dateTokens[submatch[2]])
+			timeStr = modTime.Format(dateTokens[token])
 		case birthTime:
 			birthTime := t.ModTime()
 			if t.HasBirthTime() {
 				birthTime = t.BirthTime()
 			}
-			timeStr = birthTime.Format(dateTokens[submatch[2]])
+			timeStr = birthTime.Format(dateTokens[token])
 		case accessTime:
 			accessTime := t.AccessTime()
-			timeStr = accessTime.Format(dateTokens[submatch[2]])
+			timeStr = accessTime.Format(dateTokens[token])
 		case changeTime:
 			changeTime := t.ModTime()
 			if t.HasChangeTime() {
 				changeTime = t.ChangeTime()
 			}
-			timeStr = changeTime.Format(dateTokens[submatch[2]])
+			timeStr = changeTime.Format(dateTokens[token])
 		case currentTime:
 			currentTime := time.Now()
-			timeStr = currentTime.Format(dateTokens[submatch[2]])
+			timeStr = currentTime.Format(dateTokens[token])
 		}
 
 		input = regex.ReplaceAllString(input, timeStr)
@@ -360,15 +332,14 @@ func getID3Tags(file string) (*ID3, error) {
 
 // replaceID3Variables replaces an id3 variable in the input string
 // with the corresponding id3 value
-func replaceID3Variables(tags *ID3, input string) (string, error) {
-	submatches := id3Regex.FindAllStringSubmatch(input, -1)
-	for _, submatch := range submatches {
-		regex, err := regexp.Compile(submatch[0])
-		if err != nil {
-			return "", err
-		}
+func replaceID3Variables(tags *ID3, input string, id3v id3Var) string {
+	submatches := id3v.submatches
+	for i := range submatches {
+		current := id3v.values[i]
+		regex := current.regex
+		submatch := current.tag
 
-		switch submatch[1] {
+		switch submatch {
 		case "format":
 			input = regex.ReplaceAllString(input, tags.Format)
 		case "type":
@@ -418,7 +389,7 @@ func replaceID3Variables(tags *ID3, input string) (string, error) {
 		}
 	}
 
-	return input, nil
+	return input
 }
 
 // getExifData retrieves the exif data embedded in an image file.
@@ -451,19 +422,16 @@ func getExifData(file string) (*Exif, error) {
 }
 
 // replaceExifVariables replaces the exif variables in an input string
-func replaceExifVariables(exifData *Exif, input string) (string, error) {
-	submatches := exifRegex.FindAllStringSubmatch(input, -1)
-	for _, submatch := range submatches {
-		regex, err := regexp.Compile(submatch[0])
-		if err != nil {
-			return "", err
-		}
+func replaceExifVariables(
+	exifData *Exif,
+	input string,
+	ev exifVar,
+) (string, error) {
+	for i := range ev.submatches {
+		current := ev.values[i]
+		regex := current.regex
 
-		if strings.Contains(submatch[0], "exif.dt") {
-			submatch = append(submatch[:1], submatch[1+1:]...)
-		}
-
-		switch submatch[1] {
+		switch current.attr {
 		case "dt":
 			date := exifData.DateTimeOriginal
 			arr := strings.Split(date, " ")
@@ -476,7 +444,7 @@ func replaceExifVariables(exifData *Exif, input string) (string, error) {
 				return "", err
 			}
 
-			timeStr := dt.Format(dateTokens[submatch[2]])
+			timeStr := dt.Format(dateTokens[current.timeStr])
 			input = regex.ReplaceAllString(input, timeStr)
 		case "model":
 			cmodel := exifData.Model
@@ -534,47 +502,44 @@ func replaceExifVariables(exifData *Exif, input string) (string, error) {
 }
 
 // replaceIndex deals with sequential numbering in various formats
-func (op *Operation) replaceIndex(str string, count int) (string, error) {
-	submatches := indexRegex.FindAllStringSubmatch(str, -1)
-
-	if submatches[0][1] != "" {
-		startNumber, err := strconv.Atoi(submatches[0][1])
-		if err != nil {
-			return "", err
+func (op *Operation) replaceIndex(
+	str string,
+	count int,
+	nv numberVar,
+) string {
+	for i := range nv.submatches {
+		current := nv.values[i]
+		op.startNumber = current.startNumber
+		num := op.startNumber + (count * current.step)
+		n := int64(num)
+		var r string
+		switch current.format {
+		case "r":
+			r = integerToRoman(num)
+		case "h":
+			r = strconv.FormatInt(n, 16)
+		case "o":
+			r = strconv.FormatInt(n, 8)
+		case "b":
+			r = strconv.FormatInt(n, 2)
+		default:
+			r = fmt.Sprintf(current.index, num)
 		}
-		op.startNumber = startNumber
-	} else {
-		op.startNumber = 1
+
+		str = current.regex.ReplaceAllString(str, r)
 	}
 
-	index := submatches[0][2]
-	format := submatches[0][4]
-
-	num := op.startNumber + count
-	var r string
-	switch format {
-	case "r":
-		r = itor(num)
-	case "h":
-		n := int64(num)
-		r = strconv.FormatInt(n, 16)
-	case "o":
-		n := int64(num)
-		r = strconv.FormatInt(n, 8)
-	case "b":
-		n := int64(num)
-		r = strconv.FormatInt(n, 2)
-	default:
-		r = fmt.Sprintf(index, num)
-	}
-
-	return indexRegex.ReplaceAllString(str, r), nil
+	return str
 }
 
 // handleVariables checks if any variables are present in the replacement
 // string and delegates the variable replacement to the appropriate
 // function
-func (op *Operation) handleVariables(str string, ch Change) (string, error) {
+func (op *Operation) handleVariables(
+	str string,
+	ch Change,
+	vars *replaceVars,
+) (string, error) {
 	fileName := filepath.Base(ch.Source)
 	fileExt := filepath.Ext(fileName)
 	parentDir := filepath.Base(ch.BaseDir)
@@ -606,7 +571,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 
 	// handle date variables (e.g {{mtime.DD}})
 	if dateRegex.MatchString(str) {
-		out, err := replaceDateVariables(source, str)
+		out, err := replaceDateVariables(source, str, vars.date)
 		if err != nil {
 			return "", err
 		}
@@ -619,7 +584,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 			return "", err
 		}
 
-		out, err := replaceExifVariables(exifData, str)
+		out, err := replaceExifVariables(exifData, str, vars.exif)
 		if err != nil {
 			return "", err
 		}
@@ -632,15 +597,11 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 			return "", err
 		}
 
-		out, err := replaceID3Variables(tags, str)
-		if err != nil {
-			return "", err
-		}
-		str = out
+		str = replaceID3Variables(tags, str, vars.id3)
 	}
 
 	if hashRegex.MatchString(str) {
-		out, err := replaceFileHash(source, str)
+		out, err := replaceFileHash(source, str, vars.hash)
 		if err != nil {
 			return "", err
 		}
@@ -648,11 +609,7 @@ func (op *Operation) handleVariables(str string, ch Change) (string, error) {
 	}
 
 	if randomRegex.Match([]byte(str)) {
-		out, err := replaceRandomVariables(str)
-		if err != nil {
-			return "", err
-		}
-		str = out
+		str = replaceRandomVariables(str, vars.random)
 	}
 
 	return str, nil
