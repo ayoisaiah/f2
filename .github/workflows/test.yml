@@ -27,4 +27,4 @@ jobs:
 
     # Tests
     - name: Run testing
-      run: go test ./...
+      run: go test ./... -race
