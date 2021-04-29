@@ -83,11 +83,11 @@ Benchmark #1: f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03
 
 ## Installation
 
-F2 is written in Go, so you can install it through `go get` (requires Go 1.16 or
+F2 is written in Go, so you can install it through `go install` (requires Go 1.16 or
 later):
 
 ```bash
-$ go get -u github.com/ayoisaiah/f2/cmd/...
+$ go install github.com/ayoisaiah/f2/cmd/f2@latest
 ```
 
 You can also install it via `npm` if you have it installed:
@@ -113,7 +113,7 @@ AUTHOR:
    Ayooluwa Isaiah <ayo@freshman.tech>
 
 VERSION:
-   v1.5.2
+   v1.5.3
 
 FLAGS:
    --find <pattern>, -f <pattern>       Search <pattern>. Treated as a regular expression by default. Use -s or --string-mode to opt out
@@ -123,8 +123,8 @@ FLAGS:
    --recursive, -R                      Rename files recursively (default: false)
    --max-depth <integer>, -m <integer>  positive <integer> indicating the maximum depth for a recursive search (set to 0 for no limit) (default: 0)
    --undo, -u                           Undo the last operation performed in the current working directory. (default: false)
-   --sort <sort>                        Sort the matches according to the provided <sort>
-   --sortr <sort>                       Same as <sort> but presents the matches in the reverse order
+   --sort <sort>                        Sort the matches according to the provided <sort> (possible values: default, size, mtime, btime, atime, ctime)
+   --sortr <sort>                       Same as <sort> but presents the matches in the reverse order (possible values: default, size, mtime, btime, atime, ctime)
    --ignore-case, -i                    Ignore case (default: false)
    --quiet, -q                          Don't print out any information including errors (default: false)
    --ignore-ext, -e                     Ignore extension (default: false)
@@ -137,7 +137,7 @@ FLAGS:
    --version, -v                        print the version (default: false)
 
 DOCUMENTATION:
-	https://github.com/ayoisaiah/f2/wiki
+  https://github.com/ayoisaiah/f2/wiki
 
 WEBSITE:
   https://github.com/ayoisaiah/f2
