@@ -24,7 +24,36 @@ func randate() time.Time {
 }
 
 func TestAutoIncrementingNumber(t *testing.T) {
-	// TODO: Write test
+	files := []string{"a.md", "b.md", "c.md"}
+	replacement := []string{
+		"%d",
+		"%06d",
+		"10%03d",
+		"2%d3<5>",
+		"%03dr<1-5>",
+		"%db",
+		"%do",
+		"%dh",
+	}
+	want := map[string][]string{
+		"a.md": {"1", "000001", "010", "2", "VI", "1", "1", "1"},
+		"b.md": {"2", "000002", "011", "8", "VII", "10", "2", "2"},
+		"c.md": {"3", "000003", "012", "11", "VIII", "11", "3", "3"},
+	}
+	for i, v := range replacement {
+		op := &Operation{}
+		nv, err := getNumberVar(v)
+		if err != nil {
+			t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
+		}
+
+		for j, f := range files {
+			out := op.replaceIndex(v, j, nv)
+			if out != want[f][i] {
+				t.Fatalf("Test(%v) — got: %s, want %s", v, out, want[f][i])
+			}
+		}
+	}
 }
 
 func TestReplaceFilenameVariables(t *testing.T) {
@@ -65,7 +94,6 @@ func TestReplaceFilenameVariables(t *testing.T) {
 }
 
 func TestReplaceDateVariables(t *testing.T) {
-	// TODO: Noticed some intermittent failures
 	testDir := setupFileSystem(t)
 
 	for _, file := range fileSystem {

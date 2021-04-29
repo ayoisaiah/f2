@@ -27,8 +27,10 @@ var (
 	filenameRegex  = regexp.MustCompile("{{f}}")
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
-	indexRegex     = regexp.MustCompile(`(\d+)?(%(\d?)+d)([borh])?(\d+)?`)
-	randomRegex    = regexp.MustCompile(
+	indexRegex     = regexp.MustCompile(
+		`(\d+)?(%(\d?)+d)([borh])?(\d+)?(?:<(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)>)?`,
+	)
+	randomRegex = regexp.MustCompile(
 		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
 	)
 	hashRegex = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
@@ -507,10 +509,30 @@ func (op *Operation) replaceIndex(
 	count int,
 	nv numberVar,
 ) string {
+	if len(op.numberOffset) == 0 {
+		for range nv.submatches {
+			op.numberOffset = append(op.numberOffset, 0)
+		}
+	}
+
 	for i := range nv.submatches {
 		current := nv.values[i]
+
 		op.startNumber = current.startNumber
-		num := op.startNumber + (count * current.step)
+		num := op.startNumber + (count * current.step) + op.numberOffset[i]
+		if len(current.skip) != 0 {
+		outer:
+			for {
+				for _, v := range current.skip {
+					if num >= v.min && num <= v.max {
+						num += current.step
+						op.numberOffset[i] += current.step
+						continue outer
+					}
+				}
+				break
+			}
+		}
 		n := int64(num)
 		var r string
 		switch current.format {

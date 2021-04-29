@@ -1,11 +1,17 @@
 package f2
 
 import (
+	"math"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+type numbersToSkip struct {
+	min int
+	max int
+}
 
 type numberVar struct {
 	submatches [][]string
@@ -15,6 +21,7 @@ type numberVar struct {
 		index       string
 		format      string
 		step        int
+		skip        []numbersToSkip
 	}
 }
 
@@ -167,6 +174,7 @@ func getNumberVar(str string) (numberVar, error) {
 				index       string
 				format      string
 				step        int
+				skip        []numbersToSkip
 			}
 
 			regex, err := regexp.Compile(submatch[0])
@@ -192,6 +200,41 @@ func getNumberVar(str string) (numberVar, error) {
 				n.step, err = strconv.Atoi(submatch[5])
 				if err != nil {
 					return nv, err
+				}
+			}
+
+			skipNumbers := submatch[6]
+			if skipNumbers != "" {
+				slice := strings.Split(skipNumbers, ",")
+				for _, v := range slice {
+					if strings.Contains(v, "-") {
+						sl := strings.Split(v, "-")
+						n1, err := strconv.Atoi(sl[0])
+						if err != nil {
+							return nv, err
+						}
+
+						n2, err := strconv.Atoi(sl[1])
+						if err != nil {
+							return nv, err
+						}
+
+						n.skip = append(n.skip, numbersToSkip{
+							max: int(math.Max(float64(n1), float64(n2))),
+							min: int(math.Min(float64(n1), float64(n2))),
+						})
+						continue
+					}
+
+					num, err := strconv.Atoi(v)
+					if err != nil {
+						return nv, err
+					}
+
+					n.skip = append(n.skip, numbersToSkip{
+						max: num,
+						min: num,
+					})
 				}
 			}
 

@@ -86,6 +86,7 @@ type Operation struct {
 	quiet         bool
 	errors        []renameError
 	revert        bool
+	numberOffset  []int
 }
 
 type backupFile struct {
