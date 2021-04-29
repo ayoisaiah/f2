@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"gopkg.in/djherbis/times.v1"
@@ -102,6 +103,83 @@ func (op *Operation) sortByTime() (err error) {
 	return err
 }
 
+func (op *Operation) sortPaths(
+	paths map[string][]os.DirEntry,
+	sorted bool,
+) []Change {
+	var p []Change
+
+	if sorted {
+		type KeyValue struct {
+			Key   string
+			Value []os.DirEntry
+		}
+
+		// create an empty slice of key-value pairs
+		s := make([]KeyValue, 0, len(paths))
+		// append all map keys-value pairs to the slice
+		for k, v := range paths {
+			s = append(s, KeyValue{k, v})
+		}
+
+		// sort map keys
+		sort.SliceStable(s, func(i, j int) bool {
+			if op.reverseSort {
+				return strings.ToLower(s[i].Key) > strings.ToLower(s[j].Key)
+			}
+
+			return strings.ToLower(s[i].Key) < strings.ToLower(s[j].Key)
+		})
+
+		for _, v := range s {
+			k := v.Key
+			val := paths[v.Key]
+
+			// sort directory entries
+			sort.SliceStable(val, func(i, j int) bool {
+				if op.reverseSort {
+					return strings.ToLower(
+						val[i].Name(),
+					) > strings.ToLower(
+						val[j].Name(),
+					)
+				}
+
+				return strings.ToLower(
+					val[i].Name(),
+				) < strings.ToLower(
+					val[j].Name(),
+				)
+			})
+
+			for _, f := range val {
+				var change = Change{
+					BaseDir: k,
+					IsDir:   f.IsDir(),
+					Source:  filepath.Clean(f.Name()),
+				}
+
+				p = append(p, change)
+			}
+		}
+		return p
+	}
+
+	for k, v := range paths {
+		for _, f := range v {
+			var change = Change{
+				BaseDir: k,
+				IsDir:   f.IsDir(),
+				Source:  filepath.Clean(f.Name()),
+			}
+
+			p = append(p, change)
+		}
+	}
+
+	return p
+}
+
 // sortBy delegates the sorting of matches to the appropriate method
 func (op *Operation) sortBy() (err error) {
 	switch op.sort {
@@ -109,7 +187,7 @@ func (op *Operation) sortBy() (err error) {
 		return op.sortBySize()
 	case accessTime, modTime, birthTime, changeTime:
 		return op.sortByTime()
-	default:
-		return nil
 	}
+
+	return nil
 }

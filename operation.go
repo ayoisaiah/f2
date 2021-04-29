@@ -446,19 +446,22 @@ func (op *Operation) filterMatches() error {
 }
 
 // setPaths creates a Change struct for each path
-// and checks if its a directory or not
 func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
-	for k, v := range paths {
-		for _, f := range v {
-			var change = Change{
-				BaseDir: k,
-				IsDir:   f.IsDir(),
-				Source:  filepath.Clean(f.Name()),
-			}
-
-			op.paths = append(op.paths, change)
+	if op.exec {
+		if !indexRegex.MatchString(op.replacement) {
+			op.paths = op.sortPaths(paths, false)
+			return
 		}
 	}
+
+	// Don't bother sorting the paths in alphabetical order
+	// if a different sort has been set that's not the default
+	if op.sort != "" && op.sort != "default" {
+		op.paths = op.sortPaths(paths, false)
+		return
+	}
+
+	op.paths = op.sortPaths(paths, true)
 }
 
 // retrieveBackupFile retrieves the path to a previously created
@@ -475,7 +478,6 @@ func (op *Operation) retrieveBackupFile() (string, error) {
 	}
 
 	fullPath := filepath.Join(homeDir, ".f2", "backups", dir+".json")
-
 	if _, err := os.Stat(fullPath); err != nil {
 		return "", err
 	}
@@ -587,6 +589,12 @@ func newOperation(c *cli.Context) (*Operation, error) {
 		return nil, err
 	}
 
+	// Get the current working directory
+	op.workingDir, err = filepath.Abs(".")
+	if err != nil {
+		return nil, err
+	}
+
 	if op.revert {
 		return op, nil
 	}
@@ -612,12 +620,6 @@ func newOperation(c *cli.Context) (*Operation, error) {
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	// Get the current working directory
-	op.workingDir, err = filepath.Abs(".")
-	if err != nil {
-		return nil, err
 	}
 
 	op.setPaths(paths)
