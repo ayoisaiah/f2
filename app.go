@@ -85,7 +85,7 @@ func GetApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.5.2",
+		Version:              "v1.5.3",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -127,11 +127,11 @@ func GetApp() *cli.App {
 			},
 			&cli.StringFlag{
 				Name:  "sort",
-				Usage: "Sort the matches according to the provided `<sort>`",
+				Usage: "Sort the matches according to the provided `<sort>` (possible values: default, size, mtime, btime, atime, ctime)",
 			},
 			&cli.StringFlag{
 				Name:  "sortr",
-				Usage: "Same as `<sort>` but presents the matches in the reverse order",
+				Usage: "Same as `<sort>` but presents the matches in the reverse order (possible values: default, size, mtime, btime, atime, ctime)",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-case",
