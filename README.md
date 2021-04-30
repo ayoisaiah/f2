@@ -19,7 +19,7 @@
 
 <img src="https://ik.imagekit.io/turnupdev/f2_EsdXrHHKt.png?tr:q-100" alt="Screenshot of F2 in action">
 
-## Why should I use F2?
+## Why should you use F2?
 
 - F2 helps you organise your filesystem through batch renaming so that your files and directories can have a consistent naming scheme.
 - It offers a comprehensive set of renaming options and scales well from trivial string replacements to more complex operations involving regular expressions.
@@ -29,7 +29,7 @@
 - F2 is very fast and won't waste your time. See [benchmarks](#benchmarks).
 - F2 allows you to [revert any renaming operation](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) performed with the program. This means you don't have to worry about making a mistake because you can always get back to the previous state without breaking a sweat.
 - F2 has good test coverage with equal attention paid to all supported platforms (Linux, Windows and macOS).
-- F2 is [well documented](https://github.com/ayoisaiah/f2/wiki) so that you won't have to scratch your head while figuring out what you can do with it. Lots of examples are provided to aid comprehension.
+- F2 is [well documented](https://github.com/ayoisaiah/f2/wiki) so that you won't have to scratch your head while figuring out what you can do with it. Lots of [realistic examples](https://github.com/ayoisaiah/f2/wiki/Renaming-Recipes) are provided to aid comprehension.
 
 ## Main features
 
@@ -37,13 +37,13 @@
 - Cross-platform with full support for Linux, macOS, and Windows. It also runs on less commonly-used platforms, like Termux (Android).
 - Extremely fast, even when working with a large amount of files.
 - Automatically detects potential conflicts such as file collisions, or overrides and reports them to you.
-- Provides several built-in variables for the easier renaming of certain file types. At the moment, Exif data for images and ID3 data for audio files are supported.
+- Provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for the easier renaming of certain file types. At the moment, Exif data for images and ID3 data for audio files are supported.
 - Supports find and replace using regular expressions, including capture groups.
 - Ignores hidden directories and files by default.
 - Supports recursive renaming for both files and directories.
 - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
-- Supports undoing an operation from a map file.
-- Extensive documentation and examples for each and every option that is provided.
+- Supports undoing the last renaming operation in case of mistakes or errors.
+- Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each and every option that is provided.
 - Extensive unit testing with close to 100% coverage.
 
 ## Benchmarks
@@ -83,70 +83,25 @@ Benchmark #1: f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03
 
 ## Installation
 
-F2 is written in Go, so you can install it through `go install` (requires Go 1.16 or
-later):
+F2 is written in Go, so you can install it through `go install` (requires Go 1.16 or later):
 
 ```bash
 $ go install github.com/ayoisaiah/f2/cmd/f2@latest
 ```
 
-You can also install it via `npm` if you have it installed:
+You can also install it via `npm` or `yarn` if you have it installed:
 
 ```bash
 $ npm i @ayoisaiah/f2 -g
+# or
+$ yarn global add @ayoisaiah/f2
 ```
 
 Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases).
 
-## Command-line options
-
-This is the output of `f2 --help`:
-
-```plaintext
-DESCRIPTION:
-  F2 is a command-line tool for batch renaming multiple files and directories quickly and safely
-
-USAGE:
-   f2 FLAGS [OPTIONS] [PATHS...]
-
-AUTHOR:
-   Ayooluwa Isaiah <ayo@freshman.tech>
-
-VERSION:
-   v1.5.3
-
-FLAGS:
-   --find <pattern>, -f <pattern>       Search <pattern>. Treated as a regular expression by default. Use -s or --string-mode to opt out
-   --replace <string>, -r <string>      Replacement <string>. If omitted, defaults to an empty string. Supports built-in and regex capture variables
-   --exclude <pattern>, -E <pattern>    Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude <pattern>s can be specified.
-   --exec, -x                           Execute the batch renaming operation (default: false)
-   --recursive, -R                      Rename files recursively (default: false)
-   --max-depth <integer>, -m <integer>  positive <integer> indicating the maximum depth for a recursive search (set to 0 for no limit) (default: 0)
-   --undo, -u                           Undo the last operation performed in the current working directory. (default: false)
-   --sort <sort>                        Sort the matches according to the provided <sort> (possible values: default, size, mtime, btime, atime, ctime)
-   --sortr <sort>                       Same as <sort> but presents the matches in the reverse order (possible values: default, size, mtime, btime, atime, ctime)
-   --ignore-case, -i                    Ignore case (default: false)
-   --quiet, -q                          Don't print out any information including errors (default: false)
-   --ignore-ext, -e                     Ignore extension (default: false)
-   --include-dir, -d                    Include directories (default: false)
-   --only-dir, -D                       Rename only directories (implies include-dir) (default: false)
-   --hidden, -H                         Include hidden files and directories (default: false)
-   --fix-conflicts, -F                  Fix any detected conflicts with auto indexing (default: false)
-   --string-mode, -s                    Opt into string literal mode by treating find expressions as non-regex strings (default: false)
-   --help, -h                           show help (default: false)
-   --version, -v                        print the version (default: false)
-
-DOCUMENTATION:
-  https://github.com/ayoisaiah/f2/wiki
-
-WEBSITE:
-  https://github.com/ayoisaiah/f2
-```
-
 ## Documentation
 
-Visit the [wiki page](https://github.com/ayoisaiah/f2/wiki) to learn all the
-operations that can be achieved with F2.
+Visit the [wiki page](https://github.com/ayoisaiah/f2/wiki) to view usage examples and learn about all the renaming operations that can be achieved with F2.
 
 ## Credits
 
