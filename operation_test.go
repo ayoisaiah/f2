@@ -164,8 +164,11 @@ func action(args []string) (ActionResult, error) {
 			}
 		}
 
-		if op.includeDir {
-			op.sortMatches()
+		if op.sort != "" {
+			err = op.sortBy()
+			if err != nil {
+				return err
+			}
 		}
 
 		err = op.replace()
@@ -831,5 +834,60 @@ func TestApplyUndo(t *testing.T) {
 				err,
 			)
 		}
+	}
+}
+
+func TestHandleErrors(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Replace Pressure with Limits in string mode",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E1.1080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E2.1080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Limits (2021) S1.E3.1080p.mkv",
+				},
+			},
+			expectedErrors: []renameError{
+				{
+					entry: Change{
+						Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+						BaseDir: testDir,
+						Target:  "No Limits (2021) S1.E3.1080p.mkv",
+					},
+					err: errors.New("Missing permissions"),
+				},
+			},
+			args: []string{"-f", "Pressure", "-r", "Limits", "-s", testDir},
+		},
+	}
+
+	for _, v := range cases {
+		op := &Operation{}
+		op.matches = v.want
+		op.errors = v.expectedErrors
+		err := op.handleErrors()
+		if err == nil {
+			t.Fatal("Expected an error not got nil")
+		}
+
+		str, err := op.retrieveBackupFile()
+		if err != nil {
+			t.Fatalf("Unexpected error while retrieving backup file: %v", err)
+		}
+
+		os.Remove(str)
 	}
 }

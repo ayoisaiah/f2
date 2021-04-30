@@ -1,6 +1,7 @@
 package f2
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -206,4 +207,74 @@ func TestFixConflicts(t *testing.T) {
 	}
 
 	runFixConflict(t, table)
+}
+
+func TestReportConflicts(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	table := map[conflict][]Conflict{
+		fileExists: {
+			{
+				source: []string{filepath.Join(testDir, "abc.pdf")},
+				target: filepath.Join(testDir, "abc.epub"),
+			},
+		},
+		emptyFilename: {
+			{
+				source: []string{filepath.Join(testDir, "abc.pdf")},
+				target: filepath.Join(testDir, ""),
+			},
+		},
+		invalidCharacters: {
+			{
+				source: []string{filepath.Join(testDir, "abc.pdf")},
+				target: filepath.Join(testDir, "%^&*().pdf"),
+			},
+		},
+		overwritingNewPath: {
+			{
+				source: []string{
+					filepath.Join(testDir, "abc.epub"),
+					filepath.Join(testDir, "abc.pdf"),
+				},
+				target: filepath.Join(testDir, "abc.mobi"),
+			},
+		},
+		maxLengthExceeded: {
+			{
+				source: []string{
+					filepath.Join(testDir, "abc.pdf"),
+				},
+				target: filepath.Join(
+					testDir,
+					"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.mobi",
+				),
+			},
+		},
+	}
+
+	op := &Operation{}
+	op.conflicts = table
+	rescueStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	os.Stdout = w
+
+	op.reportConflicts()
+
+	w.Close()
+
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	os.Stdout = rescueStdout
+
+	if string(out) == "" {
+		t.Fatal(
+			"Expected output to be a non-empty string but, got an empty string",
+		)
+	}
 }

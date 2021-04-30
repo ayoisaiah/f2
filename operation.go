@@ -262,7 +262,9 @@ func (op *Operation) reportErrors() {
 		target := filepath.Join(v.entry.BaseDir, v.entry.Target)
 
 		msg := v.err.Error()
-		msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
+		if strings.IndexByte(msg, ':') != -1 {
+			msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
+		}
 		d := []string{
 			source,
 			target,

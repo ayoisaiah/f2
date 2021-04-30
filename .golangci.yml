@@ -71,6 +71,9 @@ issues:
       text: "G404:"
 
     - linters:
+      - dupl
+      text: "sort_test"
+    - linters:
       - gosec
       text: "weak cryptographic primitive"
     - linters:

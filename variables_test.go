@@ -450,7 +450,7 @@ func TestReplaceRandomVariable(t *testing.T) {
 	}
 }
 
-func TestItor(t *testing.T) {
+func TestIntegerToRoman(t *testing.T) {
 	testCases := []struct {
 		input  int
 		output string
