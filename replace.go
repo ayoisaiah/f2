@@ -352,21 +352,25 @@ func (op *Operation) replaceString(fileName string) (str string) {
 	}
 	replacement := op.replacement
 
-	if strings.HasPrefix(replacement, `\C`) && len(replacement) == 3 {
+	if strings.HasPrefix(replacement, `\T`) {
 		matches := op.searchRegex.FindAllString(fileName, -1)
 		str = fileName
 		for _, v := range matches {
 			switch replacement {
-			case `\Cu`:
+			case `\Tcu`:
 				str = strings.ReplaceAll(str, v, strings.ToUpper(v))
-			case `\Cl`:
+			case `\Tcl`:
 				str = strings.ReplaceAll(str, v, strings.ToLower(v))
-			case `\Ct`:
+			case `\Tct`:
 				str = strings.ReplaceAll(
 					str,
 					v,
 					strings.Title(strings.ToLower(v)),
 				)
+			case `\Twin`:
+				str = fullWindowsForbiddenRegx.ReplaceAllString(str, "")
+			case `\Tmac`:
+				str = strings.ReplaceAll(str, ":", "")
 			}
 		}
 		return
