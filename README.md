@@ -19,6 +19,24 @@
 
 <img src="https://ik.imagekit.io/turnupdev/f2_EsdXrHHKt.png?tr:q-100" alt="Screenshot of F2 in action">
 
+## Installation
+
+F2 is written in Go, so you can install it through `go install` (requires Go 1.16 or later):
+
+```bash
+$ go install github.com/ayoisaiah/f2/cmd/f2@latest
+```
+
+You can also install it via `npm` or `yarn` if you have it installed:
+
+```bash
+$ npm i @ayoisaiah/f2 -g
+# or
+$ yarn global add @ayoisaiah/f2
+```
+
+Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases).
+
 ## Why should you use F2?
 
 - F2 helps you organise your filesystem through batch renaming so that your files and directories can have a consistent naming scheme.
@@ -45,6 +63,10 @@
 - Supports undoing the last renaming operation in case of mistakes or errors.
 - Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each and every option that is provided.
 - Extensive unit testing with close to 100% coverage.
+
+## Documentation
+
+Visit the [wiki page](https://github.com/ayoisaiah/f2/wiki) to view usage examples and learn about all the renaming operations that can be achieved with F2.
 
 ## Benchmarks
 
@@ -80,28 +102,6 @@ Benchmark #1: f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03
   Time (mean ± σ):     31.143 s ±  1.691 s    [User: 34.792 s, System: 4.779 s]
   Range (min … max):   29.317 s … 33.355 s    10 runs
 ```
-
-## Installation
-
-F2 is written in Go, so you can install it through `go install` (requires Go 1.16 or later):
-
-```bash
-$ go install github.com/ayoisaiah/f2/cmd/f2@latest
-```
-
-You can also install it via `npm` or `yarn` if you have it installed:
-
-```bash
-$ npm i @ayoisaiah/f2 -g
-# or
-$ yarn global add @ayoisaiah/f2
-```
-
-Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases).
-
-## Documentation
-
-Visit the [wiki page](https://github.com/ayoisaiah/f2/wiki) to view usage examples and learn about all the renaming operations that can be achieved with F2.
 
 ## Credits
 
