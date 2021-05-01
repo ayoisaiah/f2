@@ -95,7 +95,6 @@ func TestReplaceFilenameVariables(t *testing.T) {
 
 func TestReplaceDateVariables(t *testing.T) {
 	testDir := setupFileSystem(t)
-	// TODO: Fix intermittent failures
 
 	for _, file := range fileSystem {
 		path := filepath.Join(testDir, file)
@@ -118,7 +117,7 @@ func TestReplaceDateVariables(t *testing.T) {
 		accessTime := timeInfo.AccessTime()
 		modTime := timeInfo.ModTime()
 
-		fileTimes := []string{"mtime", "atime", "ctime", "now", "btime"}
+		fileTimes := []string{"mtime", "atime", "ctime", "btime"}
 
 		for _, v := range fileTimes {
 			var timeValue time.Time
@@ -137,8 +136,6 @@ func TestReplaceDateVariables(t *testing.T) {
 				if timeInfo.HasBirthTime() {
 					timeValue = timeInfo.BirthTime()
 				}
-			case "now":
-				timeValue = time.Now()
 			}
 
 			for key, token := range dateTokens {
@@ -157,7 +154,11 @@ func TestReplaceDateVariables(t *testing.T) {
 		}
 
 		if !cmp.Equal(want, got) {
-			t.Fatalf("Expected %v, but got %v\n", want, got)
+			t.Fatalf(
+				"Expected %v, but got %v\n",
+				prettyPrint(want),
+				prettyPrint(got),
+			)
 		}
 	}
 }
