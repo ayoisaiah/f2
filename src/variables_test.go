@@ -95,6 +95,7 @@ func TestReplaceFilenameVariables(t *testing.T) {
 
 func TestReplaceDateVariables(t *testing.T) {
 	testDir := setupFileSystem(t)
+	// TODO: Fix intermittent failures
 
 	for _, file := range fileSystem {
 		path := filepath.Join(testDir, file)
@@ -162,7 +163,7 @@ func TestReplaceDateVariables(t *testing.T) {
 }
 
 func TestReplaceExifVariables(t *testing.T) {
-	rootDir := filepath.Join("testdata", "images")
+	rootDir := filepath.Join("..", "testdata", "images")
 
 	type FileExif struct {
 		Year         string `json:"year"`
@@ -265,7 +266,7 @@ func TestReplaceExifVariables(t *testing.T) {
 }
 
 func TestReplaceID3Variables(t *testing.T) {
-	rootDir := filepath.Join("testdata", "audio")
+	rootDir := filepath.Join("..", "testdata", "audio")
 
 	type FileID3 struct {
 		Format      string `json:"format"`
@@ -369,7 +370,7 @@ func TestReplaceID3Variables(t *testing.T) {
 }
 
 func TestFileHash(t *testing.T) {
-	testDir := filepath.Join("testdata", "images")
+	testDir := filepath.Join("..", "testdata", "images")
 
 	cases := []testCase{
 		{

@@ -352,7 +352,8 @@ func (op *Operation) replaceString(fileName string) (str string) {
 	}
 	replacement := op.replacement
 
-	if strings.HasPrefix(replacement, `\T`) {
+	slice := []string{`\Tcu`, `\Tcl`, `\Tct`, `\Twin`, `\Tmac`}
+	if contains(slice, replacement) {
 		matches := op.searchRegex.FindAllString(fileName, -1)
 		str = fileName
 		for _, v := range matches {
@@ -368,11 +369,12 @@ func (op *Operation) replaceString(fileName string) (str string) {
 					strings.Title(strings.ToLower(v)),
 				)
 			case `\Twin`:
-				str = fullWindowsForbiddenRegx.ReplaceAllString(str, "")
+				str = fullWindowsForbiddenRegex.ReplaceAllString(str, "")
 			case `\Tmac`:
 				str = strings.ReplaceAll(str, ":", "")
 			}
 		}
+
 		return
 	}
 

@@ -3,7 +3,7 @@ package f2
 import "testing"
 
 func TestSortBySize(t *testing.T) {
-	testDir := "testdata/images"
+	testDir := "../testdata/images"
 
 	cases := []testCase{
 		{
@@ -102,7 +102,7 @@ func TestSortBySize(t *testing.T) {
 }
 
 func TestDefaultSort(t *testing.T) {
-	testDir := "testdata/images"
+	testDir := "../testdata/images"
 
 	cases := []testCase{
 		{

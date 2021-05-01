@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/ayoisaiah/f2"
+	f2 "github.com/ayoisaiah/f2/src"
 )
 
 func run(args []string) error {

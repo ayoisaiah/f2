@@ -17,9 +17,9 @@ var (
 	// forward and back slash characters because their presence will cause a new
 	// directory to be created
 	windowsForbiddenRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*`)
-	// fullWindowsForbiddenRegx is like windowsForbiddenRegex but includes
+	// fullWindowsForbiddenRegex is like windowsForbiddenRegex but includes
 	// forward and backslashes
-	fullWindowsForbiddenRegx = regexp.MustCompile(`<|>|:|"|\||\?|\*|/|\\`)
+	fullWindowsForbiddenRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*|/|\\`)
 )
 
 const (
