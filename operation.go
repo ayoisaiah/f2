@@ -202,7 +202,12 @@ func (op *Operation) printChanges() {
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
-		d := []string{source, target, green.Sprint("ok")}
+
+		status := green.Sprint("ok")
+		if source == target {
+			status = yellow.Sprint("unchanged")
+		}
+		d := []string{source, target, status}
 		data[i] = d
 	}
 
@@ -214,10 +219,17 @@ func (op *Operation) printChanges() {
 // Errors are aggregated instead of being reported one by one
 func (op *Operation) rename() {
 	var errs []renameError
+
+	var renamed []Change
 	for _, ch := range op.matches {
 		var source, target = ch.Source, ch.Target
 		source = filepath.Join(ch.BaseDir, source)
 		target = filepath.Join(ch.BaseDir, target)
+
+		// skip unchanged file names
+		if source == target {
+			continue
+		}
 
 		renameErr := renameError{
 			entry: ch,
@@ -242,8 +254,11 @@ func (op *Operation) rename() {
 			renameErr.err = err
 			errs = append(errs, renameErr)
 		}
+
+		renamed = append(renamed, ch)
 	}
 
+	op.matches = renamed
 	op.errors = errs
 }
 
@@ -360,7 +375,14 @@ func (op *Operation) apply() error {
 			return op.handleErrors()
 		}
 
-		return op.backup()
+		if len(op.matches) > 0 && !op.revert {
+			return op.backup()
+		}
+
+		if !op.quiet {
+			fmt.Println("No files were renamed")
+		}
+		return nil
 	}
 
 	if op.quiet {

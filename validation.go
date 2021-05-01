@@ -196,6 +196,11 @@ func (op *Operation) detectConflicts() {
 		// Report if target file exists on the filesystem
 		if _, err := os.Stat(target); err == nil ||
 			errors.Is(err, os.ErrExist) {
+			// Don't report a conflict for an unchanged filename
+			if source == target {
+				continue
+			}
+
 			op.conflicts[fileExists] = append(
 				op.conflicts[fileExists],
 				Conflict{
