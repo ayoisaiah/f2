@@ -200,7 +200,8 @@ func (op *Operation) detectConflicts() {
 		if _, err := os.Stat(target); err == nil ||
 			errors.Is(err, os.ErrExist) {
 			// Don't report a conflict for an unchanged filename
-			if source == target {
+			// Also handles case-insensitive filesystems
+			if strings.EqualFold(source, target) {
 				continue
 			}
 

@@ -383,7 +383,7 @@ func getAllVariables(str string) (replaceVars, error) {
 	return v, nil
 }
 
-// regexReplace handles string replacement in regex mode
+// regexReplace handles string replacement
 func (op *Operation) regexReplace(
 	r *regexp.Regexp,
 	fileName, replacement string,
