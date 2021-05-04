@@ -98,6 +98,18 @@ func GetApp() *cli.App {
 				Aliases: []string{"r"},
 				Usage:   "Replacement `<string>`. If omitted, defaults to an empty string. Supports built-in and regex capture variables",
 			},
+			&cli.UintFlag{
+				Name:        "replace-limit",
+				Aliases:     []string{"l"},
+				Usage:       "Limit the number of replacements to be made (replaces all matches if set to 0)",
+				Value:       0,
+				DefaultText: "0",
+			},
+			&cli.BoolFlag{
+				Name:    "string-mode",
+				Aliases: []string{"s"},
+				Usage:   "Opt into string literal mode by treating find expressions as non-regex strings",
+			},
 			&cli.StringSliceFlag{
 				Name:    "exclude",
 				Aliases: []string{"E"},
@@ -113,7 +125,7 @@ func GetApp() *cli.App {
 				Aliases: []string{"R"},
 				Usage:   "Rename files recursively",
 			},
-			&cli.IntFlag{
+			&cli.UintFlag{
 				Name:        "max-depth",
 				Aliases:     []string{"m"},
 				Usage:       "positive `<integer>` indicating the maximum depth for a recursive search (set to 0 for no limit)",
@@ -167,11 +179,6 @@ func GetApp() *cli.App {
 				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
 				Usage:   "Fix any detected conflicts with auto indexing",
-			},
-			&cli.BoolFlag{
-				Name:    "string-mode",
-				Aliases: []string{"s"},
-				Usage:   "Opt into string literal mode by treating find expressions as non-regex strings",
 			},
 		},
 		UseShortOptionHandling: true,

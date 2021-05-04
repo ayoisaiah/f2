@@ -61,32 +61,33 @@ type renameError struct {
 
 // Operation represents a batch renaming operation
 type Operation struct {
-	paths         []Change
-	matches       []Change
-	conflicts     map[conflict][]Conflict
-	findString    string
-	replacement   string
-	startNumber   int
-	exec          bool
-	fixConflicts  bool
-	includeHidden bool
-	includeDir    bool
-	onlyDir       bool
-	ignoreCase    bool
-	ignoreExt     bool
-	searchRegex   *regexp.Regexp
-	directories   []string
-	recursive     bool
-	workingDir    string
-	stringMode    bool
-	excludeFilter []string
-	maxDepth      int
-	sort          string
-	reverseSort   bool
-	quiet         bool
-	errors        []renameError
-	revert        bool
-	numberOffset  []int
+	paths             []Change
+	matches           []Change
+	conflicts         map[conflict][]Conflict
+	findString        string
+	replacement       string
+	startNumber       int
+	exec              bool
+	fixConflicts      bool
+	includeHidden     bool
+	includeDir        bool
+	onlyDir           bool
+	ignoreCase        bool
+	ignoreExt         bool
+	searchRegex       *regexp.Regexp
+	directories       []string
+	recursive         bool
+	workingDir        string
+	stringLiteralMode bool
+	excludeFilter     []string
+	maxDepth          int
+	sort              string
+	reverseSort       bool
+	quiet             bool
+	errors            []renameError
+	revert            bool
+	numberOffset      []int
+	replaceLimit      int
 }
 
 type backupFile struct {
@@ -427,20 +428,6 @@ func (op *Operation) findMatches() error {
 			f = filenameWithoutExtension(f)
 		}
 
-		if op.stringMode {
-			findStr := op.findString
-
-			if op.ignoreCase {
-				f = strings.ToLower(f)
-				findStr = strings.ToLower(findStr)
-			}
-
-			if strings.Contains(f, findStr) {
-				op.matches = append(op.matches, v)
-			}
-			continue
-		}
-
 		matched := op.searchRegex.MatchString(f)
 		if matched {
 			op.matches = append(op.matches, v)
@@ -564,11 +551,12 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.recursive = c.Bool("recursive")
 	op.directories = c.Args().Slice()
 	op.onlyDir = c.Bool("only-dir")
-	op.stringMode = c.Bool("string-mode")
+	op.stringLiteralMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
-	op.maxDepth = c.Int("max-depth")
+	op.maxDepth = int(c.Uint("max-depth"))
 	op.quiet = c.Bool("quiet")
 	op.revert = c.Bool("undo")
+	op.replaceLimit = int(c.Uint("replace-limit"))
 
 	// Sorting
 	if c.String("sort") != "" {
@@ -583,6 +571,12 @@ func setOptions(op *Operation, c *cli.Context) error {
 	}
 
 	findPattern := c.String("find")
+
+	// Escape all regular expression metacharacters in string literal mode
+	if op.stringLiteralMode {
+		findPattern = regexp.QuoteMeta(findPattern)
+	}
+
 	// Match entire string if find pattern is empty
 	if findPattern == "" {
 		findPattern = ".*"

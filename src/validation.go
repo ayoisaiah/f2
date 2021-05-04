@@ -20,6 +20,9 @@ var (
 	// fullWindowsForbiddenRegex is like windowsForbiddenRegex but includes
 	// forward and backslashes
 	fullWindowsForbiddenRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*|/|\\`)
+	// macForbiddenRegex is used to match the strings that contain forbidden
+	// characters in macOS' file names.
+	macForbiddenRegex = regexp.MustCompile(`:`)
 )
 
 const (

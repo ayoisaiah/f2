@@ -383,50 +383,79 @@ func getAllVariables(str string) (replaceVars, error) {
 	return v, nil
 }
 
-func (op *Operation) replaceString(fileName string) (str string) {
-	findString := op.findString
-	if findString == "" {
-		findString = fileName
+// regexReplace handles string replacement in regex mode
+func (op *Operation) regexReplace(
+	r *regexp.Regexp,
+	fileName, replacement string,
+) string {
+	var output string
+	if op.replaceLimit > 0 {
+		counter := 0
+		output = r.ReplaceAllStringFunc(
+			fileName,
+			func(val string) string {
+				if counter == op.replaceLimit {
+					return val
+				}
+
+				counter++
+				return r.ReplaceAllString(val, replacement)
+			},
+		)
+	} else {
+		output = r.ReplaceAllString(fileName, replacement)
 	}
+
+	return output
+}
+
+// transformString handles string transformations like uppercase,
+// lowercase, stripping characters, e.t.c
+func (op *Operation) transformString(
+	fileName, replacement string,
+) (out string) {
+	matches := op.searchRegex.FindAllString(fileName, -1)
+	if len(matches) == 0 {
+		return fileName
+	}
+
+	switch replacement {
+	case `\Tcu`:
+		out = op.regexReplace(
+			op.searchRegex,
+			fileName,
+			strings.ToUpper(matches[0]),
+		)
+	case `\Tcl`:
+		out = op.regexReplace(
+			op.searchRegex,
+			fileName,
+			strings.ToLower(matches[0]),
+		)
+	case `\Tct`:
+		out = op.regexReplace(
+			op.searchRegex,
+			fileName,
+			strings.Title(strings.ToLower(matches[0])),
+		)
+	case `\Twin`:
+		out = op.regexReplace(fullWindowsForbiddenRegex, fileName, "")
+	case `\Tmac`:
+		out = op.regexReplace(macForbiddenRegex, fileName, "")
+	}
+
+	return out
+}
+
+func (op *Operation) replaceString(fileName string) (str string) {
 	replacement := op.replacement
 
 	slice := []string{`\Tcu`, `\Tcl`, `\Tct`, `\Twin`, `\Tmac`}
 	if contains(slice, replacement) {
-		matches := op.searchRegex.FindAllString(fileName, -1)
-		str = fileName
-		for _, v := range matches {
-			switch replacement {
-			case `\Tcu`:
-				str = strings.ReplaceAll(str, v, strings.ToUpper(v))
-			case `\Tcl`:
-				str = strings.ReplaceAll(str, v, strings.ToLower(v))
-			case `\Tct`:
-				str = strings.ReplaceAll(
-					str,
-					v,
-					strings.Title(strings.ToLower(v)),
-				)
-			case `\Twin`:
-				str = fullWindowsForbiddenRegex.ReplaceAllString(str, "")
-			case `\Tmac`:
-				str = strings.ReplaceAll(str, ":", "")
-			}
-		}
-
-		return
+		return op.transformString(fileName, replacement)
 	}
 
-	if op.stringMode {
-		if op.ignoreCase {
-			str = op.searchRegex.ReplaceAllString(fileName, replacement)
-		} else {
-			str = strings.ReplaceAll(fileName, findString, replacement)
-		}
-	} else {
-		str = op.searchRegex.ReplaceAllString(fileName, replacement)
-	}
-
-	return str
+	return op.regexReplace(op.searchRegex, fileName, replacement)
 }
 
 // replace replaces the matched text in each path with the
