@@ -428,6 +428,7 @@ func replaceExifVariables(
 		current := ev.values[i]
 		regex := current.regex
 
+		var value string
 		switch current.attr {
 		case "dt":
 			date := exifData.DateTimeOriginal
@@ -441,58 +442,41 @@ func replaceExifVariables(
 				return "", err
 			}
 
-			timeStr := dt.Format(dateTokens[current.timeStr])
-			input = regex.ReplaceAllString(input, timeStr)
+			value = dt.Format(dateTokens[current.timeStr])
 		case "model":
-			cmodel := exifData.Model
-			cmodel = strings.ReplaceAll(cmodel, "/", "_")
-			input = regex.ReplaceAllString(input, cmodel)
+			value = strings.ReplaceAll(exifData.Model, "/", "_")
 		case "lens":
-			lens := exifData.LensModel
-			lens = strings.ReplaceAll(lens, "/", "_")
-			input = regex.ReplaceAllString(input, lens)
+			value = strings.ReplaceAll(exifData.LensModel, "/", "_")
 		case "make":
-			cmake := exifData.Make
-			input = regex.ReplaceAllString(input, cmake)
+			value = exifData.Make
 		case "iso":
-			var iso string
 			if len(exifData.ISOSpeedRatings) > 0 {
-				iso = strconv.Itoa(exifData.ISOSpeedRatings[0])
+				value = strconv.Itoa(exifData.ISOSpeedRatings[0])
 			}
-			input = regex.ReplaceAllString(input, "ISO"+iso)
 		case "et":
-			var et string
 			if len(exifData.ExposureTime) > 0 {
-				et = exifData.ExposureTime[0]
-				et = strings.ReplaceAll(et, "/", "_")
+				value = exifData.ExposureTime[0]
+				value = strings.ReplaceAll(value, "/", "_")
 			}
-			input = regex.ReplaceAllString(input, et+"s")
 		case "fnum":
-			v := exifDivision(exifData.FNumber)
-			input = regex.ReplaceAllString(input, "f"+v)
+			value = exifDivision(exifData.FNumber)
 		case "fl":
-			v := exifDivision(exifData.FocalLength)
-			input = regex.ReplaceAllString(input, v+"mm")
+			value = exifDivision(exifData.FocalLength)
 		case "wh":
-			var wh string
 			if len(exifData.ImageLength) > 0 && len(exifData.ImageWidth) > 0 {
 				h, w := exifData.ImageLength[0], exifData.ImageWidth[0]
-				wh = strconv.Itoa(w) + "x" + strconv.Itoa(h)
+				value = strconv.Itoa(w) + "x" + strconv.Itoa(h)
 			}
-			input = regex.ReplaceAllString(input, wh)
 		case "h":
-			var h string
 			if len(exifData.ImageLength) > 0 {
-				h = strconv.Itoa(exifData.ImageLength[0])
+				value = strconv.Itoa(exifData.ImageLength[0])
 			}
-			input = regex.ReplaceAllString(input, h)
 		case "w":
-			var w string
 			if len(exifData.ImageWidth) > 0 {
-				w = strconv.Itoa(exifData.ImageWidth[0])
+				value = strconv.Itoa(exifData.ImageWidth[0])
 			}
-			input = regex.ReplaceAllString(input, w)
 		}
+		input = regex.ReplaceAllString(input, value)
 	}
 
 	return input, nil
