@@ -1,6 +1,7 @@
 package f2
 
 import (
+	"errors"
 	"math"
 	"path/filepath"
 	"regexp"
@@ -77,12 +78,21 @@ type replaceVars struct {
 	random randomVar
 }
 
+var (
+	errInvalidSubmatches = errors.New("Invalid number of submatches")
+)
+
 func getDateVar(str string) (dateVar, error) {
 	var d dateVar
 	if dateRegex.MatchString(str) {
 		d.submatches = dateRegex.FindAllStringSubmatch(str, -1)
+		expectedLength := 3
 
 		for _, submatch := range d.submatches {
+			if len(submatch) < expectedLength {
+				return d, errInvalidSubmatches
+			}
+
 			var x struct {
 				regex *regexp.Regexp
 				attr  string
@@ -108,8 +118,13 @@ func getHashVar(str string) (hashVar, error) {
 	var h hashVar
 	if hashRegex.MatchString(str) {
 		h.submatches = hashRegex.FindAllStringSubmatch(str, -1)
+		expectedLength := 2
 
 		for _, submatch := range h.submatches {
+			if len(submatch) < expectedLength {
+				return h, errInvalidSubmatches
+			}
+
 			var x struct {
 				regex  *regexp.Regexp
 				hashFn string
@@ -133,7 +148,13 @@ func getExifVar(str string) (exifVar, error) {
 
 	if exifRegex.MatchString(str) {
 		ex.submatches = exifRegex.FindAllStringSubmatch(str, -1)
+		expectedLength := 3
+
 		for _, submatch := range ex.submatches {
+			if len(submatch) < expectedLength {
+				return ex, errInvalidSubmatches
+			}
+
 			var x struct {
 				regex   *regexp.Regexp
 				attr    string
@@ -167,7 +188,13 @@ func getNumberVar(str string) (numberVar, error) {
 
 	if indexRegex.MatchString(str) {
 		nv.submatches = indexRegex.FindAllStringSubmatch(str, -1)
+		expectedLength := 7
+
 		for _, submatch := range nv.submatches {
+			if len(submatch) < expectedLength {
+				return nv, errInvalidSubmatches
+			}
+
 			var n struct {
 				regex       *regexp.Regexp
 				startNumber int
@@ -246,27 +273,33 @@ func getNumberVar(str string) (numberVar, error) {
 }
 
 func getID3Var(str string) (id3Var, error) {
-	var i id3Var
+	var iv id3Var
 	if id3Regex.MatchString(str) {
-		i.submatches = id3Regex.FindAllStringSubmatch(str, -1)
-		for _, submatch := range i.submatches {
+		iv.submatches = id3Regex.FindAllStringSubmatch(str, -1)
+		expectedLength := 2
+
+		for _, submatch := range iv.submatches {
+			if len(submatch) < expectedLength {
+				return iv, errInvalidSubmatches
+			}
+
 			var x struct {
 				regex *regexp.Regexp
 				tag   string
 			}
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
-				return i, err
+				return iv, err
 			}
 
 			x.regex = regex
 			x.tag = submatch[1]
 
-			i.values = append(i.values, x)
+			iv.values = append(iv.values, x)
 		}
 	}
 
-	return i, nil
+	return iv, nil
 }
 
 func getRandomVar(str string) (randomVar, error) {
@@ -274,35 +307,40 @@ func getRandomVar(str string) (randomVar, error) {
 
 	if randomRegex.MatchString(str) {
 		rv.submatches = randomRegex.FindAllStringSubmatch(str, -1)
+		expectedLength := 4
 
 		for _, submatch := range rv.submatches {
-			var r struct {
+			if len(submatch) < expectedLength {
+				return rv, errInvalidSubmatches
+			}
+
+			var val struct {
 				regex      *regexp.Regexp
 				length     int
 				characters string
 			}
-			r.length = 10
+			val.length = 10
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return rv, err
 			}
-			r.regex = regex
+			val.regex = regex
 
 			strLen := submatch[1]
 			if strLen != "" {
-				r.length, err = strconv.Atoi(strLen)
+				val.length, err = strconv.Atoi(strLen)
 				if err != nil {
 					return rv, err
 				}
 			}
 
-			r.characters = submatch[2]
+			val.characters = submatch[2]
 
 			if submatch[3] != "" {
-				r.characters = submatch[3]
+				val.characters = submatch[3]
 			}
 
-			rv.values = append(rv.values, r)
+			rv.values = append(rv.values, val)
 		}
 	}
 

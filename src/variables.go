@@ -404,12 +404,7 @@ func getExifData(file string) (*Exif, error) {
 		return nil, err
 	}
 
-	defer func() {
-		ferr := f.Close()
-		if ferr != nil {
-			err = ferr
-		}
-	}()
+	defer f.Close()
 
 	exifData := &Exif{}
 	x, err := exif.Decode(f)
@@ -630,7 +625,7 @@ func (op *Operation) handleVariables(
 		str = out
 	}
 
-	if randomRegex.Match([]byte(str)) {
+	if randomRegex.MatchString(str) {
 		str = replaceRandomVariables(str, vars.random)
 	}
 
