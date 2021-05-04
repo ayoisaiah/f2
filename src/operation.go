@@ -556,7 +556,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.maxDepth = int(c.Uint("max-depth"))
 	op.quiet = c.Bool("quiet")
 	op.revert = c.Bool("undo")
-	op.replaceLimit = int(c.Uint("replace-limit"))
+	op.replaceLimit = c.Int("replace-limit")
 
 	// Sorting
 	if c.String("sort") != "" {

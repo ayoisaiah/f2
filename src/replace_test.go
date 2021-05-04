@@ -11,6 +11,93 @@ func TestFindReplace(t *testing.T) {
 
 	cases := []testCase{
 		{
+			name: "Replace the last 2 matches",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2021) S1.E5.5080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2021) S5.E2.5080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2021) S5.E3.5080p.mkv",
+				},
+			},
+			args: []string{
+				"-f",
+				"1",
+				"-r",
+				"5",
+				"-l",
+				"-2",
+				testDir,
+			},
+		},
+		{
+			name: "Replace the last match",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2021) S1.E1.5080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2021) S1.E2.5080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2021) S1.E3.5080p.mkv",
+				},
+			},
+			args: []string{
+				"-f",
+				"1",
+				"-r",
+				"5",
+				"-l",
+				"-1",
+				testDir,
+			},
+		},
+		{
+			name: "Replace the first 10 matches",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2025) S5.E5.5080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2025) S5.E2.5080p.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2025) S5.E3.5080p.mkv",
+				},
+			},
+			args: []string{
+				"-f",
+				"1",
+				"-r",
+				"5",
+				"-l",
+				"10",
+				testDir,
+			},
+		},
+		{
 			want: []Change{
 				{
 					Source:  "No Pressure (2021) S1.E1.1080p.mkv",

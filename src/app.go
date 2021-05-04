@@ -85,7 +85,7 @@ func GetApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.5.3",
+		Version:              "v1.5.6",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -98,7 +98,7 @@ func GetApp() *cli.App {
 				Aliases: []string{"r"},
 				Usage:   "Replacement `<string>`. If omitted, defaults to an empty string. Supports built-in and regex capture variables",
 			},
-			&cli.UintFlag{
+			&cli.IntFlag{
 				Name:        "replace-limit",
 				Aliases:     []string{"l"},
 				Usage:       "Limit the number of replacements to be made (replaces all matches if set to 0)",

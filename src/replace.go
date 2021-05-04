@@ -389,7 +389,9 @@ func (op *Operation) regexReplace(
 	fileName, replacement string,
 ) string {
 	var output string
-	if op.replaceLimit > 0 {
+
+	switch limit := op.replaceLimit; {
+	case limit > 0:
 		counter := 0
 		output = r.ReplaceAllStringFunc(
 			fileName,
@@ -402,7 +404,23 @@ func (op *Operation) regexReplace(
 				return r.ReplaceAllString(val, replacement)
 			},
 		)
-	} else {
+	case limit < 0:
+		matches := r.FindAllString(fileName, -1)
+
+		l := len(matches) + limit
+		counter := 0
+		output = r.ReplaceAllStringFunc(
+			fileName,
+			func(val string) string {
+				if counter >= l {
+					return r.ReplaceAllString(val, replacement)
+				}
+
+				counter++
+				return val
+			},
+		)
+	default:
 		output = r.ReplaceAllString(fileName, replacement)
 	}
 
