@@ -11,6 +11,23 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+func printColor(color, text string) string {
+	if _, ok := os.LookupEnv("NO_COLOR"); ok {
+		return text
+	}
+
+	switch color {
+	case "yellow":
+		return yellow.Sprint(text)
+	case "green":
+		return green.Sprint(text)
+	case "red":
+		return red.Sprint(text)
+	}
+
+	return text
+}
+
 func printError(silent bool, err error) {
 	if !silent {
 		fmt.Fprintln(os.Stderr, err)

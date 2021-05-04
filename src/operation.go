@@ -28,8 +28,8 @@ var (
 	)
 
 	errConflictDetected = fmt.Errorf(
-		"Conflict detected! Please resolve before proceeding or append the %s flag to fix conflicts automatically",
-		yellow.Sprint("-F"),
+		"Resolve conflicts before proceeding or use the %s flag to auto fix all conflicts",
+		printColor("yellow", "-F"),
 	)
 )
 
@@ -188,7 +188,7 @@ func (op *Operation) undo(path string) error {
 		if err = os.Remove(path); err != nil {
 			fmt.Printf(
 				"Unable to remove redundant undo file '%s' after successful operation.",
-				yellow.Sprint(path),
+				printColor("yellow", path),
 			)
 		}
 	}
@@ -204,9 +204,9 @@ func (op *Operation) printChanges() {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
 
-		status := green.Sprint("ok")
+		status := printColor("green", "ok")
 		if source == target {
-			status = yellow.Sprint("unchanged")
+			status = printColor("yellow", "unchanged")
 		}
 		d := []string{source, target, status}
 		data[i] = d
@@ -217,7 +217,7 @@ func (op *Operation) printChanges() {
 
 // rename iterates over all the matches and renames them on the filesystem
 // directories are auto-created if necessary.
-// Errors are aggregated instead of being reported one by one
+// Errors are aggregated ins""tead of being reported one by one
 func (op *Operation) rename() {
 	var errs []renameError
 
@@ -269,7 +269,7 @@ func (op *Operation) reportErrors() {
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
-		d := []string{source, target, green.Sprint("success")}
+		d := []string{source, target, printColor("green", "success")}
 		data[i] = d
 	}
 
@@ -284,7 +284,7 @@ func (op *Operation) reportErrors() {
 		d := []string{
 			source,
 			target,
-			red.Sprintf("%s", strings.TrimPrefix(msg, ": ")),
+			printColor("red", strings.TrimPrefix(msg, ": ")),
 		}
 		data[i+len(op.matches)] = d
 	}
@@ -316,7 +316,7 @@ func (op *Operation) handleErrors() error {
 	if err == nil && len(op.matches) > 0 {
 		return fmt.Errorf(
 			"Some files could not be renamed. To revert the changes, run %s",
-			yellow.Sprint("f2 -u"),
+			printColor("yellow", "f2 -u"),
 		)
 	} else if err != nil && len(op.matches) > 0 {
 		return fmt.Errorf("The above files could not be renamed")
@@ -392,7 +392,7 @@ func (op *Operation) apply() error {
 	op.printChanges()
 	fmt.Printf(
 		"Append the %s flag to apply the above changes\n",
-		yellow.Sprint("-x"),
+		printColor("yellow", "-x"),
 	)
 
 	return nil

@@ -69,7 +69,7 @@ func checkForUpdates(app *cli.App) {
 			app.Name,
 		)
 	} else {
-		fmt.Printf("%s: %s at %s\n", green.Sprint("Update available"), version, resp.Request.URL.String())
+		fmt.Printf("%s: %s at %s\n", printColor("green", "Update available"), version, resp.Request.URL.String())
 	}
 }
 
@@ -85,7 +85,7 @@ func GetApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.5.6",
+		Version:              "v1.5.7",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

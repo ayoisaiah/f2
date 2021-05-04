@@ -97,7 +97,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				"",
-				red.Sprint("❌ [Empty filename]"),
+				printColor("red", "❌ [Empty filename]"),
 			}
 			data = append(data, slice)
 		}
@@ -108,7 +108,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				v.target,
-				red.Sprint("❌ [Path already exists]"),
+				printColor("red", "❌ [Path already exists]"),
 			}
 			data = append(data, slice)
 		}
@@ -120,7 +120,7 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					red.Sprint("❌ [Overwriting newly renamed path]"),
+					printColor("red", "❌ [Overwriting newly renamed path]"),
 				}
 				data = append(data, slice)
 			}
@@ -133,9 +133,11 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					red.Sprintf(
-						"❌ [Invalid characters present: (%s)]",
-						v.cause,
+					printColor("red",
+						fmt.Sprintf(
+							"❌ [Invalid characters present: (%s)]",
+							v.cause,
+						),
 					),
 				}
 				data = append(data, slice)
@@ -149,9 +151,11 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					red.Sprintf(
-						"❌ [Maximum file name exceeded: (%s)]",
-						v.cause,
+					printColor("red",
+						fmt.Sprintf(
+							"❌ [Maximum file name exceeded: (%s)]",
+							v.cause,
+						),
 					),
 				}
 				data = append(data, slice)
