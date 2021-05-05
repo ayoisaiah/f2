@@ -17,7 +17,7 @@
 
 **F2** is a cross-platform command-line tool for batch renaming files and directories **quickly** and **safely**. Written in Go!
 
-<img src="https://ik.imagekit.io/turnupdev/f2_EsdXrHHKt.png?tr:q-100" alt="Screenshot of F2 in action">
+<img src="https://ik.imagekit.io/turnupdev/f2-demo_tnCZlpBrkhX.gif?tr:q-100" alt="F2 in action on Ubuntu Linux">
 
 ## Installation
 
@@ -68,6 +68,14 @@ Other installation methods including downloading pre-compiled binaries are
 - Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each option that is provided.
 - Extensive unit testing with close to 100% coverage.
 
+## Screenshots
+
+![Screenshot of F2 in action on Linux](https://ik.imagekit.io/turnupdev/f2_EsdXrHHKt.png?tr:q-100)
+
+![F2 can utilise exif attributes from a variety of image formats](https://ik.imagekit.io/turnupdev/f2-exif-example_1__82eO1ZqnbgT.png?tr:q-100)
+
+![F2 can utilise ID3 attributes to organise music files](https://ik.imagekit.io/turnupdev/f2-id3-example_Esb--IK6A.png?tr:q-100)
+
 ## Documentation
 
 Visit the [wiki page](https://github.com/ayoisaiah/f2/wiki) to view usage examples and learn about all the renaming operations that can be achieved with F2.
@@ -89,7 +97,7 @@ Benchmark #1: f2 -f ".*" -r "{{id3.artist}}_{{id3.album}}_{{id3.track}}_{{r}}.mp
   Range (min … max):    1.634 s …  1.736 s    10 runs
 ```
 
-Renaming **100,000** files in a using a random name and an auto incrementing
+Renaming **100,000** files in a using a random string and an auto incrementing
 integer (~5 seconds):
 
 ```bash
@@ -132,7 +140,7 @@ TotalMilliseconds : 29582.481
 Using F2 to rename **10,000** MP3 files using an auto incrementing integer (~12 seconds):
 
 ```bash
-Measure-Command { f2 -f ".*" -r "audio_%03d.mp3" -x }
+$ Measure-Command { f2 -f ".*" -r "audio_%03d.mp3" -x }
 
 Days              : 0
 Hours             : 0
