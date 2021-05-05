@@ -172,6 +172,7 @@ func (op *Operation) undo(path string) error {
 		op.matches[i] = ch
 	}
 
+	// Sort only in print mode
 	if !op.exec && op.sort != "" {
 		err = op.sortBy()
 		if err != nil {
@@ -315,7 +316,7 @@ func (op *Operation) handleErrors() error {
 
 	if err == nil && len(op.matches) > 0 {
 		return fmt.Errorf(
-			"Some files could not be renamed. To revert the changes, run %s",
+			"Some files could not be renamed. To revert the changes, run: %s",
 			printColor("yellow", "f2 -u"),
 		)
 	} else if err != nil && len(op.matches) > 0 {
@@ -350,8 +351,13 @@ func (op *Operation) backup() error {
 // Conflicts will be ignored if indicated
 func (op *Operation) apply() error {
 	if len(op.matches) == 0 {
+		msg := "Failed to match any files"
+		if op.revert {
+			msg = "No operations to undo"
+		}
+
 		if !op.quiet {
-			fmt.Println("Failed to match any files")
+			fmt.Println(msg)
 		}
 		return nil
 	}
@@ -380,15 +386,17 @@ func (op *Operation) apply() error {
 			return op.backup()
 		}
 
-		if !op.quiet {
+		if !op.quiet && !op.revert {
 			fmt.Println("No files were renamed")
 		}
+
 		return nil
 	}
 
 	if op.quiet {
 		return nil
 	}
+
 	op.printChanges()
 	fmt.Printf(
 		"Append the %s flag to apply the above changes\n",
@@ -507,6 +515,7 @@ func (op *Operation) run() error {
 				err,
 			)
 		}
+
 		return op.undo(path)
 	}
 
