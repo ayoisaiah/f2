@@ -7,6 +7,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
+
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 type numbersToSkip struct {
@@ -460,6 +465,18 @@ func (op *Operation) transformString(
 		out = op.regexReplace(fullWindowsForbiddenRegex, fileName, "")
 	case `\Tmac`:
 		out = op.regexReplace(macForbiddenRegex, fileName, "")
+	case `\Td`:
+		t := transform.Chain(
+			norm.NFD,
+			runes.Remove(runes.In(unicode.Mn)),
+			norm.NFC,
+		)
+		result, _, err := transform.String(t, fileName)
+		if err != nil {
+			return fileName
+		}
+
+		out = result
 	}
 
 	return out
@@ -468,7 +485,7 @@ func (op *Operation) transformString(
 func (op *Operation) replaceString(fileName string) (str string) {
 	replacement := op.replacement
 
-	slice := []string{`\Tcu`, `\Tcl`, `\Tct`, `\Twin`, `\Tmac`}
+	slice := []string{`\Tcu`, `\Tcl`, `\Tct`, `\Twin`, `\Tmac`, `\Td`}
 	if contains(slice, replacement) {
 		return op.transformString(fileName, replacement)
 	}

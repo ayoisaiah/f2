@@ -11,5 +11,6 @@ require (
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/urfave/cli/v2 v2.2.0
 	golang.org/x/sys v0.0.0-20210414055047-fe65e336abe0 // indirect
+	golang.org/x/text v0.3.6
 	gopkg.in/djherbis/times.v1 v1.2.0
 )

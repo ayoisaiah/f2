@@ -326,6 +326,12 @@ func TestTransformation(t *testing.T) {
 			find:      `abc.*`,
 			output:    `abc<>_{}*?\/\.epub`,
 		},
+		{
+			input:     "žůžo.txt",
+			transform: `\Td`,
+			find:      "žůžo",
+			output:    "zuzo.txt",
+		},
 	}
 
 	for _, v := range cases {
