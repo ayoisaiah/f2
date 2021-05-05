@@ -27,7 +27,7 @@ F2 is written in Go, so you can install it through `go install` (requires Go 1.1
 $ go install github.com/ayoisaiah/f2/cmd/f2@latest
 ```
 
-You can also install it via `npm` or `yarn` if you have it installed:
+You can also install it via [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/):
 
 ```bash
 $ npm i @ayoisaiah/f2 -g
@@ -35,7 +35,8 @@ $ npm i @ayoisaiah/f2 -g
 $ yarn global add @ayoisaiah/f2
 ```
 
-Otherwise, you can download precompiled binaries for Linux, Windows, and macOS on the [releases page](https://github.com/ayoisaiah/f2/releases).
+Other installation methods including downloading pre-compiled binaries are
+[available here](https://github.com/ayoisaiah/f2/wiki/Installation/).
 
 ## Why should you use F2?
 
@@ -53,15 +54,18 @@ Otherwise, you can download precompiled binaries for Linux, Windows, and macOS o
 
 - Safe and transparent. F2 uses a dry run mode by default so you can review the exact changes that will be made to your filesystem before making them.
 - Cross-platform with full support for Linux, macOS, and Windows. It also runs on less commonly-used platforms, like Termux (Android).
-- Extremely fast, even when working with a large amount of files.
-- Automatically detects potential conflicts such as file collisions, or overrides and reports them to you.
+- [Extremely fast](#benchmarks), even when working with a large amount of files.
+- Automatically [detects potential conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) such as file collisions, or overrides and reports them to you.
 - Provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for the easier renaming of certain file types. At the moment, Exif data for images and ID3 data for audio files are supported.
-- Supports find and replace using regular expressions, including capture groups.
+- Supports find and replace using [regular expressions](https://github.com/ayoisaiah/f2/wiki/Regular-expressions), including capture groups.
 - Ignores hidden directories and files by default.
+- Respects the [`NO_COLOR`](https://no-color.org/) environmental variable.
+- Supports limiting the number of replaced matches, and you can start from the beginning or end of the file name.
 - Supports recursive renaming for both files and directories.
-- Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
+- Supports renaming only files, or only directories, or both.
+- Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.), and it can be formatted in several ways.
 - Supports undoing the last renaming operation in case of mistakes or errors.
-- Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each and every option that is provided.
+- Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each option that is provided.
 - Extensive unit testing with close to 100% coverage.
 
 ## Documentation
@@ -85,7 +89,8 @@ Benchmark #1: f2 -f ".*" -r "{{id3.artist}}_{{id3.album}}_{{id3.track}}_{{r}}.mp
   Range (min … max):    1.634 s …  1.736 s    10 runs
 ```
 
-Renaming **100,000** files in a single operation using random names (~5 seconds):
+Renaming **100,000** files in a using a random name and an auto incrementing
+integer (~5 seconds):
 
 ```bash
 $ hyperfine --warmup 3 'f2 -f ".*" -r "{{r}}_%03d" -x'
@@ -94,13 +99,52 @@ Benchmark #1: f2 -f ".*" -r "{{r}}_%03d" -x
   Range (min … max):    4.421 s …  5.474 s    10 runs
 ```
 
-Renaming **100,000** JPEG files using their Exif attributes (~30 seconds):
+Renaming **100,000** JPEG files using Exif attributes (~30 seconds):
 
 ```bash
 $ hyperfine --warmup 3 'f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03d.jpg" -x'
 Benchmark #1: f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03d.jpg" -x
   Time (mean ± σ):     31.143 s ±  1.691 s    [User: 34.792 s, System: 4.779 s]
   Range (min … max):   29.317 s … 33.355 s    10 runs
+```
+
+### Windows
+
+Using native PowerShell commands to rename **10,000** MP3 files using an auto incrementing integer (~30 seconds):
+
+```bash
+$ Measure-Command { Get-ChildItem *.mp3 | ForEach-Object -Begin { $count = 1 } -Process { Rename-Item $_ -NewName "music_$count.mp3"; $count++ } }
+
+
+Days              : 0
+Hours             : 0
+Minutes           : 0
+Seconds           : 29
+Milliseconds      : 582
+Ticks             : 295824810
+TotalDays         : 0.000342389826388889
+TotalHours        : 0.00821735583333333
+TotalMinutes      : 0.49304135
+TotalSeconds      : 29.582481
+TotalMilliseconds : 29582.481
+```
+
+Using F2 to rename **10,000** MP3 files using an auto incrementing integer (~12 seconds):
+
+```bash
+Measure-Command { f2 -f ".*" -r "audio_%03d.mp3" -x }
+
+Days              : 0
+Hours             : 0
+Minutes           : 0
+Seconds           : 11
+Milliseconds      : 634
+Ticks             : 116342215
+TotalDays         : 0.000134655341435185
+TotalHours        : 0.00323172819444444
+TotalMinutes      : 0.193903691666667
+TotalSeconds      : 11.6342215
+TotalMilliseconds : 11634.2215
 ```
 
 ## Credits
