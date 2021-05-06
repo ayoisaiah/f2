@@ -433,16 +433,18 @@ func replaceExifVariables(
 		case "dt":
 			date := exifData.DateTimeOriginal
 			arr := strings.Split(date, " ")
-			var dt time.Time
-			d := strings.ReplaceAll(arr[0], ":", "-")
-			t := arr[1]
-			var err error
-			dt, err = time.Parse(time.RFC3339, d+"T"+t+"Z")
-			if err != nil {
-				return "", err
-			}
+			if len(arr) > 1 {
+				var dt time.Time
+				d := strings.ReplaceAll(arr[0], ":", "-")
+				t := arr[1]
+				var err error
+				dt, err = time.Parse(time.RFC3339, d+"T"+t+"Z")
+				if err != nil {
+					return "", err
+				}
 
-			value = dt.Format(dateTokens[current.timeStr])
+				value = dt.Format(dateTokens[current.timeStr])
+			}
 		case "model":
 			value = strings.ReplaceAll(exifData.Model, "/", "_")
 		case "lens":

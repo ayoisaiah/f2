@@ -172,7 +172,8 @@ func getExifVar(str string) (exifVar, error) {
 
 			x.regex = regex
 
-			if strings.Contains(submatch[0], "exif.dt") {
+			if strings.Contains(submatch[0], "exif.dt") ||
+				strings.Contains(submatch[0], "x.dt") {
 				submatch = append(submatch[:1], submatch[1+1:]...)
 			}
 

@@ -48,7 +48,7 @@ Other installation methods including downloading pre-compiled binaries are
 - F2 is very fast and won't waste your time. See [benchmarks](#benchmarks).
 - F2 allows you to [revert any renaming operation](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) performed with the program. This means you don't have to worry about making a mistake because you can always get back to the previous state without breaking a sweat.
 - F2 has good test coverage with equal attention paid to all supported platforms (Linux, Windows and macOS).
-- F2 is [well documented](https://github.com/ayoisaiah/f2/wiki) so that you won't have to scratch your head while figuring out what you can do with it. Lots of [realistic examples](https://github.com/ayoisaiah/f2/wiki/Renaming-Recipes) are provided to aid comprehension.
+- F2 is [well documented](https://github.com/ayoisaiah/f2/wiki) so that you won't have to scratch your head while figuring out what you can do with it. Lots of [realistic examples](https://github.com/ayoisaiah/f2/wiki/Real-world-examples) are provided to aid comprehension.
 
 ## Main features
 
