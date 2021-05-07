@@ -85,16 +85,22 @@ var lettersAndNumbers = letterBytes + numberBytes
 
 // Exif represents exif information from an image file
 type Exif struct {
-	ISOSpeedRatings  []int
-	DateTimeOriginal string
-	Make             string
-	Model            string
-	ExposureTime     []string
-	FocalLength      []string
-	FNumber          []string
-	ImageWidth       []int
-	ImageLength      []int // the image height
-	LensModel        string
+	ISOSpeedRatings       []int
+	DateTimeOriginal      string
+	Make                  string
+	Model                 string
+	ExposureTime          []string
+	FocalLength           []string
+	FNumber               []string
+	ImageWidth            []int
+	ImageLength           []int // the image height
+	LensModel             string
+	Software              string
+	FocalLengthIn35mmFilm []int
+	PixelYDimension       []int
+	PixelXDimension       []int
+	Longitude             string
+	Latitude              string
 }
 
 // ID3 represents id3 data from an audio file
@@ -126,7 +132,7 @@ func init() {
 	)
 
 	exifRegex = regexp.MustCompile(
-		"{{(?:exif|x)\\.(iso|et|fl|w|h|wh|make|model|lens|fnum)?(?:(dt)\\.(" + tokenString + "))?}}",
+		"{{(?:exif|x)\\.(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)?(?:(dt)\\.(" + tokenString + "))?}}",
 	)
 
 	id3Regex = regexp.MustCompile(
@@ -409,10 +415,17 @@ func getExifData(file string) (*Exif, error) {
 	exifData := &Exif{}
 	x, err := exif.Decode(f)
 	if err == nil {
-		b, err := x.MarshalJSON()
+		var b []byte
+		b, err = x.MarshalJSON()
 		if err == nil {
 			_ = json.Unmarshal(b, exifData)
 		}
+	}
+
+	lat, lon, err := x.LatLong()
+	if err == nil {
+		exifData.Latitude = fmt.Sprintf("%.5f", lat)
+		exifData.Longitude = fmt.Sprintf("%.5f", lon)
 	}
 
 	return exifData, nil
@@ -445,6 +458,8 @@ func replaceExifVariables(
 
 				value = dt.Format(dateTokens[current.timeStr])
 			}
+		case "soft":
+			value = exifData.Software
 		case "model":
 			value = strings.ReplaceAll(exifData.Model, "/", "_")
 		case "lens":
@@ -457,25 +472,76 @@ func replaceExifVariables(
 			}
 		case "et":
 			if len(exifData.ExposureTime) > 0 {
-				value = exifData.ExposureTime[0]
-				value = strings.ReplaceAll(value, "/", "_")
+				et := strings.Split(exifData.ExposureTime[0], "/")
+				if len(et) == 1 {
+					value = et[0]
+					break
+				}
+
+				x, y := et[0], et[1]
+				numerator, err := strconv.Atoi(x)
+				if err != nil {
+					value = exifData.ExposureTime[0]
+					break
+				}
+
+				denominator, err := strconv.Atoi(y)
+				if err != nil {
+					value = exifData.ExposureTime[0]
+					break
+				}
+
+				divisor := greatestCommonDivisor(numerator, denominator)
+				if (numerator/divisor)%(denominator/divisor) == 0 {
+					value = fmt.Sprintf(
+						"%d",
+						(numerator/divisor)/(denominator/divisor),
+					)
+				} else {
+					value = fmt.Sprintf("%d_%d", numerator/divisor, denominator/divisor)
+				}
 			}
 		case "fnum":
 			value = exifDivision(exifData.FNumber)
 		case "fl":
 			value = exifDivision(exifData.FocalLength)
+		case "fl35":
+			if len(exifData.FocalLengthIn35mmFilm) > 0 {
+				value = strconv.Itoa(exifData.FocalLengthIn35mmFilm[0])
+			}
+		case "lat":
+			value = exifData.Latitude
+		case "lon":
+			value = exifData.Longitude
 		case "wh":
 			if len(exifData.ImageLength) > 0 && len(exifData.ImageWidth) > 0 {
 				h, w := exifData.ImageLength[0], exifData.ImageWidth[0]
+				value = strconv.Itoa(w) + "x" + strconv.Itoa(h)
+				break
+			}
+
+			if len(exifData.PixelXDimension) > 0 &&
+				len(exifData.PixelYDimension) > 0 {
+				h, w := exifData.PixelYDimension[0], exifData.PixelXDimension[0]
 				value = strconv.Itoa(w) + "x" + strconv.Itoa(h)
 			}
 		case "h":
 			if len(exifData.ImageLength) > 0 {
 				value = strconv.Itoa(exifData.ImageLength[0])
+				break
+			}
+
+			if len(exifData.PixelYDimension) > 0 {
+				value = strconv.Itoa(exifData.PixelYDimension[0])
 			}
 		case "w":
 			if len(exifData.ImageWidth) > 0 {
 				value = strconv.Itoa(exifData.ImageWidth[0])
+				break
+			}
+
+			if len(exifData.PixelXDimension) > 0 {
+				value = strconv.Itoa(exifData.PixelXDimension[0])
 			}
 		}
 		input = regex.ReplaceAllString(input, value)

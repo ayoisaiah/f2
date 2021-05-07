@@ -135,6 +135,15 @@ loop:
 	return paths, nil
 }
 
+func greatestCommonDivisor(a, b int) int {
+	precision := 0.0001
+	if float64(b) < precision {
+		return a
+	}
+
+	return greatestCommonDivisor(b, a%b)
+}
+
 func exifDivision(slice []string) string {
 	if len(slice) > 0 {
 		str := slice[0]
