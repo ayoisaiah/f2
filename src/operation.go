@@ -314,11 +314,15 @@ func (op *Operation) handleErrors() error {
 		err = op.backup()
 	}
 
+	msg := fmt.Sprintf(
+		"Some files could not be renamed. To revert the changes, run: %s",
+		printColor("yellow", "f2 -u"),
+	)
+	if op.revert {
+		msg = "Some files could not be reverted. See above table for the full explanation."
+	}
 	if err == nil && len(op.matches) > 0 {
-		return fmt.Errorf(
-			"Some files could not be renamed. To revert the changes, run: %s",
-			printColor("yellow", "f2 -u"),
-		)
+		return fmt.Errorf(msg)
 	} else if err != nil && len(op.matches) > 0 {
 		return fmt.Errorf("The above files could not be renamed")
 	}
