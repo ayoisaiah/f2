@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -470,4 +471,58 @@ func TestIntegerToRoman(t *testing.T) {
 			t.Fatalf("Roman(%v) = %v, want %v.", v.input, str, v.output)
 		}
 	}
+}
+
+func TestReplaceExifToolVariables(t *testing.T) {
+	_, err := exec.LookPath("exiftool")
+	if err != nil {
+		return
+	}
+
+	rootDir := filepath.Join("..", "testdata", "images")
+
+	cases := []testCase{
+		{
+			name: "Use exiftool data to rename DNG file",
+			want: []Change{
+				{
+					Source:  "proraw.dng",
+					BaseDir: rootDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"proraw.dng",
+				"-r",
+				"{{xt.FOV}}_{{xt.ISO}}_{{xt.ImageWidth}}",
+				rootDir,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		f := filenameWithoutExtension(c.want[0].Source)
+
+		jsonFile, err := os.ReadFile(filepath.Join(rootDir, f+"_exiftool.json"))
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		var m = make(map[string]interface{})
+		err = json.Unmarshal(jsonFile, &m)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		target := fmt.Sprintf(
+			"%v_%v_%v",
+			m["FOV"],
+			m["ISO"],
+			m["ImageWidth"],
+		)
+
+		c.want[0].Target = target
+	}
+
+	runFindReplace(t, cases)
 }

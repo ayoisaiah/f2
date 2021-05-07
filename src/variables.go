@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	exiftool "github.com/barasher/go-exiftool"
 	"github.com/dhowden/tag"
 	"github.com/rwcarlsen/goexif/exif"
 	"gopkg.in/djherbis/times.v1"
@@ -33,10 +34,11 @@ var (
 	randomRegex = regexp.MustCompile(
 		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
 	)
-	hashRegex = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
-	id3Regex  *regexp.Regexp
-	exifRegex *regexp.Regexp
-	dateRegex *regexp.Regexp
+	hashRegex     = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
+	id3Regex      *regexp.Regexp
+	exifRegex     *regexp.Regexp
+	dateRegex     *regexp.Regexp
+	exiftoolRegex *regexp.Regexp
 )
 
 const (
@@ -130,6 +132,8 @@ func init() {
 	dateRegex = regexp.MustCompile(
 		"{{(" + modTime + "|" + changeTime + "|" + birthTime + "|" + accessTime + "|" + currentTime + ")\\.(" + tokenString + ")}}",
 	)
+
+	exiftoolRegex = regexp.MustCompile(`{{xt\.([0-9a-zA-Z]+)}}`)
 
 	exifRegex = regexp.MustCompile(
 		"{{(?:exif|x)\\.(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)?(?:(dt)\\.(" + tokenString + "))?}}",
@@ -550,6 +554,43 @@ func replaceExifVariables(
 	return input, nil
 }
 
+func replaceExifToolVariables(
+	input, filename string,
+	ev exiftoolVar,
+) (string, error) {
+	et, err := exiftool.NewExiftool()
+	if err != nil {
+		return "", fmt.Errorf("Failed to initialise exiftool: %w", err)
+	}
+
+	defer et.Close()
+
+	fileInfos := et.ExtractMetadata(filename)
+
+	for i := range ev.submatches {
+		current := ev.values[i]
+		regex := current.regex
+
+		var value string
+		for _, fileInfo := range fileInfos {
+			if fileInfo.Err != nil {
+				continue
+			}
+
+			for k, v := range fileInfo.Fields {
+				if current.attr == k {
+					value = fmt.Sprintf("%v", v)
+					break
+				}
+			}
+		}
+
+		input = regex.ReplaceAllString(input, value)
+	}
+
+	return input, nil
+}
+
 // replaceIndex deals with sequential numbering in various formats
 func (op *Operation) replaceIndex(
 	str string,
@@ -641,6 +682,14 @@ func (op *Operation) handleVariables(
 	// handle date variables (e.g {{mtime.DD}})
 	if dateRegex.MatchString(str) {
 		out, err := replaceDateVariables(source, str, vars.date)
+		if err != nil {
+			return "", err
+		}
+		str = out
+	}
+
+	if exiftoolRegex.MatchString(str) {
+		out, err := replaceExifToolVariables(str, source, vars.exiftool)
 		if err != nil {
 			return "", err
 		}

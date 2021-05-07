@@ -31,6 +31,14 @@ type numberVar struct {
 	}
 }
 
+type exiftoolVar struct {
+	submatches [][]string
+	values     []struct {
+		regex *regexp.Regexp
+		attr  string
+	}
+}
+
 type exifVar struct {
 	submatches [][]string
 	values     []struct {
@@ -75,12 +83,13 @@ type randomVar struct {
 }
 
 type replaceVars struct {
-	exif   exifVar
-	number numberVar
-	id3    id3Var
-	hash   hashVar
-	date   dateVar
-	random randomVar
+	exif     exifVar
+	exiftool exiftoolVar
+	number   numberVar
+	id3      id3Var
+	hash     hashVar
+	date     dateVar
+	random   randomVar
 }
 
 var (
@@ -278,6 +287,36 @@ func getNumberVar(str string) (numberVar, error) {
 	return nv, nil
 }
 
+func getExifToolVar(str string) (exiftoolVar, error) {
+	var et exiftoolVar
+	if exiftoolRegex.MatchString(str) {
+		et.submatches = exiftoolRegex.FindAllStringSubmatch(str, -1)
+		expectedLength := 2
+
+		for _, submatch := range et.submatches {
+			if len(submatch) < expectedLength {
+				return et, errInvalidSubmatches
+			}
+
+			var x struct {
+				regex *regexp.Regexp
+				attr  string
+			}
+			regex, err := regexp.Compile(submatch[0])
+			if err != nil {
+				return et, err
+			}
+
+			x.regex = regex
+			x.attr = submatch[1]
+
+			et.values = append(et.values, x)
+		}
+	}
+
+	return et, nil
+}
+
 func getID3Var(str string) (id3Var, error) {
 	var iv id3Var
 	if id3Regex.MatchString(str) {
@@ -382,6 +421,11 @@ func getAllVariables(str string) (replaceVars, error) {
 	}
 
 	v.random, err = getRandomVar(str)
+	if err != nil {
+		return v, err
+	}
+
+	v.exiftool, err = getExifToolVar(str)
 	if err != nil {
 		return v, err
 	}
