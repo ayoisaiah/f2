@@ -44,7 +44,7 @@ Other installation methods including downloading pre-compiled binaries are
 - It offers a comprehensive set of renaming options and scales well from trivial string replacements to more complex operations involving regular expressions.
 - F2 prioritises correctness and safety by ensuring that a renaming operation does not result in conflicts or errors. It runs several [validations](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) before carrying out a renaming operation and provides an easy way to automatically [fix any detected conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection#auto-fixing-conflicts).
 - F2 supports all the standard [renaming recipes](https://github.com/ayoisaiah/f2/wiki/Renaming-Recipes) including (but not limited to) string replacement, insertion of text as a prefix, suffix or other position in the file name, stripping a set of characters, changing the case of a set of letters, using auto incrementing numbers, swapping parts of the file name, e.t.c.
-- F2 provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for added flexibility in the renaming process. These variables are based on file attributes such as Exif information for images and ID3 tags for audio files.
+- F2 provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for added flexibility in the renaming process. These variables are based on file attributes such as Exif information for images and ID3 tags for audio files. F2 also supports utilising tags from the popular [exiftool](https://github.com/ayoisaiah/f2/wiki/Exiftool-variables) which should cover most use cases.
 - F2 is very fast and won't waste your time. See [benchmarks](#benchmarks).
 - F2 allows you to [revert any renaming operation](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) performed with the program. This means you don't have to worry about making a mistake because you can always get back to the previous state without breaking a sweat.
 - F2 has good test coverage with equal attention paid to all supported platforms (Linux, Windows and macOS).
@@ -56,7 +56,8 @@ Other installation methods including downloading pre-compiled binaries are
 - Cross-platform with full support for Linux, macOS, and Windows. It also runs on less commonly-used platforms, like Termux (Android).
 - [Extremely fast](#benchmarks), even when working with a large amount of files.
 - Automatically [detects potential conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) such as file collisions, or overrides and reports them to you.
-- Provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for the easier renaming of certain file types. At the moment, Exif data for images and ID3 data for audio files are supported.
+- Provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for the easier renaming of certain file types.
+- Provides easy access to all ~25,000 tags in [exiftool](https://github.com/ayoisaiah/f2/wiki/Exiftool-variables) for maximum flexibility in renaming.
 - Supports find and replace using [regular expressions](https://github.com/ayoisaiah/f2/wiki/Regular-expressions), including capture groups.
 - Ignores hidden directories and files by default.
 - Respects the [`NO_COLOR`](https://no-color.org/) environmental variable.
