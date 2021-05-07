@@ -580,6 +580,9 @@ func replaceExifToolVariables(
 			for k, v := range fileInfo.Fields {
 				if current.attr == k {
 					value = fmt.Sprintf("%v", v)
+					// replace forward and backward slashes with underscore
+					value = strings.ReplaceAll(value, `/`, "_")
+					value = strings.ReplaceAll(value, `\`, "_")
 					break
 				}
 			}
