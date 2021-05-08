@@ -35,8 +35,7 @@ $ npm i @ayoisaiah/f2 -g
 $ yarn global add @ayoisaiah/f2
 ```
 
-Other installation methods including downloading pre-compiled binaries are
-[available here](https://github.com/ayoisaiah/f2/wiki/Installation/).
+Other installation methods are [available here](https://github.com/ayoisaiah/f2/wiki/Installation/).
 
 ## Why should you use F2?
 

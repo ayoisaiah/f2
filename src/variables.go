@@ -158,7 +158,7 @@ func randString(n int, characterSet string) string {
 
 // replaceRandomVariables reolaces `{{r}}` in the string with a generated
 // random string
-func replaceRandomVariables(str string, rv randomVar) string {
+func replaceRandomVariables(input string, rv randomVar) string {
 	for i := range rv.submatches {
 		r := rv.values[i]
 		characters := r.characters
@@ -174,10 +174,13 @@ func replaceRandomVariables(str string, rv randomVar) string {
 			characters = lettersAndNumbers
 		}
 
-		str = r.regex.ReplaceAllString(str, randString(r.length, characters))
+		input = r.regex.ReplaceAllString(
+			input,
+			randString(r.length, characters),
+		)
 	}
 
-	return str
+	return input
 }
 
 // integerToRoman converts an integer to a roman numeral
@@ -596,7 +599,7 @@ func replaceExifToolVariables(
 
 // replaceIndex deals with sequential numbering in various formats
 func (op *Operation) replaceIndex(
-	str string,
+	input string,
 	count int,
 	nv numberVar,
 ) string {
@@ -639,17 +642,17 @@ func (op *Operation) replaceIndex(
 			r = fmt.Sprintf(current.index, num)
 		}
 
-		str = current.regex.ReplaceAllString(str, r)
+		input = current.regex.ReplaceAllString(input, r)
 	}
 
-	return str
+	return input
 }
 
 // handleVariables checks if any variables are present in the replacement
 // string and delegates the variable replacement to the appropriate
 // function
 func (op *Operation) handleVariables(
-	str string,
+	input string,
 	ch Change,
 	vars *replaceVars,
 ) (string, error) {
@@ -665,73 +668,73 @@ func (op *Operation) handleVariables(
 
 	// replace `{{f}}` in the replacement string with the original
 	// filename (without the extension)
-	if filenameRegex.MatchString(str) {
-		str = filenameRegex.ReplaceAllString(
-			str,
+	if filenameRegex.MatchString(input) {
+		input = filenameRegex.ReplaceAllString(
+			input,
 			filenameWithoutExtension(fileName),
 		)
 	}
 
 	// replace `{{ext}}` in the replacement string with the file extension
-	if extensionRegex.MatchString(str) {
-		str = extensionRegex.ReplaceAllString(str, fileExt)
+	if extensionRegex.MatchString(input) {
+		input = extensionRegex.ReplaceAllString(input, fileExt)
 	}
 
 	// replace `{{p}}` in the replacement string with the parent directory name
-	if parentDirRegex.MatchString(str) {
-		str = parentDirRegex.ReplaceAllString(str, parentDir)
+	if parentDirRegex.MatchString(input) {
+		input = parentDirRegex.ReplaceAllString(input, parentDir)
 	}
 
 	// handle date variables (e.g {{mtime.DD}})
-	if dateRegex.MatchString(str) {
-		out, err := replaceDateVariables(source, str, vars.date)
+	if dateRegex.MatchString(input) {
+		out, err := replaceDateVariables(source, input, vars.date)
 		if err != nil {
 			return "", err
 		}
-		str = out
+		input = out
 	}
 
-	if exiftoolRegex.MatchString(str) {
-		out, err := replaceExifToolVariables(str, source, vars.exiftool)
+	if exiftoolRegex.MatchString(input) {
+		out, err := replaceExifToolVariables(input, source, vars.exiftool)
 		if err != nil {
 			return "", err
 		}
-		str = out
+		input = out
 	}
 
-	if exifRegex.MatchString(str) {
+	if exifRegex.MatchString(input) {
 		exifData, err := getExifData(source)
 		if err != nil {
 			return "", err
 		}
 
-		out, err := replaceExifVariables(exifData, str, vars.exif)
+		out, err := replaceExifVariables(exifData, input, vars.exif)
 		if err != nil {
 			return "", err
 		}
-		str = out
+		input = out
 	}
 
-	if id3Regex.MatchString(str) {
+	if id3Regex.MatchString(input) {
 		tags, err := getID3Tags(source)
 		if err != nil {
 			return "", err
 		}
 
-		str = replaceID3Variables(tags, str, vars.id3)
+		input = replaceID3Variables(tags, input, vars.id3)
 	}
 
-	if hashRegex.MatchString(str) {
-		out, err := replaceFileHash(source, str, vars.hash)
+	if hashRegex.MatchString(input) {
+		out, err := replaceFileHash(source, input, vars.hash)
 		if err != nil {
 			return "", err
 		}
-		str = out
+		input = out
 	}
 
-	if randomRegex.MatchString(str) {
-		str = replaceRandomVariables(str, vars.random)
+	if randomRegex.MatchString(input) {
+		input = replaceRandomVariables(input, vars.random)
 	}
 
-	return str, nil
+	return input, nil
 }
