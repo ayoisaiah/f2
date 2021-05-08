@@ -424,12 +424,12 @@ func getExifData(file string) (*Exif, error) {
 		if err == nil {
 			_ = json.Unmarshal(b, exifData)
 		}
-	}
 
-	lat, lon, err := x.LatLong()
-	if err == nil {
-		exifData.Latitude = fmt.Sprintf("%.5f", lat)
-		exifData.Longitude = fmt.Sprintf("%.5f", lon)
+		lat, lon, err := x.LatLong()
+		if err == nil {
+			exifData.Latitude = fmt.Sprintf("%.5f", lat)
+			exifData.Longitude = fmt.Sprintf("%.5f", lon)
+		}
 	}
 
 	return exifData, nil
