@@ -22,9 +22,14 @@ AUTHOR:
 VERSION:
 	 {{.Version}}{{end}}
 {{if .VisibleFlags}}
-FLAGS:{{range .VisibleFlags}}
-	 {{.}}{{end}}{{end}}
-
+FLAGS:{{range .VisibleFlags}}{{ if (eq .Name "find" "undo" "replace") }}
+		 {{if .Aliases}}-{{range $element := .Aliases}}{{$element}},{{end}}{{end}} --{{.Name}} {{.DefaultText}}
+				 {{.Usage}}
+		 {{end}}{{end}}
+OPTIONS:{{range .VisibleFlags}}{{ if not (eq .Name "find" "replace" "undo") }}
+		 {{if .Aliases}}-{{range $element := .Aliases}}{{$element}},{{end}}{{end}} --{{.Name}} {{ .DefaultText }}
+				 {{.Usage}}
+		 {{end}}{{end}}{{end}}
 DOCUMENTATION:
 	https://github.com/ayoisaiah/f2/wiki
 
@@ -85,100 +90,112 @@ func GetApp() *cli.App {
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
 		UsageText:            "FLAGS [OPTIONS] [PATHS...]",
-		Version:              "v1.6.0",
+		Version:              "v1.6.1",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "find",
-				Aliases: []string{"f"},
-				Usage:   "Search `<pattern>`. Treated as a regular expression by default. Use -s or --string-mode to opt out",
+				Name:        "find",
+				Aliases:     []string{"f"},
+				Usage:       "Search pattern. Treated as a regular expression by default unless --string-mode is also used. If omitted, it defaults to the entire file name (including the extension).",
+				DefaultText: "<pattern>",
 			},
 			&cli.StringFlag{
-				Name:    "replace",
-				Aliases: []string{"r"},
-				Usage:   "Replacement `<string>`. If omitted, defaults to an empty string. Supports built-in and regex capture variables",
+				Name:        "replace",
+				Aliases:     []string{"r"},
+				Usage:       "Replacement string. If omitted, defaults to an empty string. Supports built-in and regex capture variables. Learn more about variable support here: https://github.com/ayoisaiah/f2/wiki/Built-in-variables",
+				DefaultText: "<string>",
 			},
 			&cli.IntFlag{
 				Name:        "replace-limit",
 				Aliases:     []string{"l"},
-				Usage:       "Limit the number of replacements to be made (replaces all matches if set to 0)",
+				Usage:       "Limit the number of replacements to be made on the file name (replaces all matches if set to 0). Can be set to a negative integer to start replacing from the end of the file name.",
 				Value:       0,
-				DefaultText: "0",
+				DefaultText: "<integer>",
 			},
 			&cli.BoolFlag{
 				Name:    "string-mode",
 				Aliases: []string{"s"},
-				Usage:   "Opt into string literal mode by treating find expressions as non-regex strings",
+				Usage:   "Opt into string literal mode. The presence of this flag causes the search pattern to be treated as a non-regex string.",
 			},
 			&cli.StringSliceFlag{
-				Name:    "exclude",
-				Aliases: []string{"E"},
-				Usage:   "Exclude files/directories that match the given find pattern. Treated as a regular expression. Multiple exclude `<pattern>`s can be specified.",
+				Name:        "exclude",
+				Aliases:     []string{"E"},
+				Usage:       "Exclude files/directories that match the given search pattern. Treated as a regular expression. Multiple exclude patterns can be specified.",
+				DefaultText: "<pattern>",
 			},
 			&cli.BoolFlag{
 				Name:    "exec",
 				Aliases: []string{"x"},
-				Usage:   "Execute the batch renaming operation",
+				Usage:   "Execute the batch renaming operation. This will commit the changes to your filesystem.",
 			},
 			&cli.BoolFlag{
 				Name:    "recursive",
 				Aliases: []string{"R"},
-				Usage:   "Rename files recursively",
+				Usage:   "Recursively traverse all directories when searching for matches. Use the --max-depth flag to control the maximum allowed depth (no limit by default).",
 			},
 			&cli.UintFlag{
 				Name:        "max-depth",
 				Aliases:     []string{"m"},
-				Usage:       "positive `<integer>` indicating the maximum depth for a recursive search (set to 0 for no limit)",
+				Usage:       "Positive integer indicating the maximum depth for a recursive search (set to 0 for no limit).",
 				Value:       0,
-				DefaultText: "0",
+				DefaultText: "<integer>",
 			},
 			&cli.BoolFlag{
 				Name:    "undo",
 				Aliases: []string{"u"},
-				Usage:   "Undo the last operation performed in the current working directory.",
+				Usage:   "Undo the last operation performed in the current working directory if possible. Learn more: https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation",
 			},
 			&cli.StringFlag{
-				Name:  "sort",
-				Usage: "Sort the matches according to the provided `<sort>` (possible values: default, size, mtime, btime, atime, ctime)",
+				Name: "sort",
+				Usage: `Sort the matches according to the provided '<sort>'.
+					Allowed sort values:
+						'default': alphabetical order
+						'size': file size
+						'mtime': file last modified time
+						'btime': file creation time (Windows and macOS only)
+						'atime': file last access time
+						'ctime': file metadata last change time`,
+				DefaultText: "<sort>",
 			},
 			&cli.StringFlag{
-				Name:  "sortr",
-				Usage: "Same as `<sort>` but presents the matches in the reverse order (possible values: default, size, mtime, btime, atime, ctime)",
+				Name:        "sortr",
+				Usage:       "Same as --sort but presents the matches in the reverse order.",
+				DefaultText: "<sort>",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-case",
 				Aliases: []string{"i"},
-				Usage:   "Ignore case",
+				Usage:   "When this flag is provided, the given pattern will be searched case insensitively.",
 			},
 			&cli.BoolFlag{
 				Name:    "quiet",
 				Aliases: []string{"q"},
-				Usage:   "Don't print out any information including errors",
+				Usage:   "Activate silent mode which doesn't print out any information including errors",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-ext",
 				Aliases: []string{"e"},
-				Usage:   "Ignore extension",
+				Usage:   "Ignore the file extension when searching for matches.",
 			},
 			&cli.BoolFlag{
 				Name:    "include-dir",
 				Aliases: []string{"d"},
-				Usage:   "Include directories",
+				Usage:   "Include directories when searching for matches as they are exempted by default.",
 			},
 			&cli.BoolFlag{
 				Name:    "only-dir",
 				Aliases: []string{"D"},
-				Usage:   "Rename only directories (implies include-dir)",
+				Usage:   "Rename only directories, not files (implies --include-dir)",
 			},
 			&cli.BoolFlag{
 				Name:    "hidden",
 				Aliases: []string{"H"},
-				Usage:   "Include hidden files and directories",
+				Usage:   "Include hidden directories and files in the matches (they are skipped by default). A hidden file or directory is one whose name starts with a period (all operating systems) or one whose hidden attribute is set to true (Windows only)",
 			},
 			&cli.BoolFlag{
 				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
-				Usage:   "Fix any detected conflicts with auto indexing",
+				Usage:   "Automatically fix conflicts based on predefined rules. Learn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection",
 			},
 		},
 		UseShortOptionHandling: true,
