@@ -219,50 +219,33 @@ func (op *Operation) detectConflicts() {
 			continue
 		}
 
-		c := op.checkTrailingPeriodConflict(source, ch.Target, target, i)
-		if c && op.fixConflicts {
+		detected := op.checkTrailingPeriodConflict(source, ch.Target, target, i)
+		if detected && op.fixConflicts {
 			i--
 			continue
 		}
 
-		c = op.checkPathLengthConflict(source, ch.Target, target, i)
-		if c && op.fixConflicts {
+		detected = op.checkPathLengthConflict(source, ch.Target, target, i)
+		if detected && op.fixConflicts {
 			i--
 			continue
 		}
 
-		c = op.checkForbiddenCharactersConflict(source, ch.Target, target, i)
-		if c && op.fixConflicts {
+		detected = op.checkForbiddenCharactersConflict(
+			source,
+			ch.Target,
+			target,
+			i,
+		)
+		if detected && op.fixConflicts {
 			i--
 			continue
 		}
 
-		// Report if target file exists on the filesystem
-		if _, err := os.Stat(target); err == nil ||
-			errors.Is(err, os.ErrExist) {
-			// Don't report a conflict for an unchanged filename
-			// Also handles case-insensitive filesystems
-			if strings.EqualFold(source, target) {
-				continue
-			}
-
-			op.conflicts[fileExists] = append(
-				op.conflicts[fileExists],
-				Conflict{
-					source: []string{source},
-					target: target,
-				},
-			)
-
-			if op.fixConflicts {
-				dir := filepath.Dir(ch.Target)
-				base := filepath.Base(ch.Target)
-				str := getNewPath(base, ch.BaseDir, nil)
-				str = filepath.Join(dir, str)
-				fullPath := filepath.Join(ch.BaseDir, str)
-				op.matches[i].Target = str
-				target = fullPath
-			}
+		detected = op.checkPathExistsConflict(source, target, ch, i)
+		if detected && op.fixConflicts {
+			i--
+			continue
 		}
 
 		// For detecting duplicates after renaming paths
@@ -275,6 +258,54 @@ func (op *Operation) detectConflicts() {
 		})
 	}
 
+	op.checkOverwritingPathConflict(m)
+}
+
+// checkPathExistsConflict reports if the newly renamed path
+// already exists on the filesystem
+func (op *Operation) checkPathExistsConflict(
+	source, target string,
+	ch Change,
+	i int,
+) bool {
+	var conflictDetected bool
+	// Report if target file exists on the filesystem
+	if _, err := os.Stat(target); err == nil ||
+		errors.Is(err, os.ErrExist) {
+		// Don't report a conflict for an unchanged filename
+		// Also handles case-insensitive filesystems
+		if strings.EqualFold(source, target) {
+			return conflictDetected
+		}
+
+		op.conflicts[fileExists] = append(
+			op.conflicts[fileExists],
+			Conflict{
+				source: []string{source},
+				target: target,
+			},
+		)
+
+		conflictDetected = true
+
+		if op.fixConflicts {
+			dir := filepath.Dir(ch.Target)
+			base := filepath.Base(ch.Target)
+			str := getNewPath(base, ch.BaseDir, nil)
+			str = filepath.Join(dir, str)
+			op.matches[i].Target = str
+		}
+	}
+
+	return conflictDetected
+}
+
+// checkOverwritingPathConflict ensures that a newly renamed path
+// is not overwritten
+func (op *Operation) checkOverwritingPathConflict(m map[string][]struct {
+	source string
+	index  int
+}) {
 	// Report duplicate targets if any
 	for k, v := range m {
 		if len(v) > 1 {
@@ -310,6 +341,7 @@ func (op *Operation) detectConflicts() {
 						}{}
 						op.matches[item.index].Target = str
 					} else {
+						// repeat the last iteration to generate a new path
 						op.matches[item.index].Target = str
 						i--
 						continue
