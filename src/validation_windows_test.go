@@ -25,6 +25,59 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 			args: []string{"-f", "abc.pdf", "-r", "<>.pdf", testDir},
 		},
 		{
+			name: "Directory or file name cannot contain trailing periods",
+			want: map[conflict][]Conflict{
+				trailingPeriod: {
+					{
+						source: []string{
+							filepath.Join(
+								testDir,
+								"No Pressure (2021) S1.E1.1080p.mkv",
+							),
+						},
+						target: filepath.Join(
+							testDir,
+							`2021...\No Pressure (2021) S1.E1.1080p.mkv`,
+						),
+						cause: "",
+					},
+					{
+						source: []string{
+							filepath.Join(
+								testDir,
+								"No Pressure (2021) S1.E2.1080p.mkv",
+							),
+						},
+						target: filepath.Join(
+							testDir,
+							`2021...\No Pressure (2021) S1.E2.1080p.mkv`,
+						),
+						cause: "",
+					},
+					{
+						source: []string{
+							filepath.Join(
+								testDir,
+								"No Pressure (2021) S1.E3.1080p.mkv",
+							),
+						},
+						target: filepath.Join(
+							testDir,
+							`2021...\No Pressure (2021) S1.E3.1080p.mkv`,
+						),
+						cause: "",
+					},
+				},
+			},
+			args: []string{
+				"-f",
+				`.* \((2021)\) .*`,
+				"-r",
+				"$1.../{{f}}{{ext}}",
+				testDir,
+			},
+		},
+		{
 			name: "File names must not contain :, |, or ? characters",
 			want: map[conflict][]Conflict{
 				invalidCharacters: {

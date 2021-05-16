@@ -60,8 +60,8 @@ func runFixConflict(t *testing.T, table []testCase) {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
 				v.name,
-				v.want,
-				result.changes,
+				prettyPrint(v.want),
+				prettyPrint(result.changes),
 			)
 		}
 	}

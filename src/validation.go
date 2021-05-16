@@ -38,6 +38,7 @@ const (
 	overwritingNewPath
 	maxLengthExceeded
 	invalidCharacters
+	trailingPeriod
 )
 
 // Conflict represents a renaming operation conflict
@@ -63,12 +64,13 @@ func getNewPath(target, baseDir string, m map[string][]struct {
 	// Extract the numbered index at the end of the filename (if any)
 	match := re.FindStringSubmatch(f)
 	num := 2
-	if len(match) == 0 {
-		match = []string{"(" + strconv.Itoa(num) + ")"}
+	if len(match) > 0 {
+		_, _ = fmt.Sscanf(match[0], "(%d)", &num)
+		num++
+	} else {
 		f += " (" + strconv.Itoa(num) + ")"
 	}
-	// ignoring error from Sscanf. num will be set to 2 regardless
-	_, _ = fmt.Sscanf(match[0], "(%d)", &num)
+
 	for {
 		newPath := re.ReplaceAllString(f, "("+strconv.Itoa(num)+")")
 		newPath += filepath.Ext(target)
@@ -100,6 +102,22 @@ func (op *Operation) reportConflicts() {
 				printColor("red", "❌ [Empty filename]"),
 			}
 			data = append(data, slice)
+		}
+	}
+
+	if slice, exists := op.conflicts[trailingPeriod]; exists {
+		for _, v := range slice {
+			for _, s := range v.source {
+				slice := []string{
+					s,
+					v.target,
+					printColor(
+						"red",
+						"❌ [trailing periods are prohibited]",
+					),
+				}
+				data = append(data, slice)
+			}
 		}
 	}
 
@@ -176,14 +194,15 @@ func (op *Operation) detectConflicts() {
 		index  int
 	})
 
-	for i, ch := range op.matches {
+	for i := 0; i < len(op.matches); i++ {
+		ch := op.matches[i]
 		var source, target = ch.Source, ch.Target
 		source = filepath.Join(ch.BaseDir, source)
 		target = filepath.Join(ch.BaseDir, target)
 
 		// Report if replacement operation results in
 		// an empty string for the new filename
-		if ch.Target == "." {
+		if ch.Target == "." || ch.Target == "" {
 			op.conflicts[emptyFilename] = append(
 				op.conflicts[emptyFilename],
 				Conflict{
@@ -197,6 +216,24 @@ func (op *Operation) detectConflicts() {
 				op.matches[i].Target = ch.Source
 			}
 
+			continue
+		}
+
+		c := op.checkTrailingPeriodConflict(source, ch.Target, target, i)
+		if c && op.fixConflicts {
+			i--
+			continue
+		}
+
+		c = op.checkPathLengthConflict(source, ch.Target, target, i)
+		if c && op.fixConflicts {
+			i--
+			continue
+		}
+
+		c = op.checkForbiddenCharactersConflict(source, ch.Target, target, i)
+		if c && op.fixConflicts {
+			i--
 			continue
 		}
 
@@ -218,7 +255,10 @@ func (op *Operation) detectConflicts() {
 			)
 
 			if op.fixConflicts {
-				str := getNewPath(target, ch.BaseDir, nil)
+				dir := filepath.Dir(ch.Target)
+				base := filepath.Base(ch.Target)
+				str := getNewPath(base, ch.BaseDir, nil)
+				str = filepath.Join(dir, str)
 				fullPath := filepath.Join(ch.BaseDir, str)
 				op.matches[i].Target = str
 				target = fullPath
@@ -252,20 +292,28 @@ func (op *Operation) detectConflicts() {
 			)
 
 			if op.fixConflicts {
-				for i, item := range v {
+				for i := 0; i < len(v); i++ {
+					item := v[i]
 					if i == 0 {
 						continue
 					}
 
-					str := getNewPath(k, op.matches[item.index].BaseDir, m)
+					dir := filepath.Dir(op.matches[item.index].Target)
+					base := filepath.Base(op.matches[item.index].Target)
+					str := getNewPath(base, op.matches[item.index].BaseDir, m)
+					str = filepath.Join(dir, str)
 					pt := filepath.Join(op.matches[item.index].BaseDir, str)
 					if _, ok := m[pt]; !ok {
 						m[pt] = []struct {
 							source string
 							index  int
 						}{}
+						op.matches[item.index].Target = str
+					} else {
+						op.matches[item.index].Target = str
+						i--
+						continue
 					}
-					op.matches[item.index].Target = str
 				}
 			}
 		}
@@ -313,89 +361,135 @@ func checkPathLength(path string) error {
 	return nil
 }
 
-// runChecks provides additional validation to detect OS specific problems
-func (op *Operation) runChecks() {
-	for i, ch := range op.matches {
-		source := filepath.Join(ch.BaseDir, ch.Source)
-		target := filepath.Join(ch.BaseDir, ch.Target)
+// checkTrailingPeriods reports if replacement operation results
+// in files or sub directories that end in trailing dots
+func (op *Operation) checkTrailingPeriodConflict(
+	source, target, absTarget string,
+	i int,
+) bool {
+	var conflictDetected bool
+	if runtime.GOOS == windows {
+		strSlice := strings.Split(target, pathSeperator)
+		for _, v := range strSlice {
+			s := strings.TrimRight(v, ".")
 
-		err := checkPathLength(ch.Target)
-		if err != nil {
-			op.conflicts[maxLengthExceeded] = append(
-				op.conflicts[maxLengthExceeded],
-				Conflict{
-					source: []string{source},
-					target: target,
-					cause:  err.Error(),
-				},
-			)
-
-			if op.fixConflicts {
-				if runtime.GOOS == windows {
-					// trim filename so that it's less than 260 characters
-					filename := []rune(filepath.Base(ch.Target))
-					ext := []rune(filepath.Ext(string(filename)))
-					f := []rune(filenameWithoutExtension(string(filename)))
-					index := windowsMaxLength - len(ext)
-					f = f[:index]
-					op.matches[i].Target = filepath.Join(string(f), string(ext))
-					ch.Target = filepath.Join(string(f), string(ext))
-				} else {
-					// trim filename so that it's no more than 255 bytes
-					filename := filepath.Base(ch.Target)
-					ext := filepath.Ext(filename)
-					f := filenameWithoutExtension(filename)
-					index := unixMaxBytes - len([]byte(ext))
-					for {
-						if len([]byte(f)) > index {
-							frune := []rune(f)
-							f = string(frune[:len(frune)-1])
-							continue
-						}
-
-						break
-					}
-
-					op.matches[i].Target = filepath.Join(f, ext)
-					ch.Target = filepath.Join(f, ext)
-				}
+			if s != v {
+				op.conflicts[trailingPeriod] = append(
+					op.conflicts[trailingPeriod],
+					Conflict{
+						source: []string{source},
+						target: absTarget,
+					},
+				)
+				conflictDetected = true
+				break
 			}
 		}
 
-		err = checkForbiddenCharacters(ch.Target)
-		if err != nil {
-			op.conflicts[invalidCharacters] = append(
-				op.conflicts[invalidCharacters],
-				Conflict{
-					source: []string{source},
-					target: target,
-					cause:  err.Error(),
-				},
-			)
+		if op.fixConflicts && conflictDetected {
+			for j, v := range strSlice {
+				s := strings.TrimRight(v, ".")
+				strSlice[j] = s
+			}
 
-			if op.fixConflicts {
-				if runtime.GOOS == windows {
-					op.matches[i].Target = windowsForbiddenRegex.ReplaceAllString(
-						ch.Target,
-						"",
-					)
+			op.matches[i].Target = strings.Join(strSlice, pathSeperator)
+		}
+	}
+
+	return conflictDetected
+}
+
+func (op *Operation) checkPathLengthConflict(
+	source, target, absTarget string,
+	i int,
+) bool {
+	var conflictDetected bool
+	err := checkPathLength(target)
+	if err != nil {
+		op.conflicts[maxLengthExceeded] = append(
+			op.conflicts[maxLengthExceeded],
+			Conflict{
+				source: []string{source},
+				target: absTarget,
+				cause:  err.Error(),
+			},
+		)
+		conflictDetected = true
+
+		if op.fixConflicts {
+			if runtime.GOOS == windows {
+				// trim filename so that it's less than 260 characters
+				filename := []rune(filepath.Base(target))
+				ext := []rune(filepath.Ext(string(filename)))
+				f := []rune(filenameWithoutExtension(string(filename)))
+				index := windowsMaxLength - len(ext)
+				f = f[:index]
+				op.matches[i].Target = filepath.Join(string(f), string(ext))
+			} else {
+				// trim filename so that it's no more than 255 bytes
+				filename := filepath.Base(target)
+				ext := filepath.Ext(filename)
+				f := filenameWithoutExtension(filename)
+				index := unixMaxBytes - len([]byte(ext))
+				for {
+					if len([]byte(f)) > index {
+						frune := []rune(f)
+						f = string(frune[:len(frune)-1])
+						continue
+					}
+
+					break
 				}
 
-				if runtime.GOOS == darwin {
-					op.matches[i].Target = strings.ReplaceAll(
-						ch.Target,
-						":",
-						"",
-					)
-				}
+				op.matches[i].Target = filepath.Join(f, ext)
 			}
 		}
 	}
+
+	return conflictDetected
+}
+
+func (op *Operation) checkForbiddenCharactersConflict(
+	source, target, absTarget string,
+	i int,
+) bool {
+	var conflictDetected bool
+	err := checkForbiddenCharacters(target)
+	if err != nil {
+		op.conflicts[invalidCharacters] = append(
+			op.conflicts[invalidCharacters],
+			Conflict{
+				source: []string{source},
+				target: absTarget,
+				cause:  err.Error(),
+			},
+		)
+
+		conflictDetected = true
+
+		if op.fixConflicts {
+			if runtime.GOOS == windows {
+				op.matches[i].Target = windowsForbiddenRegex.ReplaceAllString(
+					target,
+					"",
+				)
+			}
+
+			if runtime.GOOS == darwin {
+				op.matches[i].Target = strings.ReplaceAll(
+					target,
+					":",
+					"",
+				)
+			}
+		}
+	}
+
+	return conflictDetected
 }
 
 // validate tries to prevent common renaming problems by analyzing the list
 // of files and target destinations
 func (op *Operation) validate() {
 	op.detectConflicts()
-	op.runChecks()
 }
