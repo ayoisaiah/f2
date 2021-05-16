@@ -570,7 +570,7 @@ func (op *Operation) replace() (err error) {
 			str += fileExt
 		}
 
-		v.Target = filepath.Join(dir, str)
+		v.Target = strings.TrimSpace(filepath.Join(dir, str))
 		op.matches[i] = v
 	}
 
