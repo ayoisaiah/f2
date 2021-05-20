@@ -473,6 +473,70 @@ func TestIntegerToRoman(t *testing.T) {
 	}
 }
 
+func TestReplaceTransformVariables(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "transform file name to uppercase",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					Target:  "ABC.PDF",
+					BaseDir: testDir,
+				},
+				{
+					Source:  "abc.epub",
+					Target:  "ABC.EPUB",
+					BaseDir: testDir,
+				},
+			},
+			args: []string{"-f", "abc.*", "-r", "{{tr.up}}", testDir},
+		},
+		{
+			name: "transform file extension to title case",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					Target:  "abc.Pdf",
+					BaseDir: testDir,
+				},
+				{
+					Source:  "abc.epub",
+					Target:  "abc.Epub",
+					BaseDir: testDir,
+				},
+			},
+			args: []string{"-f", "pdf|epub", "-r", "{{tr.ti}}", testDir},
+		},
+		{
+			name: "transform file name to title case",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					Target:  "abc_abc_ABC_abc_abc.pdf",
+					BaseDir: testDir,
+				},
+				{
+					Source:  "abc.epub",
+					Target:  "abc_abc_ABC_abc_abc.epub",
+					BaseDir: testDir,
+				},
+			},
+			args: []string{
+				"-f",
+				"abc.*",
+				"-r",
+				"{{tr.di}}_{{tr.lw}}_{{tr.up}}_{{tr.win}}_{{tr.mac}}",
+				"-e",
+				testDir,
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestReplaceExifToolVariables(t *testing.T) {
 	_, err := exec.LookPath("exiftool")
 	if err != nil {

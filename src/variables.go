@@ -17,10 +17,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	exiftool "github.com/barasher/go-exiftool"
 	"github.com/dhowden/tag"
 	"github.com/rwcarlsen/goexif/exif"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 	"gopkg.in/djherbis/times.v1"
 )
 
@@ -34,11 +38,12 @@ var (
 	randomRegex = regexp.MustCompile(
 		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
 	)
-	hashRegex     = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
-	id3Regex      *regexp.Regexp
-	exifRegex     *regexp.Regexp
-	dateRegex     *regexp.Regexp
-	exiftoolRegex *regexp.Regexp
+	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
+	transformRegex = regexp.MustCompile(`{{tr.(up|lw|ti|win|mac|di)}}`)
+	id3Regex       *regexp.Regexp
+	exifRegex      *regexp.Regexp
+	dateRegex      *regexp.Regexp
+	exiftoolRegex  *regexp.Regexp
 )
 
 const (
@@ -648,6 +653,62 @@ func (op *Operation) replaceIndex(
 	return input
 }
 
+// replaceTransformVariables handles string transformations like uppercase,
+// lowercase, stripping characters, e.t.c
+func replaceTransformVariables(
+	input string,
+	matches []string,
+	tv transformVar,
+) string {
+	for i := range tv.submatches {
+		current := tv.values[i]
+		r := current.regex
+		for _, v := range matches {
+			switch current.token {
+			case "up":
+				input = regexReplace(r, input, strings.ToUpper(v), 1)
+			case "lw":
+				input = regexReplace(r, input, strings.ToLower(v), 1)
+			case "ti":
+				input = regexReplace(
+					r,
+					input,
+					strings.Title(strings.ToLower(v)),
+					1,
+				)
+			case "win":
+				input = regexReplace(
+					r,
+					input,
+					regexReplace(fullWindowsForbiddenRegex, v, "", 0),
+					1,
+				)
+			case "mac":
+				input = regexReplace(
+					r,
+					input,
+					regexReplace(macForbiddenRegex, v, "", 0),
+					1,
+				)
+			case "di":
+				t := transform.Chain(
+					norm.NFD,
+					runes.Remove(runes.In(unicode.Mn)),
+					norm.NFC,
+				)
+				result, _, err := transform.String(t, v)
+				if err != nil {
+					return v
+				}
+
+				input = regexReplace(r, input, result, 1)
+			}
+		}
+	}
+
+	return input
+}
+
 // handleVariables checks if any variables are present in the replacement
 // string and delegates the variable replacement to the appropriate
 // function
@@ -734,6 +795,18 @@ func (op *Operation) handleVariables(
 
 	if randomRegex.MatchString(input) {
 		input = replaceRandomVariables(input, vars.random)
+	}
+
+	if transformRegex.MatchString(input) {
+		if op.ignoreExt {
+			fileName = filenameWithoutExtension(fileName)
+		}
+
+		input = replaceTransformVariables(
+			input,
+			op.searchRegex.FindAllString(fileName, -1),
+			vars.transform,
+		)
 	}
 
 	return input, nil

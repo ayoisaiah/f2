@@ -7,11 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode"
-
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 )
 
 type numbersToSkip struct {
@@ -28,6 +23,14 @@ type numberVar struct {
 		format      string
 		step        int
 		skip        []numbersToSkip
+	}
+}
+
+type transformVar struct {
+	submatches [][]string
+	values     []struct {
+		regex *regexp.Regexp
+		token string
 	}
 }
 
@@ -83,13 +86,14 @@ type randomVar struct {
 }
 
 type replaceVars struct {
-	exif     exifVar
-	exiftool exiftoolVar
-	number   numberVar
-	id3      id3Var
-	hash     hashVar
-	date     dateVar
-	random   randomVar
+	exif      exifVar
+	exiftool  exiftoolVar
+	number    numberVar
+	id3       id3Var
+	hash      hashVar
+	date      dateVar
+	random    randomVar
+	transform transformVar
 }
 
 var (
@@ -155,6 +159,35 @@ func getHashVar(str string) (hashVar, error) {
 	}
 
 	return h, nil
+}
+
+func getTransformVar(str string) (transformVar, error) {
+	var t transformVar
+	if transformRegex.MatchString(str) {
+		t.submatches = transformRegex.FindAllStringSubmatch(str, -1)
+		expectedLength := 2
+
+		for _, submatch := range t.submatches {
+			if len(submatch) < expectedLength {
+				return t, errInvalidSubmatches
+			}
+
+			var x struct {
+				regex *regexp.Regexp
+				token string
+			}
+			regex, err := regexp.Compile(submatch[0])
+			if err != nil {
+				return t, err
+			}
+
+			x.regex = regex
+			x.token = submatch[1]
+			t.values = append(t.values, x)
+		}
+	}
+
+	return t, nil
 }
 
 func getExifVar(str string) (exifVar, error) {
@@ -430,23 +463,29 @@ func getAllVariables(str string) (replaceVars, error) {
 		return v, err
 	}
 
+	v.transform, err = getTransformVar(str)
+	if err != nil {
+		return v, err
+	}
+
 	return v, nil
 }
 
 // regexReplace handles string replacement
-func (op *Operation) regexReplace(
+func regexReplace(
 	r *regexp.Regexp,
 	fileName, replacement string,
+	replaceLimit int,
 ) string {
 	var output string
 
-	switch limit := op.replaceLimit; {
+	switch limit := replaceLimit; {
 	case limit > 0:
 		counter := 0
 		output = r.ReplaceAllStringFunc(
 			fileName,
 			func(val string) string {
-				if counter == op.replaceLimit {
+				if counter == replaceLimit {
 					return val
 				}
 
@@ -477,65 +516,13 @@ func (op *Operation) regexReplace(
 	return output
 }
 
-// transformString handles string transformations like uppercase,
-// lowercase, stripping characters, e.t.c
-func (op *Operation) transformString(
-	fileName, replacement string,
-) (out string) {
-	matches := op.searchRegex.FindAllString(fileName, -1)
-	if len(matches) == 0 {
-		return fileName
-	}
-
-	switch replacement {
-	case `\Tcu`:
-		out = op.regexReplace(
-			op.searchRegex,
-			fileName,
-			strings.ToUpper(matches[0]),
-		)
-	case `\Tcl`:
-		out = op.regexReplace(
-			op.searchRegex,
-			fileName,
-			strings.ToLower(matches[0]),
-		)
-	case `\Tct`:
-		out = op.regexReplace(
-			op.searchRegex,
-			fileName,
-			strings.Title(strings.ToLower(matches[0])),
-		)
-	case `\Twin`:
-		out = op.regexReplace(fullWindowsForbiddenRegex, fileName, "")
-	case `\Tmac`:
-		out = op.regexReplace(macForbiddenRegex, fileName, "")
-	case `\Td`:
-		t := transform.Chain(
-			norm.NFD,
-			runes.Remove(runes.In(unicode.Mn)),
-			norm.NFC,
-		)
-		result, _, err := transform.String(t, fileName)
-		if err != nil {
-			return fileName
-		}
-
-		out = result
-	}
-
-	return out
-}
-
 func (op *Operation) replaceString(fileName string) (str string) {
-	replacement := op.replacement
-
-	slice := []string{`\Tcu`, `\Tcl`, `\Tct`, `\Twin`, `\Tmac`, `\Td`}
-	if contains(slice, replacement) {
-		return op.transformString(fileName, replacement)
-	}
-
-	return op.regexReplace(op.searchRegex, fileName, replacement)
+	return regexReplace(
+		op.searchRegex,
+		fileName,
+		op.replacement,
+		op.replaceLimit,
+	)
 }
 
 // replace replaces the matched text in each path with the

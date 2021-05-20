@@ -2,7 +2,6 @@ package f2
 
 import (
 	"path/filepath"
-	"regexp"
 	"testing"
 )
 
@@ -305,48 +304,4 @@ func TestFindReplace(t *testing.T) {
 	}
 
 	runFindReplace(t, cases)
-}
-
-func TestTransformation(t *testing.T) {
-	cases := []struct {
-		input     string
-		transform string
-		find      string
-		output    string
-	}{
-		{
-			input:     `abc<>_{}*?\/\.epub`,
-			transform: `\Twin`,
-			find:      `abc.*`,
-			output:    "abc_{}.epub",
-		},
-		{
-			input:     `abc<>_{}*:?\/\.epub`,
-			transform: `\Tmac`,
-			find:      `abc.*`,
-			output:    `abc<>_{}*?\/\.epub`,
-		},
-		{
-			input:     "žůžo.txt",
-			transform: `\Td`,
-			find:      "žůžo",
-			output:    "zuzo.txt",
-		},
-	}
-
-	for _, v := range cases {
-		op := &Operation{}
-		op.replacement = v.transform
-		regex, err := regexp.Compile(v.find)
-		if err != nil {
-			t.Fatalf("Unexpected error: %v", err)
-		}
-
-		op.searchRegex = regex
-		out := op.replaceString(v.input)
-
-		if out != v.output {
-			t.Fatalf("Expected %s, but got: %s", v.output, out)
-		}
-	}
 }
