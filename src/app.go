@@ -93,13 +93,13 @@ func GetApp() *cli.App {
 		Version:              "v1.6.3",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
-			&cli.StringFlag{
+			&cli.StringSliceFlag{
 				Name:        "find",
 				Aliases:     []string{"f"},
 				Usage:       "Search pattern. Treated as a regular expression by default unless --string-mode is also used. If omitted, it defaults to the entire file name (including the extension).",
 				DefaultText: "<pattern>",
 			},
-			&cli.StringFlag{
+			&cli.StringSliceFlag{
 				Name:        "replace",
 				Aliases:     []string{"r"},
 				Usage:       "Replacement string. If omitted, defaults to an empty string. Supports built-in and regex capture variables. Learn more about variable support here: https://github.com/ayoisaiah/f2/wiki/Built-in-variables",

@@ -64,8 +64,9 @@ type Operation struct {
 	paths             []Change
 	matches           []Change
 	conflicts         map[conflict][]Conflict
-	findString        string
+	findSlice         []string
 	replacement       string
+	replacementSlice  []string
 	startNumber       int
 	exec              bool
 	fixConflicts      bool
@@ -553,8 +554,8 @@ func (op *Operation) run() error {
 // setOptions applies the command line arguments
 // onto the operation
 func setOptions(op *Operation, c *cli.Context) error {
-	op.findString = c.String("find")
-	op.replacement = c.String("replace")
+	op.findSlice = c.StringSlice("find")
+	op.replacementSlice = c.StringSlice("replace")
 	op.exec = c.Bool("exec")
 	op.fixConflicts = c.Bool("fix-conflicts")
 	op.includeDir = c.Bool("include-dir")
@@ -583,7 +584,14 @@ func setOptions(op *Operation, c *cli.Context) error {
 		op.includeDir = true
 	}
 
-	findPattern := c.String("find")
+	var findPattern string
+	if len(op.findSlice) > 0 {
+		findPattern = op.findSlice[0]
+	}
+
+	if len(op.replacementSlice) > 0 {
+		op.replacement = op.replacementSlice[0]
+	}
 
 	// Escape all regular expression metacharacters in string literal mode
 	if op.stringLiteralMode {
@@ -611,7 +619,9 @@ func setOptions(op *Operation, c *cli.Context) error {
 // newOperation returns an Operation constructed
 // from command line flags & arguments
 func newOperation(c *cli.Context) (*Operation, error) {
-	if c.String("find") == "" && c.String("replace") == "" && !c.Bool("undo") {
+	if len(c.StringSlice("find")) == 0 &&
+		len(c.StringSlice("replace")) == 0 &&
+		!c.Bool("undo") {
 		return nil, errInvalidArgument
 	}
 
