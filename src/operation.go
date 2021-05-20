@@ -46,10 +46,11 @@ const (
 
 // Change represents a single filename change
 type Change struct {
-	BaseDir string `json:"base_dir"`
-	Source  string `json:"source"`
-	Target  string `json:"target"`
-	IsDir   bool   `json:"is_dir"`
+	originalSource string
+	BaseDir        string `json:"base_dir"`
+	Source         string `json:"source"`
+	Target         string `json:"target"`
+	IsDir          bool   `json:"is_dir"`
 }
 
 // renameError represents an error that occurs when
@@ -413,6 +414,7 @@ func (op *Operation) apply() error {
 
 // findMatches locates matches for the search pattern
 // in each filename. Hidden files and directories are exempted
+// by default
 func (op *Operation) findMatches() error {
 	for _, v := range op.paths {
 		filename := filepath.Base(v.Source)
@@ -543,9 +545,39 @@ func (op *Operation) run() error {
 		}
 	}
 
-	err = op.replace()
-	if err != nil {
-		return err
+	for i, v := range op.replacementSlice {
+		op.replacement = v
+		err = op.replace()
+		if err != nil {
+			return err
+		}
+
+		for j, ch := range op.matches {
+			if i != len(op.replacementSlice)-1 {
+				op.matches[j].Source = ch.Target
+			}
+
+			if i > 0 && i == len(op.replacementSlice)-1 {
+				op.matches[j].Source = ch.originalSource
+			}
+		}
+
+		if i != len(op.replacementSlice)-1 {
+			findPattern := ".*"
+			if len(op.findSlice) > i+1 {
+				findPattern = op.findSlice[i+1]
+			}
+
+			if op.ignoreCase {
+				findPattern = "(?i)" + findPattern
+			}
+
+			re, err := regexp.Compile(findPattern)
+			if err != nil {
+				return err
+			}
+			op.searchRegex = re
+		}
 	}
 
 	return op.apply()
@@ -587,10 +619,6 @@ func setOptions(op *Operation, c *cli.Context) error {
 	var findPattern string
 	if len(op.findSlice) > 0 {
 		findPattern = op.findSlice[0]
-	}
-
-	if len(op.replacementSlice) > 0 {
-		op.replacement = op.replacementSlice[0]
 	}
 
 	// Escape all regular expression metacharacters in string literal mode

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/urfave/cli/v2"
 )
 
@@ -148,37 +149,9 @@ func action(args []string) (ActionResult, error) {
 		}
 
 		op.quiet = true
-		if op.revert {
-			return op.undo(backupFilePath)
-		}
 
-		err = op.findMatches()
-		if err != nil {
-			return err
-		}
-
-		if len(op.excludeFilter) != 0 {
-			err = op.filterMatches()
-			if err != nil {
-				return err
-			}
-		}
-
-		if op.sort != "" {
-			err = op.sortBy()
-			if err != nil {
-				return err
-			}
-		}
-
-		err = op.replace()
-		if err != nil {
-			return err
-		}
-
+		result.applyError = op.run()
 		result.changes = op.matches
-
-		result.applyError = op.apply()
 		result.backupFile = backupFilePath
 		result.conflicts = op.conflicts
 		result.operationErrors = op.errors
@@ -225,7 +198,8 @@ func runFindReplace(t *testing.T, cases []testCase) {
 		sortChanges(v.want)
 		sortChanges(result.changes)
 
-		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
+		if !cmp.Equal(v.want, result.changes, cmpopts.IgnoreUnexported(Change{})) &&
+			len(v.want) != 0 {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
 				v.name,
@@ -622,7 +596,7 @@ func TestApplyUndo(t *testing.T) {
 
 			sortChanges(ch)
 
-			if !cmp.Equal(v.want, ch) && len(v.want) != 0 {
+			if !cmp.Equal(v.want, ch, cmpopts.IgnoreUnexported(Change{})) && len(v.want) != 0 {
 				t.Fatalf(
 					"Test (%s) — Expected: %+v, got: %+v\n",
 					v.name,

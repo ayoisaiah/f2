@@ -154,9 +154,10 @@ func (op *Operation) sortPaths(
 
 			for _, f := range val {
 				var change = Change{
-					BaseDir: k,
-					IsDir:   f.IsDir(),
-					Source:  filepath.Clean(f.Name()),
+					BaseDir:        k,
+					IsDir:          f.IsDir(),
+					Source:         filepath.Clean(f.Name()),
+					originalSource: filepath.Clean(f.Name()),
 				}
 
 				p = append(p, change)
@@ -168,9 +169,10 @@ func (op *Operation) sortPaths(
 	for k, v := range paths {
 		for _, f := range v {
 			var change = Change{
-				BaseDir: k,
-				IsDir:   f.IsDir(),
-				Source:  filepath.Clean(f.Name()),
+				BaseDir:        k,
+				IsDir:          f.IsDir(),
+				Source:         filepath.Clean(f.Name()),
+				originalSource: filepath.Clean(f.Name()),
 			}
 
 			p = append(p, change)

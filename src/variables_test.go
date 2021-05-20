@@ -146,7 +146,7 @@ func TestReplaceDateVariables(t *testing.T) {
 					t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
 				}
 
-				out, err := replaceDateVariables(path, "{{"+v+"."+key+"}}", dv)
+				out, err := replaceDateVariables("{{"+v+"."+key+"}}", path, dv)
 				if err != nil {
 					t.Fatalf("Expected no errors, but got one: %v\n", err)
 				}

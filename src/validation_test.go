@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type conflictTable struct {
@@ -56,7 +57,8 @@ func runFixConflict(t *testing.T, table []testCase) {
 		sortChanges(v.want)
 		sortChanges(result.changes)
 
-		if !cmp.Equal(v.want, result.changes) && len(v.want) != 0 {
+		if !cmp.Equal(v.want, result.changes, cmpopts.IgnoreUnexported(Change{})) &&
+			len(v.want) != 0 {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
 				v.name,

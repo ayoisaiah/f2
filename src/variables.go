@@ -257,11 +257,11 @@ func getHash(file, hashFn string) (string, error) {
 
 // replaceFileHash replaces a hash variable with the corresponding
 // hash value
-func replaceFileHash(file, input string, hv hashVar) (string, error) {
+func replaceFileHash(input, filePath string, hv hashVar) (string, error) {
 	for i := range hv.submatches {
 		h := hv.values[i]
 
-		hashValue, err := getHash(file, h.hashFn)
+		hashValue, err := getHash(filePath, h.hashFn)
 		if err != nil {
 			return "", err
 		}
@@ -274,8 +274,8 @@ func replaceFileHash(file, input string, hv hashVar) (string, error) {
 
 // replaceDateVariables replaces a date variable with the corresponding
 // date value
-func replaceDateVariables(file, input string, dv dateVar) (string, error) {
-	t, err := times.Stat(file)
+func replaceDateVariables(input, filePath string, dv dateVar) (string, error) {
+	t, err := times.Stat(filePath)
 	if err != nil {
 		return "", err
 	}
@@ -319,8 +319,8 @@ func replaceDateVariables(file, input string, dv dateVar) (string, error) {
 // getID3Tags retrieves the id3 tags in an audi file (such as mp3)
 // errors while reading the id3 tags are ignored since the corresponding
 // variable will be replaced with an empty string
-func getID3Tags(file string) (*ID3, error) {
-	f, err := os.Open(file)
+func getID3Tags(filePath string) (*ID3, error) {
+	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -416,8 +416,8 @@ func replaceID3Variables(tags *ID3, input string, id3v id3Var) string {
 // Errors in decoding the exif data are ignored intentionally since
 // the corresponding exif variable will be replaced by an empty
 // string
-func getExifData(file string) (*Exif, error) {
-	f, err := os.Open(file)
+func getExifData(filePath string) (*Exif, error) {
+	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +563,7 @@ func replaceExifVariables(
 }
 
 func replaceExifToolVariables(
-	input, filename string,
+	input, filePath string,
 	ev exiftoolVar,
 ) (string, error) {
 	et, err := exiftool.NewExiftool()
@@ -573,7 +573,7 @@ func replaceExifToolVariables(
 
 	defer et.Close()
 
-	fileInfos := et.ExtractMetadata(filename)
+	fileInfos := et.ExtractMetadata(filePath)
 
 	for i := range ev.submatches {
 		current := ev.values[i]
@@ -720,7 +720,7 @@ func (op *Operation) handleVariables(
 	fileName := filepath.Base(ch.Source)
 	fileExt := filepath.Ext(fileName)
 	parentDir := filepath.Base(ch.BaseDir)
-	source := filepath.Join(ch.BaseDir, ch.Source)
+	sourcePath := filepath.Join(ch.BaseDir, ch.originalSource)
 
 	if parentDir == "." {
 		// Set to base folder of current working directory
@@ -748,7 +748,7 @@ func (op *Operation) handleVariables(
 
 	// handle date variables (e.g {{mtime.DD}})
 	if dateRegex.MatchString(input) {
-		out, err := replaceDateVariables(source, input, vars.date)
+		out, err := replaceDateVariables(input, sourcePath, vars.date)
 		if err != nil {
 			return "", err
 		}
@@ -756,7 +756,7 @@ func (op *Operation) handleVariables(
 	}
 
 	if exiftoolRegex.MatchString(input) {
-		out, err := replaceExifToolVariables(input, source, vars.exiftool)
+		out, err := replaceExifToolVariables(input, sourcePath, vars.exiftool)
 		if err != nil {
 			return "", err
 		}
@@ -764,7 +764,7 @@ func (op *Operation) handleVariables(
 	}
 
 	if exifRegex.MatchString(input) {
-		exifData, err := getExifData(source)
+		exifData, err := getExifData(sourcePath)
 		if err != nil {
 			return "", err
 		}
@@ -777,7 +777,7 @@ func (op *Operation) handleVariables(
 	}
 
 	if id3Regex.MatchString(input) {
-		tags, err := getID3Tags(source)
+		tags, err := getID3Tags(sourcePath)
 		if err != nil {
 			return "", err
 		}
@@ -786,7 +786,7 @@ func (op *Operation) handleVariables(
 	}
 
 	if hashRegex.MatchString(input) {
-		out, err := replaceFileHash(source, input, vars.hash)
+		out, err := replaceFileHash(input, sourcePath, vars.hash)
 		if err != nil {
 			return "", err
 		}
