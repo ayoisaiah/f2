@@ -91,14 +91,13 @@ Visit the [wiki page](https://github.com/ayoisaiah/f2/wiki) to view usage exampl
 Renaming **10,000** MP3 files using their ID3 attributes (~1.6 seconds):
 
 ```bash
-$ hyperfine --warmup 3 'f2 -f ".*" -r "{{id3.artist}}_{{id3.album}}_{{id3.track}}_{{r}
-}.mp3" -x'
+$ hyperfine --warmup 3 'f2 -f ".*" -r "{{id3.artist}}_{{id3.album}}_{{id3.track}}_{{r} }.mp3" -x'
 Benchmark #1: f2 -f ".*" -r "{{id3.artist}}_{{id3.album}}_{{id3.track}}_{{r}}.mp3" -x
   Time (mean ± σ):      1.691 s ±  0.031 s    [User: 1.326 s, System: 0.744 s]
   Range (min … max):    1.634 s …  1.736 s    10 runs
 ```
 
-Renaming **100,000** files in a using a random string and an auto incrementing
+Renaming **100,000** files using a random string and an auto incrementing
 integer (~5 seconds):
 
 ```bash
@@ -108,7 +107,7 @@ Benchmark #1: f2 -f ".*" -r "{{r}}_%03d" -x
   Range (min … max):    4.421 s …  5.474 s    10 runs
 ```
 
-Renaming **100,000** JPEG files using Exif attributes (~30 seconds):
+Renaming **100,000** JPEG files using their Exif attributes (~30 seconds):
 
 ```bash
 $ hyperfine --warmup 3 'f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03d.jpg" -x'
@@ -119,12 +118,10 @@ Benchmark #1: f2 -f ".*" -r "{{x.make}}_{{x.model}}_{{x.iso}}_{{x.wh}}_{{r}}_%03
 
 ### Windows
 
-Using native PowerShell commands to rename **10,000** MP3 files using an auto incrementing integer (~30 seconds):
+Renaming **10,000** MP3 files with an auto incrementing integer through native PowerShell commands (~30 seconds):
 
 ```bash
 $ Measure-Command { Get-ChildItem *.mp3 | ForEach-Object -Begin { $count = 1 } -Process { Rename-Item $_ -NewName "music_$count.mp3"; $count++ } }
-
-
 Days              : 0
 Hours             : 0
 Minutes           : 0
@@ -138,11 +135,10 @@ TotalSeconds      : 29.582481
 TotalMilliseconds : 29582.481
 ```
 
-Using F2 to rename **10,000** MP3 files using an auto incrementing integer (~12 seconds):
+Rename **10,000** MP3 files with an auto incrementing integer through F2 (~12 seconds):
 
 ```bash
 $ Measure-Command { f2 -f ".*" -r "audio_%03d.mp3" -x }
-
 Days              : 0
 Hours             : 0
 Minutes           : 0
