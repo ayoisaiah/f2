@@ -54,6 +54,7 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 - Safe and transparent. F2 uses a dry run mode by default so you can review the exact changes that will be made to your filesystem before making them.
 - Cross-platform with full support for Linux, macOS, and Windows. It also runs on less commonly-used platforms, like Termux (Android).
 - [Extremely fast](#benchmarks), even when working with a large amount of files.
+- Supports the chaining of several consecutive renaming operations before a final output is produced.
 - Automatically [detects potential conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) such as file collisions, or overrides and reports them to you.
 - Provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for the easier renaming of certain file types.
 - Provides easy access to all ~25,000 tags in [exiftool](https://github.com/ayoisaiah/f2/wiki/Exiftool-variables) for maximum flexibility in renaming.
@@ -64,7 +65,7 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 - Supports recursive renaming for both files and directories.
 - Supports renaming only files, or only directories, or both.
 - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.), and it can be formatted in several ways.
-- Supports undoing the last renaming operation in case of mistakes or errors.
+- Supports [undoing](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) the last renaming operation in case of mistakes or errors.
 - Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each option that is provided.
 - Extensive unit testing with close to 100% coverage.
 
