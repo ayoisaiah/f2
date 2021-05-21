@@ -321,18 +321,30 @@ func TestReplacementChaining(t *testing.T) {
 			name: "",
 			want: []Change{
 				{
-					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					Target:  fmt.Sprintf("no_pressure%s2021%ss1.e1.1080p.mkv", sep, sep),
+					Source: "No Pressure (2021) S1.E1.1080p.mkv",
+					Target: fmt.Sprintf(
+						"no_pressure%s2021%ss1.e1.1080p.mkv",
+						sep,
+						sep,
+					),
 					BaseDir: testDir,
 				},
 				{
-					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					Target:  fmt.Sprintf("no_pressure%s2021%ss1.e2.1080p.mkv", sep, sep),
+					Source: "No Pressure (2021) S1.E2.1080p.mkv",
+					Target: fmt.Sprintf(
+						"no_pressure%s2021%ss1.e2.1080p.mkv",
+						sep,
+						sep,
+					),
 					BaseDir: testDir,
 				},
 				{
-					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					Target:  fmt.Sprintf("no_pressure%s2021%ss1.e3.1080p.mkv", sep, sep),
+					Source: "No Pressure (2021) S1.E3.1080p.mkv",
+					Target: fmt.Sprintf(
+						"no_pressure%s2021%ss1.e3.1080p.mkv",
+						sep,
+						sep,
+					),
 					BaseDir: testDir,
 				},
 			},
@@ -353,6 +365,5 @@ func TestReplacementChaining(t *testing.T) {
 			},
 		},
 	}
-
 	runFindReplace(t, cases)
 }

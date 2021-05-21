@@ -198,7 +198,11 @@ func runFindReplace(t *testing.T, cases []testCase) {
 		sortChanges(v.want)
 		sortChanges(result.changes)
 
-		if !cmp.Equal(v.want, result.changes, cmpopts.IgnoreUnexported(Change{})) &&
+		if !cmp.Equal(
+			v.want,
+			result.changes,
+			cmpopts.IgnoreUnexported(Change{}),
+		) &&
 			len(v.want) != 0 {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
@@ -596,7 +600,8 @@ func TestApplyUndo(t *testing.T) {
 
 			sortChanges(ch)
 
-			if !cmp.Equal(v.want, ch, cmpopts.IgnoreUnexported(Change{})) && len(v.want) != 0 {
+			if !cmp.Equal(v.want, ch, cmpopts.IgnoreUnexported(Change{})) &&
+				len(v.want) != 0 {
 				t.Fatalf(
 					"Test (%s) — Expected: %+v, got: %+v\n",
 					v.name,

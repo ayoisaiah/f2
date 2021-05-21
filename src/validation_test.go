@@ -57,7 +57,11 @@ func runFixConflict(t *testing.T, table []testCase) {
 		sortChanges(v.want)
 		sortChanges(result.changes)
 
-		if !cmp.Equal(v.want, result.changes, cmpopts.IgnoreUnexported(Change{})) &&
+		if !cmp.Equal(
+			v.want,
+			result.changes,
+			cmpopts.IgnoreUnexported(Change{}),
+		) &&
 			len(v.want) != 0 {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
