@@ -717,7 +717,7 @@ func (op *Operation) handleVariables(
 	ch Change,
 	vars *replaceVars,
 ) (string, error) {
-	fileName := filepath.Base(ch.Source)
+	fileName := ch.Source
 	fileExt := filepath.Ext(fileName)
 	parentDir := filepath.Base(ch.BaseDir)
 	sourcePath := filepath.Join(ch.BaseDir, ch.originalSource)

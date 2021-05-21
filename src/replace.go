@@ -534,7 +534,7 @@ func (op *Operation) replace() (err error) {
 	}
 
 	for i, v := range op.matches {
-		fileName, dir := filepath.Base(v.Source), filepath.Dir(v.Source)
+		fileName := v.Source
 		fileExt := filepath.Ext(fileName)
 		if op.ignoreExt {
 			fileName = filenameWithoutExtension(fileName)
@@ -557,7 +557,7 @@ func (op *Operation) replace() (err error) {
 			str += fileExt
 		}
 
-		v.Target = strings.TrimSpace(filepath.Join(dir, str))
+		v.Target = strings.TrimSpace(filepath.Join(str))
 		op.matches[i] = v
 	}
 

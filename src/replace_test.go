@@ -305,3 +305,47 @@ func TestFindReplace(t *testing.T) {
 
 	runFindReplace(t, cases)
 }
+
+func TestReplacementChaining(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					Target:  "no_pressure/2021/s1.e1.1080p.mkv",
+					BaseDir: testDir,
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					Target:  "no_pressure/2021/s1.e2.1080p.mkv",
+					BaseDir: testDir,
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					Target:  "no_pressure/2021/s1.e3.1080p.mkv",
+					BaseDir: testDir,
+				},
+			},
+			args: []string{
+				"-f",
+				`(No Pressure) \((\d+)\) (.*)`,
+				"-r",
+				"$1/$2/$3",
+				"-f",
+				".*",
+				"-r",
+				"{{tr.lw}}",
+				"-f",
+				" ",
+				"-r",
+				"_",
+				testDir,
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
