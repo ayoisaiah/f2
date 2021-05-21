@@ -1,7 +1,9 @@
 package f2
 
 import (
+	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -309,23 +311,28 @@ func TestFindReplace(t *testing.T) {
 func TestReplacementChaining(t *testing.T) {
 	testDir := setupFileSystem(t)
 
+	sep := "/"
+	if runtime.GOOS == windows {
+		sep = `\`
+	}
+
 	cases := []testCase{
 		{
 			name: "",
 			want: []Change{
 				{
 					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					Target:  "no_pressure/2021/s1.e1.1080p.mkv",
+					Target:  fmt.Sprintf("no_pressure%s2021%ss1.e1.1080p.mkv", sep, sep),
 					BaseDir: testDir,
 				},
 				{
 					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					Target:  "no_pressure/2021/s1.e2.1080p.mkv",
+					Target:  fmt.Sprintf("no_pressure%s2021%ss1.e2.1080p.mkv", sep, sep),
 					BaseDir: testDir,
 				},
 				{
 					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					Target:  "no_pressure/2021/s1.e3.1080p.mkv",
+					Target:  fmt.Sprintf("no_pressure%s2021%ss1.e3.1080p.mkv", sep, sep),
 					BaseDir: testDir,
 				},
 			},
@@ -333,7 +340,7 @@ func TestReplacementChaining(t *testing.T) {
 				"-f",
 				`(No Pressure) \((\d+)\) (.*)`,
 				"-r",
-				"$1/$2/$3",
+				fmt.Sprintf("$1%s$2%s$3", sep, sep),
 				"-f",
 				".*",
 				"-r",
