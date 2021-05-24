@@ -1,8 +1,5 @@
-# This is an example .goreleaser.yml file with some sane defaults.
-# Make sure to check the documentation at http://goreleaser.com
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod download
 builds:
   - env:
@@ -41,3 +38,18 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+nfpms:
+  -
+    id: f2
+    package_name: f2
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor: Freshman
+    homepage: https://github.com/ayoisaiah/
+    maintainer: Ayooluwa Isaiah <ayo@freshman.tech>
+    description: F2 is a cross-platform command-line tool for batch renaming files and directories quickly and safely
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    recommends:
+      - exiftool
