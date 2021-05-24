@@ -53,3 +53,16 @@ nfpms:
       - rpm
     recommends:
       - exiftool
+scoop:
+  url_template: "https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  bucket:
+    owner: ayoisaiah
+    name: scoop-bucket
+  commit_author:
+    name: goreleaserbot
+    email: goreleaser@carlosbecker.com
+  commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+  homepage: "https://github.com/ayoisaiah/f2"
+  description: "F2 is a cross-platform command-line tool for batch renaming files and directories quickly and safely"
+  license: MIT
+  skip_upload: true
