@@ -529,6 +529,55 @@ func (op *Operation) retrieveBackupFile() (string, error) {
 	return fullPath, nil
 }
 
+// handleReplacementChain is ensures that each find
+// and replace operation (single or chained) is handled correctly
+func (op *Operation) handleReplacementChain() error {
+	for i, v := range op.replacementSlice {
+		op.replacement = v
+		err := op.replace()
+		if err != nil {
+			return err
+		}
+
+		for j, ch := range op.matches {
+			// Update the source to the target from the previous replacement
+			// in preparation for the next replacement
+			if i != len(op.replacementSlice)-1 {
+				op.matches[j].Source = ch.Target
+			}
+
+			// After the last replacement, update the Source
+			// back to the original
+			if i > 0 && i == len(op.replacementSlice)-1 {
+				op.matches[j].Source = ch.originalSource
+			}
+		}
+
+		if i != len(op.replacementSlice)-1 {
+			// If a find pattern is not specified for replacements after
+			// the first one, match the entire string. Otherwise, set to
+			// the corresponding find string for the next replacement
+			findPattern := ".*"
+			if len(op.findSlice) > i+1 {
+				findPattern = op.findSlice[i+1]
+			}
+
+			// Respect the ignore case setting
+			if op.ignoreCase {
+				findPattern = "(?i)" + findPattern
+			}
+
+			re, err := regexp.Compile(findPattern)
+			if err != nil {
+				return err
+			}
+			op.searchRegex = re
+		}
+	}
+
+	return nil
+}
+
 // run executes the operation sequence
 func (op *Operation) run() error {
 	if op.revert {
@@ -562,39 +611,9 @@ func (op *Operation) run() error {
 		}
 	}
 
-	for i, v := range op.replacementSlice {
-		op.replacement = v
-		err = op.replace()
-		if err != nil {
-			return err
-		}
-
-		for j, ch := range op.matches {
-			if i != len(op.replacementSlice)-1 {
-				op.matches[j].Source = ch.Target
-			}
-
-			if i > 0 && i == len(op.replacementSlice)-1 {
-				op.matches[j].Source = ch.originalSource
-			}
-		}
-
-		if i != len(op.replacementSlice)-1 {
-			findPattern := ".*"
-			if len(op.findSlice) > i+1 {
-				findPattern = op.findSlice[i+1]
-			}
-
-			if op.ignoreCase {
-				findPattern = "(?i)" + findPattern
-			}
-
-			re, err := regexp.Compile(findPattern)
-			if err != nil {
-				return err
-			}
-			op.searchRegex = re
-		}
+	err = op.handleReplacementChain()
+	if err != nil {
+		return err
 	}
 
 	return op.apply()
