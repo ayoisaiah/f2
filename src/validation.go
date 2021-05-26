@@ -278,6 +278,12 @@ func (op *Operation) checkPathExistsConflict(
 			return conflictDetected
 		}
 
+		// Don't report a conflict if overwriting files are allowed
+		if op.allowOverwrites {
+			op.matches[i].WillOverwrite = true
+			return conflictDetected
+		}
+
 		op.conflicts[fileExists] = append(
 			op.conflicts[fileExists],
 			Conflict{

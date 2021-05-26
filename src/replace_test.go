@@ -367,3 +367,31 @@ func TestReplacementChaining(t *testing.T) {
 	}
 	runFindReplace(t, cases)
 }
+
+func TestOverwritingFiles(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Overwriting abc.pdf",
+			want: []Change{
+				{
+					BaseDir:       testDir,
+					Source:        "abc.pdf",
+					Target:        "abc.epub",
+					WillOverwrite: true,
+				},
+			},
+			args: []string{
+				"-f",
+				"abc.pdf",
+				"-r",
+				"abc.epub",
+				"--allow-overwrites",
+				testDir,
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}

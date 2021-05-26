@@ -197,6 +197,10 @@ func GetApp() *cli.App {
 				Aliases: []string{"F"},
 				Usage:   "Automatically fix conflicts based on predefined rules. Learn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection",
 			},
+			&cli.BoolFlag{
+				Name:  "allow-overwrites",
+				Usage: "Allow the overwriting of existing files",
+			},
 		},
 		UseShortOptionHandling: true,
 		Action: func(c *cli.Context) error {

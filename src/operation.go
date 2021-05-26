@@ -44,6 +44,7 @@ type Change struct {
 	Source         string `json:"source"`
 	Target         string `json:"target"`
 	IsDir          bool   `json:"is_dir"`
+	WillOverwrite  bool   `json:"-"`
 }
 
 // renameError represents an error that occurs when
@@ -83,6 +84,7 @@ type Operation struct {
 	revert            bool
 	numberOffset      []int
 	replaceLimit      int
+	allowOverwrites   bool
 }
 
 type backupFile struct {
@@ -204,6 +206,11 @@ func (op *Operation) printChanges() {
 		if source == target {
 			status = printColor("yellow", "unchanged")
 		}
+
+		if v.WillOverwrite {
+			status = printColor("yellow", "overwriting")
+		}
+
 		d := []string{source, target, status}
 		data[i] = d
 	}
@@ -612,6 +619,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.maxDepth = int(c.Uint("max-depth"))
 	op.quiet = c.Bool("quiet")
 	op.revert = c.Bool("undo")
+	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
 
 	// Sorting
