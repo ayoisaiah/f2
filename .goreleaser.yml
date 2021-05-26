@@ -58,6 +58,7 @@ scoop:
   bucket:
     owner: ayoisaiah
     name: scoop-bucket
+    token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
   commit_author:
     name: goreleaserbot
     email: goreleaser@carlosbecker.com
@@ -65,4 +66,3 @@ scoop:
   homepage: "https://github.com/ayoisaiah/f2"
   description: "F2 is a cross-platform command-line tool for batch renaming files and directories quickly and safely"
   license: MIT
-  skip_upload: true
