@@ -8,21 +8,30 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
 )
 
-func printColor(color, text string) string {
+type colorString string
+
+const (
+	red    colorString = "red"
+	green  colorString = "green"
+	yellow colorString = "yellow"
+)
+
+func printColor(c colorString, text string) string {
 	if _, ok := os.LookupEnv("NO_COLOR"); ok {
 		return text
 	}
 
-	switch color {
-	case "yellow":
-		return yellow.Sprint(text)
-	case "green":
-		return green.Sprint(text)
-	case "red":
-		return red.Sprint(text)
+	switch c {
+	case yellow:
+		return color.HEX("#FFAB00").Sprint(text)
+	case green:
+		return color.HEX("#23D160").Sprint(text)
+	case red:
+		return color.HEX("#FF2F2F").Sprint(text)
 	}
 
 	return text

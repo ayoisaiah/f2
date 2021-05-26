@@ -12,14 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
-)
-
-var (
-	red    = color.HEX("#FF2F2F")
-	green  = color.HEX("#23D160")
-	yellow = color.HEX("#FFAB00")
 )
 
 var (
@@ -352,23 +345,67 @@ func (op *Operation) backup() error {
 	)
 }
 
-// apply will check for conflicts and print the changes to be made
-// or apply them directly to the filesystem if in execute mode.
-// Conflicts will be ignored if indicated
+// noMatches prints out a message if the renaming operation
+// failed to match any files
+func (op *Operation) noMatches() {
+	msg := "Failed to match any files"
+	if op.revert {
+		msg = "No operations to undo"
+	}
+
+	if !op.quiet {
+		fmt.Println(msg)
+	}
+}
+
+// execute applies the renaming operation to the filesystem.
+// A backup file is auto created as long as at least one file
+// was renamed and it wasn't an undo operation
+func (op *Operation) execute() error {
+	if op.includeDir || op.revert {
+		op.sortMatches()
+	}
+
+	op.rename()
+
+	if len(op.errors) > 0 {
+		return op.handleErrors()
+	}
+
+	if len(op.matches) > 0 && !op.revert {
+		return op.backup()
+	}
+
+	if !op.quiet && !op.revert {
+		fmt.Println("No files were renamed")
+	}
+
+	return nil
+}
+
+// dryRun prints the changes to be made to the standard output
+func (op *Operation) dryRun() {
+	if !op.quiet {
+		op.printChanges()
+		fmt.Printf(
+			"Append the %s flag to apply the above changes\n",
+			printColor("yellow", "-x"),
+		)
+	}
+}
+
+// apply prints the changes to be made in dry-run mode
+// or commits the operation to the filesystem if in execute mode.
+// If conflicts are detected, the operation is aborted and the conflicts
+// are printed out so that they may be corrected by the user
 func (op *Operation) apply() error {
 	if len(op.matches) == 0 {
-		msg := "Failed to match any files"
-		if op.revert {
-			msg = "No operations to undo"
-		}
-
-		if !op.quiet {
-			fmt.Println(msg)
-		}
+		op.noMatches()
 		return nil
 	}
 
 	op.validate()
+
 	if len(op.conflicts) > 0 && !op.fixConflicts {
 		if !op.quiet {
 			op.reportConflicts()
@@ -378,37 +415,10 @@ func (op *Operation) apply() error {
 	}
 
 	if op.exec {
-		if op.includeDir || op.revert {
-			op.sortMatches()
-		}
-
-		op.rename()
-
-		if len(op.errors) > 0 {
-			return op.handleErrors()
-		}
-
-		if len(op.matches) > 0 && !op.revert {
-			return op.backup()
-		}
-
-		if !op.quiet && !op.revert {
-			fmt.Println("No files were renamed")
-		}
-
-		return nil
+		return op.execute()
 	}
 
-	if op.quiet {
-		return nil
-	}
-
-	op.printChanges()
-	fmt.Printf(
-		"Append the %s flag to apply the above changes\n",
-		printColor("yellow", "-x"),
-	)
-
+	op.dryRun()
 	return nil
 }
 
