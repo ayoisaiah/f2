@@ -13,7 +13,7 @@ func TestUnixSpecificConflicts(t *testing.T) {
 	table := []conflictTable{
 		{
 			name: "File name must not contain more than 255 bytes",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				maxLengthExceeded: {
 					{
 						cause:  "255 bytes",

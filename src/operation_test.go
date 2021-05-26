@@ -132,7 +132,7 @@ func setupFileSystem(t testing.TB) string {
 
 type ActionResult struct {
 	changes         []Change
-	conflicts       map[conflict][]Conflict
+	conflicts       map[conflictType][]Conflict
 	backupFile      string
 	applyError      error
 	operationErrors []renameError

@@ -58,7 +58,7 @@ type renameError struct {
 type Operation struct {
 	paths             []Change
 	matches           []Change
-	conflicts         map[conflict][]Conflict
+	conflicts         map[conflictType][]Conflict
 	findSlice         []string
 	replacement       string
 	replacementSlice  []string

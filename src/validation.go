@@ -30,10 +30,10 @@ const (
 	unixMaxBytes     = 255
 )
 
-type conflict int
+type conflictType int
 
 const (
-	emptyFilename conflict = iota
+	emptyFilename conflictType = iota
 	fileExists
 	overwritingNewPath
 	maxLengthExceeded
@@ -188,7 +188,7 @@ func (op *Operation) reportConflicts() {
 // after renaming a file. Conflicts are automatically
 // fixed if specified
 func (op *Operation) detectConflicts() {
-	op.conflicts = make(map[conflict][]Conflict)
+	op.conflicts = make(map[conflictType][]Conflict)
 	m := make(map[string][]struct {
 		source string
 		index  int

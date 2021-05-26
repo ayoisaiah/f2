@@ -45,6 +45,8 @@ WEBSITE:
 	}
 }
 
+// checkForUpdates alerts the user if there is
+// an updated version of F2 from the one currently installed
 func checkForUpdates(app *cli.App) {
 	fmt.Println("Checking for updates...")
 

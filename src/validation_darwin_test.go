@@ -13,7 +13,7 @@ func TestDarwinSpecificConflicts(t *testing.T) {
 	table := []conflictTable{
 		{
 			name: "File name must not contain : character",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				invalidCharacters: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},

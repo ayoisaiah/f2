@@ -46,11 +46,13 @@ var (
 	exiftoolRegex  *regexp.Regexp
 )
 
+type hashAlgorithm string
+
 const (
-	sha1Hash   = "sha1"
-	sha256Hash = "sha256"
-	sha512Hash = "sha512"
-	md5Hash    = "md5"
+	sha1Hash   hashAlgorithm = "sha1"
+	sha256Hash hashAlgorithm = "sha256"
+	sha512Hash hashAlgorithm = "sha512"
+	md5Hash    hashAlgorithm = "md5"
 )
 
 var dateTokens = map[string]string{
@@ -87,8 +89,6 @@ const (
 	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 	numberBytes = "0123456789"
 )
-
-var lettersAndNumbers = letterBytes + numberBytes
 
 // Exif represents exif information from an image file
 type Exif struct {
@@ -161,8 +161,9 @@ func randString(n int, characterSet string) string {
 	return string(b)
 }
 
-// replaceRandomVariables reolaces `{{r}}` in the string with a generated
-// random string
+// replaceRandomVariables replaces all random string variables
+// in the string with a generated random string that matches
+// the specifications
 func replaceRandomVariables(input string, rv randomVar) string {
 	for i := range rv.submatches {
 		r := rv.values[i]
@@ -176,7 +177,7 @@ func replaceRandomVariables(input string, rv randomVar) string {
 		case `_l`:
 			characters = letterBytes
 		case `_ld`:
-			characters = lettersAndNumbers
+			characters = letterBytes + numberBytes
 		}
 
 		input = r.regex.ReplaceAllString(
@@ -189,6 +190,7 @@ func replaceRandomVariables(input string, rv randomVar) string {
 }
 
 // integerToRoman converts an integer to a roman numeral
+// For integers above 3999, it behaves like `strconv.Itoa()`
 func integerToRoman(number int) string {
 	maxRomanNumber := 3999
 	if number > maxRomanNumber {
@@ -225,7 +227,8 @@ func integerToRoman(number int) string {
 	return roman.String()
 }
 
-func getHash(file, hashFn string) (string, error) {
+// getHash retrieves the appropriate hash value for the specified file
+func getHash(file string, hashValue hashAlgorithm) (string, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return "", err
@@ -235,7 +238,7 @@ func getHash(file, hashFn string) (string, error) {
 
 	var h hash.Hash
 
-	switch hashFn {
+	switch hashValue {
 	case sha1Hash:
 		h = sha1.New()
 	case sha256Hash:
@@ -562,6 +565,8 @@ func replaceExifVariables(
 	return input, nil
 }
 
+// replaceExifToolVariables replaces the exiftool
+// variables in the input string
 func replaceExifToolVariables(
 	input, filePath string,
 	ev exiftoolVar,

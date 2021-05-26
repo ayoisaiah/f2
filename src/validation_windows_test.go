@@ -13,7 +13,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 	table := []conflictTable{
 		{
 			name: "File name must not contain < or > characters",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				invalidCharacters: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
@@ -26,7 +26,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 		},
 		{
 			name: "Directory or file name cannot contain trailing periods",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				trailingPeriod: {
 					{
 						source: []string{
@@ -79,7 +79,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 		},
 		{
 			name: "File names must not contain :, |, or ? characters",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				invalidCharacters: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
@@ -92,7 +92,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 		},
 		{
 			name: "File names must not be more than 260 characters",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				maxLengthExceeded: {
 					{
 						cause:  "260 characters",

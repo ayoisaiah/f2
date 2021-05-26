@@ -12,7 +12,7 @@ import (
 
 type conflictTable struct {
 	name string
-	want map[conflict][]Conflict
+	want map[conflictType][]Conflict
 	args []string
 }
 
@@ -79,7 +79,7 @@ func TestDetectConflicts(t *testing.T) {
 	table := []conflictTable{
 		{
 			name: "File exists",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				fileExists: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
@@ -91,7 +91,7 @@ func TestDetectConflicts(t *testing.T) {
 		},
 		{
 			name: "Empty filename",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				emptyFilename: {
 					{
 						source: []string{filepath.Join(testDir, "abc.pdf")},
@@ -103,7 +103,7 @@ func TestDetectConflicts(t *testing.T) {
 		},
 		{
 			name: "Overwriting newly renamed path",
-			want: map[conflict][]Conflict{
+			want: map[conflictType][]Conflict{
 				overwritingNewPath: {
 					{
 						source: []string{
@@ -218,7 +218,7 @@ func TestFixConflicts(t *testing.T) {
 func TestReportConflicts(t *testing.T) {
 	testDir := setupFileSystem(t)
 
-	table := map[conflict][]Conflict{
+	table := map[conflictType][]Conflict{
 		fileExists: {
 			{
 				source: []string{filepath.Join(testDir, "abc.pdf")},

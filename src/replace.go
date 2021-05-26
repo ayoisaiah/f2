@@ -72,7 +72,7 @@ type hashVar struct {
 	submatches [][]string
 	values     []struct {
 		regex  *regexp.Regexp
-		hashFn string
+		hashFn hashAlgorithm
 	}
 }
 
@@ -132,6 +132,8 @@ func getDateVar(str string) (dateVar, error) {
 	return d, nil
 }
 
+// getHashVar retrieves all the hash variables in the replacement
+// string if any
 func getHashVar(str string) (hashVar, error) {
 	var h hashVar
 	if hashRegex.MatchString(str) {
@@ -145,7 +147,7 @@ func getHashVar(str string) (hashVar, error) {
 
 			var x struct {
 				regex  *regexp.Regexp
-				hashFn string
+				hashFn hashAlgorithm
 			}
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
@@ -153,7 +155,7 @@ func getHashVar(str string) (hashVar, error) {
 			}
 
 			x.regex = regex
-			x.hashFn = submatch[1]
+			x.hashFn = hashAlgorithm(submatch[1])
 			h.values = append(h.values, x)
 		}
 	}
@@ -161,6 +163,8 @@ func getHashVar(str string) (hashVar, error) {
 	return h, nil
 }
 
+// getTransformVar retrieves all the string transformation variables
+// in the replacement string if any
 func getTransformVar(str string) (transformVar, error) {
 	var t transformVar
 	if transformRegex.MatchString(str) {
@@ -190,6 +194,8 @@ func getTransformVar(str string) (transformVar, error) {
 	return t, nil
 }
 
+// getExifVar retrieves all the exif variables in the replacement
+// string if any
 func getExifVar(str string) (exifVar, error) {
 	var ex exifVar
 
@@ -231,6 +237,8 @@ func getExifVar(str string) (exifVar, error) {
 	return ex, nil
 }
 
+// getNumberVar retrieves all the index variables in the replacement string
+// if any
 func getNumberVar(str string) (numberVar, error) {
 	var nv numberVar
 
@@ -320,6 +328,8 @@ func getNumberVar(str string) (numberVar, error) {
 	return nv, nil
 }
 
+// getExifToolVar retrieves all the exiftool variables in the
+// replacement string if any
 func getExifToolVar(str string) (exiftoolVar, error) {
 	var et exiftoolVar
 	if exiftoolRegex.MatchString(str) {
@@ -350,6 +360,8 @@ func getExifToolVar(str string) (exiftoolVar, error) {
 	return et, nil
 }
 
+// getID3Var retrieves all the id3 variables in the
+// replacement string if any
 func getID3Var(str string) (id3Var, error) {
 	var iv id3Var
 	if id3Regex.MatchString(str) {
@@ -380,6 +392,8 @@ func getID3Var(str string) (id3Var, error) {
 	return iv, nil
 }
 
+// getRandomVar retrieves all the random variables in the
+// replacement string if any
 func getRandomVar(str string) (randomVar, error) {
 	var rv randomVar
 
@@ -425,6 +439,8 @@ func getRandomVar(str string) (randomVar, error) {
 	return rv, nil
 }
 
+// getAllVariables retrieves all the variables present in the replacement
+// string
 func getAllVariables(str string) (replaceVars, error) {
 	var v replaceVars
 	var err error
@@ -471,7 +487,9 @@ func getAllVariables(str string) (replaceVars, error) {
 	return v, nil
 }
 
-// regexReplace handles string replacement
+// regexReplace replaces matches in the filename with the replacement string.
+// It respects the specified replacement limit. A negative limit starts the
+// replacement from the end of the fileName
 func regexReplace(
 	r *regexp.Regexp,
 	fileName, replacement string,
@@ -516,6 +534,8 @@ func regexReplace(
 	return output
 }
 
+// replaceString replaces all matches in the filename
+// with the replacement string
 func (op *Operation) replaceString(fileName string) (str string) {
 	return regexReplace(
 		op.searchRegex,
