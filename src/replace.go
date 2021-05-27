@@ -581,7 +581,7 @@ func (op *Operation) replace() (err error) {
 			ch.Target += fileExt
 		}
 
-		ch.Target = strings.TrimSpace(ch.Target)
+		ch.Target = strings.TrimSpace(filepath.Clean(ch.Target))
 		op.matches[i] = ch
 	}
 
