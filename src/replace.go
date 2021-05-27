@@ -85,7 +85,7 @@ type randomVar struct {
 	}
 }
 
-type replaceVars struct {
+type variables struct {
 	exif      exifVar
 	exiftool  exiftoolVar
 	number    numberVar
@@ -100,10 +100,10 @@ var (
 	errInvalidSubmatches = errors.New("Invalid number of submatches")
 )
 
-func getDateVar(str string) (dateVar, error) {
+func getDateVar(replacementInput string) (dateVar, error) {
 	var d dateVar
-	if dateRegex.MatchString(str) {
-		d.submatches = dateRegex.FindAllStringSubmatch(str, -1)
+	if dateRegex.MatchString(replacementInput) {
+		d.submatches = dateRegex.FindAllStringSubmatch(replacementInput, -1)
 		expectedLength := 3
 
 		for _, submatch := range d.submatches {
@@ -134,10 +134,10 @@ func getDateVar(str string) (dateVar, error) {
 
 // getHashVar retrieves all the hash variables in the replacement
 // string if any
-func getHashVar(str string) (hashVar, error) {
+func getHashVar(replacementInput string) (hashVar, error) {
 	var h hashVar
-	if hashRegex.MatchString(str) {
-		h.submatches = hashRegex.FindAllStringSubmatch(str, -1)
+	if hashRegex.MatchString(replacementInput) {
+		h.submatches = hashRegex.FindAllStringSubmatch(replacementInput, -1)
 		expectedLength := 2
 
 		for _, submatch := range h.submatches {
@@ -165,10 +165,13 @@ func getHashVar(str string) (hashVar, error) {
 
 // getTransformVar retrieves all the string transformation variables
 // in the replacement string if any
-func getTransformVar(str string) (transformVar, error) {
+func getTransformVar(replacementInput string) (transformVar, error) {
 	var t transformVar
-	if transformRegex.MatchString(str) {
-		t.submatches = transformRegex.FindAllStringSubmatch(str, -1)
+	if transformRegex.MatchString(replacementInput) {
+		t.submatches = transformRegex.FindAllStringSubmatch(
+			replacementInput,
+			-1,
+		)
 		expectedLength := 2
 
 		for _, submatch := range t.submatches {
@@ -196,11 +199,11 @@ func getTransformVar(str string) (transformVar, error) {
 
 // getExifVar retrieves all the exif variables in the replacement
 // string if any
-func getExifVar(str string) (exifVar, error) {
+func getExifVar(replacementInput string) (exifVar, error) {
 	var ex exifVar
 
-	if exifRegex.MatchString(str) {
-		ex.submatches = exifRegex.FindAllStringSubmatch(str, -1)
+	if exifRegex.MatchString(replacementInput) {
+		ex.submatches = exifRegex.FindAllStringSubmatch(replacementInput, -1)
 		expectedLength := 3
 
 		for _, submatch := range ex.submatches {
@@ -208,7 +211,7 @@ func getExifVar(str string) (exifVar, error) {
 				return ex, errInvalidSubmatches
 			}
 
-			var x struct {
+			var val struct {
 				regex   *regexp.Regexp
 				attr    string
 				timeStr string
@@ -218,19 +221,19 @@ func getExifVar(str string) (exifVar, error) {
 				return ex, err
 			}
 
-			x.regex = regex
+			val.regex = regex
 
 			if strings.Contains(submatch[0], "exif.dt") ||
 				strings.Contains(submatch[0], "x.dt") {
 				submatch = append(submatch[:1], submatch[1+1:]...)
 			}
 
-			x.attr = submatch[1]
-			if x.attr == "dt" {
-				x.timeStr = submatch[2]
+			val.attr = submatch[1]
+			if val.attr == "dt" {
+				val.timeStr = submatch[2]
 			}
 
-			ex.values = append(ex.values, x)
+			ex.values = append(ex.values, val)
 		}
 	}
 
@@ -239,11 +242,11 @@ func getExifVar(str string) (exifVar, error) {
 
 // getNumberVar retrieves all the index variables in the replacement string
 // if any
-func getNumberVar(str string) (numberVar, error) {
+func getNumberVar(replacementInput string) (numberVar, error) {
 	var nv numberVar
 
-	if indexRegex.MatchString(str) {
-		nv.submatches = indexRegex.FindAllStringSubmatch(str, -1)
+	if indexRegex.MatchString(replacementInput) {
+		nv.submatches = indexRegex.FindAllStringSubmatch(replacementInput, -1)
 		expectedLength := 7
 
 		for _, submatch := range nv.submatches {
@@ -251,7 +254,7 @@ func getNumberVar(str string) (numberVar, error) {
 				return nv, errInvalidSubmatches
 			}
 
-			var n struct {
+			var val struct {
 				regex       *regexp.Regexp
 				startNumber int
 				index       string
@@ -265,22 +268,22 @@ func getNumberVar(str string) (numberVar, error) {
 				return nv, err
 			}
 
-			n.regex = regex
+			val.regex = regex
 
 			if submatch[1] != "" {
-				n.startNumber, err = strconv.Atoi(submatch[1])
+				val.startNumber, err = strconv.Atoi(submatch[1])
 				if err != nil {
 					return nv, err
 				}
 			} else {
-				n.startNumber = 1
+				val.startNumber = 1
 			}
 
-			n.index = submatch[2]
-			n.format = submatch[4]
-			n.step = 1
+			val.index = submatch[2]
+			val.format = submatch[4]
+			val.step = 1
 			if submatch[5] != "" {
-				n.step, err = strconv.Atoi(submatch[5])
+				val.step, err = strconv.Atoi(submatch[5])
 				if err != nil {
 					return nv, err
 				}
@@ -302,7 +305,7 @@ func getNumberVar(str string) (numberVar, error) {
 							return nv, err
 						}
 
-						n.skip = append(n.skip, numbersToSkip{
+						val.skip = append(val.skip, numbersToSkip{
 							max: int(math.Max(float64(n1), float64(n2))),
 							min: int(math.Min(float64(n1), float64(n2))),
 						})
@@ -314,14 +317,14 @@ func getNumberVar(str string) (numberVar, error) {
 						return nv, err
 					}
 
-					n.skip = append(n.skip, numbersToSkip{
+					val.skip = append(val.skip, numbersToSkip{
 						max: num,
 						min: num,
 					})
 				}
 			}
 
-			nv.values = append(nv.values, n)
+			nv.values = append(nv.values, val)
 		}
 	}
 
@@ -330,10 +333,13 @@ func getNumberVar(str string) (numberVar, error) {
 
 // getExifToolVar retrieves all the exiftool variables in the
 // replacement string if any
-func getExifToolVar(str string) (exiftoolVar, error) {
+func getExifToolVar(replacementInput string) (exiftoolVar, error) {
 	var et exiftoolVar
-	if exiftoolRegex.MatchString(str) {
-		et.submatches = exiftoolRegex.FindAllStringSubmatch(str, -1)
+	if exiftoolRegex.MatchString(replacementInput) {
+		et.submatches = exiftoolRegex.FindAllStringSubmatch(
+			replacementInput,
+			-1,
+		)
 		expectedLength := 2
 
 		for _, submatch := range et.submatches {
@@ -362,10 +368,10 @@ func getExifToolVar(str string) (exiftoolVar, error) {
 
 // getID3Var retrieves all the id3 variables in the
 // replacement string if any
-func getID3Var(str string) (id3Var, error) {
+func getID3Var(replacementInput string) (id3Var, error) {
 	var iv id3Var
-	if id3Regex.MatchString(str) {
-		iv.submatches = id3Regex.FindAllStringSubmatch(str, -1)
+	if id3Regex.MatchString(replacementInput) {
+		iv.submatches = id3Regex.FindAllStringSubmatch(replacementInput, -1)
 		expectedLength := 2
 
 		for _, submatch := range iv.submatches {
@@ -394,11 +400,11 @@ func getID3Var(str string) (id3Var, error) {
 
 // getRandomVar retrieves all the random variables in the
 // replacement string if any
-func getRandomVar(str string) (randomVar, error) {
+func getRandomVar(replacementInput string) (randomVar, error) {
 	var rv randomVar
 
-	if randomRegex.MatchString(str) {
-		rv.submatches = randomRegex.FindAllStringSubmatch(str, -1)
+	if randomRegex.MatchString(replacementInput) {
+		rv.submatches = randomRegex.FindAllStringSubmatch(replacementInput, -1)
 		expectedLength := 4
 
 		for _, submatch := range rv.submatches {
@@ -439,47 +445,47 @@ func getRandomVar(str string) (randomVar, error) {
 	return rv, nil
 }
 
-// getAllVariables retrieves all the variables present in the replacement
+// extractVariables retrieves all the variables present in the replacement
 // string
-func getAllVariables(str string) (replaceVars, error) {
-	var v replaceVars
+func extractVariables(replacementInput string) (variables, error) {
+	var v variables
 	var err error
-	v.exif, err = getExifVar(str)
+	v.exif, err = getExifVar(replacementInput)
 	if err != nil {
 		return v, err
 	}
 
-	v.number, err = getNumberVar(str)
+	v.number, err = getNumberVar(replacementInput)
 	if err != nil {
 		return v, err
 	}
 
-	v.id3, err = getID3Var(str)
+	v.id3, err = getID3Var(replacementInput)
 	if err != nil {
 		return v, err
 	}
 
-	v.hash, err = getHashVar(str)
+	v.hash, err = getHashVar(replacementInput)
 	if err != nil {
 		return v, err
 	}
 
-	v.date, err = getDateVar(str)
+	v.date, err = getDateVar(replacementInput)
 	if err != nil {
 		return v, err
 	}
 
-	v.random, err = getRandomVar(str)
+	v.random, err = getRandomVar(replacementInput)
 	if err != nil {
 		return v, err
 	}
 
-	v.exiftool, err = getExifToolVar(str)
+	v.exiftool, err = getExifToolVar(replacementInput)
 	if err != nil {
 		return v, err
 	}
 
-	v.transform, err = getTransformVar(str)
+	v.transform, err = getTransformVar(replacementInput)
 	if err != nil {
 		return v, err
 	}
@@ -487,12 +493,12 @@ func getAllVariables(str string) (replaceVars, error) {
 	return v, nil
 }
 
-// regexReplace replaces matches in the filename with the replacement string.
-// It respects the specified replacement limit. A negative limit starts the
-// replacement from the end of the fileName
+// regexReplace replaces matched substrings in the input with the replacement.
+// It respects the specified replacement limit. A negative limit indicates that
+// replacement should start from the end of the fileName
 func regexReplace(
 	r *regexp.Regexp,
-	fileName, replacement string,
+	input, replacement string,
 	replaceLimit int,
 ) string {
 	var output string
@@ -501,7 +507,7 @@ func regexReplace(
 	case limit > 0:
 		counter := 0
 		output = r.ReplaceAllStringFunc(
-			fileName,
+			input,
 			func(val string) string {
 				if counter == replaceLimit {
 					return val
@@ -512,12 +518,12 @@ func regexReplace(
 			},
 		)
 	case limit < 0:
-		matches := r.FindAllString(fileName, -1)
+		matches := r.FindAllString(input, -1)
 
 		l := len(matches) + limit
 		counter := 0
 		output = r.ReplaceAllStringFunc(
-			fileName,
+			input,
 			func(val string) string {
 				if counter >= l {
 					return r.ReplaceAllString(val, replacement)
@@ -528,7 +534,7 @@ func regexReplace(
 			},
 		)
 	default:
-		output = r.ReplaceAllString(fileName, replacement)
+		output = r.ReplaceAllString(input, replacement)
 	}
 
 	return output
@@ -536,49 +542,47 @@ func regexReplace(
 
 // replaceString replaces all matches in the filename
 // with the replacement string
-func (op *Operation) replaceString(fileName string) (str string) {
+func (op *Operation) replaceString(originalName string) string {
 	return regexReplace(
 		op.searchRegex,
-		fileName,
+		originalName,
 		op.replacement,
 		op.replaceLimit,
 	)
 }
 
-// replace replaces the matched text in each path with the
+// replace handles the replacement of matches in each file with the
 // replacement string
 func (op *Operation) replace() (err error) {
-	vars, err := getAllVariables(op.replacement)
+	vars, err := extractVariables(op.replacement)
 	if err != nil {
 		return err
 	}
 
-	for i, v := range op.matches {
-		fileName := v.Source
-		fileExt := filepath.Ext(fileName)
+	for i, ch := range op.matches {
+		ch := ch // prevent memory aliasing problem when ch is referenced
+		ch.index = i
+		originalName := ch.Source
+		fileExt := filepath.Ext(originalName)
 		if op.ignoreExt {
-			fileName = filenameWithoutExtension(fileName)
+			originalName = filenameWithoutExtension(originalName)
 		}
 
-		str := op.replaceString(fileName)
+		ch.Target = op.replaceString(originalName)
 
-		// handle variables
-		str, err = op.handleVariables(str, v, &vars)
+		// Replace any variables present with their corresponding values
+		err = op.replaceVariables(&ch, &vars)
 		if err != nil {
 			return err
 		}
 
-		// If numbering scheme is present
-		if indexRegex.MatchString(str) {
-			str = op.replaceIndex(str, i, vars.number)
-		}
-
+		// Reattach the original extension to the new file name
 		if op.ignoreExt {
-			str += fileExt
+			ch.Target += fileExt
 		}
 
-		v.Target = strings.TrimSpace(filepath.Join(str))
-		op.matches[i] = v
+		ch.Target = strings.TrimSpace(ch.Target)
+		op.matches[i] = ch
 	}
 
 	return nil

@@ -61,6 +61,9 @@ func TestReplaceFilenameVariables(t *testing.T) {
 	testDir := setupFileSystem(t)
 
 	for _, path := range fileSystem {
+		op := &Operation{}
+		op.replacement = "{{p}}-{{f}}{{ext}}"
+
 		fullPath := filepath.Join(testDir, path)
 		base := filenameWithoutExtension(filepath.Base(path))
 		ext := filepath.Ext(path)
@@ -68,19 +71,19 @@ func TestReplaceFilenameVariables(t *testing.T) {
 		ch := Change{
 			BaseDir: filepath.Join(testDir, dir),
 			Source:  filepath.Base(path),
+			Target:  op.replacement,
 		}
 
-		op := &Operation{}
-		op.replacement = "{{p}}-{{f}}{{ext}}"
-		v, err := getAllVariables(op.replacement)
+		v, err := extractVariables(op.replacement)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 
-		got, err := op.handleVariables(op.replacement, ch, &v)
+		err = op.replaceVariables(&ch, &v)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
+		got := ch.Target
 
 		want := fmt.Sprintf(
 			"%s-%s%s",

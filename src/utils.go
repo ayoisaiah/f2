@@ -84,6 +84,8 @@ func printTable(data [][]string) {
 	table.Render()
 }
 
+// filenameWithoutExtension returns the input file name
+// without its extension
 func filenameWithoutExtension(fileName string) string {
 	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }

@@ -39,6 +39,7 @@ const (
 
 // Change represents a single filename change
 type Change struct {
+	index          int
 	originalSource string
 	BaseDir        string `json:"base_dir"`
 	Source         string `json:"source"`

@@ -162,9 +162,9 @@ func randString(n int, characterSet string) string {
 }
 
 // replaceRandomVariables replaces all random string variables
-// in the string with a generated random string that matches
+// in the target filename with a generated random string that matches
 // the specifications
-func replaceRandomVariables(input string, rv randomVar) string {
+func replaceRandomVariables(target string, rv randomVar) string {
 	for i := range rv.submatches {
 		r := rv.values[i]
 		characters := r.characters
@@ -180,21 +180,21 @@ func replaceRandomVariables(input string, rv randomVar) string {
 			characters = letterBytes + numberBytes
 		}
 
-		input = r.regex.ReplaceAllString(
-			input,
+		target = r.regex.ReplaceAllString(
+			target,
 			randString(r.length, characters),
 		)
 	}
 
-	return input
+	return target
 }
 
 // integerToRoman converts an integer to a roman numeral
-// For integers above 3999, it behaves like `strconv.Itoa()`
-func integerToRoman(number int) string {
+// For integers above 3999, it returns the stringified integer
+func integerToRoman(integer int) string {
 	maxRomanNumber := 3999
-	if number > maxRomanNumber {
-		return strconv.Itoa(number)
+	if integer > maxRomanNumber {
+		return strconv.Itoa(integer)
 	}
 
 	conversions := []struct {
@@ -218,9 +218,9 @@ func integerToRoman(number int) string {
 
 	var roman strings.Builder
 	for _, conversion := range conversions {
-		for number >= conversion.value {
+		for integer >= conversion.value {
 			roman.WriteString(conversion.digit)
-			number -= conversion.value
+			integer -= conversion.value
 		}
 	}
 
@@ -260,25 +260,28 @@ func getHash(file string, hashValue hashAlgorithm) (string, error) {
 
 // replaceFileHash replaces a hash variable with the corresponding
 // hash value
-func replaceFileHash(input, filePath string, hv hashVar) (string, error) {
+func replaceFileHash(target, sourcePath string, hv hashVar) (string, error) {
 	for i := range hv.submatches {
 		h := hv.values[i]
 
-		hashValue, err := getHash(filePath, h.hashFn)
+		hashValue, err := getHash(sourcePath, h.hashFn)
 		if err != nil {
 			return "", err
 		}
 
-		input = h.regex.ReplaceAllString(input, hashValue)
+		target = h.regex.ReplaceAllString(target, hashValue)
 	}
 
-	return input, nil
+	return target, nil
 }
 
-// replaceDateVariables replaces a date variable with the corresponding
-// date value
-func replaceDateVariables(input, filePath string, dv dateVar) (string, error) {
-	t, err := times.Stat(filePath)
+// replaceDateVariables replaces any date variables in the target
+// with the corresponding date value
+func replaceDateVariables(
+	target, sourcePath string,
+	dv dateVar,
+) (string, error) {
+	t, err := times.Stat(sourcePath)
 	if err != nil {
 		return "", err
 	}
@@ -313,17 +316,17 @@ func replaceDateVariables(input, filePath string, dv dateVar) (string, error) {
 			timeStr = currentTime.Format(dateTokens[token])
 		}
 
-		input = regex.ReplaceAllString(input, timeStr)
+		target = regex.ReplaceAllString(target, timeStr)
 	}
 
-	return input, nil
+	return target, nil
 }
 
 // getID3Tags retrieves the id3 tags in an audi file (such as mp3)
 // errors while reading the id3 tags are ignored since the corresponding
 // variable will be replaced with an empty string
-func getID3Tags(filePath string) (*ID3, error) {
-	f, err := os.Open(filePath)
+func getID3Tags(sourcePath string) (*ID3, error) {
+	f, err := os.Open(sourcePath)
 	if err != nil {
 		return nil, err
 	}
@@ -353,9 +356,17 @@ func getID3Tags(filePath string) (*ID3, error) {
 	}, nil
 }
 
-// replaceID3Variables replaces an id3 variable in the input string
-// with the corresponding id3 value
-func replaceID3Variables(tags *ID3, input string, id3v id3Var) string {
+// replaceID3Variables replaces all id3 variables in the target file name
+// with the corresponding id3 tag value
+func replaceID3Variables(
+	target, sourcePath string,
+	id3v id3Var,
+) (string, error) {
+	tags, err := getID3Tags(sourcePath)
+	if err != nil {
+		return target, err
+	}
+
 	submatches := id3v.submatches
 	for i := range submatches {
 		current := id3v.values[i]
@@ -364,63 +375,63 @@ func replaceID3Variables(tags *ID3, input string, id3v id3Var) string {
 
 		switch submatch {
 		case "format":
-			input = regex.ReplaceAllString(input, tags.Format)
+			target = regex.ReplaceAllString(target, tags.Format)
 		case "type":
-			input = regex.ReplaceAllString(input, tags.FileType)
+			target = regex.ReplaceAllString(target, tags.FileType)
 		case "title":
-			input = regex.ReplaceAllString(input, tags.Title)
+			target = regex.ReplaceAllString(target, tags.Title)
 		case "album":
-			input = regex.ReplaceAllString(input, tags.Album)
+			target = regex.ReplaceAllString(target, tags.Album)
 		case "artist":
-			input = regex.ReplaceAllString(input, tags.Artist)
+			target = regex.ReplaceAllString(target, tags.Artist)
 		case "album_artist":
-			input = regex.ReplaceAllString(input, tags.AlbumArtist)
+			target = regex.ReplaceAllString(target, tags.AlbumArtist)
 		case "genre":
-			input = regex.ReplaceAllString(input, tags.Genre)
+			target = regex.ReplaceAllString(target, tags.Genre)
 		case "composer":
-			input = regex.ReplaceAllString(input, tags.Composer)
+			target = regex.ReplaceAllString(target, tags.Composer)
 		case "track":
 			var track string
 			if tags.Track != 0 {
 				track = strconv.Itoa(tags.Track)
 			}
-			input = regex.ReplaceAllString(input, track)
+			target = regex.ReplaceAllString(target, track)
 		case "total_tracks":
 			var total string
 			if tags.TotalTracks != 0 {
 				total = strconv.Itoa(tags.TotalTracks)
 			}
-			input = regex.ReplaceAllString(input, total)
+			target = regex.ReplaceAllString(target, total)
 		case "disc":
 			var disc string
 			if tags.Disc != 0 {
 				disc = strconv.Itoa(tags.Disc)
 			}
-			input = regex.ReplaceAllString(input, disc)
+			target = regex.ReplaceAllString(target, disc)
 		case "total_discs":
 			var total string
 			if tags.TotalDiscs != 0 {
 				total = strconv.Itoa(tags.TotalDiscs)
 			}
-			input = regex.ReplaceAllString(input, total)
+			target = regex.ReplaceAllString(target, total)
 		case "year":
 			var year string
 			if tags.Year != 0 {
 				year = strconv.Itoa(tags.Year)
 			}
-			input = regex.ReplaceAllString(input, year)
+			target = regex.ReplaceAllString(target, year)
 		}
 	}
 
-	return input
+	return target, nil
 }
 
 // getExifData retrieves the exif data embedded in an image file.
 // Errors in decoding the exif data are ignored intentionally since
 // the corresponding exif variable will be replaced by an empty
 // string
-func getExifData(filePath string) (*Exif, error) {
-	f, err := os.Open(filePath)
+func getExifData(sourcePath string) (*Exif, error) {
+	f, err := os.Open(sourcePath)
 	if err != nil {
 		return nil, err
 	}
@@ -448,10 +459,14 @@ func getExifData(filePath string) (*Exif, error) {
 
 // replaceExifVariables replaces the exif variables in an input string
 func replaceExifVariables(
-	exifData *Exif,
-	input string,
+	target, sourcePath string,
 	ev exifVar,
 ) (string, error) {
+	exifData, err := getExifData(sourcePath)
+	if err != nil {
+		return target, err
+	}
+
 	for i := range ev.submatches {
 		current := ev.values[i]
 		regex := current.regex
@@ -559,16 +574,16 @@ func replaceExifVariables(
 				value = strconv.Itoa(exifData.PixelXDimension[0])
 			}
 		}
-		input = regex.ReplaceAllString(input, value)
+		target = regex.ReplaceAllString(target, value)
 	}
 
-	return input, nil
+	return target, nil
 }
 
-// replaceExifToolVariables replaces the exiftool
-// variables in the input string
+// replaceExifToolVariables replaces the all exiftool
+// variables in the target
 func replaceExifToolVariables(
-	input, filePath string,
+	target, sourcePath string,
 	ev exiftoolVar,
 ) (string, error) {
 	et, err := exiftool.NewExiftool()
@@ -578,7 +593,7 @@ func replaceExifToolVariables(
 
 	defer et.Close()
 
-	fileInfos := et.ExtractMetadata(filePath)
+	fileInfos := et.ExtractMetadata(sourcePath)
 
 	for i := range ev.submatches {
 		current := ev.values[i]
@@ -601,15 +616,15 @@ func replaceExifToolVariables(
 			}
 		}
 
-		input = regex.ReplaceAllString(input, value)
+		target = regex.ReplaceAllString(target, value)
 	}
 
-	return input, nil
+	return target, nil
 }
 
 // replaceIndex deals with sequential numbering in various formats
 func (op *Operation) replaceIndex(
-	input string,
+	target string,
 	count int,
 	nv numberVar,
 ) string {
@@ -652,16 +667,16 @@ func (op *Operation) replaceIndex(
 			r = fmt.Sprintf(current.index, num)
 		}
 
-		input = current.regex.ReplaceAllString(input, r)
+		target = current.regex.ReplaceAllString(target, r)
 	}
 
-	return input
+	return target
 }
 
 // replaceTransformVariables handles string transformations like uppercase,
 // lowercase, stripping characters, e.t.c
 func replaceTransformVariables(
-	input string,
+	target string,
 	matches []string,
 	tv transformVar,
 ) string {
@@ -671,27 +686,27 @@ func replaceTransformVariables(
 		for _, v := range matches {
 			switch current.token {
 			case "up":
-				input = regexReplace(r, input, strings.ToUpper(v), 1)
+				target = regexReplace(r, target, strings.ToUpper(v), 1)
 			case "lw":
-				input = regexReplace(r, input, strings.ToLower(v), 1)
+				target = regexReplace(r, target, strings.ToLower(v), 1)
 			case "ti":
-				input = regexReplace(
+				target = regexReplace(
 					r,
-					input,
+					target,
 					strings.Title(strings.ToLower(v)),
 					1,
 				)
 			case "win":
-				input = regexReplace(
+				target = regexReplace(
 					r,
-					input,
+					target,
 					regexReplace(fullWindowsForbiddenRegex, v, "", 0),
 					1,
 				)
 			case "mac":
-				input = regexReplace(
+				target = regexReplace(
 					r,
-					input,
+					target,
 					regexReplace(macForbiddenRegex, v, "", 0),
 					1,
 				)
@@ -706,24 +721,22 @@ func replaceTransformVariables(
 					return v
 				}
 
-				input = regexReplace(r, input, result, 1)
+				target = regexReplace(r, target, result, 1)
 			}
 		}
 	}
 
-	return input
+	return target
 }
 
-// handleVariables checks if any variables are present in the replacement
-// string and delegates the variable replacement to the appropriate
-// function
-func (op *Operation) handleVariables(
-	input string,
-	ch Change,
-	vars *replaceVars,
-) (string, error) {
-	fileName := ch.Source
-	fileExt := filepath.Ext(fileName)
+// replaceVariables checks if any variables are present in the target filename
+// and delegates the variable replacement to the appropriate function
+func (op *Operation) replaceVariables(
+	ch *Change,
+	vars *variables,
+) error {
+	sourceName := ch.Source
+	fileExt := filepath.Ext(sourceName)
 	parentDir := filepath.Base(ch.BaseDir)
 	sourcePath := filepath.Join(ch.BaseDir, ch.originalSource)
 
@@ -732,87 +745,92 @@ func (op *Operation) handleVariables(
 		parentDir = filepath.Base(op.workingDir)
 	}
 
-	// replace `{{f}}` in the replacement string with the original
-	// filename (without the extension)
-	if filenameRegex.MatchString(input) {
-		input = filenameRegex.ReplaceAllString(
-			input,
-			filenameWithoutExtension(fileName),
+	// replace `{{f}}` in the target with the original filename
+	// (excluding the extension)
+	if filenameRegex.MatchString(ch.Target) {
+		ch.Target = regexReplace(
+			filenameRegex,
+			ch.Target,
+			filenameWithoutExtension(sourceName),
+			0,
 		)
 	}
 
-	// replace `{{ext}}` in the replacement string with the file extension
-	if extensionRegex.MatchString(input) {
-		input = extensionRegex.ReplaceAllString(input, fileExt)
+	// replace `{{ext}}` in the target with the file extension
+	if extensionRegex.MatchString(ch.Target) {
+		ch.Target = regexReplace(extensionRegex, ch.Target, fileExt, 0)
 	}
 
-	// replace `{{p}}` in the replacement string with the parent directory name
-	if parentDirRegex.MatchString(input) {
-		input = parentDirRegex.ReplaceAllString(input, parentDir)
+	// replace `{{p}}` in the target with the parent directory name
+	if parentDirRegex.MatchString(ch.Target) {
+		ch.Target = regexReplace(parentDirRegex, ch.Target, parentDir, 0)
 	}
 
 	// handle date variables (e.g {{mtime.DD}})
-	if dateRegex.MatchString(input) {
-		out, err := replaceDateVariables(input, sourcePath, vars.date)
+	if dateRegex.MatchString(ch.Target) {
+		out, err := replaceDateVariables(ch.Target, sourcePath, vars.date)
 		if err != nil {
-			return "", err
+			return err
 		}
-		input = out
+		ch.Target = out
 	}
 
-	if exiftoolRegex.MatchString(input) {
-		out, err := replaceExifToolVariables(input, sourcePath, vars.exiftool)
+	if exiftoolRegex.MatchString(ch.Target) {
+		out, err := replaceExifToolVariables(
+			ch.Target,
+			sourcePath,
+			vars.exiftool,
+		)
 		if err != nil {
-			return "", err
+			return err
 		}
-		input = out
+		ch.Target = out
 	}
 
-	if exifRegex.MatchString(input) {
-		exifData, err := getExifData(sourcePath)
+	if exifRegex.MatchString(ch.Target) {
+		out, err := replaceExifVariables(ch.Target, sourcePath, vars.exif)
 		if err != nil {
-			return "", err
+			return err
 		}
-
-		out, err := replaceExifVariables(exifData, input, vars.exif)
-		if err != nil {
-			return "", err
-		}
-		input = out
+		ch.Target = out
 	}
 
-	if id3Regex.MatchString(input) {
-		tags, err := getID3Tags(sourcePath)
+	if id3Regex.MatchString(ch.Target) {
+		out, err := replaceID3Variables(ch.Target, sourcePath, vars.id3)
 		if err != nil {
-			return "", err
+			return err
 		}
-
-		input = replaceID3Variables(tags, input, vars.id3)
+		ch.Target = out
 	}
 
-	if hashRegex.MatchString(input) {
-		out, err := replaceFileHash(input, sourcePath, vars.hash)
+	if hashRegex.MatchString(ch.Target) {
+		out, err := replaceFileHash(ch.Target, sourcePath, vars.hash)
 		if err != nil {
-			return "", err
+			return err
 		}
-		input = out
+		ch.Target = out
 	}
 
-	if randomRegex.MatchString(input) {
-		input = replaceRandomVariables(input, vars.random)
+	if randomRegex.MatchString(ch.Target) {
+		ch.Target = replaceRandomVariables(ch.Target, vars.random)
 	}
 
-	if transformRegex.MatchString(input) {
+	if transformRegex.MatchString(ch.Target) {
 		if op.ignoreExt {
-			fileName = filenameWithoutExtension(fileName)
+			sourceName = filenameWithoutExtension(sourceName)
 		}
 
-		input = replaceTransformVariables(
-			input,
-			op.searchRegex.FindAllString(fileName, -1),
+		ch.Target = replaceTransformVariables(
+			ch.Target,
+			op.searchRegex.FindAllString(sourceName, -1),
 			vars.transform,
 		)
 	}
 
-	return input, nil
+	// Replace indexing scheme like %03d in the target
+	if indexRegex.MatchString(ch.Target) {
+		ch.Target = op.replaceIndex(ch.Target, ch.index, vars.number)
+	}
+
+	return nil
 }
