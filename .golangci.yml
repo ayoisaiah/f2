@@ -53,6 +53,7 @@ linters:
     - ineffassign
     - misspell
     - nakedret
+    - nolintlint
     - rowserrcheck
     - staticcheck
     - structcheck
