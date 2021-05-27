@@ -525,9 +525,3 @@ func (op *Operation) checkForbiddenCharactersConflict(
 
 	return conflictDetected
 }
-
-// validate tries to prevent common renaming problems by analyzing the list
-// of files and target destinations
-func (op *Operation) validate() {
-	op.detectConflicts()
-}

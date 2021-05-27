@@ -412,7 +412,7 @@ func (op *Operation) apply() error {
 		return nil
 	}
 
-	op.validate()
+	op.detectConflicts()
 
 	if len(op.conflicts) > 0 && !op.fixConflicts {
 		if !op.quiet {
