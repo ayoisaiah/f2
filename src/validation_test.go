@@ -246,7 +246,7 @@ func TestReportConflicts(t *testing.T) {
 				target: filepath.Join(testDir, "abc.mobi"),
 			},
 		},
-		maxLengthExceeded: {
+		maxFilenameLengthExceeded: {
 			{
 				source: []string{
 					filepath.Join(testDir, "abc.pdf"),
@@ -287,8 +287,8 @@ func TestReportConflicts(t *testing.T) {
 
 func TestGetNewPath(t *testing.T) {
 	type m map[string][]struct {
-		source string
-		index  int
+		sourcePath string
+		index      int
 	}
 	cases := []struct {
 		input  string
@@ -316,26 +316,26 @@ func TestGetNewPath(t *testing.T) {
 			m: m{
 				"an_image (8).png": {
 					{
-						source: "img.png",
-						index:  3,
+						sourcePath: "img.png",
+						index:      3,
 					},
 				},
 				"an_image (9).png": {
 					{
-						source: "img-2.png",
-						index:  5,
+						sourcePath: "img-2.png",
+						index:      5,
 					},
 				},
 				"an_image (10).png": {
 					{
-						source: "img-3.png",
-						index:  8,
+						sourcePath: "img-3.png",
+						index:      8,
 					},
 				},
 				"an_image (11).png": {
 					{
-						source: "img-4.png",
-						index:  6,
+						sourcePath: "img-4.png",
+						index:      6,
 					},
 				},
 			},
@@ -343,7 +343,11 @@ func TestGetNewPath(t *testing.T) {
 	}
 
 	for _, v := range cases {
-		out := getNewPath(v.input, ".", v.m)
+		ch := Change{
+			Target:  v.input,
+			BaseDir: ".",
+		}
+		out := newTarget(ch, v.m)
 		if out != v.output {
 			t.Fatalf(
 				"Incorrect output from getNewPath. Want: %s, got %s",

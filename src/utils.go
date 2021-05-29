@@ -90,60 +90,9 @@ func filenameWithoutExtension(fileName string) string {
 	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }
 
-// walk is used to navigate directories recursively
-// and include their contents in the pool of paths in
-// which to find matches
-func walk(
-	paths map[string][]os.DirEntry,
-	includeHidden bool,
-	maxDepth int,
-) (map[string][]os.DirEntry, error) {
-	var iterated []string
-	var n = make(map[string][]os.DirEntry)
-	var counter int
-
-loop:
-	for k, v := range paths {
-		if contains(iterated, k) {
-			continue
-		}
-
-		if !includeHidden {
-			var err error
-			v, err = removeHidden(v, k)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		for _, de := range v {
-			if de.IsDir() {
-				fp := filepath.Join(k, de.Name())
-				dirEntry, err := os.ReadDir(fp)
-				if err != nil {
-					return nil, err
-				}
-
-				n[fp] = dirEntry
-			}
-		}
-
-		iterated = append(iterated, k)
-	}
-
-	if len(n) > 0 {
-		for k, v := range n {
-			paths[k] = v
-			delete(n, k)
-		}
-
-		counter++
-		if !(maxDepth > 0 && counter == maxDepth) {
-			goto loop
-		}
-	}
-
-	return paths, nil
+func prettyPrint(i interface{}) string {
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
 }
 
 func greatestCommonDivisor(a, b int) int {
@@ -182,9 +131,4 @@ func exifDivision(slice []string) string {
 	}
 
 	return ""
-}
-
-func prettyPrint(i interface{}) string {
-	s, _ := json.MarshalIndent(i, "", "\t")
-	return string(s)
 }

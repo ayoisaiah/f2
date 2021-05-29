@@ -682,6 +682,68 @@ func setOptions(op *Operation, c *cli.Context) error {
 	return nil
 }
 
+// walk is used to navigate directories recursively
+// and include their contents in the pool of paths in
+// which to find matches. It respects the following properties
+// set on the operation: whether hidden files should be
+// included, and the maximum depth limit (0 for no limit).
+// The paths argument is modified in place
+func (op *Operation) walk(paths map[string][]os.DirEntry) error {
+	var recursedPaths []string
+	var currentDepth int
+	// currentLevel represents the current level of directories
+	// and their contents
+	var currentLevel = make(map[string][]os.DirEntry)
+
+loop:
+	// The goal of each iteration is to created entries for each
+	// unaccounted directory in the current level
+	for dir, dirContents := range paths {
+		if contains(recursedPaths, dir) {
+			continue
+		}
+
+		if !op.includeHidden {
+			var err error
+			dirContents, err = removeHidden(dirContents, dir)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, entry := range dirContents {
+			if entry.IsDir() {
+				fp := filepath.Join(dir, entry.Name())
+				dirEntry, err := os.ReadDir(fp)
+				if err != nil {
+					return err
+				}
+
+				currentLevel[fp] = dirEntry
+			}
+		}
+
+		recursedPaths = append(recursedPaths, dir)
+	}
+
+	// if there are directories in the current level
+	// store each directory entry and empty the
+	// currentLevel so that it may be repopulated
+	if len(currentLevel) > 0 {
+		for dir, dirContents := range currentLevel {
+			paths[dir] = dirContents
+			delete(currentLevel, dir)
+		}
+
+		currentDepth++
+		if !(op.maxDepth > 0 && currentDepth == op.maxDepth) {
+			goto loop
+		}
+	}
+
+	return nil
+}
+
 // newOperation returns an Operation constructed
 // from command line flags & arguments
 func newOperation(c *cli.Context) (*Operation, error) {
@@ -703,6 +765,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 		return nil, err
 	}
 
+	// If reverting an operation, no need to walk through directories
 	if op.revert {
 		return op, nil
 	}
@@ -724,7 +787,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	if op.recursive {
-		paths, err = walk(paths, op.includeHidden, op.maxDepth)
+		err = op.walk(paths)
 		if err != nil {
 			return nil, err
 		}

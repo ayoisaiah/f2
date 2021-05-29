@@ -622,10 +622,12 @@ func replaceExifToolVariables(
 	return target, nil
 }
 
-// replaceIndex deals with sequential numbering in various formats
+// replaceIndex replaces indexing variables in the target with their
+// corresponding values. The `index` argument is used in conjunction with
+// other values to increment the current index
 func (op *Operation) replaceIndex(
 	target string,
-	count int,
+	index int,
 	nv numberVar,
 ) string {
 	if len(op.numberOffset) == 0 {
@@ -638,7 +640,7 @@ func (op *Operation) replaceIndex(
 		current := nv.values[i]
 
 		op.startNumber = current.startNumber
-		num := op.startNumber + (count * current.step) + op.numberOffset[i]
+		num := op.startNumber + (index * current.step) + op.numberOffset[i]
 		if len(current.skip) != 0 {
 		outer:
 			for {
@@ -700,14 +702,14 @@ func replaceTransformVariables(
 				target = regexReplace(
 					r,
 					target,
-					regexReplace(fullWindowsForbiddenRegex, v, "", 0),
+					regexReplace(fullWindowsForbiddenCharRegex, v, "", 0),
 					1,
 				)
 			case "mac":
 				target = regexReplace(
 					r,
 					target,
-					regexReplace(macForbiddenRegex, v, "", 0),
+					regexReplace(macForbiddenCharRegex, v, "", 0),
 					1,
 				)
 			case "di":

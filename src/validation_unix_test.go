@@ -14,7 +14,7 @@ func TestUnixSpecificConflicts(t *testing.T) {
 		{
 			name: "File name must not contain more than 255 bytes",
 			want: map[conflictType][]Conflict{
-				maxLengthExceeded: {
+				maxFilenameLengthExceeded: {
 					{
 						cause:  "255 bytes",
 						source: []string{filepath.Join(testDir, "abc.pdf")},

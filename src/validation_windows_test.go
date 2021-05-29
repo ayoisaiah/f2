@@ -93,7 +93,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 		{
 			name: "File names must not be more than 260 characters",
 			want: map[conflictType][]Conflict{
-				maxLengthExceeded: {
+				maxFilenameLengthExceeded: {
 					{
 						cause:  "260 characters",
 						source: []string{filepath.Join(testDir, "abc.pdf")},
