@@ -35,6 +35,7 @@ linters:
     - exhaustive
     - goconst
     - gocritic
+    - revive
     - gofmt
     - goimports
     - gomnd
