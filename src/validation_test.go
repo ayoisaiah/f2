@@ -17,9 +17,12 @@ type conflictTable struct {
 }
 
 func runConflictCheck(t *testing.T, table []conflictTable) {
+	t.Helper()
+
 	for _, v := range table {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
+
 		result, err := action(args)
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error: %v\n", v.name, err)
@@ -45,6 +48,8 @@ func runConflictCheck(t *testing.T, table []conflictTable) {
 }
 
 func runFixConflict(t *testing.T, table []testCase) {
+	t.Helper()
+
 	for _, v := range table {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
@@ -262,10 +267,12 @@ func TestReportConflicts(t *testing.T) {
 	op := &Operation{}
 	op.conflicts = table
 	rescueStdout := os.Stdout
+
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
+
 	os.Stdout = w
 
 	op.reportConflicts()
@@ -276,6 +283,7 @@ func TestReportConflicts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
+
 	os.Stdout = rescueStdout
 
 	if string(out) == "" {
@@ -290,6 +298,7 @@ func TestGetNewPath(t *testing.T) {
 		sourcePath string
 		index      int
 	}
+
 	cases := []struct {
 		input  string
 		output string
@@ -347,6 +356,7 @@ func TestGetNewPath(t *testing.T) {
 			Target:  v.input,
 			BaseDir: ".",
 		}
+
 		out := newTarget(ch, v.m)
 		if out != v.output {
 			t.Fatalf(

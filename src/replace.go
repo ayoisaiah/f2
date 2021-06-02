@@ -116,6 +116,7 @@ func getDateVar(replacementInput string) (dateVar, error) {
 				attr  string
 				token string
 			}
+
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return d, err
@@ -133,7 +134,7 @@ func getDateVar(replacementInput string) (dateVar, error) {
 }
 
 // getHashVar retrieves all the hash variables in the replacement
-// string if any
+// string if any.
 func getHashVar(replacementInput string) (hashVar, error) {
 	var h hashVar
 	if hashRegex.MatchString(replacementInput) {
@@ -149,6 +150,7 @@ func getHashVar(replacementInput string) (hashVar, error) {
 				regex  *regexp.Regexp
 				hashFn hashAlgorithm
 			}
+
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return h, err
@@ -164,7 +166,7 @@ func getHashVar(replacementInput string) (hashVar, error) {
 }
 
 // getTransformVar retrieves all the string transformation variables
-// in the replacement string if any
+// in the replacement string if any.
 func getTransformVar(replacementInput string) (transformVar, error) {
 	var t transformVar
 	if transformRegex.MatchString(replacementInput) {
@@ -183,6 +185,7 @@ func getTransformVar(replacementInput string) (transformVar, error) {
 				regex *regexp.Regexp
 				token string
 			}
+
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return t, err
@@ -198,7 +201,7 @@ func getTransformVar(replacementInput string) (transformVar, error) {
 }
 
 // getExifVar retrieves all the exif variables in the replacement
-// string if any
+// string if any.
 func getExifVar(replacementInput string) (exifVar, error) {
 	var ex exifVar
 
@@ -216,6 +219,7 @@ func getExifVar(replacementInput string) (exifVar, error) {
 				attr    string
 				timeStr string
 			}
+
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return ex, err
@@ -241,7 +245,7 @@ func getExifVar(replacementInput string) (exifVar, error) {
 }
 
 // getNumberVar retrieves all the index variables in the replacement string
-// if any
+// if any.
 func getNumberVar(replacementInput string) (numberVar, error) {
 	var nv numberVar
 
@@ -282,6 +286,7 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 			val.index = submatch[2]
 			val.format = submatch[4]
 			val.step = 1
+
 			if submatch[5] != "" {
 				val.step, err = strconv.Atoi(submatch[5])
 				if err != nil {
@@ -295,6 +300,7 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 				for _, v := range slice {
 					if strings.Contains(v, "-") {
 						sl := strings.Split(v, "-")
+
 						n1, err := strconv.Atoi(sl[0])
 						if err != nil {
 							return nv, err
@@ -309,6 +315,7 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 							max: int(math.Max(float64(n1), float64(n2))),
 							min: int(math.Min(float64(n1), float64(n2))),
 						})
+
 						continue
 					}
 
@@ -332,7 +339,7 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 }
 
 // getExifToolVar retrieves all the exiftool variables in the
-// replacement string if any
+// replacement string if any.
 func getExifToolVar(replacementInput string) (exiftoolVar, error) {
 	var et exiftoolVar
 	if exiftoolRegex.MatchString(replacementInput) {
@@ -351,6 +358,7 @@ func getExifToolVar(replacementInput string) (exiftoolVar, error) {
 				regex *regexp.Regexp
 				attr  string
 			}
+
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return et, err
@@ -367,7 +375,7 @@ func getExifToolVar(replacementInput string) (exiftoolVar, error) {
 }
 
 // getID3Var retrieves all the id3 variables in the
-// replacement string if any
+// replacement string if any.
 func getID3Var(replacementInput string) (id3Var, error) {
 	var iv id3Var
 	if id3Regex.MatchString(replacementInput) {
@@ -383,6 +391,7 @@ func getID3Var(replacementInput string) (id3Var, error) {
 				regex *regexp.Regexp
 				tag   string
 			}
+
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return iv, err
@@ -399,7 +408,7 @@ func getID3Var(replacementInput string) (id3Var, error) {
 }
 
 // getRandomVar retrieves all the random variables in the
-// replacement string if any
+// replacement string if any.
 func getRandomVar(replacementInput string) (randomVar, error) {
 	var rv randomVar
 
@@ -417,11 +426,14 @@ func getRandomVar(replacementInput string) (randomVar, error) {
 				length     int
 				characters string
 			}
+
 			val.length = 10
+
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
 				return rv, err
 			}
+
 			val.regex = regex
 
 			strLen := submatch[1]
@@ -446,10 +458,12 @@ func getRandomVar(replacementInput string) (randomVar, error) {
 }
 
 // extractVariables retrieves all the variables present in the replacement
-// string
+// string.
 func extractVariables(replacementInput string) (variables, error) {
 	var v variables
+
 	var err error
+
 	v.exif, err = getExifVar(replacementInput)
 	if err != nil {
 		return v, err
@@ -495,7 +509,7 @@ func extractVariables(replacementInput string) (variables, error) {
 
 // regexReplace replaces matched substrings in the input with the replacement.
 // It respects the specified replacement limit. A negative limit indicates that
-// replacement should start from the end of the fileName
+// replacement should start from the end of the fileName.
 func regexReplace(
 	r *regexp.Regexp,
 	input, replacement string,
@@ -541,7 +555,7 @@ func regexReplace(
 }
 
 // replaceString replaces all matches in the filename
-// with the replacement string
+// with the replacement string.
 func (op *Operation) replaceString(originalName string) string {
 	return regexReplace(
 		op.searchRegex,
@@ -552,7 +566,7 @@ func (op *Operation) replaceString(originalName string) string {
 }
 
 // replace handles the replacement of matches in each file with the
-// replacement string
+// replacement string.
 func (op *Operation) replace() (err error) {
 	vars, err := extractVariables(op.replacement)
 	if err != nil {
@@ -564,6 +578,7 @@ func (op *Operation) replace() (err error) {
 		ch.index = i
 		originalName := ch.Source
 		fileExt := filepath.Ext(originalName)
+
 		if op.ignoreExt {
 			originalName = filenameWithoutExtension(originalName)
 		}

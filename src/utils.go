@@ -60,13 +60,14 @@ func removeHidden(
 }
 
 // contains checks if a string is present in
-// a string slice
+// a string slice.
 func contains(s []string, e string) bool {
 	for _, a := range s {
 		if a == e {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -83,7 +84,7 @@ func printTable(data [][]string) {
 }
 
 // filenameWithoutExtension returns the input file name
-// without its extension
+// without its extension.
 func filenameWithoutExtension(fileName string) string {
 	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }

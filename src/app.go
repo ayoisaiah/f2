@@ -46,11 +46,12 @@ WEBSITE:
 }
 
 // checkForUpdates alerts the user if there is
-// an updated version of F2 from the one currently installed
+// an updated version of F2 from the one currently installed.
 func checkForUpdates(app *cli.App) {
 	fmt.Println("Checking for updates...")
 
 	c := http.Client{Timeout: 20 * time.Second}
+
 	resp, err := c.Get("https://github.com/ayoisaiah/f2/releases/latest")
 	if err != nil {
 		fmt.Println("HTTP Error: Failed to check for update")
@@ -60,6 +61,7 @@ func checkForUpdates(app *cli.App) {
 	defer resp.Body.Close()
 
 	var version string
+
 	_, err = fmt.Sscanf(
 		resp.Request.URL.String(),
 		"https://github.com/ayoisaiah/f2/releases/tag/%s",
@@ -80,7 +82,7 @@ func checkForUpdates(app *cli.App) {
 	}
 }
 
-// GetApp retrieves the f2 app instance
+// GetApp retrieves the f2 app instance.
 func GetApp() *cli.App {
 	return &cli.App{
 		Name: "F2",

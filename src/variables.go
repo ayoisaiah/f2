@@ -90,7 +90,7 @@ const (
 	numberBytes = "0123456789"
 )
 
-// Exif represents exif information from an image file
+// Exif represents exif information from an image file.
 type Exif struct {
 	ISOSpeedRatings       []int
 	DateTimeOriginal      string
@@ -110,7 +110,7 @@ type Exif struct {
 	Latitude              string
 }
 
-// ID3 represents id3 data from an audio file
+// ID3 represents id3 data from an audio file.
 type ID3 struct {
 	Format      string
 	FileType    string
@@ -152,18 +152,20 @@ func init() {
 }
 
 // randString returns a random string of the specified length
-// using the specified characterSet
+// using the specified characterSet.
 func randString(n int, characterSet string) string {
 	b := make([]byte, n)
+
 	for i := range b {
-		b[i] = characterSet[rand.Intn(len(characterSet))]
+		b[i] = characterSet[rand.Intn(len(characterSet))] //nolint:gosec // appropriate use of math.rand
 	}
+
 	return string(b)
 }
 
 // replaceRandomVariables replaces all random string variables
 // in the target filename with a generated random string that matches
-// the specifications
+// the specifications.
 func replaceRandomVariables(target string, rv randomVar) string {
 	for i := range rv.submatches {
 		r := rv.values[i]
@@ -190,7 +192,7 @@ func replaceRandomVariables(target string, rv randomVar) string {
 }
 
 // integerToRoman converts an integer to a roman numeral
-// For integers above 3999, it returns the stringified integer
+// For integers above 3999, it returns the stringified integer.
 func integerToRoman(integer int) string {
 	maxRomanNumber := 3999
 	if integer > maxRomanNumber {
@@ -217,6 +219,7 @@ func integerToRoman(integer int) string {
 	}
 
 	var roman strings.Builder
+
 	for _, conversion := range conversions {
 		for integer >= conversion.value {
 			roman.WriteString(conversion.digit)
@@ -227,7 +230,7 @@ func integerToRoman(integer int) string {
 	return roman.String()
 }
 
-// getHash retrieves the appropriate hash value for the specified file
+// getHash retrieves the appropriate hash value for the specified file.
 func getHash(file string, hashValue hashAlgorithm) (string, error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -259,7 +262,7 @@ func getHash(file string, hashValue hashAlgorithm) (string, error) {
 }
 
 // replaceFileHash replaces a hash variable with the corresponding
-// hash value
+// hash value.
 func replaceFileHash(target, sourcePath string, hv hashVar) (string, error) {
 	for i := range hv.submatches {
 		h := hv.values[i]
@@ -276,7 +279,7 @@ func replaceFileHash(target, sourcePath string, hv hashVar) (string, error) {
 }
 
 // replaceDateVariables replaces any date variables in the target
-// with the corresponding date value
+// with the corresponding date value.
 func replaceDateVariables(
 	target, sourcePath string,
 	dv dateVar,
@@ -292,6 +295,7 @@ func replaceDateVariables(
 		token := current.token
 
 		var timeStr string
+
 		switch current.attr {
 		case modTime:
 			modTime := t.ModTime()
@@ -301,6 +305,7 @@ func replaceDateVariables(
 			if t.HasBirthTime() {
 				birthTime = t.BirthTime()
 			}
+
 			timeStr = birthTime.Format(dateTokens[token])
 		case accessTime:
 			accessTime := t.AccessTime()
@@ -310,6 +315,7 @@ func replaceDateVariables(
 			if t.HasChangeTime() {
 				changeTime = t.ChangeTime()
 			}
+
 			timeStr = changeTime.Format(dateTokens[token])
 		case currentTime:
 			currentTime := time.Now()
@@ -324,7 +330,7 @@ func replaceDateVariables(
 
 // getID3Tags retrieves the id3 tags in an audi file (such as mp3)
 // errors while reading the id3 tags are ignored since the corresponding
-// variable will be replaced with an empty string
+// variable will be replaced with an empty string.
 func getID3Tags(sourcePath string) (*ID3, error) {
 	f, err := os.Open(sourcePath)
 	if err != nil {
@@ -357,7 +363,7 @@ func getID3Tags(sourcePath string) (*ID3, error) {
 }
 
 // replaceID3Variables replaces all id3 variables in the target file name
-// with the corresponding id3 tag value
+// with the corresponding id3 tag value.
 func replaceID3Variables(
 	target, sourcePath string,
 	id3v id3Var,
@@ -395,30 +401,35 @@ func replaceID3Variables(
 			if tags.Track != 0 {
 				track = strconv.Itoa(tags.Track)
 			}
+
 			target = regex.ReplaceAllString(target, track)
 		case "total_tracks":
 			var total string
 			if tags.TotalTracks != 0 {
 				total = strconv.Itoa(tags.TotalTracks)
 			}
+
 			target = regex.ReplaceAllString(target, total)
 		case "disc":
 			var disc string
 			if tags.Disc != 0 {
 				disc = strconv.Itoa(tags.Disc)
 			}
+
 			target = regex.ReplaceAllString(target, disc)
 		case "total_discs":
 			var total string
 			if tags.TotalDiscs != 0 {
 				total = strconv.Itoa(tags.TotalDiscs)
 			}
+
 			target = regex.ReplaceAllString(target, total)
 		case "year":
 			var year string
 			if tags.Year != 0 {
 				year = strconv.Itoa(tags.Year)
 			}
+
 			target = regex.ReplaceAllString(target, year)
 		}
 	}
@@ -429,7 +440,7 @@ func replaceID3Variables(
 // getExifData retrieves the exif data embedded in an image file.
 // Errors in decoding the exif data are ignored intentionally since
 // the corresponding exif variable will be replaced by an empty
-// string
+// string.
 func getExifData(sourcePath string) (*Exif, error) {
 	f, err := os.Open(sourcePath)
 	if err != nil {
@@ -439,9 +450,11 @@ func getExifData(sourcePath string) (*Exif, error) {
 	defer f.Close()
 
 	exifData := &Exif{}
+
 	x, err := exif.Decode(f)
 	if err == nil {
 		var b []byte
+
 		b, err = x.MarshalJSON()
 		if err == nil {
 			_ = json.Unmarshal(b, exifData)
@@ -461,7 +474,7 @@ func getExifData(sourcePath string) (*Exif, error) {
 // exif data. This exposure time may be a fraction
 // so it is reduced to its simplest form and the
 // forward slash is replaced with an underscore since
-// it is forbidden in file names
+// it is forbidden in file names.
 func getExifExposureTime(exifData *Exif) string {
 	et := strings.Split(exifData.ExposureTime[0], "/")
 	if len(et) == 1 {
@@ -469,6 +482,7 @@ func getExifExposureTime(exifData *Exif) string {
 	}
 
 	x, y := et[0], et[1]
+
 	numerator, err := strconv.Atoi(x)
 	if err != nil {
 		return ""
@@ -491,7 +505,7 @@ func getExifExposureTime(exifData *Exif) string {
 }
 
 // getExifDate parses the exif original date and returns it
-// in the specified format
+// in the specified format.
 func getExifDate(exifData *Exif, format string) string {
 	dateTimeString := exifData.DateTimeOriginal
 	dateTimeSlice := strings.Split(dateTimeString, " ")
@@ -514,7 +528,7 @@ func getExifDate(exifData *Exif, format string) string {
 }
 
 // getDecimalFromSlice reduces an exif values in the following format: [8/5]
-// to its equivalent decimal value -> 1.6
+// to its equivalent decimal value -> 1.6.
 func getDecimalFromSlice(slice []string) string {
 	if len(slice) == 0 {
 		return ""
@@ -538,6 +552,7 @@ func getDecimalFromSlice(slice []string) string {
 	}
 
 	v := float64(numerator) / float64(denominator)
+
 	decimalValue, err := strconv.FormatFloat(v, 'f', -1, 64), nil
 	if err != nil {
 		return ""
@@ -547,7 +562,7 @@ func getDecimalFromSlice(slice []string) string {
 }
 
 // getExifDimensions retrieves the specified dimension
-// w -> width, h -> height, wh -> width x height
+// w -> width, h -> height, wh -> width x height.
 func getExifDimensions(exifData *Exif, dimension string) string {
 	var w, h string
 	if len(exifData.ImageWidth) > 0 {
@@ -576,7 +591,7 @@ func getExifDimensions(exifData *Exif, dimension string) string {
 
 // replaceExifVariables replaces the exif variables in an input string
 // if an error occurs while attempting to get the value represented
-// by the variables, it is replaced with an empty string
+// by the variables, it is replaced with an empty string.
 func replaceExifVariables(
 	target, sourcePath string,
 	ev exifVar,
@@ -591,6 +606,7 @@ func replaceExifVariables(
 		regex := current.regex
 
 		var value string
+
 		switch current.attr {
 		case "dt":
 			value = getExifDate(exifData, current.timeStr)
@@ -625,6 +641,7 @@ func replaceExifVariables(
 		case "wh", "h", "w":
 			value = getExifDimensions(exifData, current.attr)
 		}
+
 		target = regex.ReplaceAllString(target, value)
 	}
 
@@ -632,7 +649,7 @@ func replaceExifVariables(
 }
 
 // replaceExifToolVariables replaces the all exiftool
-// variables in the target
+// variables in the target.
 func replaceExifToolVariables(
 	target, sourcePath string,
 	ev exiftoolVar,
@@ -651,6 +668,7 @@ func replaceExifToolVariables(
 		regex := current.regex
 
 		var value string
+
 		for _, fileInfo := range fileInfos {
 			if fileInfo.Err != nil {
 				continue
@@ -662,6 +680,7 @@ func replaceExifToolVariables(
 					// replace forward and backward slashes with underscore
 					value = strings.ReplaceAll(value, `/`, "_")
 					value = strings.ReplaceAll(value, `\`, "_")
+
 					break
 				}
 			}
@@ -675,7 +694,7 @@ func replaceExifToolVariables(
 
 // replaceIndex replaces indexing variables in the target with their
 // corresponding values. The `index` argument is used in conjunction with
-// other values to increment the current index
+// other values to increment the current index.
 func (op *Operation) replaceIndex(
 	target string,
 	index int,
@@ -692,6 +711,7 @@ func (op *Operation) replaceIndex(
 
 		op.startNumber = current.startNumber
 		num := op.startNumber + (index * current.step) + op.numberOffset[i]
+
 		if len(current.skip) != 0 {
 		outer:
 			for {
@@ -705,8 +725,11 @@ func (op *Operation) replaceIndex(
 				break
 			}
 		}
+
 		n := int64(num)
+
 		var r string
+
 		switch current.format {
 		case "r":
 			r = integerToRoman(num)
@@ -727,7 +750,7 @@ func (op *Operation) replaceIndex(
 }
 
 // replaceTransformVariables handles string transformations like uppercase,
-// lowercase, stripping characters, e.t.c
+// lowercase, stripping characters, e.t.c.
 func replaceTransformVariables(
 	target string,
 	matches []string,
@@ -736,6 +759,7 @@ func replaceTransformVariables(
 	for i := range tv.submatches {
 		current := tv.values[i]
 		r := current.regex
+
 		for _, v := range matches {
 			switch current.token {
 			case "up":
@@ -769,6 +793,7 @@ func replaceTransformVariables(
 					runes.Remove(runes.In(unicode.Mn)),
 					norm.NFC,
 				)
+
 				result, _, err := transform.String(t, v)
 				if err != nil {
 					return v
@@ -783,7 +808,7 @@ func replaceTransformVariables(
 }
 
 // replaceVariables checks if any variables are present in the target filename
-// and delegates the variable replacement to the appropriate function
+// and delegates the variable replacement to the appropriate function.
 func (op *Operation) replaceVariables(
 	ch *Change,
 	vars *variables,
@@ -825,6 +850,7 @@ func (op *Operation) replaceVariables(
 		if err != nil {
 			return err
 		}
+
 		ch.Target = out
 	}
 
@@ -837,6 +863,7 @@ func (op *Operation) replaceVariables(
 		if err != nil {
 			return err
 		}
+
 		ch.Target = out
 	}
 
@@ -845,6 +872,7 @@ func (op *Operation) replaceVariables(
 		if err != nil {
 			return err
 		}
+
 		ch.Target = out
 	}
 
@@ -853,6 +881,7 @@ func (op *Operation) replaceVariables(
 		if err != nil {
 			return err
 		}
+
 		ch.Target = out
 	}
 
@@ -861,6 +890,7 @@ func (op *Operation) replaceVariables(
 		if err != nil {
 			return err
 		}
+
 		ch.Target = out
 	}
 

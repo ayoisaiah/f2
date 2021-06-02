@@ -11,7 +11,7 @@ import (
 	"gopkg.in/djherbis/times.v1"
 )
 
-// sortMatches is used to sort files to avoid renaming conflicts
+// sortMatches is used to sort files to avoid renaming conflicts.
 func (op *Operation) sortMatches() {
 	sort.SliceStable(op.matches, func(i, j int) bool {
 		// sort parent directories before child directories in revert mode
@@ -29,7 +29,7 @@ func (op *Operation) sortMatches() {
 	})
 }
 
-// sortBySize sorts the matches according to their file size
+// sortBySize sorts the matches according to their file size.
 func (op *Operation) sortBySize() (err error) {
 	sort.SliceStable(op.matches, func(i, j int) bool {
 		ipath := filepath.Join(op.matches[i].BaseDir, op.matches[i].Source)
@@ -53,7 +53,7 @@ func (op *Operation) sortBySize() (err error) {
 }
 
 // sortByTime sorts the matches by the specified file attribute
-// (mtime, atime, btime or ctime)
+// (mtime, atime, btime or ctime).
 func (op *Operation) sortByTime() (err error) {
 	sort.SliceStable(op.matches, func(i, j int) bool {
 		ipath := filepath.Join(op.matches[i].BaseDir, op.matches[i].Source)
@@ -163,6 +163,7 @@ func (op *Operation) sortPaths(
 				p = append(p, change)
 			}
 		}
+
 		return p
 	}
 
@@ -182,7 +183,7 @@ func (op *Operation) sortPaths(
 	return p
 }
 
-// sortBy delegates the sorting of matches to the appropriate method
+// sortBy delegates the sorting of matches to the appropriate method.
 func (op *Operation) sortBy() (err error) {
 	switch op.sort {
 	case "size":

@@ -88,15 +88,17 @@ func init() {
 // setupFileSystem creates all required files and folders for
 // the tests and returns a function that is used as
 // a teardown function when the tests are done.
-func setupFileSystem(t testing.TB) string {
+func setupFileSystem(tb testing.TB) string {
+	tb.Helper()
+
 	testDir, err := ioutil.TempDir(".", "")
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
-	t.Cleanup(func() {
+	tb.Cleanup(func() {
 		if err = os.RemoveAll(testDir); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 	})
 
@@ -109,22 +111,23 @@ func setupFileSystem(t testing.TB) string {
 	}
 	for _, v := range directories {
 		filePath := filepath.Join(testDir, v)
+
 		err = os.MkdirAll(filePath, os.ModePerm)
 		if err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 	}
 
 	for _, f := range fileSystem {
 		filePath := filepath.Join(testDir, f)
 		if err = ioutil.WriteFile(filePath, []byte{}, 0600); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 	}
 
 	abs, err := filepath.Abs(testDir)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	return abs
@@ -169,9 +172,12 @@ func sortChanges(s []Change) {
 }
 
 func runFindReplace(t *testing.T, cases []testCase) {
+	t.Helper()
+
 	for _, v := range cases {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
+
 		result, err := action(args) // err will be nil
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error: %v", v.name, err)
@@ -588,6 +594,7 @@ func TestApplyUndo(t *testing.T) {
 			}
 
 			var bf backupFile
+
 			err = json.Unmarshal(file, &bf)
 			if err != nil {
 				t.Fatalf(
@@ -596,6 +603,7 @@ func TestApplyUndo(t *testing.T) {
 					err,
 				)
 			}
+
 			ch := bf.Operations
 
 			sortChanges(ch)
@@ -614,6 +622,7 @@ func TestApplyUndo(t *testing.T) {
 		// Test Undo function
 		args = os.Args[0:1]
 		args = append(args, v.undoArgs...)
+
 		result, err := action(args)
 		if err != nil {
 			t.Fatalf("Test(%d) — Unexpected error in undo mode: %v\n", i+1, err)
@@ -671,6 +680,7 @@ func TestHandleErrors(t *testing.T) {
 		op := &Operation{}
 		op.matches = v.want
 		op.errors = v.expectedErrors
+
 		err := op.handleErrors()
 		if err == nil {
 			t.Fatal("Expected an error not got nil")

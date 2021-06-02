@@ -20,8 +20,10 @@ linters-settings:
         checks: argument,case,condition,return
   govet:
     check-shadowing: true
-  maligned:
-    suggest-new: true
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+
 linters:
   disable-all: true
   enable:
@@ -31,15 +33,16 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - errorlint
     - exportloopref
     - exhaustive
     - goconst
+    - godot
     - gocritic
-    - revive
     - gofmt
     - goimports
     - gomnd
-      # - gocyclo # Some functions violate this for now
+    - gocyclo
     - goprintffuncname
     - gosec
     - gosimple
@@ -47,15 +50,21 @@ linters:
     - ineffassign
     - misspell
     - nakedret
-    - rowserrcheck
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
     - staticcheck
     - structcheck
     - stylecheck
+    - thelper
+    - tparallel
     - typecheck
     - unconvert
     - unparam
     - varcheck
     - whitespace
+    - wsl
 
 issues:
   fix: true
@@ -67,21 +76,13 @@ issues:
         - dupl
     - linters:
       - gosec
-      text: "G404:"
-    - linters:
-      - dupl
-      text: "sort_test"
-    - linters:
-      - gosec
       text: "weak cryptographic primitive"
     - linters:
       - stylecheck
       text: "error strings should not be capitalized"
-rules:
-  - linters:
-    - gosec
-    - funlen
-    severity: info
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
 
 run:
   issues-exit-code: 1

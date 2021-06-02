@@ -21,6 +21,7 @@ func randate() time.Time {
 	delta := max - min
 
 	sec := rand.Int63n(delta) + min
+
 	return time.Unix(sec, 0)
 }
 
@@ -41,8 +42,10 @@ func TestAutoIncrementingNumber(t *testing.T) {
 		"b.md": {"2", "000002", "011", "8", "VII", "10", "2", "2"},
 		"c.md": {"3", "000003", "012", "11", "VIII", "11", "3", "3"},
 	}
+
 	for i, v := range replacement {
 		op := &Operation{}
+
 		nv, err := getNumberVar(v)
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
@@ -83,6 +86,7 @@ func TestReplaceFilenameVariables(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
+
 		got := ch.Target
 
 		want := fmt.Sprintf(
@@ -105,6 +109,7 @@ func TestReplaceDateVariables(t *testing.T) {
 
 		// change the atime and mtime to a random value
 		mtime, atime := randate(), randate()
+
 		err := os.Chtimes(path, atime, mtime)
 		if err != nil {
 			t.Fatalf("Expected no errors, but got one: %v\n", err)
@@ -125,6 +130,7 @@ func TestReplaceDateVariables(t *testing.T) {
 
 		for _, v := range fileTimes {
 			var timeValue time.Time
+
 			switch v {
 			case "mtime":
 				timeValue = modTime
@@ -144,6 +150,7 @@ func TestReplaceDateVariables(t *testing.T) {
 
 			for key, token := range dateTokens {
 				want[v+"."+key] = timeValue.Format(token)
+
 				dv, err := getDateVar("{{" + v + "." + key + "}}")
 				if err != nil {
 					t.Fatalf("Test (%s) — Unexpected error: %v", v, err)
@@ -153,6 +160,7 @@ func TestReplaceDateVariables(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Expected no errors, but got one: %v\n", err)
 				}
+
 				got[v+"."+key] = out
 			}
 		}
@@ -244,6 +252,7 @@ func TestReplaceExifVariables(t *testing.T) {
 		}
 
 		var exif FileExif
+
 		err = json.Unmarshal(jsonFile, &exif)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -348,6 +357,7 @@ func TestReplaceID3Variables(t *testing.T) {
 		}
 
 		var id3 FileID3
+
 		err = json.Unmarshal(jsonFile, &id3)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -431,7 +441,9 @@ func TestReplaceRandomVariable(t *testing.T) {
 		submatches := randomRegex.FindAllStringSubmatch(v, -1)
 		strLen := submatches[0][1]
 		length := 10
+
 		var err error
+
 		if strLen != "" {
 			length, err = strconv.Atoi(strLen)
 			if err != nil {
@@ -576,6 +588,7 @@ func TestReplaceExifToolVariables(t *testing.T) {
 		}
 
 		var m = make(map[string]interface{})
+
 		err = json.Unmarshal(jsonFile, &m)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)

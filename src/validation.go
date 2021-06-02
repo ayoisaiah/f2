@@ -15,10 +15,10 @@ var (
 	// windowsForbiddenCharRegex is used to match the strings that contain forbidden
 	// characters in Windows' file names. This does not include also forbidden
 	// forward and back slash characters because their presence will cause a new
-	// directory to be created
+	// directory to be created.
 	windowsForbiddenCharRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*`)
 	// fullWindowsForbiddenCharRegex is like windowsForbiddenRegex but includes
-	// forward and backslashes
+	// forward and backslashes.
 	fullWindowsForbiddenCharRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*|/|\\`)
 	// macForbiddenCharRegex is used to match the strings that contain forbidden
 	// characters in macOS' file names.
@@ -42,7 +42,7 @@ const (
 )
 
 // Conflict represents a renaming operation conflict
-// such as duplicate targets or empty filenames
+// such as duplicate targets or empty filenames.
 type Conflict struct {
 	source []string
 	target string
@@ -51,7 +51,7 @@ type Conflict struct {
 
 // newTarget appends a number to the target file name so that it
 // does not conflict with an existing path on the filesystem or
-// another renamed file. For example: image.png becomes image (2).png
+// another renamed file. For example: image.png becomes image (2).png.
 func newTarget(ch Change, renamedPaths map[string][]struct {
 	sourcePath string
 	index      int
@@ -61,6 +61,7 @@ func newTarget(ch Change, renamedPaths map[string][]struct {
 	// Extract the numbered index at the end of the filename (if any)
 	match := re.FindStringSubmatch(f)
 	num := 2
+
 	if len(match) > 0 {
 		_, _ = fmt.Sscanf(match[0], "(%d)", &num)
 		num++
@@ -82,6 +83,7 @@ func newTarget(ch Change, renamedPaths map[string][]struct {
 					goto out
 				}
 			}
+
 			return target
 		}
 	out:
@@ -89,9 +91,10 @@ func newTarget(ch Change, renamedPaths map[string][]struct {
 	}
 }
 
-// reportConflicts prints any detected conflicts to the standard error
+// reportConflicts prints any detected conflicts to the standard error.
 func (op *Operation) reportConflicts() {
 	var data [][]string
+
 	if slice, exists := op.conflicts[emptyFilename]; exists {
 		for _, v := range slice {
 			slice := []string{
@@ -184,7 +187,7 @@ func (op *Operation) reportConflicts() {
 
 // detectConflicts detects any conflicts that occur
 // after renaming a file. Conflicts are automatically
-// fixed if specified in the operation
+// fixed if specified in the operation.
 func (op *Operation) detectConflicts() {
 	op.conflicts = make(map[conflictType][]Conflict)
 
@@ -316,7 +319,7 @@ func (op *Operation) checkPathExistsConflict(
 }
 
 // checkOverwritingPathConflict ensures that a newly renamed path
-// is not overwritten by another renamed file
+// is not overwritten by another renamed file.
 func (op *Operation) checkOverwritingPathConflict(
 	renamedPaths map[string][]struct {
 		sourcePath string
@@ -342,6 +345,7 @@ func (op *Operation) checkOverwritingPathConflict(
 			if op.fixConflicts {
 				for i := 0; i < len(v); i++ {
 					item := v[i]
+
 					if i == 0 {
 						continue
 					}
@@ -351,6 +355,7 @@ func (op *Operation) checkOverwritingPathConflict(
 						renamedPaths,
 					)
 					pt := filepath.Join(op.matches[item.index].BaseDir, target)
+
 					if _, ok := renamedPaths[pt]; !ok {
 						renamedPaths[pt] = []struct {
 							sourcePath string
@@ -370,7 +375,7 @@ func (op *Operation) checkOverwritingPathConflict(
 }
 
 // checkForbiddenCharacters is responsible for ensuring that target file names
-// do not contain forbidden characters for the current OS
+// do not contain forbidden characters for the current OS.
 func checkForbiddenCharacters(path string) error {
 	if runtime.GOOS == windows {
 		if windowsForbiddenCharRegex.MatchString(path) {
@@ -393,7 +398,7 @@ func checkForbiddenCharacters(path string) error {
 }
 
 // checktTargetLength is responsible for ensuring that the target name length
-// does not exceed the maximum value on each supported operating system
+// does not exceed the maximum value on each supported operating system.
 func checktTargetLength(target string) error {
 	// Get the standalone filename
 	filename := filepath.Base(target)
@@ -411,12 +416,13 @@ func checktTargetLength(target string) error {
 }
 
 // checkTrailingPeriods reports if replacement operation results
-// in files or sub directories that end in trailing dots
+// in files or sub directories that end in trailing dots.
 func (op *Operation) checkTrailingPeriodConflict(
 	sourcePath, target, targetPath string,
 	i int,
 ) bool {
 	var conflictDetected bool
+
 	if runtime.GOOS == windows {
 		strSlice := strings.Split(target, pathSeperator)
 		for _, v := range strSlice {
@@ -431,6 +437,7 @@ func (op *Operation) checkTrailingPeriodConflict(
 					},
 				)
 				conflictDetected = true
+
 				break
 			}
 		}
@@ -453,6 +460,7 @@ func (op *Operation) checkPathLengthConflict(
 	i int,
 ) bool {
 	var conflictDetected bool
+
 	err := checktTargetLength(target)
 	if err != nil {
 		op.conflicts[maxFilenameLengthExceeded] = append(
@@ -503,6 +511,7 @@ func (op *Operation) checkForbiddenCharactersConflict(
 	i int,
 ) bool {
 	var conflictDetected bool
+
 	err := checkForbiddenCharacters(target)
 	if err != nil {
 		op.conflicts[invalidCharacters] = append(

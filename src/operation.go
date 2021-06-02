@@ -37,7 +37,7 @@ const (
 	dotCharacter = 46
 )
 
-// Change represents a single filename change
+// Change represents a single filename change.
 type Change struct {
 	index          int
 	originalSource string
@@ -49,13 +49,13 @@ type Change struct {
 }
 
 // renameError represents an error that occurs when
-// renaming a file
+// renaming a file.
 type renameError struct {
 	entry Change
 	err   error
 }
 
-// Operation represents a batch renaming operation
+// Operation represents a batch renaming operation.
 type Operation struct {
 	paths             []Change
 	matches           []Change
@@ -101,7 +101,7 @@ func init() {
 }
 
 // createBackupDir creates the directory for backups
-// if it doesn't exist already
+// if it doesn't exist already.
 func createBackupDir(dir string) (string, error) {
 	dirname, err := os.UserHomeDir()
 	if err != nil {
@@ -134,10 +134,12 @@ func (op *Operation) writeToFile(outputFile string) (err error) {
 	}
 
 	writer := bufio.NewWriter(file)
+
 	b, err := json.MarshalIndent(mf, "", "    ")
 	if err != nil {
 		return err
 	}
+
 	_, err = writer.Write(b)
 	if err != nil {
 		return err
@@ -148,7 +150,7 @@ func (op *Operation) writeToFile(outputFile string) (err error) {
 
 // undo reverses a successful renaming operation indicated
 // in the specified map file. The undo file is deleted
-// if the operation is successfully reverted
+// if the operation is successfully reverted.
 func (op *Operation) undo(path string) error {
 	file, err := os.ReadFile(path)
 	if err != nil {
@@ -156,10 +158,12 @@ func (op *Operation) undo(path string) error {
 	}
 
 	var bf backupFile
+
 	err = json.Unmarshal(file, &bf)
 	if err != nil {
 		return err
 	}
+
 	op.matches = bf.Operations
 
 	for i, v := range op.matches {
@@ -196,9 +200,10 @@ func (op *Operation) undo(path string) error {
 }
 
 // printChanges displays the changes to be made in a
-// table format
+// table format.
 func (op *Operation) printChanges() {
 	var data = make([][]string, len(op.matches))
+
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
@@ -221,11 +226,12 @@ func (op *Operation) printChanges() {
 
 // rename iterates over all the matches and renames them on the filesystem
 // directories are auto-created if necessary.
-// Errors are aggregated ins""tead of being reported one by one
+// Errors are aggregated ins""tead of being reported one by one.
 func (op *Operation) rename() {
 	var errs []renameError
 
-	var renamed []Change
+	renamed := []Change{}
+
 	for _, ch := range op.matches {
 		var source, target = ch.Source, ch.Target
 		source = filepath.Join(ch.BaseDir, source)
@@ -247,10 +253,12 @@ func (op *Operation) rename() {
 			// No need to check if the `dir` exists or if there are several
 			// consecutive slashes since `os.MkdirAll` handles that
 			dir := filepath.Dir(ch.Target)
+
 			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
 			if err != nil {
 				renameErr.err = err
 				errs = append(errs, renameErr)
+
 				continue
 			}
 		}
@@ -267,9 +275,10 @@ func (op *Operation) rename() {
 	op.errors = errs
 }
 
-// reportErrors displays the errors that occur during a renaming operation
+// reportErrors displays the errors that occur during a renaming operation.
 func (op *Operation) reportErrors() {
 	var data = make([][]string, len(op.errors)+len(op.matches))
+
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
@@ -285,6 +294,7 @@ func (op *Operation) reportErrors() {
 		if strings.IndexByte(msg, ':') != -1 {
 			msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
 		}
+
 		d := []string{
 			source,
 			target,
@@ -297,7 +307,7 @@ func (op *Operation) reportErrors() {
 }
 
 // handleErrors is used to report the errors and write any successful
-// operations to a file
+// operations to a file.
 func (op *Operation) handleErrors() error {
 	// first remove the error entries from the matches so they are not confused
 	// with successful operations
@@ -324,6 +334,7 @@ func (op *Operation) handleErrors() error {
 	if op.revert {
 		msg = "Some files could not be reverted. See above table for the full explanation."
 	}
+
 	if err == nil && len(op.matches) > 0 {
 		return fmt.Errorf(msg)
 	} else if err != nil && len(op.matches) > 0 {
@@ -334,7 +345,7 @@ func (op *Operation) handleErrors() error {
 }
 
 // backup creates the path where the backup file
-// will be written to
+// will be written to.
 func (op *Operation) backup() error {
 	workingDir := strings.ReplaceAll(op.workingDir, pathSeperator, "_")
 	if runtime.GOOS == windows {
@@ -354,7 +365,7 @@ func (op *Operation) backup() error {
 }
 
 // noMatches prints out a message if the renaming operation
-// failed to match any files
+// failed to match any files.
 func (op *Operation) noMatches() {
 	msg := "Failed to match any files"
 	if op.revert {
@@ -368,7 +379,7 @@ func (op *Operation) noMatches() {
 
 // execute applies the renaming operation to the filesystem.
 // A backup file is auto created as long as at least one file
-// was renamed and it wasn't an undo operation
+// was renamed and it wasn't an undo operation.
 func (op *Operation) execute() error {
 	if op.includeDir || op.revert {
 		op.sortMatches()
@@ -391,7 +402,7 @@ func (op *Operation) execute() error {
 	return nil
 }
 
-// dryRun prints the changes to be made to the standard output
+// dryRun prints the changes to be made to the standard output.
 func (op *Operation) dryRun() {
 	if !op.quiet {
 		op.printChanges()
@@ -405,7 +416,7 @@ func (op *Operation) dryRun() {
 // apply prints the changes to be made in dry-run mode
 // or commits the operation to the filesystem if in execute mode.
 // If conflicts are detected, the operation is aborted and the conflicts
-// are printed out so that they may be corrected by the user
+// are printed out so that they may be corrected by the user.
 func (op *Operation) apply() error {
 	if len(op.matches) == 0 {
 		op.noMatches()
@@ -427,12 +438,13 @@ func (op *Operation) apply() error {
 	}
 
 	op.dryRun()
+
 	return nil
 }
 
 // findMatches locates matches for the search pattern
 // in each filename. Hidden files and directories are exempted
-// by default
+// by default.
 func (op *Operation) findMatches() error {
 	for _, v := range op.paths {
 		filename := filepath.Base(v.Source)
@@ -451,6 +463,7 @@ func (op *Operation) findMatches() error {
 			if err != nil {
 				return err
 			}
+
 			if r {
 				continue
 			}
@@ -471,10 +484,12 @@ func (op *Operation) findMatches() error {
 }
 
 // filterMatches excludes any files or directories that match
-// the find pattern in accordance with the provided exclude pattern
+// the find pattern in accordance with the provided exclude pattern.
 func (op *Operation) filterMatches() error {
 	var filtered []Change
+
 	filters := strings.Join(op.excludeFilter, "|")
+
 	regex, err := regexp.Compile(filters)
 	if err != nil {
 		return err
@@ -487,10 +502,11 @@ func (op *Operation) filterMatches() error {
 	}
 
 	op.matches = filtered
+
 	return nil
 }
 
-// setPaths creates a Change struct for each path
+// setPaths creates a Change struct for each path.
 func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 	if op.exec {
 		if !indexRegex.MatchString(op.replacement) {
@@ -510,7 +526,7 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 }
 
 // retrieveBackupFile retrieves the path to a previously created
-// backup file for the current directory
+// backup file for the current directory.
 func (op *Operation) retrieveBackupFile() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -531,10 +547,11 @@ func (op *Operation) retrieveBackupFile() (string, error) {
 }
 
 // handleReplacementChain is ensures that each find
-// and replace operation (single or chained) is handled correctly
+// and replace operation (single or chained) is handled correctly.
 func (op *Operation) handleReplacementChain() error {
 	for i, v := range op.replacementSlice {
 		op.replacement = v
+
 		err := op.replace()
 		if err != nil {
 			return err
@@ -572,6 +589,7 @@ func (op *Operation) handleReplacementChain() error {
 			if err != nil {
 				return err
 			}
+
 			op.searchRegex = re
 		}
 	}
@@ -579,7 +597,7 @@ func (op *Operation) handleReplacementChain() error {
 	return nil
 }
 
-// run executes the operation sequence
+// run executes the operation sequence.
 func (op *Operation) run() error {
 	if op.revert {
 		path, err := op.retrieveBackupFile()
@@ -621,7 +639,7 @@ func (op *Operation) run() error {
 }
 
 // setOptions applies the command line arguments
-// onto the operation
+// onto the operation.
 func setOptions(op *Operation, c *cli.Context) error {
 	op.findSlice = c.StringSlice("find")
 	op.replacementSlice = c.StringSlice("replace")
@@ -677,6 +695,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	op.searchRegex = re
 
 	return nil
@@ -687,10 +706,12 @@ func setOptions(op *Operation, c *cli.Context) error {
 // which to find matches. It respects the following properties
 // set on the operation: whether hidden files should be
 // included, and the maximum depth limit (0 for no limit).
-// The paths argument is modified in place
+// The paths argument is modified in place.
 func (op *Operation) walk(paths map[string][]os.DirEntry) error {
 	var recursedPaths []string
+
 	var currentDepth int
+
 	// currentLevel represents the current level of directories
 	// and their contents
 	var currentLevel = make(map[string][]os.DirEntry)
@@ -732,6 +753,7 @@ loop:
 	if len(currentLevel) > 0 {
 		for dir, dirContents := range currentLevel {
 			paths[dir] = dirContents
+
 			delete(currentLevel, dir)
 		}
 
@@ -745,7 +767,7 @@ loop:
 }
 
 // newOperation returns an Operation constructed
-// from command line flags & arguments
+// from command line flags & arguments.
 func newOperation(c *cli.Context) (*Operation, error) {
 	if len(c.StringSlice("find")) == 0 &&
 		len(c.StringSlice("replace")) == 0 &&
@@ -754,6 +776,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	op := &Operation{}
+
 	err := setOptions(op, c)
 	if err != nil {
 		return nil, err
@@ -794,5 +817,6 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	op.setPaths(paths)
+
 	return op, nil
 }
