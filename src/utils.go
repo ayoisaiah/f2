@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
@@ -102,33 +100,4 @@ func greatestCommonDivisor(a, b int) int {
 	}
 
 	return greatestCommonDivisor(b, a%b)
-}
-
-func exifDivision(slice []string) string {
-	if len(slice) > 0 {
-		str := slice[0]
-		strSlice := strings.Split(str, "/")
-		expectedLength := 2
-		if len(strSlice) == expectedLength {
-			numerator, err := strconv.Atoi(strSlice[0])
-			if err != nil {
-				return ""
-			}
-
-			denominator, err := strconv.Atoi(strSlice[1])
-			if err != nil {
-				return ""
-			}
-
-			v := float64(numerator) / float64(denominator)
-			str, err := strconv.FormatFloat(v, 'f', -1, 64), nil
-			if err != nil {
-				return ""
-			}
-
-			return str
-		}
-	}
-
-	return ""
 }

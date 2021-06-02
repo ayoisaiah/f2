@@ -457,7 +457,126 @@ func getExifData(sourcePath string) (*Exif, error) {
 	return exifData, nil
 }
 
+// getExifExposureTime retrieves the exposure time from
+// exif data. This exposure time may be a fraction
+// so it is reduced to its simplest form and the
+// forward slash is replaced with an underscore since
+// it is forbidden in file names
+func getExifExposureTime(exifData *Exif) string {
+	et := strings.Split(exifData.ExposureTime[0], "/")
+	if len(et) == 1 {
+		return et[0]
+	}
+
+	x, y := et[0], et[1]
+	numerator, err := strconv.Atoi(x)
+	if err != nil {
+		return ""
+	}
+
+	denominator, err := strconv.Atoi(y)
+	if err != nil {
+		return ""
+	}
+
+	divisor := greatestCommonDivisor(numerator, denominator)
+	if (numerator/divisor)%(denominator/divisor) == 0 {
+		return fmt.Sprintf(
+			"%d",
+			(numerator/divisor)/(denominator/divisor),
+		)
+	}
+
+	return fmt.Sprintf("%d_%d", numerator/divisor, denominator/divisor)
+}
+
+// getExifDate parses the exif original date and returns it
+// in the specified format
+func getExifDate(exifData *Exif, format string) string {
+	dateTimeString := exifData.DateTimeOriginal
+	dateTimeSlice := strings.Split(dateTimeString, " ")
+
+	// must include date and time components
+	expectedLength := 2
+	if len(dateTimeSlice) < expectedLength {
+		return ""
+	}
+
+	dateString := strings.ReplaceAll(dateTimeSlice[0], ":", "-")
+	timeString := dateTimeSlice[1]
+
+	dateTime, err := time.Parse(time.RFC3339, dateString+"T"+timeString+"Z")
+	if err != nil {
+		return ""
+	}
+
+	return dateTime.Format(dateTokens[format])
+}
+
+// getDecimalFromSlice reduces an exif values in the following format: [8/5]
+// to its equivalent decimal value -> 1.6
+func getDecimalFromSlice(slice []string) string {
+	if len(slice) == 0 {
+		return ""
+	}
+
+	fractionSlice := strings.Split(slice[0], "/")
+
+	expectedLength := 2
+	if len(fractionSlice) != expectedLength {
+		return ""
+	}
+
+	numerator, err := strconv.Atoi(fractionSlice[0])
+	if err != nil {
+		return ""
+	}
+
+	denominator, err := strconv.Atoi(fractionSlice[1])
+	if err != nil {
+		return ""
+	}
+
+	v := float64(numerator) / float64(denominator)
+	decimalValue, err := strconv.FormatFloat(v, 'f', -1, 64), nil
+	if err != nil {
+		return ""
+	}
+
+	return decimalValue
+}
+
+// getExifDimensions retrieves the specified dimension
+// w -> width, h -> height, wh -> width x height
+func getExifDimensions(exifData *Exif, dimension string) string {
+	var w, h string
+	if len(exifData.ImageWidth) > 0 {
+		w = strconv.Itoa(exifData.ImageWidth[0])
+	} else if len(exifData.PixelXDimension) > 0 {
+		w = strconv.Itoa(exifData.PixelXDimension[0])
+	}
+
+	if len(exifData.ImageLength) > 0 {
+		h = strconv.Itoa(exifData.ImageLength[0])
+	} else if len(exifData.PixelYDimension) > 0 {
+		h = strconv.Itoa(exifData.PixelYDimension[0])
+	}
+
+	switch dimension {
+	case "w":
+		return w
+	case "h":
+		return h
+	case "wh":
+		return w + "x" + h
+	}
+
+	return ""
+}
+
 // replaceExifVariables replaces the exif variables in an input string
+// if an error occurs while attempting to get the value represented
+// by the variables, it is replaced with an empty string
 func replaceExifVariables(
 	target, sourcePath string,
 	ev exifVar,
@@ -474,20 +593,7 @@ func replaceExifVariables(
 		var value string
 		switch current.attr {
 		case "dt":
-			date := exifData.DateTimeOriginal
-			arr := strings.Split(date, " ")
-			if len(arr) > 1 {
-				var dt time.Time
-				d := strings.ReplaceAll(arr[0], ":", "-")
-				t := arr[1]
-				var err error
-				dt, err = time.Parse(time.RFC3339, d+"T"+t+"Z")
-				if err != nil {
-					return "", err
-				}
-
-				value = dt.Format(dateTokens[current.timeStr])
-			}
+			value = getExifDate(exifData, current.timeStr)
 		case "soft":
 			value = exifData.Software
 		case "model":
@@ -502,39 +608,12 @@ func replaceExifVariables(
 			}
 		case "et":
 			if len(exifData.ExposureTime) > 0 {
-				et := strings.Split(exifData.ExposureTime[0], "/")
-				if len(et) == 1 {
-					value = et[0]
-					break
-				}
-
-				x, y := et[0], et[1]
-				numerator, err := strconv.Atoi(x)
-				if err != nil {
-					value = exifData.ExposureTime[0]
-					break
-				}
-
-				denominator, err := strconv.Atoi(y)
-				if err != nil {
-					value = exifData.ExposureTime[0]
-					break
-				}
-
-				divisor := greatestCommonDivisor(numerator, denominator)
-				if (numerator/divisor)%(denominator/divisor) == 0 {
-					value = fmt.Sprintf(
-						"%d",
-						(numerator/divisor)/(denominator/divisor),
-					)
-				} else {
-					value = fmt.Sprintf("%d_%d", numerator/divisor, denominator/divisor)
-				}
+				value = getExifExposureTime(exifData)
 			}
 		case "fnum":
-			value = exifDivision(exifData.FNumber)
+			value = getDecimalFromSlice(exifData.FNumber)
 		case "fl":
-			value = exifDivision(exifData.FocalLength)
+			value = getDecimalFromSlice(exifData.FocalLength)
 		case "fl35":
 			if len(exifData.FocalLengthIn35mmFilm) > 0 {
 				value = strconv.Itoa(exifData.FocalLengthIn35mmFilm[0])
@@ -543,36 +622,8 @@ func replaceExifVariables(
 			value = exifData.Latitude
 		case "lon":
 			value = exifData.Longitude
-		case "wh":
-			if len(exifData.ImageLength) > 0 && len(exifData.ImageWidth) > 0 {
-				h, w := exifData.ImageLength[0], exifData.ImageWidth[0]
-				value = strconv.Itoa(w) + "x" + strconv.Itoa(h)
-				break
-			}
-
-			if len(exifData.PixelXDimension) > 0 &&
-				len(exifData.PixelYDimension) > 0 {
-				h, w := exifData.PixelYDimension[0], exifData.PixelXDimension[0]
-				value = strconv.Itoa(w) + "x" + strconv.Itoa(h)
-			}
-		case "h":
-			if len(exifData.ImageLength) > 0 {
-				value = strconv.Itoa(exifData.ImageLength[0])
-				break
-			}
-
-			if len(exifData.PixelYDimension) > 0 {
-				value = strconv.Itoa(exifData.PixelYDimension[0])
-			}
-		case "w":
-			if len(exifData.ImageWidth) > 0 {
-				value = strconv.Itoa(exifData.ImageWidth[0])
-				break
-			}
-
-			if len(exifData.PixelXDimension) > 0 {
-				value = strconv.Itoa(exifData.PixelXDimension[0])
-			}
+		case "wh", "h", "w":
+			value = getExifDimensions(exifData, current.attr)
 		}
 		target = regex.ReplaceAllString(target, value)
 	}
