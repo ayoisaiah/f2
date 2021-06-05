@@ -564,25 +564,10 @@ func (op *Operation) handleReplacementChain() error {
 		}
 
 		if i != len(op.replacementSlice)-1 {
-			// If a find pattern is not specified for replacements after
-			// the first one, match the entire string. Otherwise, set to
-			// the corresponding find string for the next replacement
-			findPattern := ".*"
-			if len(op.findSlice) > i+1 {
-				findPattern = op.findSlice[i+1]
-			}
-
-			// Respect the ignore case setting
-			if op.ignoreCase {
-				findPattern = "(?i)" + findPattern
-			}
-
-			re, err := regexp.Compile(findPattern)
+			err := op.setFindStringRegex(i + 1)
 			if err != nil {
 				return err
 			}
-
-			op.searchRegex = re
 		}
 	}
 
@@ -630,6 +615,37 @@ func (op *Operation) run() error {
 	return op.apply()
 }
 
+// setFindStringRegex compiles a regular expression for the
+// find string of the corresponding replacement index (if any).
+// Otherwise, the created regex will match the entire file name.
+func (op *Operation) setFindStringRegex(replacementIndex int) error {
+	// findPattern is set to match the entire file name by default
+	// except if a find string for the corresponding replacement index
+	// is found
+	findPattern := ".*"
+	if len(op.findSlice) > replacementIndex {
+		findPattern = op.findSlice[replacementIndex]
+
+		// Escape all regular expression metacharacters in string literal mode
+		if op.stringLiteralMode {
+			findPattern = regexp.QuoteMeta(findPattern)
+		}
+
+		if op.ignoreCase {
+			findPattern = "(?i)" + findPattern
+		}
+	}
+
+	re, err := regexp.Compile(findPattern)
+	if err != nil {
+		return err
+	}
+
+	op.searchRegex = re
+
+	return nil
+}
+
 // setOptions applies the command line arguments
 // onto the operation.
 func setOptions(op *Operation, c *cli.Context) error {
@@ -664,33 +680,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 		op.includeDir = true
 	}
 
-	var findPattern string
-	if len(op.findSlice) > 0 {
-		findPattern = op.findSlice[0]
-	}
-
-	// Escape all regular expression metacharacters in string literal mode
-	if op.stringLiteralMode {
-		findPattern = regexp.QuoteMeta(findPattern)
-	}
-
-	// Match entire string if find pattern is empty
-	if findPattern == "" {
-		findPattern = ".*"
-	}
-
-	if op.ignoreCase {
-		findPattern = "(?i)" + findPattern
-	}
-
-	re, err := regexp.Compile(findPattern)
-	if err != nil {
-		return err
-	}
-
-	op.searchRegex = re
-
-	return nil
+	return op.setFindStringRegex(0)
 }
 
 // walk is used to navigate directories recursively
