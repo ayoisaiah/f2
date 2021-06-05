@@ -28,24 +28,6 @@ import (
 	"gopkg.in/djherbis/times.v1"
 )
 
-var (
-	filenameRegex  = regexp.MustCompile("{{f}}")
-	extensionRegex = regexp.MustCompile("{{ext}}")
-	parentDirRegex = regexp.MustCompile("{{p}}")
-	indexRegex     = regexp.MustCompile(
-		`(\d+)?(%(\d?)+d)([borh])?(\d+)?(?:<(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)>)?`,
-	)
-	randomRegex = regexp.MustCompile(
-		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
-	)
-	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
-	transformRegex = regexp.MustCompile(`{{tr.(up|lw|ti|win|mac|di)}}`)
-	id3Regex       *regexp.Regexp
-	exifRegex      *regexp.Regexp
-	dateRegex      *regexp.Regexp
-	exiftoolRegex  *regexp.Regexp
-)
-
 type hashAlgorithm string
 
 const (
@@ -54,28 +36,6 @@ const (
 	sha512Hash hashAlgorithm = "sha512"
 	md5Hash    hashAlgorithm = "md5"
 )
-
-var dateTokens = map[string]string{
-	"YYYY": "2006",
-	"YY":   "06",
-	"MMMM": "January",
-	"MMM":  "Jan",
-	"MM":   "01",
-	"M":    "1",
-	"DDDD": "Monday",
-	"DDD":  "Mon",
-	"DD":   "02",
-	"D":    "2",
-	"H":    "15",
-	"hh":   "03",
-	"h":    "3",
-	"mm":   "04",
-	"m":    "4",
-	"ss":   "05",
-	"s":    "5",
-	"A":    "PM",
-	"a":    "pm",
-}
 
 const (
 	modTime     = "mtime"
@@ -125,6 +85,46 @@ type ID3 struct {
 	TotalTracks int
 	Disc        int
 	TotalDiscs  int
+}
+
+var (
+	filenameRegex  = regexp.MustCompile("{{f}}")
+	extensionRegex = regexp.MustCompile("{{ext}}")
+	parentDirRegex = regexp.MustCompile("{{p}}")
+	indexRegex     = regexp.MustCompile(
+		`(\d+)?(%(\d?)+d)([borh])?(\d+)?(?:<(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)>)?`,
+	)
+	randomRegex = regexp.MustCompile(
+		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
+	)
+	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
+	transformRegex = regexp.MustCompile(`{{tr.(up|lw|ti|win|mac|di)}}`)
+	id3Regex       *regexp.Regexp
+	exifRegex      *regexp.Regexp
+	dateRegex      *regexp.Regexp
+	exiftoolRegex  *regexp.Regexp
+)
+
+var dateTokens = map[string]string{
+	"YYYY": "2006",
+	"YY":   "06",
+	"MMMM": "January",
+	"MMM":  "Jan",
+	"MM":   "01",
+	"M":    "1",
+	"DDDD": "Monday",
+	"DDD":  "Mon",
+	"DD":   "02",
+	"D":    "2",
+	"H":    "15",
+	"hh":   "03",
+	"h":    "3",
+	"mm":   "04",
+	"m":    "4",
+	"ss":   "05",
+	"s":    "5",
+	"A":    "PM",
+	"a":    "pm",
 }
 
 func init() {

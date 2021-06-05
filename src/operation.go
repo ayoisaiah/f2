@@ -26,8 +26,6 @@ var (
 	)
 )
 
-var pathSeperator = "/"
-
 const (
 	windows = "windows"
 	darwin  = "darwin"
@@ -92,12 +90,6 @@ type backupFile struct {
 	WorkingDir string   `json:"working_dir"`
 	Date       string   `json:"date"`
 	Operations []Change `json:"operations"`
-}
-
-func init() {
-	if runtime.GOOS == windows {
-		pathSeperator = `\`
-	}
 }
 
 // createBackupDir creates the directory for backups
