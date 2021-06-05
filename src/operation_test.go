@@ -56,6 +56,7 @@ var fileSystem = []string{
 	"conflicts/xyz.txt",
 	"conflicts/123.txt",
 	"conflicts/123 (3).txt",
+	"regex/100$-(boring+company).com.ng",
 }
 
 func init() {
@@ -108,6 +109,7 @@ func setupFileSystem(tb testing.TB) string {
 		"morepics/nested",
 		"conflicts",
 		".dir",
+		"regex",
 	}
 	for _, v := range directories {
 		filePath := filepath.Join(testDir, v)
@@ -428,12 +430,42 @@ func TestExcludeFilter(t *testing.T) {
 	runFindReplace(t, cases)
 }
 
-func TestStringMode(t *testing.T) {
+func TestStringLiteralMode(t *testing.T) {
 	testDir := setupFileSystem(t)
 
 	cases := []testCase{
 		{
-			name: "Replace Pressure with Limits in string mode",
+			name: "String literal mode: match regex special characters without escaping them",
+			want: []Change{
+				{
+					Source:  "100$-(boring+company).com.ng",
+					BaseDir: filepath.Join(testDir, "regex"),
+					Target:  "100#-[boring_company].com.ng",
+				},
+			},
+			args: []string{
+				"-f",
+				"$",
+				"-r",
+				"#",
+				"-f",
+				"+",
+				"-r",
+				"_",
+				"-f",
+				"(",
+				"-r",
+				"[",
+				"-f",
+				")",
+				"-r",
+				"]",
+				"-se",
+				filepath.Join(testDir, "regex"),
+			},
+		},
+		{
+			name: "String literal mode: Basic find and replace",
 			want: []Change{
 				{
 					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
@@ -454,7 +486,7 @@ func TestStringMode(t *testing.T) {
 			args: []string{"-f", "Pressure", "-r", "Limits", "-s", testDir},
 		},
 		{
-			name: "Replace entire string if find pattern is empty",
+			name: "String literal mode: replace entire string if find pattern is empty",
 			want: []Change{
 				{
 					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
@@ -475,14 +507,13 @@ func TestStringMode(t *testing.T) {
 			args: []string{
 				"-r",
 				"%03d{{ext}}",
-				"-s",
-				"-E",
+				"-sE",
 				"abc|pics",
 				testDir,
 			},
 		},
 		{
-			name: "Respect case insensitive option",
+			name: "String literal mode: respect case insensitive option",
 			want: []Change{
 				{
 					Source:  "a.jpg",
@@ -510,8 +541,7 @@ func TestStringMode(t *testing.T) {
 				"jpg",
 				"-r",
 				"jpeg",
-				"-R",
-				"-si",
+				"-siR",
 				filepath.Join(testDir, "images"),
 			},
 		},
