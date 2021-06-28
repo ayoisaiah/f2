@@ -40,10 +40,10 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 ## Why should you use F2?
 
 - F2 helps you organise your filesystem through batch renaming so that your files and directories can have a consistent naming scheme.
-- It offers a comprehensive set of renaming options and scales well from trivial string replacements to more complex operations involving regular expressions.
-- F2 prioritises correctness and safety by ensuring that a renaming operation does not result in conflicts or errors. It runs several [validations](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) before carrying out a renaming operation and provides an easy way to automatically [fix any detected conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection#auto-fixing-conflicts).
+- It offers a comprehensive set of renaming options, and scales well from trivial string replacements to more complex operations involving regular expressions.
+- F2 prioritises correctness and safety by ensuring that a renaming operation does not result in conflicts or errors. It runs several [validations](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection) before carrying out a renaming operation, and provides an easy way to automatically [fix any detected conflicts](https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection#auto-fixing-conflicts).
 - F2 supports all the standard [renaming recipes](https://github.com/ayoisaiah/f2/wiki/Renaming-Recipes) including (but not limited to) string replacement, insertion of text as a prefix, suffix or other position in the file name, stripping a set of characters, changing the case of a set of letters, using auto incrementing numbers, swapping parts of the file name, e.t.c.
-- F2 provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for added flexibility in the renaming process. These variables are based on file attributes such as Exif information for images and ID3 tags for audio files. F2 also supports utilising tags from the popular [exiftool](https://github.com/ayoisaiah/f2/wiki/Exiftool-variables) which should cover most use cases.
+- F2 provides several [built-in variables](https://github.com/ayoisaiah/f2/wiki/Built-in-variables) for added flexibility in the renaming process. These variables are based on file attributes such as Exif information for images, and ID3 tags for audio files. F2 also supports utilising tags from the popular [exiftool](https://github.com/ayoisaiah/f2/wiki/Exiftool-variables) which should cover most use cases.
 - F2 is very fast and won't waste your time. See [benchmarks](#benchmarks).
 - F2 allows you to [revert any renaming operation](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) performed with the program. This means you don't have to worry about making a mistake because you can always get back to the previous state without breaking a sweat.
 - F2 has good test coverage with equal attention paid to all supported platforms (Linux, Windows and macOS).
@@ -67,7 +67,6 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.), and it can be formatted in several ways.
 - Supports [undoing](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) the last renaming operation in case of mistakes or errors.
 - Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each option that is provided.
-- Extensive unit testing with close to 100% coverage.
 
 ## Screenshots
 
@@ -135,7 +134,7 @@ TotalSeconds      : 29.582481
 TotalMilliseconds : 29582.481
 ```
 
-Rename **10,000** MP3 files with an auto incrementing integer through F2 (~12 seconds):
+Renaming **10,000** MP3 files with an auto incrementing integer through F2 (~12 seconds):
 
 ```bash
 $ Measure-Command { f2 -f ".*" -r "audio_%03d.mp3" -x }
