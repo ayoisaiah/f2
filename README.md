@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="https://ik.imagekit.io/turnupdev/f2_logo_02eDMiVt7.png" width="350" height="350" alt="f2">
+   <img src="https://ik.imagekit.io/turnupdev/f2_logo_02eDMiVt7.png" width="250" height="250" alt="f2">
 </p>
 
 <p align="center">
