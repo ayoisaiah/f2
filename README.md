@@ -72,7 +72,7 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 
 ![Screenshot of F2 in action on Linux](https://ik.imagekit.io/turnupdev/f2_EsdXrHHKt.png?tr:q-100)
 
-![F2 can utilise exif attributes from a variety of image formats](https://ik.imagekit.io/turnupdev/f2-exif-example_1__82eO1ZqnbgT.png?tr:q-100)
+![F2 can utilise exif attributes from a variety of image formats](https://ik.imagekit.io/turnupdev/f2-exif-example_Xn_Ko8ait.png?tr:q-100)
 
 ![F2 can utilise ID3 attributes to organise music files](https://ik.imagekit.io/turnupdev/f2-id3-example_Esb--IK6A.png?tr:q-100)
 
