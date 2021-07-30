@@ -222,6 +222,68 @@ func runFindReplace(t *testing.T, cases []testCase) {
 	}
 }
 
+func TestFilePaths(t *testing.T) {
+	testDir := setupFileSystem(t)
+	cases := []testCase{
+		{
+			name: "Target a specific mkv file",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "No Pressure (2021) S1.E3.1080p.mp4",
+				},
+			},
+			args: []string{"-f", "mkv", "-r", "mp4", filepath.Join(testDir, "No Pressure (2021) S1.E3.1080p.mkv")},
+		},
+		{
+			name: "Combine file paths and directory paths",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  "qqq.pdf",
+				},
+				{
+					Source:  "abc.epub",
+					BaseDir: testDir,
+					Target:  "qqq.epub",
+				},
+				{
+					Source:  "abc.png",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "qqq.png",
+				},
+			},
+			args: []string{"-f", "abc", "-r", "qqq", testDir, filepath.Join(testDir, "images", "abc.png")},
+		},
+		{
+			name: "No side effects should result from specifying a directory and a file inside the directory",
+			want: []Change{
+				{
+					Source:  "abc.png",
+					BaseDir: filepath.Join(testDir, "images"),
+					Target:  "qqq.png",
+				},
+			},
+			args: []string{"-f", "abc", "-r", "qqq", filepath.Join(testDir, "images"), filepath.Join(testDir, "images", "abc.png")},
+		},
+		{
+			name: "Specifying a file path should be unaffected by recursion",
+			want: []Change{
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  "qqq.pdf",
+				},
+			},
+			args: []string{"-f", "abc", "-r", "qqq", "-R", filepath.Join(testDir, "abc.pdf")},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestHidden(t *testing.T) {
 	testDir := setupFileSystem(t)
 	cases := []testCase{

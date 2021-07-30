@@ -778,8 +778,41 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	var paths = make(map[string][]os.DirEntry)
 	for _, v := range op.directories {
 		paths[v], err = os.ReadDir(v)
+		if err == nil {
+			continue
+		}
+
+		var f os.FileInfo
+
+		f, err = os.Stat(v)
 		if err != nil {
 			return nil, err
+		}
+
+		dir := filepath.Dir(v)
+
+		var dirEntry []os.DirEntry
+
+		dirEntry, err = os.ReadDir(dir)
+		if err != nil {
+			return nil, err
+		}
+
+	entryLoop:
+		for _, entry := range dirEntry {
+			if entry.Name() == f.Name() {
+				// Ensure that the file is not already
+				// present in the directory entry
+				for _, e := range paths[dir] {
+					if e.Name() == f.Name() {
+						break entryLoop
+					}
+				}
+
+				paths[dir] = append(paths[dir], entry)
+
+				break
+			}
 		}
 	}
 
