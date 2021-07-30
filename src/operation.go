@@ -17,13 +17,15 @@ import (
 
 var (
 	errInvalidArgument = errors.New(
-		"Invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
+		"Invalid argument: one of `-f`, `-r`, `-csv` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
 	)
 
 	errConflictDetected = fmt.Errorf(
 		"Resolve conflicts before proceeding or use the %s flag to auto fix all conflicts",
 		printColor("yellow", "-F"),
 	)
+
+	errCSVReadFailed = errors.New("Unable to read CSV file")
 )
 
 const (
@@ -84,6 +86,7 @@ type Operation struct {
 	numberOffset      []int
 	replaceLimit      int
 	allowOverwrites   bool
+	csvFilename       string
 }
 
 type backupFile struct {
@@ -667,6 +670,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.revert = c.Bool("undo")
 	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
+	op.csvFilename = c.String("csv")
 
 	// Sorting
 	if c.String("sort") != "" {
@@ -748,11 +752,51 @@ loop:
 	return nil
 }
 
+func (op *Operation) handleCSV() error {
+	records, err := readCSVFile(op.csvFilename)
+	if err != nil {
+		return err
+	}
+
+	var p []Change
+
+	for _, v := range records {
+		if len(v) > 0 {
+			sourceFile := strings.TrimSpace(v[0])
+
+			var targetName string
+
+			if len(v) > 1 {
+				targetName = strings.TrimSpace(v[1])
+			}
+
+			if f, err := os.Stat(sourceFile); err == nil || errors.Is(err, os.ErrExist) {
+				dir := filepath.Dir(f.Name())
+
+				ch := Change{
+					BaseDir:        dir,
+					Source:         filepath.Clean(f.Name()),
+					originalSource: filepath.Clean(f.Name()),
+					IsDir:          f.IsDir(),
+					Target:         targetName,
+				}
+
+				p = append(p, ch)
+			}
+		}
+	}
+
+	op.paths = p
+
+	return nil
+}
+
 // newOperation returns an Operation constructed
 // from command line flags & arguments.
 func newOperation(c *cli.Context) (*Operation, error) {
 	if len(c.StringSlice("find")) == 0 &&
 		len(c.StringSlice("replace")) == 0 &&
+		c.String("csv") == "" &&
 		!c.Bool("undo") {
 		return nil, errInvalidArgument
 	}
@@ -772,6 +816,15 @@ func newOperation(c *cli.Context) (*Operation, error) {
 
 	// If reverting an operation, no need to walk through directories
 	if op.revert {
+		return op, nil
+	}
+
+	if op.csvFilename != "" {
+		err = op.handleCSV()
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", errCSVReadFailed, err.Error())
+		}
+
 		return op, nil
 	}
 
