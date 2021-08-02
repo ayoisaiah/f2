@@ -3,6 +3,7 @@ module github.com/ayoisaiah/f2
 go 1.16
 
 require (
+	github.com/adrg/xdg v0.3.3 // indirect
 	github.com/barasher/go-exiftool v1.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63

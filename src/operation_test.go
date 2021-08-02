@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adrg/xdg"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/urfave/cli/v2"
@@ -65,23 +66,16 @@ func init() {
 		log.Fatal(err)
 	}
 
-	userhomeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	workingDir = strings.ReplaceAll(workingDir, "/", "_")
 	if runtime.GOOS == windows {
 		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
 
-	backupFilePath = filepath.Join(
-		userhomeDir,
-		".f2",
-		"backups",
-		workingDir+".json",
-	)
+	backupFilePath, err = xdg.DataFile(filepath.Join("f2", "backups", workingDir+".json"))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	rand.Seed(time.Now().UnixNano())
 }

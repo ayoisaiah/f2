@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adrg/xdg"
 	"github.com/urfave/cli/v2"
 )
 
@@ -90,17 +91,6 @@ type backupFile struct {
 	WorkingDir string   `json:"working_dir"`
 	Date       string   `json:"date"`
 	Operations []Change `json:"operations"`
-}
-
-// createBackupDir creates the directory for backups
-// if it doesn't exist already.
-func createBackupDir(dir string) (string, error) {
-	dirname, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	return dirname, os.MkdirAll(filepath.Join(dirname, ".f2", dir), os.ModePerm)
 }
 
 // writeToFile writes the details of a successful operation
@@ -344,16 +334,14 @@ func (op *Operation) backup() error {
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
 
-	dirname, err := createBackupDir("backups")
+	file := workingDir + ".json"
+
+	backupFile, err := xdg.DataFile(filepath.Join("f2", "backups", file))
 	if err != nil {
 		return err
 	}
 
-	file := workingDir + ".json"
-
-	return op.writeToFile(
-		filepath.Join(dirname, ".f2", "backups", file),
-	)
+	return op.writeToFile(backupFile)
 }
 
 // noMatches prints out a message if the renaming operation
@@ -520,17 +508,25 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 // retrieveBackupFile retrieves the path to a previously created
 // backup file for the current directory.
 func (op *Operation) retrieveBackupFile() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
 	dir := strings.ReplaceAll(op.workingDir, pathSeperator, "_")
 	if runtime.GOOS == windows {
 		dir = strings.ReplaceAll(dir, ":", "_")
 	}
 
-	fullPath := filepath.Join(homeDir, ".f2", "backups", dir+".json")
+	file := dir + ".json"
+
+	fullPath, err := xdg.SearchDataFile(filepath.Join("f2", "backups", file))
+	if err == nil {
+		return fullPath, nil
+	}
+
+	// check the old location for backup files
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	fullPath = filepath.Join(homeDir, ".f2", "backups", file)
 	if _, err := os.Stat(fullPath); err != nil {
 		return "", err
 	}
