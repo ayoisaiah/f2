@@ -102,7 +102,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				"",
-				pterm.Red("❌ [Empty filename]"),
+				pterm.Red("empty filename"),
 			}
 			data = append(data, slice)
 		}
@@ -115,7 +115,7 @@ func (op *Operation) reportConflicts() {
 					s,
 					v.target,
 					pterm.Red(
-						"❌ [trailing periods are prohibited]",
+						"trailing periods are prohibited",
 					),
 				}
 				data = append(data, slice)
@@ -128,7 +128,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				v.target,
-				pterm.Red("❌ [Path already exists]"),
+				pterm.Red("path already exists"),
 			}
 			data = append(data, slice)
 		}
@@ -140,7 +140,7 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					pterm.Red("❌ [Overwriting newly renamed path]"),
+					pterm.Red("overwriting newly renamed path"),
 				}
 				data = append(data, slice)
 			}
@@ -155,7 +155,7 @@ func (op *Operation) reportConflicts() {
 					v.target,
 					pterm.Red(
 						fmt.Sprintf(
-							"❌ [Invalid characters present: (%s)]",
+							"invalid characters present: (%s)",
 							v.cause,
 						),
 					),
@@ -173,7 +173,7 @@ func (op *Operation) reportConflicts() {
 					v.target,
 					pterm.Red(
 						fmt.Sprintf(
-							"❌ [Maximum file name exceeded: (%s)]",
+							"max file name length exceeded: (%s)",
 							v.cause,
 						),
 					),
