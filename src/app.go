@@ -10,6 +10,17 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+func disableColor() {
+	pterm.DisableColor()
+	pterm.DisableStyling()
+	pterm.Debug.Prefix.Text = ""
+	pterm.Info.Prefix.Text = ""
+	pterm.Success.Prefix.Text = ""
+	pterm.Warning.Prefix.Text = ""
+	pterm.Error.Prefix.Text = ""
+	pterm.Fatal.Prefix.Text = ""
+}
+
 func init() {
 	// Override the default help template
 	cli.AppHelpTemplate = `DESCRIPTION:
@@ -48,7 +59,7 @@ WEBSITE:
 
 	// Disable colour output if NO_COLOR is set
 	if _, exists := os.LookupEnv("NO_COLOR"); exists {
-		pterm.DisableColor()
+		disableColor()
 	}
 
 	pterm.Error.MessageStyle = pterm.NewStyle(pterm.FgRed)
@@ -219,6 +230,10 @@ func GetApp() *cli.App {
 				Usage:   "Enable verbose output. Each renaming operation will be printed out if this flag is provided.",
 			},
 			&cli.BoolFlag{
+				Name:  "no-color",
+				Usage: "Disable coloured output",
+			},
+			&cli.BoolFlag{
 				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
 				Usage:   "Automatically fix conflicts based on predefined rules. Learn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection",
@@ -230,6 +245,10 @@ func GetApp() *cli.App {
 		},
 		UseShortOptionHandling: true,
 		Action: func(c *cli.Context) error {
+			if c.Bool("no-color") {
+				disableColor()
+			}
+
 			op, err := newOperation(c)
 			if err != nil {
 				printError(false, err)
