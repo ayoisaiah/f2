@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/pterm/pterm"
 )
 
 var (
@@ -100,7 +102,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				"",
-				printColor("red", "❌ [Empty filename]"),
+				pterm.Red("❌ [Empty filename]"),
 			}
 			data = append(data, slice)
 		}
@@ -112,8 +114,7 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					printColor(
-						"red",
+					pterm.Red(
 						"❌ [trailing periods are prohibited]",
 					),
 				}
@@ -127,7 +128,7 @@ func (op *Operation) reportConflicts() {
 			slice := []string{
 				strings.Join(v.source, ""),
 				v.target,
-				printColor("red", "❌ [Path already exists]"),
+				pterm.Red("❌ [Path already exists]"),
 			}
 			data = append(data, slice)
 		}
@@ -139,7 +140,7 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					printColor("red", "❌ [Overwriting newly renamed path]"),
+					pterm.Red("❌ [Overwriting newly renamed path]"),
 				}
 				data = append(data, slice)
 			}
@@ -152,7 +153,7 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					printColor("red",
+					pterm.Red(
 						fmt.Sprintf(
 							"❌ [Invalid characters present: (%s)]",
 							v.cause,
@@ -170,7 +171,7 @@ func (op *Operation) reportConflicts() {
 				slice := []string{
 					s,
 					v.target,
-					printColor("red",
+					pterm.Red(
 						fmt.Sprintf(
 							"❌ [Maximum file name exceeded: (%s)]",
 							v.cause,

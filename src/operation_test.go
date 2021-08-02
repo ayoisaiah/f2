@@ -72,7 +72,9 @@ func init() {
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
 
-	backupFilePath, err = xdg.DataFile(filepath.Join("f2", "backups", workingDir+".json"))
+	backupFilePath, err = xdg.DataFile(
+		filepath.Join("f2", "backups", workingDir+".json"),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -228,7 +230,13 @@ func TestFilePaths(t *testing.T) {
 					Target:  "No Pressure (2021) S1.E3.1080p.mp4",
 				},
 			},
-			args: []string{"-f", "mkv", "-r", "mp4", filepath.Join(testDir, "No Pressure (2021) S1.E3.1080p.mkv")},
+			args: []string{
+				"-f",
+				"mkv",
+				"-r",
+				"mp4",
+				filepath.Join(testDir, "No Pressure (2021) S1.E3.1080p.mkv"),
+			},
 		},
 		{
 			name: "Combine file paths and directory paths",
@@ -249,7 +257,14 @@ func TestFilePaths(t *testing.T) {
 					Target:  "qqq.png",
 				},
 			},
-			args: []string{"-f", "abc", "-r", "qqq", testDir, filepath.Join(testDir, "images", "abc.png")},
+			args: []string{
+				"-f",
+				"abc",
+				"-r",
+				"qqq",
+				testDir,
+				filepath.Join(testDir, "images", "abc.png"),
+			},
 		},
 		{
 			name: "No side effects should result from specifying a directory and a file inside the directory",
@@ -260,7 +275,14 @@ func TestFilePaths(t *testing.T) {
 					Target:  "qqq.png",
 				},
 			},
-			args: []string{"-f", "abc", "-r", "qqq", filepath.Join(testDir, "images"), filepath.Join(testDir, "images", "abc.png")},
+			args: []string{
+				"-f",
+				"abc",
+				"-r",
+				"qqq",
+				filepath.Join(testDir, "images"),
+				filepath.Join(testDir, "images", "abc.png"),
+			},
 		},
 		{
 			name: "Specifying a file path should be unaffected by recursion",
@@ -271,7 +293,14 @@ func TestFilePaths(t *testing.T) {
 					Target:  "qqq.pdf",
 				},
 			},
-			args: []string{"-f", "abc", "-r", "qqq", "-R", filepath.Join(testDir, "abc.pdf")},
+			args: []string{
+				"-f",
+				"abc",
+				"-r",
+				"qqq",
+				"-R",
+				filepath.Join(testDir, "abc.pdf"),
+			},
 		},
 	}
 

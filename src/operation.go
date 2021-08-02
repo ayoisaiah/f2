@@ -13,17 +13,18 @@ import (
 	"time"
 
 	"github.com/adrg/xdg"
+	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 )
 
 var (
 	errInvalidArgument = errors.New(
-		"Invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value\nUse 'f2 --help' for more information",
+		"Invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value. Use 'f2 --help' for more information",
 	)
 
 	errConflictDetected = fmt.Errorf(
 		"Resolve conflicts before proceeding or use the %s flag to auto fix all conflicts",
-		printColor("yellow", "-F"),
+		pterm.Yellow("-F"),
 	)
 )
 
@@ -171,9 +172,9 @@ func (op *Operation) undo(path string) error {
 
 	if op.exec {
 		if err = os.Remove(path); err != nil {
-			fmt.Printf(
-				"Unable to remove redundant undo file '%s' after successful operation.",
-				printColor("yellow", path),
+			pterm.Warning.Printfln(
+				"Unable to remove redundant backup file '%s' after successful undo operation.",
+				pterm.Yellow(path),
 			)
 		}
 	}
@@ -190,13 +191,13 @@ func (op *Operation) printChanges() {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
 
-		status := printColor("green", "ok")
+		status := pterm.Green("ok")
 		if source == target {
-			status = printColor("yellow", "unchanged")
+			status = pterm.Yellow("unchanged")
 		}
 
 		if v.WillOverwrite {
-			status = printColor("yellow", "overwriting")
+			status = pterm.Yellow("overwriting")
 		}
 
 		d := []string{source, target, status}
@@ -264,7 +265,7 @@ func (op *Operation) reportErrors() {
 	for i, v := range op.matches {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
-		d := []string{source, target, printColor("green", "success")}
+		d := []string{source, target, pterm.Green("success")}
 		data[i] = d
 	}
 
@@ -280,7 +281,7 @@ func (op *Operation) reportErrors() {
 		d := []string{
 			source,
 			target,
-			printColor("red", strings.TrimPrefix(msg, ": ")),
+			pterm.Red(strings.TrimPrefix(msg, ": ")),
 		}
 		data[i+len(op.matches)] = d
 	}
@@ -311,7 +312,7 @@ func (op *Operation) handleErrors() error {
 
 	msg := fmt.Sprintf(
 		"Some files could not be renamed. To revert the changes, run: %s",
-		printColor("yellow", "f2 -u"),
+		pterm.Yellow("f2 -u"),
 	)
 	if op.revert {
 		msg = "Some files could not be reverted. See above table for the full explanation."
@@ -353,7 +354,7 @@ func (op *Operation) noMatches() {
 	}
 
 	if !op.quiet {
-		fmt.Println(msg)
+		pterm.Info.Println(msg)
 	}
 }
 
@@ -376,7 +377,7 @@ func (op *Operation) execute() error {
 	}
 
 	if !op.quiet && !op.revert {
-		fmt.Println("No files were renamed")
+		pterm.Info.Println("No files were renamed")
 	}
 
 	return nil
@@ -386,9 +387,8 @@ func (op *Operation) execute() error {
 func (op *Operation) dryRun() {
 	if !op.quiet {
 		op.printChanges()
-		fmt.Printf(
-			"Append the %s flag to apply the above changes\n",
-			printColor("yellow", "-x"),
+		pterm.Info.Printfln(
+			"Use the -x or --exec flag to apply the above changes",
 		)
 	}
 }

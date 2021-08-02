@@ -2,42 +2,16 @@ package f2
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/pterm/pterm"
 )
-
-type colorString string
-
-const (
-	red    colorString = "red"
-	green  colorString = "green"
-	yellow colorString = "yellow"
-)
-
-func printColor(c colorString, text string) string {
-	if _, ok := os.LookupEnv("NO_COLOR"); ok {
-		return text
-	}
-
-	switch c {
-	case yellow:
-		return color.HEX("#FFAB00").Sprint(text)
-	case green:
-		return color.HEX("#23D160").Sprint(text)
-	case red:
-		return color.HEX("#FF2F2F").Sprint(text)
-	}
-
-	return text
-}
 
 func printError(silent bool, err error) {
 	if !silent {
-		fmt.Fprintln(os.Stderr, err)
+		pterm.Error.Println(err)
 	}
 }
 

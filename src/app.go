@@ -3,8 +3,10 @@ package f2
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 )
 
@@ -43,18 +45,22 @@ WEBSITE:
 		oldVersionPrinter(c)
 		checkForUpdates(GetApp())
 	}
+
+	// Disable colour output if NO_COLOR is set
+	if _, exists := os.LookupEnv("NO_COLOR"); exists {
+		pterm.DisableColor()
+	}
 }
 
 // checkForUpdates alerts the user if there is
 // an updated version of F2 from the one currently installed.
 func checkForUpdates(app *cli.App) {
-	fmt.Println("Checking for updates...")
-
-	c := http.Client{Timeout: 20 * time.Second}
+	spinner, _ := pterm.DefaultSpinner.Start("Checking for updates...")
+	c := http.Client{Timeout: 10 * time.Second}
 
 	resp, err := c.Get("https://github.com/ayoisaiah/f2/releases/latest")
 	if err != nil {
-		fmt.Println("HTTP Error: Failed to check for update")
+		pterm.Error.Println("HTTP Error: Failed to check for update")
 		return
 	}
 
@@ -68,17 +74,22 @@ func checkForUpdates(app *cli.App) {
 		&version,
 	)
 	if err != nil {
-		fmt.Println("Failed to get latest version")
+		pterm.Error.Println("Failed to get latest version")
 		return
 	}
 
 	if version == app.Version {
-		fmt.Printf(
-			"Congratulations, you are using the latest version of %s\n",
+		text := pterm.Sprintf(
+			"Congratulations, you are using the latest version of %s",
 			app.Name,
 		)
+		spinner.Success(text)
 	} else {
-		fmt.Printf("%s: %s at %s\n", printColor("green", "Update available"), version, resp.Request.URL.String())
+		pterm.Warning.Prefix = pterm.Prefix{
+			Text:  "UPDATE AVAILABLE",
+			Style: pterm.NewStyle(pterm.BgYellow, pterm.FgBlack),
+		}
+		pterm.Warning.Printfln("A new release of F2 is available: %s at %s", version, resp.Request.URL.String())
 	}
 }
 
