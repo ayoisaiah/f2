@@ -22,9 +22,8 @@ var (
 		"Invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value. Use 'f2 --help' for more information",
 	)
 
-	errConflictDetected = fmt.Errorf(
-		"Resolve conflicts before proceeding or use the %s flag to auto fix all conflicts",
-		pterm.Yellow("-F"),
+	errConflictDetected = errors.New(
+		"Resolve conflicts before proceeding or use the -F flag to auto fix all conflicts",
 	)
 )
 

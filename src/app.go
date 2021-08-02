@@ -50,6 +50,12 @@ WEBSITE:
 	if _, exists := os.LookupEnv("NO_COLOR"); exists {
 		pterm.DisableColor()
 	}
+
+	pterm.Error.MessageStyle = pterm.NewStyle(pterm.FgRed)
+	pterm.Error.Prefix = pterm.Prefix{
+		Text:  "ERROR",
+		Style: pterm.NewStyle(pterm.BgRed, pterm.FgBlack),
+	}
 }
 
 // checkForUpdates alerts the user if there is
