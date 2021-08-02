@@ -33,7 +33,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
-    - errorlint
+    # - errorlint
     - exportloopref
     - exhaustive
     - goconst
