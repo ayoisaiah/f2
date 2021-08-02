@@ -208,6 +208,11 @@ func GetApp() *cli.App {
 				Usage:   "Include hidden directories and files in the matches (they are skipped by default). A hidden file or directory is one whose name starts with a period (all operating systems) or one whose hidden attribute is set to true (Windows only)",
 			},
 			&cli.BoolFlag{
+				Name:    "verbose",
+				Aliases: []string{"V"},
+				Usage:   "Enable verbose output. Each renaming operation will be printed out if this flag is provided.",
+			},
+			&cli.BoolFlag{
 				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
 				Usage:   "Automatically fix conflicts based on predefined rules. Learn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection",

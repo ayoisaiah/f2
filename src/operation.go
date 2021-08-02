@@ -86,6 +86,7 @@ type Operation struct {
 	numberOffset      []int
 	replaceLimit      int
 	allowOverwrites   bool
+	verbose           bool
 }
 
 type backupFile struct {
@@ -174,7 +175,7 @@ func (op *Operation) undo(path string) error {
 		if err = os.Remove(path); err != nil {
 			pterm.Warning.Printfln(
 				"Unable to remove redundant backup file '%s' after successful undo operation.",
-				pterm.Yellow(path),
+				pterm.LightYellow(path),
 			)
 		}
 	}
@@ -209,7 +210,7 @@ func (op *Operation) printChanges() {
 
 // rename iterates over all the matches and renames them on the filesystem
 // directories are auto-created if necessary.
-// Errors are aggregated ins""tead of being reported one by one.
+// Errors are aggregated instead of being reported one by one.
 func (op *Operation) rename() {
 	var errs []renameError
 
@@ -249,6 +250,12 @@ func (op *Operation) rename() {
 		if err := os.Rename(source, target); err != nil {
 			renameErr.err = err
 			errs = append(errs, renameErr)
+
+			if op.verbose {
+				pterm.Error.Printfln("Failed to rename %s to %s", source, target)
+			}
+		} else if op.verbose {
+			pterm.Success.Printfln("Renamed %s to %s", source, target)
 		}
 
 		renamed = append(renamed, ch)
@@ -661,6 +668,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.maxDepth = int(c.Uint("max-depth"))
 	op.quiet = c.Bool("quiet")
 	op.revert = c.Bool("undo")
+	op.verbose = c.Bool("verbose")
 	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
 
