@@ -10,17 +10,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func disableColor() {
-	pterm.DisableColor()
-	pterm.DisableStyling()
-	pterm.Debug.Prefix.Text = ""
-	pterm.Info.Prefix.Text = ""
-	pterm.Success.Prefix.Text = ""
-	pterm.Warning.Prefix.Text = ""
-	pterm.Error.Prefix.Text = ""
-	pterm.Fatal.Prefix.Text = ""
-}
-
 func init() {
 	// Override the default help template
 	cli.AppHelpTemplate = `DESCRIPTION:
@@ -59,7 +48,12 @@ WEBSITE:
 
 	// Disable colour output if NO_COLOR is set
 	if _, exists := os.LookupEnv("NO_COLOR"); exists {
-		disableColor()
+		disableStyling()
+	}
+
+	// Disable colour output if F2_NO_COLOR is set
+	if _, exists := os.LookupEnv("F2_NO_COLOR"); exists {
+		disableStyling()
 	}
 
 	pterm.Error.MessageStyle = pterm.NewStyle(pterm.FgRed)
@@ -67,6 +61,18 @@ WEBSITE:
 		Text:  "ERROR",
 		Style: pterm.NewStyle(pterm.BgRed, pterm.FgBlack),
 	}
+}
+
+// disableStyling disables all styling provided by pterm.
+func disableStyling() {
+	pterm.DisableColor()
+	pterm.DisableStyling()
+	pterm.Debug.Prefix.Text = ""
+	pterm.Info.Prefix.Text = ""
+	pterm.Success.Prefix.Text = ""
+	pterm.Warning.Prefix.Text = ""
+	pterm.Error.Prefix.Text = ""
+	pterm.Fatal.Prefix.Text = ""
 }
 
 // checkForUpdates alerts the user if there is
@@ -246,7 +252,7 @@ func GetApp() *cli.App {
 		UseShortOptionHandling: true,
 		Action: func(c *cli.Context) error {
 			if c.Bool("no-color") {
-				disableColor()
+				disableStyling()
 			}
 
 			op, err := newOperation(c)
