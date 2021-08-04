@@ -3,7 +3,6 @@
 </p>
 
 <p align="center">
-   <a href="https://www.codacy.com/manual/ayoisaiah/f2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ayoisaiah/f2&amp;utm_campaign=Badge_Grade"><img src="https://api.codacy.com/project/badge/Grade/7136493cf477467387381890cb25dc9e" alt="Codacy Badge"></a>
    <a href="http://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt=""></a>
    <a href="https://github.com/ayoisaiah/F2/actions"><img src="https://github.com/ayoisaiah/F2/actions/workflows/test.yml/badge.svg" alt="Github Actions"></a>
    <a href="https://golang.org"><img src="https://img.shields.io/badge/Made%20with-Go-1f425f.svg" alt="made-with-Go"></a>
@@ -66,6 +65,7 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 - Supports renaming only files, or only directories, or both.
 - Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.), and it can be formatted in several ways.
 - Supports [undoing](https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation) the last renaming operation in case of mistakes or errors.
+- Supports renaming from a [CSV file](https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file).
 - Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each option that is provided.
 
 ## Screenshots

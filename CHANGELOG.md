@@ -6,7 +6,7 @@ This release brings the following improvements:
 - Improved no color options. You can now set the `F2_NO_COLOR` environmental variable or use the brand new `--no-color` flag to disable coloured output.
 - Validation error messages are now much clearer (no longer mixing emoji and text).
 - Console output has been improved by using [pterm](https://github.com/pterm/pterm). The green, red, and yellow colours are slightly different now due to this change.
-- You can now specify a set of files or directory as argument to F2 Ithanks to [nightson](https://github.com/nightson) for suggesting this enhancement).
+- You can now specify a set of files or directory as argument to F2 (thanks to [nightson](https://github.com/nightson) for suggesting this enhancement).
 - The backup directory has changed to `~/.local/share/f2/backups` on Linux, `~/Library/Application Support/f2/backups` on macOS, and `%LOCALAPPDATA%\f2\backups` on Windows. The previous backup directory (`~/.f2/backups`) is still supported (in case you have existing backups there), but new backup files will not be created there anymore. This change was made to conform to the [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) and conventions for storing application files on each operating system, and to avoid cluttering up the home directory.
 - A `--verbose` option was added for outputting each renaming operation in `--exec` mode.
 
