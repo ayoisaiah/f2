@@ -25,6 +25,8 @@ var (
 	errConflictDetected = errors.New(
 		"Resolve conflicts before proceeding or use the -F flag to auto fix all conflicts",
 	)
+
+	errCSVReadFailed = errors.New("Unable to read CSV file")
 )
 
 const (
@@ -86,6 +88,7 @@ type Operation struct {
 	replaceLimit      int
 	allowOverwrites   bool
 	verbose           bool
+	csvFilename       string
 }
 
 type backupFile struct {
@@ -670,6 +673,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.verbose = c.Bool("verbose")
 	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
+	op.csvFilename = c.String("csv")
 
 	// Sorting
 	if c.String("sort") != "" {
@@ -751,11 +755,70 @@ loop:
 	return nil
 }
 
+func (op *Operation) handleCSV() error {
+	records, err := readCSVFile(op.csvFilename)
+	if err != nil {
+		return err
+	}
+
+	var p []Change
+
+records:
+	for _, v := range records {
+		if len(v) > 0 {
+			source := strings.TrimSpace(v[0])
+
+			var targetName string
+
+			if len(v) > 1 {
+				targetName = strings.TrimSpace(v[1])
+			}
+
+			if f, err := os.Stat(source); err == nil || errors.Is(err, os.ErrExist) {
+				dir := filepath.Dir(source)
+
+				vars, err := extractVariables(targetName)
+				if err != nil {
+					return err
+				}
+
+				ch := Change{
+					BaseDir:        dir,
+					Source:         filepath.Clean(f.Name()),
+					originalSource: filepath.Clean(f.Name()),
+					IsDir:          f.IsDir(),
+					Target:         targetName,
+				}
+
+				err = op.replaceVariables(&ch, &vars)
+				if err != nil {
+					return err
+				}
+
+				// ensure the same the same path is not added more than once
+				for _, v1 := range p {
+					fullPath := filepath.Join(v1.BaseDir, v1.Source)
+					if fullPath == source {
+						continue records
+					}
+				}
+
+				p = append(p, ch)
+			}
+		}
+	}
+
+	op.paths = p
+
+	return nil
+}
+
 // newOperation returns an Operation constructed
 // from command line flags & arguments.
 func newOperation(c *cli.Context) (*Operation, error) {
 	if len(c.StringSlice("find")) == 0 &&
 		len(c.StringSlice("replace")) == 0 &&
+		c.String("csv") == "" &&
 		!c.Bool("undo") {
 		return nil, errInvalidArgument
 	}
@@ -775,6 +838,15 @@ func newOperation(c *cli.Context) (*Operation, error) {
 
 	// If reverting an operation, no need to walk through directories
 	if op.revert {
+		return op, nil
+	}
+
+	if op.csvFilename != "" {
+		err = op.handleCSV()
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", errCSVReadFailed, err.Error())
+		}
+
 		return op, nil
 	}
 

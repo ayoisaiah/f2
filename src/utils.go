@@ -1,6 +1,7 @@
 package f2
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -75,4 +76,22 @@ func greatestCommonDivisor(a, b int) int {
 	}
 
 	return greatestCommonDivisor(b, a%b)
+}
+
+func readCSVFile(filePath string) ([][]string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+
+	csvReader := csv.NewReader(f)
+
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
 }

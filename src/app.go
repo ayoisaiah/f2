@@ -143,6 +143,11 @@ func GetApp() *cli.App {
 				Usage:       "Replacement string. If omitted, defaults to an empty string. Supports built-in and regex capture variables. Learn more about variable support here: https://github.com/ayoisaiah/f2/wiki/Built-in-variables",
 				DefaultText: "<string>",
 			},
+			&cli.StringFlag{
+				Name:        "csv",
+				Usage:       "List of files in CSV format",
+				DefaultText: "<file>",
+			},
 			&cli.IntFlag{
 				Name:        "replace-limit",
 				Aliases:     []string{"l"},
