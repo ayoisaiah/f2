@@ -325,10 +325,8 @@ func (op *Operation) handleErrors() error {
 		err = op.backup()
 	}
 
-	msg := fmt.Sprintf(
-		"Some files could not be renamed. To revert the changes, run: %s",
-		pterm.Yellow("f2 -u"),
-	)
+	msg := "Some files could not be renamed. To revert the changes, run: f2 -u"
+
 	if op.revert {
 		msg = "Some files could not be reverted. See above table for the full explanation."
 	}
@@ -732,7 +730,7 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 
 	var p []Change
 
-	for _, v := range records {
+	for i, v := range records {
 		if len(v) == 0 {
 			continue
 		}
@@ -740,6 +738,8 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 		source := strings.TrimSpace(v[0])
 
 		var targetName string
+
+		var found bool
 
 		if len(v) > 1 {
 			targetName = strings.TrimSpace(v[1])
@@ -757,7 +757,12 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 			if f, err := os.Stat(fullPath); err == nil ||
 				errors.Is(err, os.ErrExist) {
 				m[fullPath] = f
+				found = true
 			}
+		}
+
+		if !found && op.verbose {
+			pterm.Warning.Printfln("Source file '%s' was not found, so row '%d' was skipped", source, i+1)
 		}
 
 	loop:
