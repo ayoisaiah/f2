@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,7 +20,7 @@ import (
 
 var (
 	errInvalidArgument = errors.New(
-		"Invalid argument: one of `-f`, `-r` or `-u` must be present and set to a non empty string value. Use 'f2 --help' for more information",
+		"Invalid argument: one of `-f`, `-r`, `-csv` or `-u` must be present and set to a non empty string value. Use 'f2 --help' for more information",
 	)
 
 	errConflictDetected = errors.New(
@@ -42,6 +43,7 @@ const (
 type Change struct {
 	index          int
 	originalSource string
+	csvRow         []string
 	BaseDir        string `json:"base_dir"`
 	Source         string `json:"source"`
 	Target         string `json:"target"`
@@ -254,7 +256,11 @@ func (op *Operation) rename() {
 			errs = append(errs, renameErr)
 
 			if op.verbose {
-				pterm.Error.Printfln("Failed to rename %s to %s", source, target)
+				pterm.Error.Printfln(
+					"Failed to rename %s to %s",
+					source,
+					target,
+				)
 			}
 		} else if op.verbose {
 			pterm.Success.Printfln("Renamed %s to %s", source, target)
@@ -651,45 +657,6 @@ func (op *Operation) setFindStringRegex(replacementIndex int) error {
 	return nil
 }
 
-// setOptions applies the command line arguments
-// onto the operation.
-func setOptions(op *Operation, c *cli.Context) error {
-	op.findSlice = c.StringSlice("find")
-	op.replacementSlice = c.StringSlice("replace")
-	op.exec = c.Bool("exec")
-	op.fixConflicts = c.Bool("fix-conflicts")
-	op.includeDir = c.Bool("include-dir")
-	op.includeHidden = c.Bool("hidden")
-	op.ignoreCase = c.Bool("ignore-case")
-	op.ignoreExt = c.Bool("ignore-ext")
-	op.recursive = c.Bool("recursive")
-	op.directories = c.Args().Slice()
-	op.onlyDir = c.Bool("only-dir")
-	op.stringLiteralMode = c.Bool("string-mode")
-	op.excludeFilter = c.StringSlice("exclude")
-	op.maxDepth = int(c.Uint("max-depth"))
-	op.quiet = c.Bool("quiet")
-	op.revert = c.Bool("undo")
-	op.verbose = c.Bool("verbose")
-	op.allowOverwrites = c.Bool("allow-overwrites")
-	op.replaceLimit = c.Int("replace-limit")
-	op.csvFilename = c.String("csv")
-
-	// Sorting
-	if c.String("sort") != "" {
-		op.sort = c.String("sort")
-	} else if c.String("sortr") != "" {
-		op.sort = c.String("sortr")
-		op.reverseSort = true
-	}
-
-	if op.onlyDir {
-		op.includeDir = true
-	}
-
-	return op.setFindStringRegex(0)
-}
-
 // walk is used to navigate directories recursively
 // and include their contents in the pool of paths in
 // which to find matches. It respects the following properties
@@ -755,7 +722,9 @@ loop:
 	return nil
 }
 
-func (op *Operation) handleCSV() error {
+// handleCSV reads the provided CSV file, and finds all the
+// valid candidates for replacement.
+func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 	records, err := readCSVFile(op.csvFilename)
 	if err != nil {
 		return err
@@ -763,54 +732,117 @@ func (op *Operation) handleCSV() error {
 
 	var p []Change
 
-records:
 	for _, v := range records {
-		if len(v) > 0 {
-			source := strings.TrimSpace(v[0])
+		if len(v) == 0 {
+			continue
+		}
 
-			var targetName string
+		source := strings.TrimSpace(v[0])
 
-			if len(v) > 1 {
-				targetName = strings.TrimSpace(v[1])
+		var targetName string
+
+		if len(v) > 1 {
+			targetName = strings.TrimSpace(v[1])
+		}
+
+		m := make(map[string]os.FileInfo)
+
+		for k := range paths {
+			fullPath := source
+
+			if !filepath.IsAbs(source) {
+				fullPath = filepath.Join(k, source)
 			}
 
-			if f, err := os.Stat(source); err == nil || errors.Is(err, os.ErrExist) {
-				dir := filepath.Dir(source)
-
-				vars, err := extractVariables(targetName)
-				if err != nil {
-					return err
-				}
-
-				ch := Change{
-					BaseDir:        dir,
-					Source:         filepath.Clean(f.Name()),
-					originalSource: filepath.Clean(f.Name()),
-					IsDir:          f.IsDir(),
-					Target:         targetName,
-				}
-
-				err = op.replaceVariables(&ch, &vars)
-				if err != nil {
-					return err
-				}
-
-				// ensure the same the same path is not added more than once
-				for _, v1 := range p {
-					fullPath := filepath.Join(v1.BaseDir, v1.Source)
-					if fullPath == source {
-						continue records
-					}
-				}
-
-				p = append(p, ch)
+			if f, err := os.Stat(fullPath); err == nil ||
+				errors.Is(err, os.ErrExist) {
+				m[fullPath] = f
 			}
+		}
+
+	loop:
+		for k, f := range m {
+			dir := filepath.Dir(k)
+
+			vars, err := extractVariables(targetName)
+			if err != nil {
+				return err
+			}
+
+			ch := Change{
+				BaseDir:        dir,
+				Source:         filepath.Clean(f.Name()),
+				originalSource: filepath.Clean(f.Name()),
+				csvRow:         v,
+				IsDir:          f.IsDir(),
+				Target:         targetName,
+			}
+
+			err = op.replaceVariables(&ch, &vars)
+			if err != nil {
+				return err
+			}
+
+			// ensure the same the same path is not added more than once
+			for _, v1 := range p {
+				fullPath := filepath.Join(v1.BaseDir, v1.Source)
+				if fullPath == k {
+					break loop
+				}
+			}
+
+			p = append(p, ch)
 		}
 	}
 
 	op.paths = p
 
 	return nil
+}
+
+// setOptions applies the command line arguments
+// onto the operation.
+func setOptions(op *Operation, c *cli.Context) error {
+	op.findSlice = c.StringSlice("find")
+	op.replacementSlice = c.StringSlice("replace")
+	op.exec = c.Bool("exec")
+	op.fixConflicts = c.Bool("fix-conflicts")
+	op.includeDir = c.Bool("include-dir")
+	op.includeHidden = c.Bool("hidden")
+	op.ignoreCase = c.Bool("ignore-case")
+	op.ignoreExt = c.Bool("ignore-ext")
+	op.recursive = c.Bool("recursive")
+	op.directories = c.Args().Slice()
+	op.onlyDir = c.Bool("only-dir")
+	op.stringLiteralMode = c.Bool("string-mode")
+	op.excludeFilter = c.StringSlice("exclude")
+	op.maxDepth = int(c.Uint("max-depth"))
+	op.quiet = c.Bool("quiet")
+	op.revert = c.Bool("undo")
+	op.verbose = c.Bool("verbose")
+	op.allowOverwrites = c.Bool("allow-overwrites")
+	op.replaceLimit = c.Int("replace-limit")
+	op.csvFilename = c.String("csv")
+
+	// Sorting
+	if c.String("sort") != "" {
+		op.sort = c.String("sort")
+	} else if c.String("sortr") != "" {
+		op.sort = c.String("sortr")
+		op.reverseSort = true
+	}
+
+	if op.onlyDir {
+		op.includeDir = true
+	}
+
+	// Ensure that each findString has a corresponding replacement.
+	// The replacement defaults to an empty string if unset
+	for len(op.findSlice) > len(op.replacementSlice) {
+		op.replacementSlice = append(op.replacementSlice, "")
+	}
+
+	return op.setFindStringRegex(0)
 }
 
 // newOperation returns an Operation constructed
@@ -838,15 +870,6 @@ func newOperation(c *cli.Context) (*Operation, error) {
 
 	// If reverting an operation, no need to walk through directories
 	if op.revert {
-		return op, nil
-	}
-
-	if op.csvFilename != "" {
-		err = op.handleCSV()
-		if err != nil {
-			return nil, fmt.Errorf("%w: %s", errCSVReadFailed, err.Error())
-		}
-
 		return op, nil
 	}
 
@@ -907,6 +930,13 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	op.setPaths(paths)
+
+	if op.csvFilename != "" {
+		err = op.handleCSV(paths)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", errCSVReadFailed, err.Error())
+		}
+	}
 
 	return op, nil
 }

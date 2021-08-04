@@ -85,6 +85,14 @@ type randomVar struct {
 	}
 }
 
+type csvVar struct {
+	submatches [][]string
+	values     []struct {
+		regex  *regexp.Regexp
+		column int
+	}
+}
+
 type variables struct {
 	exif      exifVar
 	exiftool  exiftoolVar
@@ -94,12 +102,53 @@ type variables struct {
 	date      dateVar
 	random    randomVar
 	transform transformVar
+	csv       csvVar
 }
 
 var (
 	errInvalidSubmatches = errors.New("Invalid number of submatches")
 )
 
+// getCsvVar retrieves all the csv variables in the replacement
+// string if any.
+func getCsvVar(replacementInput string) (csvVar, error) {
+	var c csvVar
+	if csvRegex.MatchString(replacementInput) {
+		c.submatches = csvRegex.FindAllStringSubmatch(replacementInput, -1)
+		expectedLength := 2
+
+		for _, submatch := range c.submatches {
+			if len(submatch) < expectedLength {
+				return c, errInvalidSubmatches
+			}
+
+			var x struct {
+				regex  *regexp.Regexp
+				column int
+			}
+
+			regex, err := regexp.Compile(submatch[0])
+			if err != nil {
+				return c, err
+			}
+
+			x.regex = regex
+
+			n, err := strconv.Atoi(submatch[1])
+			if err != nil {
+				return c, err
+			}
+
+			x.column = n
+			c.values = append(c.values, x)
+		}
+	}
+
+	return c, nil
+}
+
+// getDateVar retrieves all the date variables in the replacement
+// string if any.
 func getDateVar(replacementInput string) (dateVar, error) {
 	var d dateVar
 	if dateRegex.MatchString(replacementInput) {
@@ -500,6 +549,11 @@ func extractVariables(replacementInput string) (variables, error) {
 	}
 
 	v.transform, err = getTransformVar(replacementInput)
+	if err != nil {
+		return v, err
+	}
+
+	v.csv, err = getCsvVar(replacementInput)
 	if err != nil {
 		return v, err
 	}

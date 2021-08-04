@@ -809,3 +809,30 @@ func TestHandleErrors(t *testing.T) {
 		os.Remove(str)
 	}
 }
+
+func TestCSV(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	csv := filepath.Join("..", "testdata", "input.csv")
+
+	cases := []testCase{
+		{
+			name: "Rename from CSV file",
+			want: []Change{
+				{
+					Source:  "ios.mp4",
+					BaseDir: filepath.Join(testDir, "images", "pics"),
+					Target:  "a podcast on ios 15.mp4",
+				},
+				{
+					Source:  "abc.pdf",
+					BaseDir: testDir,
+					Target:  "A book about africa.pdf",
+				},
+			},
+			args: []string{"-csv", csv, "-r", "{{csv.3}}{{ext}}", testDir},
+		},
+	}
+
+	runFindReplace(t, cases)
+}

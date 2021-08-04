@@ -357,7 +357,7 @@ func TestGetNewPath(t *testing.T) {
 			BaseDir: ".",
 		}
 
-		out := newTarget(ch, v.m)
+		out := newTarget(&ch, v.m)
 		if out != v.output {
 			t.Fatalf(
 				"Incorrect output from getNewPath. Want: %s, got %s",

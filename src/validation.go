@@ -54,7 +54,7 @@ type Conflict struct {
 // newTarget appends a number to the target file name so that it
 // does not conflict with an existing path on the filesystem or
 // another renamed file. For example: image.png becomes image (2).png.
-func newTarget(ch Change, renamedPaths map[string][]struct {
+func newTarget(ch *Change, renamedPaths map[string][]struct {
 	sourcePath string
 	index      int
 }) string {
@@ -260,7 +260,7 @@ func (op *Operation) detectConflicts() {
 			continue
 		}
 
-		detected = op.checkPathExistsConflict(sourcePath, targetPath, ch, i)
+		detected = op.checkPathExistsConflict(sourcePath, targetPath, &ch, i)
 		if detected && op.fixConflicts {
 			i--
 			continue
@@ -282,7 +282,7 @@ func (op *Operation) detectConflicts() {
 // already exists on the filesystem.
 func (op *Operation) checkPathExistsConflict(
 	sourcePath, targetPath string,
-	ch Change,
+	ch *Change,
 	i int,
 ) bool {
 	var conflictDetected bool
@@ -352,7 +352,7 @@ func (op *Operation) checkOverwritingPathConflict(
 					}
 
 					target := newTarget(
-						op.matches[item.index],
+						&op.matches[item.index],
 						renamedPaths,
 					)
 					pt := filepath.Join(op.matches[item.index].BaseDir, target)

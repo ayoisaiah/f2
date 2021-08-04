@@ -99,6 +99,7 @@ var (
 	)
 	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
 	transformRegex = regexp.MustCompile(`{{tr.(up|lw|ti|win|mac|di)}}`)
+	csvRegex       = regexp.MustCompile(`{{csv.(\d+)}}`)
 	id3Regex       *regexp.Regexp
 	exifRegex      *regexp.Regexp
 	dateRegex      *regexp.Regexp
@@ -807,6 +808,27 @@ func replaceTransformVariables(
 	return target
 }
 
+// replaceCsvVariables inserts the appropriate CSV column
+// in the replacement target or an empty string if the column
+// is not present in the row.
+func replaceCsvVariables(target string, csvRow []string, cv csvVar) string {
+	for i := range cv.submatches {
+		current := cv.values[i]
+		column := current.column - 1
+		r := current.regex
+
+		var value string
+
+		if len(csvRow) > column && column >= 0 {
+			value = csvRow[column]
+		}
+
+		target = r.ReplaceAllString(target, value)
+	}
+
+	return target
+}
+
 // replaceVariables checks if any variables are present in the target filename
 // and delegates the variable replacement to the appropriate function.
 func (op *Operation) replaceVariables(
@@ -881,6 +903,12 @@ func (op *Operation) replaceVariables(
 		if err != nil {
 			return err
 		}
+
+		ch.Target = out
+	}
+
+	if csvRegex.MatchString(ch.Target) {
+		out := replaceCsvVariables(ch.Target, ch.csvRow, vars.csv)
 
 		ch.Target = out
 	}
