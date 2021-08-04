@@ -145,8 +145,8 @@ func GetApp() *cli.App {
 			},
 			&cli.StringFlag{
 				Name:        "csv",
-				Usage:       "List of files in CSV format",
-				DefaultText: "<file>",
+				Usage:       "Load a CSV file, and rename according to its contents. File names will be matched according to the content in the first column",
+				DefaultText: "<csv file>",
 			},
 			&cli.IntFlag{
 				Name:        "replace-limit",
