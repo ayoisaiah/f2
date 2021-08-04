@@ -760,9 +760,10 @@ func (op *Operation) handleCSV() error {
 
 	var p []Change
 
+records:
 	for _, v := range records {
 		if len(v) > 0 {
-			sourceFile := strings.TrimSpace(v[0])
+			source := strings.TrimSpace(v[0])
 
 			var targetName string
 
@@ -770,8 +771,13 @@ func (op *Operation) handleCSV() error {
 				targetName = strings.TrimSpace(v[1])
 			}
 
-			if f, err := os.Stat(sourceFile); err == nil || errors.Is(err, os.ErrExist) {
-				dir := filepath.Dir(f.Name())
+			if f, err := os.Stat(source); err == nil || errors.Is(err, os.ErrExist) {
+				dir := filepath.Dir(source)
+
+				vars, err := extractVariables(targetName)
+				if err != nil {
+					return err
+				}
 
 				ch := Change{
 					BaseDir:        dir,
@@ -779,6 +785,19 @@ func (op *Operation) handleCSV() error {
 					originalSource: filepath.Clean(f.Name()),
 					IsDir:          f.IsDir(),
 					Target:         targetName,
+				}
+
+				err = op.replaceVariables(&ch, &vars)
+				if err != nil {
+					return err
+				}
+
+				// ensure the same the same path is not added more than once
+				for _, v1 := range p {
+					fullPath := filepath.Join(v1.BaseDir, v1.Source)
+					if fullPath == source {
+						continue records
+					}
 				}
 
 				p = append(p, ch)
