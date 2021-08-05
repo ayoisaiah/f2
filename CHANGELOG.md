@@ -1,3 +1,11 @@
+## 1.7.1 (2021-08-05)
+
+The following enhancements were made:
+
+- Quiet mode (`--quiet`) no longer suppresses errors.
+- Help output has been improved and made more succinct.
+- Running F2 without arguments now shows a short help message.
+
 ## 1.7.0 (2021-08-04)
 
 This release brings the following improvements:
