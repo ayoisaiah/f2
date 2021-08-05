@@ -20,7 +20,8 @@ builds:
         goarch: arm64
     main: ./cmd/f2
 archives:
-  - replacements:
+  -
+    replacements:
       darwin: darwin
       linux: linux
       windows: windows
@@ -28,6 +29,11 @@ archives:
       386: i386
       amd64: amd64
       arm64: arm64
+
+    files:
+      - LICENCE
+      - README.md
+      - CHANGELOG.md
 checksum:
   name_template: 'checksums.txt'
 snapshot:
