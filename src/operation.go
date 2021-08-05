@@ -83,7 +83,6 @@ type Operation struct {
 	maxDepth          int
 	sort              string
 	reverseSort       bool
-	quiet             bool
 	errors            []renameError
 	revert            bool
 	numberOffset      []int
@@ -91,6 +90,7 @@ type Operation struct {
 	allowOverwrites   bool
 	verbose           bool
 	csvFilename       string
+	quiet             bool
 }
 
 type backupFile struct {
@@ -366,9 +366,7 @@ func (op *Operation) noMatches() {
 		msg = "No operations to undo"
 	}
 
-	if !op.quiet {
-		pterm.Info.Println(msg)
-	}
+	pterm.Info.Println(msg)
 }
 
 // execute applies the renaming operation to the filesystem.
@@ -389,7 +387,7 @@ func (op *Operation) execute() error {
 		return op.backup()
 	}
 
-	if !op.quiet && !op.revert {
+	if !op.revert {
 		pterm.Info.Println("No files were renamed")
 	}
 
@@ -400,10 +398,11 @@ func (op *Operation) execute() error {
 func (op *Operation) dryRun() {
 	if !op.quiet {
 		op.printChanges()
-		pterm.Info.Printfln(
-			"Use the -x or --exec flag to apply the above changes",
-		)
 	}
+
+	pterm.Info.Printfln(
+		"Use the -x or --exec flag to apply the above changes",
+	)
 }
 
 // apply prints the changes to be made in dry-run mode
@@ -419,9 +418,7 @@ func (op *Operation) apply() error {
 	op.detectConflicts()
 
 	if len(op.conflicts) > 0 && !op.fixConflicts {
-		if !op.quiet {
-			op.reportConflicts()
-		}
+		op.reportConflicts()
 
 		return errConflictDetected
 	}
@@ -762,7 +759,11 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 		}
 
 		if !found && op.verbose {
-			pterm.Warning.Printfln("Source file '%s' was not found, so row '%d' was skipped", source, i+1)
+			pterm.Warning.Printfln(
+				"Source file '%s' was not found, so row '%d' was skipped",
+				source,
+				i+1,
+			)
 		}
 
 	loop:
@@ -822,12 +823,12 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.stringLiteralMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
 	op.maxDepth = int(c.Uint("max-depth"))
-	op.quiet = c.Bool("quiet")
 	op.revert = c.Bool("undo")
 	op.verbose = c.Bool("verbose")
 	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
 	op.csvFilename = c.String("csv")
+	op.quiet = c.Bool("quiet")
 
 	// Sorting
 	if c.String("sort") != "" {

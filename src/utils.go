@@ -7,14 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/pterm/pterm"
 )
-
-func printError(silent bool, err error) {
-	if !silent {
-		pterm.Error.Println(err)
-	}
-}
 
 func removeHidden(
 	de []os.DirEntry,

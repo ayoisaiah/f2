@@ -17,6 +17,7 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 )
 
@@ -150,6 +151,8 @@ func action(args []string) (ActionResult, error) {
 		}
 
 		op.quiet = true
+
+		pterm.DisableOutput()
 
 		result.applyError = op.run()
 		result.changes = op.matches
