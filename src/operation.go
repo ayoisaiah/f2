@@ -28,6 +28,8 @@ var (
 	)
 
 	errCSVReadFailed = errors.New("Unable to read CSV file")
+
+	errBackupNotFound = errors.New("Unable to find the backup file for the current directory")
 )
 
 const (
@@ -585,10 +587,7 @@ func (op *Operation) run() error {
 	if op.revert {
 		path, err := op.retrieveBackupFile()
 		if err != nil {
-			return fmt.Errorf(
-				"Failed to retrieve backup file for the current directory: %w",
-				err,
-			)
+			return errBackupNotFound
 		}
 
 		return op.undo(path)
