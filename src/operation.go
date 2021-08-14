@@ -29,7 +29,9 @@ var (
 
 	errCSVReadFailed = errors.New("Unable to read CSV file")
 
-	errBackupNotFound = errors.New("Unable to find the backup file for the current directory")
+	errBackupNotFound = errors.New(
+		"Unable to find the backup file for the current directory",
+	)
 )
 
 const (

@@ -1,8 +1,13 @@
 repos:
 -   repo: https://github.com/tekwizely/pre-commit-golang
-    rev: v0.8.3
+    rev: v1.0.0-beta.4
     hooks:
     -   id: go-build-repo-mod
+    -   id: my-cmd
+        name: golines
+        args: [golines, '-m', '80', '-w', '--']
+        always_run: false
+        verbose: false
     -   id: go-test-repo-mod
     -   id: go-imports
     -   id: golangci-lint-repo-mod
