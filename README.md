@@ -26,11 +26,19 @@ F2 is written in Go, so you can install it through `go install` (requires Go 1.1
 $ go install github.com/ayoisaiah/f2/cmd/f2@latest
 ```
 
-You can also install it via [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/):
+### NPM package
+
+You can also install F2 via its [npm package](https://www.npmjs.com/package/@ayoisaiah/f2):
+
+With `npm`:
 
 ```bash
 $ npm i @ayoisaiah/f2 -g
-# or
+```
+
+With `yarn`:
+
+```bash
 $ yarn global add @ayoisaiah/f2
 ```
 
