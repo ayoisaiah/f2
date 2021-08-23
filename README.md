@@ -18,7 +18,7 @@
 
 <img src="https://ik.imagekit.io/turnupdev/f2-demo_tnCZlpBrkhX.gif?tr:q-100" alt="F2 in action on Ubuntu Linux">
 
-## Installation
+## ⚡ Installation
 
 F2 is written in Go, so you can install it through `go install` (requires Go 1.16 or later):
 
@@ -26,7 +26,7 @@ F2 is written in Go, so you can install it through `go install` (requires Go 1.1
 $ go install github.com/ayoisaiah/f2/cmd/f2@latest
 ```
 
-### NPM package
+### 📦 NPM package
 
 You can also install F2 via its [npm package](https://www.npmjs.com/package/@ayoisaiah/f2):
 
@@ -44,7 +44,7 @@ $ yarn global add @ayoisaiah/f2
 
 Other installation methods are [available here](https://github.com/ayoisaiah/f2/wiki/Installation/).
 
-## Why should you use F2?
+## 💥 Why should you use F2?
 
 - F2 helps you organise your filesystem through batch renaming so that your files and directories can have a consistent naming scheme.
 - It offers a comprehensive set of renaming options, and scales well from trivial string replacements to more complex operations involving regular expressions.
@@ -56,7 +56,7 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 - F2 has good test coverage with equal attention paid to all supported platforms (Linux, Windows and macOS).
 - F2 is [well documented](https://github.com/ayoisaiah/f2/wiki) so that you won't have to scratch your head while figuring out what you can do with it. Lots of [realistic examples](https://github.com/ayoisaiah/f2/wiki/Real-world-examples) are provided to aid comprehension.
 
-## Main features
+## ✨ Main features
 
 - Safe and transparent. F2 uses a dry run mode by default so you can review the exact changes that will be made to your filesystem before making them.
 - Cross-platform with full support for Linux, macOS, and Windows. It also runs on less commonly-used platforms, like Termux (Android).
@@ -76,7 +76,7 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 - Supports renaming from a [CSV file](https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file).
 - Extensive [documentation](https://github.com/ayoisaiah/f2/wiki) and examples for each option that is provided.
 
-## Screenshots
+## 💻 Screenshots
 
 ![Screenshot of F2 in action on Linux](https://ik.imagekit.io/turnupdev/f2_EsdXrHHKt.png?tr:q-100)
 
@@ -84,11 +84,11 @@ Other installation methods are [available here](https://github.com/ayoisaiah/f2/
 
 ![F2 can utilise ID3 attributes to organise music files](https://ik.imagekit.io/turnupdev/f2-id3-example_Esb--IK6A.png?tr:q-100)
 
-## Documentation
+## 📃 Documentation
 
 Visit the [wiki page](https://github.com/ayoisaiah/f2/wiki) to view usage examples and learn about all the renaming operations that can be achieved with F2.
 
-## Benchmarks
+## 🔥 Benchmarks
 
 **Environment**
 - **OS**: Ubuntu 20.04.2 LTS on Windows 10 x86_64
@@ -159,21 +159,10 @@ TotalSeconds      : 11.6342215
 TotalMilliseconds : 11634.2215
 ```
 
-## Credits
-
-F2 relies on other open source software listed below:
-
-- [urfave/cli](https://github.com/urfave/cli)
-- [gookit/color](https://github.com/gookit/color)
-- [olekukonko/tablewriter](https://github.com/olekukonko/tablewriter)
-- [rwcarlsen/goexif](https://github.com/rwcarlsen/goexif)
-- [djherbis/times](https://github.com/djherbis/times)
-- [dhowden/tag](https://github.com/dhowden/tag)
-
-## Contribute
+## 🤝 Contribute
 
 Bug reports and feature requests are much welcome! Please open an issue before creating a pull request.
 
-## Licence
+## ⚖ Licence
 
 Created by Ayooluwa Isaiah and released under the terms of the [MIT Licence](http://opensource.org/licenses/MIT).
