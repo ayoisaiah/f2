@@ -1,6 +1,7 @@
 package f2
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -136,6 +137,7 @@ type ActionResult struct {
 	backupFile      string
 	applyError      error
 	operationErrors []renameError
+	output          *bytes.Buffer
 }
 
 func action(args []string) (ActionResult, error) {
@@ -148,6 +150,9 @@ func action(args []string) (ActionResult, error) {
 			return err
 		}
 
+		var buf bytes.Buffer
+
+		op.writer = &buf
 		op.quiet = true
 
 		pterm.DisableOutput()
@@ -157,6 +162,7 @@ func action(args []string) (ActionResult, error) {
 		result.backupFile = backupFilePath
 		result.conflicts = op.conflicts
 		result.operationErrors = op.errors
+		result.output = &buf
 
 		return nil
 	}
@@ -793,7 +799,11 @@ func TestHandleErrors(t *testing.T) {
 	}
 
 	for _, v := range cases {
-		op := &Operation{}
+		var buf bytes.Buffer
+
+		op := &Operation{
+			writer: &buf,
+		}
 		op.matches = v.want
 		op.errors = v.expectedErrors
 

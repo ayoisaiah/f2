@@ -3,6 +3,7 @@ package f2
 import (
 	"encoding/csv"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -39,8 +40,8 @@ func contains(s []string, e string) bool {
 	return false
 }
 
-func printTable(data [][]string) {
-	table := tablewriter.NewWriter(os.Stdout)
+func printTable(data [][]string, w io.Writer) {
+	table := tablewriter.NewWriter(w)
 	table.SetHeader([]string{"Input", "Output", "Status"})
 	table.SetAutoWrapText(false)
 

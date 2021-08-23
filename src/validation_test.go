@@ -1,7 +1,7 @@
 package f2
 
 import (
-	"io"
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -264,29 +264,16 @@ func TestReportConflicts(t *testing.T) {
 		},
 	}
 
-	op := &Operation{}
-	op.conflicts = table
-	rescueStdout := os.Stdout
+	var buf bytes.Buffer
 
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
+	op := &Operation{
+		writer: &buf,
 	}
-
-	os.Stdout = w
+	op.conflicts = table
 
 	op.reportConflicts()
 
-	w.Close()
-
-	out, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	os.Stdout = rescueStdout
-
-	if string(out) == "" {
+	if buf.String() == "" {
 		t.Fatal(
 			"Expected output to be a non-empty string but, got an empty string",
 		)

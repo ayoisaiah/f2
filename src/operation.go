@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -95,6 +96,7 @@ type Operation struct {
 	verbose           bool
 	csvFilename       string
 	quiet             bool
+	writer            io.Writer
 }
 
 type backupFile struct {
@@ -213,7 +215,7 @@ func (op *Operation) printChanges() {
 		data[i] = d
 	}
 
-	printTable(data)
+	printTable(data, op.writer)
 }
 
 // rename iterates over all the matches and renames them on the filesystem
@@ -305,7 +307,7 @@ func (op *Operation) reportErrors() {
 		data[i+len(op.matches)] = d
 	}
 
-	printTable(data)
+	printTable(data, op.writer)
 }
 
 // handleErrors is used to report the errors and write any successful
@@ -862,7 +864,9 @@ func newOperation(c *cli.Context) (*Operation, error) {
 		return nil, errInvalidArgument
 	}
 
-	op := &Operation{}
+	op := &Operation{
+		writer: os.Stdout,
+	}
 
 	err := setOptions(op, c)
 	if err != nil {
