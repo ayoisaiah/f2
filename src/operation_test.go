@@ -59,6 +59,7 @@ var fileSystem = []string{
 	"conflicts/123.txt",
 	"conflicts/123 (3).txt",
 	"regex/100$-(boring+company).com.ng",
+	"weirdo/Data Structures and Algorithms/1. Asymptotic Analysis and Insertion Sort, Merge Sort/2.Sorting & Searching why bother with these simple tasks/this is a long path/1. Sorting & Searching- why bother with these simple tasks- - Data Structure & Algorithms - Part-2.mp4",
 }
 
 func init() {
@@ -94,22 +95,23 @@ func setupFileSystem(tb testing.TB) string {
 		tb.Fatal(err)
 	}
 
+	absPath, err := filepath.Abs(testDir)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	tb.Cleanup(func() {
-		if err = os.RemoveAll(testDir); err != nil {
-			tb.Fatal(err)
+		if err = os.RemoveAll(absPath); err != nil {
+			tb.Fatalf(
+				"An error occurred while cleaning up the filesystem: %s",
+				err,
+			)
 		}
 	})
 
-	directories := []string{
-		"images/pics",
-		"scripts",
-		"morepics/nested",
-		"conflicts",
-		".dir",
-		"regex",
-	}
-	for _, v := range directories {
-		filePath := filepath.Join(testDir, v)
+	for _, v := range fileSystem {
+		dir := filepath.Dir(v)
+		filePath := filepath.Join(testDir, dir)
 
 		err = os.MkdirAll(filePath, os.ModePerm)
 		if err != nil {
@@ -118,18 +120,14 @@ func setupFileSystem(tb testing.TB) string {
 	}
 
 	for _, f := range fileSystem {
-		filePath := filepath.Join(testDir, f)
-		if err = ioutil.WriteFile(filePath, []byte{}, 0600); err != nil {
+		pathToFile := filepath.Join(absPath, f)
+
+		if err = os.WriteFile(pathToFile, []byte{}, 0600); err != nil {
 			tb.Fatal(err)
 		}
 	}
 
-	abs, err := filepath.Abs(testDir)
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	return abs
+	return absPath
 }
 
 type ActionResult struct {

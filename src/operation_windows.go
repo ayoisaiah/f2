@@ -16,7 +16,16 @@ func isHidden(filename, baseDir string) (bool, error) {
 		return true, nil
 	}
 
-	pointer, err := syscall.UTF16PtrFromString(filepath.Join(baseDir, filename))
+	absPath, err := filepath.Abs(filepath.Join(baseDir, filename))
+	if err != nil {
+		return false, err
+	}
+
+	// Appending `\\?\` to the absolute path helps with
+	// preventing 'Path Not Specified Error' when accessing
+	// long paths and filenames
+	// https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd
+	pointer, err := syscall.UTF16PtrFromString(`\\?\` + absPath)
 	if err != nil {
 		return false, err
 	}
