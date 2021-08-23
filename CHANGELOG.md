@@ -1,3 +1,9 @@
+## 1.7.2 (2021-08-23)
+
+Fixes:
+
+- Path not specified error in Windows when runnng on a long path has been fixed.
+
 ## 1.7.1 (2021-08-05)
 
 The following enhancements were made:
