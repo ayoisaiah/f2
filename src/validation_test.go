@@ -236,6 +236,12 @@ func TestReportConflicts(t *testing.T) {
 				target: filepath.Join(testDir, ""),
 			},
 		},
+		trailingPeriod: {
+			{
+				source: []string{filepath.Join(testDir, "abc.pdf")},
+				target: filepath.Join(testDir, "abc.pdf."),
+			},
+		},
 		invalidCharacters: {
 			{
 				source: []string{filepath.Join(testDir, "abc.pdf")},

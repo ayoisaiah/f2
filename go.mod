@@ -15,7 +15,9 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pterm/pterm v0.12.29
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
+	github.com/sebdah/goldie/v2 v2.5.3 // indirect
 	github.com/segmentio/golines v0.5.0 // indirect
+	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/urfave/cli/v2 v2.2.0
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e // indirect

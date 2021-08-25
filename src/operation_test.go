@@ -19,6 +19,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pterm/pterm"
+	"github.com/sebdah/goldie/v2"
 	"github.com/urfave/cli/v2"
 )
 
@@ -32,6 +33,7 @@ type testCase struct {
 
 var (
 	backupFilePath string
+	fixtures       = filepath.Join("..", "testdata")
 )
 
 var fileSystem = []string{
@@ -183,7 +185,7 @@ func runFindReplace(t *testing.T, cases []testCase) {
 		args := os.Args[0:1]
 		args = append(args, v.args...)
 
-		result, err := action(args) // err will be nil
+		result, err := action(args)
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error: %v", v.name, err)
 		}
@@ -846,4 +848,11 @@ func TestCSV(t *testing.T) {
 	}
 
 	runFindReplace(t, cases)
+}
+
+func TestShortHelp(t *testing.T) {
+	help := shortHelp(GetApp())
+
+	g := goldie.New(t, goldie.WithFixtureDir(fixtures))
+	g.Assert(t, "help", []byte(help))
 }
