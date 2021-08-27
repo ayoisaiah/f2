@@ -44,7 +44,7 @@ func helpText() string {
 		"https://github.com/ayoisaiah/f2/wiki",
 	)
 	website := fmt.Sprintf(
-		"%s\n\t\thttps://github.com/ayoisaiah/f2\n",
+		"%s\n\t\thttps://github.com/ayoisaiah/f2",
 		pterm.Yellow("WEBSITE"),
 	)
 
@@ -63,7 +63,7 @@ func shortHelp(app *cli.App) string {
 F2 helps you organise your filesystem through batch renaming.
 The simplest usage is to do a basic find and replace:
 
-$ f2 -f 'Screenshot' -r 'Image'
+$ f2 Screenshot Image
 +--------------------+---------------+--------+
 |       INPUT        |    OUTPUT     | STATUS |
 +--------------------+---------------+--------+
@@ -72,9 +72,14 @@ $ f2 -f 'Screenshot' -r 'Image'
 | Screenshot (3).png | Image (3).png | ok     |
 +--------------------+---------------+--------+
 
-For more usage examples, see: https://github.com/ayoisaiah/f2/wiki
+The first argument is the find string, while the second is the
+replacement string. Any other arguments are interpreted as paths
+to files or directories where the renaming operation should take 
+place. The current directory is used by default.
 
-Use f2 --help to see the full list of options.`
+F2 supports many command-line options. Use the --help flag to examine
+the full list. For extensive usage examples, visit the project wiki:
+https://github.com/ayoisaiah/f2/wiki`
 
 	return heading + usage + description
 }

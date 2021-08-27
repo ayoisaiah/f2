@@ -396,6 +396,50 @@ func TestOverwritingFiles(t *testing.T) {
 	runFindReplace(t, cases)
 }
 
+func TestSimpleMode(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Using positional arguments for find/replace",
+			want: []Change{
+				{
+					BaseDir: testDir,
+					Source:  "abc.pdf",
+					Target:  "123.pdf",
+				},
+				{
+					BaseDir: testDir,
+					Source:  "abc.epub",
+					Target:  "123.epub",
+				},
+			},
+			args: []string{
+				"abc",
+				"123",
+				testDir,
+			},
+		},
+		{
+			name: "Strip out text",
+			want: []Change{
+				{
+					BaseDir: testDir,
+					Source:  "abc.pdf",
+					Target:  ".pdf",
+				},
+			},
+			args: []string{
+				"abc",
+				"",
+				filepath.Join(testDir, "abc.pdf"),
+			},
+		},
+	}
+
+	runFindReplace(t, cases)
+}
+
 func TestReplaceLongPath(t *testing.T) {
 	testDir := setupFileSystem(t)
 

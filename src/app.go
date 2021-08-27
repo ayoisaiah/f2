@@ -93,6 +93,9 @@ func checkForUpdates(app *cli.App) {
 
 // GetApp retrieves the f2 app instance.
 func GetApp() *cli.App {
+	usageText := `FLAGS [OPTIONS] [PATHS TO FILES OR DIRECTORIES...]
+or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
+
 	return &cli.App{
 		Name: "F2",
 		Authors: []*cli.Author{
@@ -102,7 +105,7 @@ func GetApp() *cli.App {
 			},
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely.",
-		UsageText:            "FLAGS [OPTIONS] [PATHS TO FILES OR DIRECTORIES...]",
+		UsageText:            usageText,
 		Version:              "v1.7.2",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
@@ -231,7 +234,8 @@ func GetApp() *cli.App {
 		},
 		UseShortOptionHandling: true,
 		Action: func(c *cli.Context) error {
-			if c.NumFlags() == 0 {
+			// print short help if no arguments or flags are present
+			if c.NumFlags() == 0 && !c.Args().Present() {
 				pterm.Println(shortHelp(c.App))
 				os.Exit(1)
 			}

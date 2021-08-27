@@ -24,6 +24,10 @@ var (
 		"Invalid argument: one of `-f`, `-r`, `-csv` or `-u` must be present and set to a non empty string value. Use 'f2 --help' for more information",
 	)
 
+	errInvalidSimpleModeArgs = errors.New(
+		"At least one argument must be specified in simple mode",
+	)
+
 	errConflictDetected = errors.New(
 		"Resolve conflicts before proceeding or use the -F flag to auto fix all conflicts",
 	)
@@ -65,38 +69,40 @@ type renameError struct {
 
 // Operation represents a batch renaming operation.
 type Operation struct {
-	paths             []Change
-	matches           []Change
-	conflicts         map[conflictType][]Conflict
-	findSlice         []string
-	replacement       string
-	replacementSlice  []string
-	startNumber       int
-	exec              bool
-	fixConflicts      bool
-	includeHidden     bool
-	includeDir        bool
-	onlyDir           bool
-	ignoreCase        bool
-	ignoreExt         bool
-	searchRegex       *regexp.Regexp
-	directories       []string
-	recursive         bool
-	workingDir        string
-	stringLiteralMode bool
-	excludeFilter     []string
-	maxDepth          int
-	sort              string
-	reverseSort       bool
-	errors            []renameError
-	revert            bool
-	numberOffset      []int
-	replaceLimit      int
-	allowOverwrites   bool
-	verbose           bool
-	csvFilename       string
-	quiet             bool
-	writer            io.Writer
+	paths              []Change
+	matches            []Change
+	conflicts          map[conflictType][]Conflict
+	findSlice          []string
+	replacement        string
+	replacementSlice   []string
+	startNumber        int
+	exec               bool
+	fixConflicts       bool
+	includeHidden      bool
+	includeDir         bool
+	onlyDir            bool
+	ignoreCase         bool
+	ignoreExt          bool
+	searchRegex        *regexp.Regexp
+	pathsToFilesOrDirs []string
+	recursive          bool
+	workingDir         string
+	stringLiteralMode  bool
+	excludeFilter      []string
+	maxDepth           int
+	sort               string
+	reverseSort        bool
+	errors             []renameError
+	revert             bool
+	numberOffset       []int
+	replaceLimit       int
+	allowOverwrites    bool
+	verbose            bool
+	csvFilename        string
+	quiet              bool
+	writer             io.Writer
+	reader             io.Reader
+	simpleMode         bool
 }
 
 type backupFile struct {
@@ -427,6 +433,23 @@ func (op *Operation) apply() error {
 		op.reportConflicts()
 
 		return errConflictDetected
+	}
+
+	if op.simpleMode {
+		op.printChanges()
+
+		if op.writer == os.Stdout {
+			fmt.Fprint(op.writer, "Press ENTER to apply the above changes")
+
+			reader := bufio.NewReader(op.reader)
+
+			_, err := reader.ReadString('\n')
+			if err != nil && !errors.Is(err, io.EOF) {
+				return err
+			}
+
+			return op.execute()
+		}
 	}
 
 	if op.exec {
@@ -812,6 +835,13 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 // setOptions applies the command line arguments
 // onto the operation.
 func setOptions(op *Operation, c *cli.Context) error {
+	if len(c.StringSlice("find")) == 0 &&
+		len(c.StringSlice("replace")) == 0 &&
+		c.String("csv") == "" &&
+		!c.Bool("undo") {
+		return errInvalidArgument
+	}
+
 	op.findSlice = c.StringSlice("find")
 	op.replacementSlice = c.StringSlice("replace")
 	op.exec = c.Bool("exec")
@@ -821,7 +851,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.ignoreCase = c.Bool("ignore-case")
 	op.ignoreExt = c.Bool("ignore-ext")
 	op.recursive = c.Bool("recursive")
-	op.directories = c.Args().Slice()
+	op.pathsToFilesOrDirs = c.Args().Slice()
 	op.onlyDir = c.Bool("only-dir")
 	op.stringLiteralMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
@@ -854,23 +884,55 @@ func setOptions(op *Operation, c *cli.Context) error {
 	return op.setFindStringRegex(0)
 }
 
+// setSimpleModeOptions is used to set the options for the
+// renaming operation in simpleMode.
+func setSimpleModeOptions(op *Operation, c *cli.Context) error {
+	args := c.Args().Slice()
+
+	if len(args) < 1 {
+		return errInvalidSimpleModeArgs
+	}
+
+	// If a replacement string is not specified, it shoud be
+	// an empty string
+	if len(args) == 1 {
+		args = append(args, "")
+	}
+
+	minArgs := 2
+
+	op.simpleMode = true
+
+	op.findSlice = []string{args[0]}
+	op.replacementSlice = []string{args[1]}
+
+	if len(args) > minArgs {
+		op.pathsToFilesOrDirs = args[minArgs:]
+	}
+
+	return op.setFindStringRegex(0)
+}
+
 // newOperation returns an Operation constructed
 // from command line flags & arguments.
 func newOperation(c *cli.Context) (*Operation, error) {
-	if len(c.StringSlice("find")) == 0 &&
-		len(c.StringSlice("replace")) == 0 &&
-		c.String("csv") == "" &&
-		!c.Bool("undo") {
-		return nil, errInvalidArgument
-	}
-
 	op := &Operation{
 		writer: os.Stdout,
+		reader: os.Stdin,
 	}
 
-	err := setOptions(op, c)
-	if err != nil {
-		return nil, err
+	var err error
+
+	if c.NumFlags() > 0 {
+		err = setOptions(op, c)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err = setSimpleModeOptions(op, c)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Get the current working directory
@@ -885,12 +947,8 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	}
 
 	var paths = make(map[string][]os.DirEntry)
-	for _, v := range op.directories {
-		paths[v], err = os.ReadDir(v)
-		if err == nil {
-			continue
-		}
 
+	for _, v := range op.pathsToFilesOrDirs {
 		var f os.FileInfo
 
 		f, err = os.Stat(v)
@@ -898,9 +956,18 @@ func newOperation(c *cli.Context) (*Operation, error) {
 			return nil, err
 		}
 
+		if f.IsDir() {
+			paths[v], err = os.ReadDir(v)
+			if err != nil {
+				return nil, err
+			}
+
+			continue
+		}
+
 		dir := filepath.Dir(v)
 
-		var dirEntry []os.DirEntry
+		var dirEntry []fs.DirEntry
 
 		dirEntry, err = os.ReadDir(dir)
 		if err != nil {
