@@ -50,15 +50,15 @@ func disableStyling() {
 	pterm.Fatal.Prefix.Text = ""
 }
 
-// checkForUpdates alerts the user if there is
-// an updated version of F2 from the one currently installed.
+// checkForUpdates alerts the user if an updated version of F2
+// is available.
 func checkForUpdates(app *cli.App) {
 	spinner, _ := pterm.DefaultSpinner.Start("Checking for updates...")
 	c := http.Client{Timeout: 10 * time.Second}
 
 	resp, err := c.Get("https://github.com/ayoisaiah/f2/releases/latest")
 	if err != nil {
-		pterm.Error.Println("HTTP Error: Failed to check for update")
+		pterm.Error.Println("Failed to check for update")
 		return
 	}
 
@@ -109,6 +109,11 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 		Version:              "v1.7.2",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "csv",
+				Usage:       "Load a CSV file, and rename according to its contents.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file.",
+				DefaultText: "<csv file>",
+			},
 			&cli.StringSliceFlag{
 				Name:        "find",
 				Aliases:     []string{"f"},
@@ -126,22 +131,9 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Aliases: []string{"u"},
 				Usage:   "Undo the last operation performed in the current working directory if possible.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Undoing-a-renaming-operation.",
 			},
-			&cli.StringFlag{
-				Name:        "csv",
-				Usage:       "Load a CSV file, and rename according to its contents.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file.",
-				DefaultText: "<csv file>",
-			},
-			&cli.IntFlag{
-				Name:        "replace-limit",
-				Aliases:     []string{"l"},
-				Usage:       "Limit the number of replacements to be made on each matched file (replaces all matches if set to 0).\n\t\t\t\tCan be set to a negative integer to start replacing from the end of the file name.",
-				Value:       0,
-				DefaultText: "<integer>",
-			},
 			&cli.BoolFlag{
-				Name:    "string-mode",
-				Aliases: []string{"s"},
-				Usage:   "Treats the search pattern as a non-regex string.",
+				Name:  "allow-overwrites",
+				Usage: "Allow the overwriting of existing files.",
 			},
 			&cli.StringSliceFlag{
 				Name:        "exclude",
@@ -155,14 +147,60 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Usage:   "Commit the renaming operation to the filesystem.",
 			},
 			&cli.BoolFlag{
-				Name:    "recursive",
-				Aliases: []string{"R"},
-				Usage:   "Recursively traverse directories when searching for matches.",
+				Name:    "fix-conflicts",
+				Aliases: []string{"F"},
+				Usage:   "Automatically fix conflicts based on predefined rules.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection.",
+			},
+			&cli.BoolFlag{
+				Name:    "hidden",
+				Aliases: []string{"H"},
+				Usage:   "Include hidden files (they are skipped by default).",
+			},
+			&cli.BoolFlag{
+				Name:    "include-dir",
+				Aliases: []string{"d"},
+				Usage:   "Include directories (they are exempted by default).",
+			},
+			&cli.BoolFlag{
+				Name:    "ignore-case",
+				Aliases: []string{"i"},
+				Usage:   "Search for matches case insensitively.",
+			},
+			&cli.BoolFlag{
+				Name:    "ignore-ext",
+				Aliases: []string{"e"},
+				Usage:   "Ignore the file extension when searching for matches.",
 			},
 			&cli.UintFlag{
 				Name:        "max-depth",
 				Aliases:     []string{"m"},
 				Usage:       "Indicates the maximum depth for a recursive search (set to 0 by default for no limit).",
+				Value:       0,
+				DefaultText: "<integer>",
+			},
+			&cli.BoolFlag{
+				Name:  "no-color",
+				Usage: "Disable coloured output.",
+			},
+			&cli.BoolFlag{
+				Name:    "only-dir",
+				Aliases: []string{"D"},
+				Usage:   "Rename only directories, not files (implies --include-dir).",
+			},
+			&cli.BoolFlag{
+				Name:    "quiet",
+				Aliases: []string{"q"},
+				Usage:   "Don't print out any information (except errors).",
+			},
+			&cli.BoolFlag{
+				Name:    "recursive",
+				Aliases: []string{"R"},
+				Usage:   "Recursively traverse directories when searching for matches.",
+			},
+			&cli.IntFlag{
+				Name:        "replace-limit",
+				Aliases:     []string{"l"},
+				Usage:       "Limit the number of replacements to be made on each matched file (replaces all matches if set to 0).\n\t\t\t\tCan be set to a negative integer to start replacing from the end of the file name.",
 				Value:       0,
 				DefaultText: "<integer>",
 			},
@@ -184,52 +222,14 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				DefaultText: "<sort>",
 			},
 			&cli.BoolFlag{
-				Name:    "ignore-case",
-				Aliases: []string{"i"},
-				Usage:   "Search for matches case insensitively.",
-			},
-			&cli.BoolFlag{
-				Name:    "quiet",
-				Aliases: []string{"q"},
-				Usage:   "Don't print out any information (except errors).",
-			},
-			&cli.BoolFlag{
-				Name:    "ignore-ext",
-				Aliases: []string{"e"},
-				Usage:   "Ignore the file extension when searching for matches.",
-			},
-			&cli.BoolFlag{
-				Name:    "include-dir",
-				Aliases: []string{"d"},
-				Usage:   "Include directories (they are exempted by default).",
-			},
-			&cli.BoolFlag{
-				Name:    "only-dir",
-				Aliases: []string{"D"},
-				Usage:   "Rename only directories, not files (implies --include-dir).",
-			},
-			&cli.BoolFlag{
-				Name:    "hidden",
-				Aliases: []string{"H"},
-				Usage:   "Include hidden files (they are skipped by default).",
+				Name:    "string-mode",
+				Aliases: []string{"s"},
+				Usage:   "Treats the search pattern as a non-regex string.",
 			},
 			&cli.BoolFlag{
 				Name:    "verbose",
 				Aliases: []string{"V"},
 				Usage:   "Enable verbose output.",
-			},
-			&cli.BoolFlag{
-				Name:  "no-color",
-				Usage: "Disable coloured output.",
-			},
-			&cli.BoolFlag{
-				Name:    "fix-conflicts",
-				Aliases: []string{"F"},
-				Usage:   "Automatically fix conflicts based on predefined rules.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection.",
-			},
-			&cli.BoolFlag{
-				Name:  "allow-overwrites",
-				Usage: "Allow the overwriting of existing files.",
 			},
 		},
 		UseShortOptionHandling: true,
