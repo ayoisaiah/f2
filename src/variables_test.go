@@ -493,6 +493,18 @@ func TestReplaceTransformVariables(t *testing.T) {
 
 	cases := []testCase{
 		{
+			name: "transform directory name to uppercase",
+			want: []Change{
+				{
+					Source:  "docs.03.05.period",
+					Target:  "DOCS.03.05.PERIOD",
+					BaseDir: testDir,
+					IsDir:   true,
+				},
+			},
+			args: []string{"-f", `^docs.*`, "-r", "{{tr.up}}", "-D", testDir},
+		},
+		{
 			name: "transform file name to uppercase",
 			want: []Change{
 				{

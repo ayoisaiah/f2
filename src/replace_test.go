@@ -12,6 +12,45 @@ func TestFindReplace(t *testing.T) {
 
 	cases := []testCase{
 		{
+			name: "Replace directory name that contains a period",
+			want: []Change{
+				{
+					Source:  "docs.03.05.period",
+					BaseDir: testDir,
+					Target:  "docs_03_05_period",
+					IsDir:   true,
+				},
+			},
+			args: []string{
+				"-f",
+				`\.`,
+				"-r",
+				"_",
+				"-D",
+				testDir,
+			},
+		},
+		{
+			name: "Ignore extension option should have no effect on directories",
+			want: []Change{
+				{
+					Source:  "docs.03.05.period",
+					BaseDir: testDir,
+					Target:  "docs_03_05_period",
+					IsDir:   true,
+				},
+			},
+			args: []string{
+				"-f",
+				`\.`,
+				"-r",
+				"_",
+				"-D",
+				"-e",
+				testDir,
+			},
+		},
+		{
 			name: "Replace the last 2 matches",
 			want: []Change{
 				{

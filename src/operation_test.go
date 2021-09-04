@@ -40,6 +40,7 @@ var fileSystem = []string{
 	"No Pressure (2021) S1.E1.1080p.mkv",
 	"No Pressure (2021) S1.E2.1080p.mkv",
 	"No Pressure (2021) S1.E3.1080p.mkv",
+	"docs.03.05.period/word.docx",
 	"images/a.jpg",
 	"images/b.jPg",
 	"images/abc.png",

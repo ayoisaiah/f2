@@ -927,7 +927,7 @@ func (op *Operation) replaceVariables(
 	}
 
 	if transformRegex.MatchString(ch.Target) {
-		if op.ignoreExt {
+		if op.ignoreExt && !ch.IsDir {
 			sourceName = filenameWithoutExtension(sourceName)
 		}
 

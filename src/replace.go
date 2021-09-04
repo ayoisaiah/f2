@@ -633,7 +633,7 @@ func (op *Operation) replace() (err error) {
 		originalName := ch.Source
 		fileExt := filepath.Ext(originalName)
 
-		if op.ignoreExt {
+		if op.ignoreExt && !ch.IsDir {
 			originalName = filenameWithoutExtension(originalName)
 		}
 
@@ -646,7 +646,7 @@ func (op *Operation) replace() (err error) {
 		}
 
 		// Reattach the original extension to the new file name
-		if op.ignoreExt {
+		if op.ignoreExt && !ch.IsDir {
 			ch.Target += fileExt
 		}
 

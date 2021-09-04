@@ -465,20 +465,20 @@ func (op *Operation) apply() error {
 // in each filename. Hidden files and directories are exempted
 // by default.
 func (op *Operation) findMatches() error {
-	for _, v := range op.paths {
-		filename := filepath.Base(v.Source)
+	for _, ch := range op.paths {
+		filename := filepath.Base(ch.Source)
 
-		if v.IsDir && !op.includeDir {
+		if ch.IsDir && !op.includeDir {
 			continue
 		}
 
-		if op.onlyDir && !v.IsDir {
+		if op.onlyDir && !ch.IsDir {
 			continue
 		}
 
 		// ignore dotfiles on unix and hidden files on windows
 		if !op.includeHidden {
-			r, err := isHidden(filename, v.BaseDir)
+			r, err := isHidden(filename, ch.BaseDir)
 			if err != nil {
 				return err
 			}
@@ -488,14 +488,14 @@ func (op *Operation) findMatches() error {
 			}
 		}
 
-		var f = filename
-		if op.ignoreExt {
+		f := filename
+		if op.ignoreExt && !ch.IsDir {
 			f = filenameWithoutExtension(f)
 		}
 
 		matched := op.searchRegex.MatchString(f)
 		if matched {
-			op.matches = append(op.matches, v)
+			op.matches = append(op.matches, ch)
 		}
 	}
 
