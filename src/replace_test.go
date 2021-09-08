@@ -21,14 +21,7 @@ func TestFindReplace(t *testing.T) {
 					IsDir:   true,
 				},
 			},
-			args: []string{
-				"-f",
-				`\.`,
-				"-r",
-				"_",
-				"-D",
-				testDir,
-			},
+			args: "-f '\\.' -r _ -D " + testDir,
 		},
 		{
 			name: "Ignore extension option should have no effect on directories",
@@ -40,15 +33,7 @@ func TestFindReplace(t *testing.T) {
 					IsDir:   true,
 				},
 			},
-			args: []string{
-				"-f",
-				`\.`,
-				"-r",
-				"_",
-				"-D",
-				"-e",
-				testDir,
-			},
+			args: "-f '\\.' -r _ -D -e " + testDir,
 		},
 		{
 			name: "Replace the last 2 matches",
@@ -69,15 +54,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "No Pressure (2021) S5.E3.5080p.mkv",
 				},
 			},
-			args: []string{
-				"-f",
-				"1",
-				"-r",
-				"5",
-				"-l",
-				"-2",
-				testDir,
-			},
+			args: "-f 1 -r 5 -l -2 " + testDir,
 		},
 		{
 			name: "Replace the last match",
@@ -98,15 +75,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "No Pressure (2021) S1.E3.5080p.mkv",
 				},
 			},
-			args: []string{
-				"-f",
-				"1",
-				"-r",
-				"5",
-				"-l",
-				"-1",
-				testDir,
-			},
+			args: "-f 1 -r 5 -l -1 " + testDir,
 		},
 		{
 			name: "Replace the first 10 matches",
@@ -127,15 +96,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "No Pressure (2025) S5.E3.5080p.mkv",
 				},
 			},
-			args: []string{
-				"-f",
-				"1",
-				"-r",
-				"5",
-				"-l",
-				"10",
-				testDir,
-			},
+			args: "-f 1 -r 5 -l 10 " + testDir,
 		},
 		{
 			want: []Change{
@@ -155,15 +116,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "No Pressure (2025) S5.E3.1080p.mkv",
 				},
 			},
-			args: []string{
-				"-f",
-				"1",
-				"-r",
-				"5",
-				"-l",
-				"2",
-				testDir,
-			},
+			args: "-f 1 -r 5 -l 2 " + testDir,
 		},
 		{
 			want: []Change{
@@ -183,13 +136,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "3.mkv",
 				},
 			},
-			args: []string{
-				"-f",
-				".*E(\\d+).*",
-				"-r",
-				"$1.mkv",
-				testDir,
-			},
+			args: "-f '.*E(\\d+).*' -r $1.mkv " + testDir,
 		},
 		{
 			want: []Change{
@@ -209,13 +156,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "No Pressure 100.mkv",
 				},
 			},
-			args: []string{
-				"-f",
-				"(No Pressure).*",
-				"-r",
-				"$1 98%d.mkv",
-				testDir,
-			},
+			args: "-f '(No Pressure).*' -r '$1 98%d.mkv' " + testDir,
 		},
 		{
 			want: []Change{
@@ -230,13 +171,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "main.ts",
 				},
 			},
-			args: []string{
-				"-f",
-				"js",
-				"-r",
-				"ts",
-				filepath.Join(testDir, "scripts"),
-			},
+			args: "-f js -r ts " + filepath.Join(testDir, "scripts"),
 		},
 		{
 			want: []Change{
@@ -251,14 +186,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "m a i n .js",
 				},
 			},
-			args: []string{
-				"-f",
-				"(.)",
-				"-r",
-				"$1 ",
-				"-e",
-				filepath.Join(testDir, "scripts"),
-			},
+			args: "-f (.) -r '$1 ' -e " + filepath.Join(testDir, "scripts"),
 		},
 		{
 			want: []Change{
@@ -288,15 +216,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "img.jpeg",
 				},
 			},
-			args: []string{
-				"-f",
-				"jpg",
-				"-r",
-				"jpeg",
-				"-R",
-				"-i",
-				testDir,
-			},
+			args: "-f jpg -r jpeg -R -i " + testDir,
 		},
 		{
 			want: []Change{
@@ -323,7 +243,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "image-2.avif",
 				},
 			},
-			args: []string{"-f", "pic", "-r", "image", "-d", "-R", testDir},
+			args: "-f pic -r image -d -R " + testDir,
 		},
 		{
 			want: []Change{
@@ -340,7 +260,7 @@ func TestFindReplace(t *testing.T) {
 					Target:  "moreimages",
 				},
 			},
-			args: []string{"-f", "pic", "-r", "image", "-D", "-R", testDir},
+			args: "-f pic -r image -D -R " + testDir,
 		},
 	}
 
@@ -387,23 +307,14 @@ func TestReplacementChaining(t *testing.T) {
 					BaseDir: testDir,
 				},
 			},
-			args: []string{
-				"-f",
-				`(No Pressure) \((\d+)\) (.*)`,
-				"-r",
-				fmt.Sprintf("$1%s$2%s$3", sep, sep),
-				"-f",
-				".*",
-				"-r",
-				"{{tr.lw}}",
-				"-f",
-				" ",
-				"-r",
-				"_",
-				testDir,
-			},
+			args: "-f '(No Pressure) \\((\\d+)\\) (.*)' -r " + fmt.Sprintf(
+				"$1%s$2%s$3",
+				sep,
+				sep,
+			) + " -f .* -r {{tr.lw}} -f ' ' -r _ " + testDir,
 		},
 	}
+
 	runFindReplace(t, cases)
 }
 
@@ -421,14 +332,7 @@ func TestOverwritingFiles(t *testing.T) {
 					WillOverwrite: true,
 				},
 			},
-			args: []string{
-				"-f",
-				"abc.pdf",
-				"-r",
-				"abc.epub",
-				"--allow-overwrites",
-				testDir,
-			},
+			args: "-f abc.pdf -r abc.epub --allow-overwrites " + testDir,
 		},
 	}
 
@@ -453,11 +357,7 @@ func TestSimpleMode(t *testing.T) {
 					Target:  "123.epub",
 				},
 			},
-			args: []string{
-				"abc",
-				"123",
-				testDir,
-			},
+			args: "abc 123 " + testDir,
 		},
 		{
 			name: "Strip out text",
@@ -468,11 +368,7 @@ func TestSimpleMode(t *testing.T) {
 					Target:  ".pdf",
 				},
 			},
-			args: []string{
-				"abc",
-				"",
-				filepath.Join(testDir, "abc.pdf"),
-			},
+			args: "abc ' ' " + filepath.Join(testDir, "abc.pdf"),
 		},
 	}
 
@@ -496,14 +392,7 @@ func TestReplaceLongPath(t *testing.T) {
 					Target:  "part2.mp4",
 				},
 			},
-			args: []string{
-				"-f",
-				`^1\..*`,
-				"-r",
-				"part2.mp4",
-				"-R",
-				testDir,
-			},
+			args: "-f '^1\\..*' -r part2.mp4 -R " + testDir,
 		},
 	}
 

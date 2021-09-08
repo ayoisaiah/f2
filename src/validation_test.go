@@ -8,39 +8,49 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	shellquote "github.com/kballard/go-shellquote"
 )
 
 type conflictTable struct {
 	name string
 	want map[conflictType][]Conflict
-	args []string
+	args string
 }
 
 func runConflictCheck(t *testing.T, table []conflictTable) {
 	t.Helper()
 
-	for _, v := range table {
+	for _, tc := range table {
 		args := os.Args[0:1]
-		args = append(args, v.args...)
+
+		argsSlice, err := shellquote.Split(tc.args)
+		if err != nil {
+			t.Fatalf("shellquote.Split error: %v", err)
+		}
+
+		args = append(args, argsSlice...)
 
 		result, err := action(args)
 		if err != nil {
-			t.Fatalf("Test (%s) — Unexpected error: %v\n", v.name, err)
+			t.Fatalf("Test (%s) — Unexpected error: %v\n", tc.name, err)
 		}
 
 		if len(result.conflicts) == 0 {
-			t.Fatalf("Test (%s) — Expected some conflicts but got none", v.name)
+			t.Fatalf(
+				"Test (%s) — Expected some conflicts but got none",
+				tc.name,
+			)
 		}
 
 		if !cmp.Equal(
-			v.want,
+			tc.want,
 			result.conflicts,
 			cmp.AllowUnexported(Conflict{}),
 		) {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
-				v.name,
-				v.want,
+				tc.name,
+				tc.want,
 				result.conflicts,
 			)
 		}
@@ -50,28 +60,41 @@ func runConflictCheck(t *testing.T, table []conflictTable) {
 func runFixConflict(t *testing.T, table []testCase) {
 	t.Helper()
 
-	for _, v := range table {
+	for _, tc := range table {
 		args := os.Args[0:1]
-		args = append(args, v.args...)
-		result, _ := action(args) // err will be nil
 
-		if len(result.conflicts) == 0 {
-			t.Fatalf("Test (%s) — Expected some conflicts but got none", v.name)
+		argsSlice, err := shellquote.Split(tc.args)
+		if err != nil {
+			t.Fatalf("shellquote.Split error: %v", err)
 		}
 
-		sortChanges(v.want)
+		args = append(args, argsSlice...)
+
+		result, err := action(args) // err will be nil
+		if err != nil {
+			t.Fatalf("Test (%s) — Unexpected error from F2: %v", tc.name, err)
+		}
+
+		if len(result.conflicts) == 0 {
+			t.Fatalf(
+				"Test (%s) — Expected some conflicts but got none",
+				tc.name,
+			)
+		}
+
+		sortChanges(tc.want)
 		sortChanges(result.changes)
 
 		if !cmp.Equal(
-			v.want,
+			tc.want,
 			result.changes,
 			cmpopts.IgnoreUnexported(Change{}),
 		) &&
-			len(v.want) != 0 {
+			len(tc.want) != 0 {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
-				v.name,
-				prettyPrint(v.want),
+				tc.name,
+				prettyPrint(tc.want),
 				prettyPrint(result.changes),
 			)
 		}
@@ -92,7 +115,7 @@ func TestDetectConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"-f", "pdf", "-r", "epub", testDir},
+			args: "-f pdf -r epub " + testDir,
 		},
 		{
 			name: "Empty filename",
@@ -104,7 +127,7 @@ func TestDetectConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"-f", "abc.pdf", "-r", "", testDir},
+			args: "-f abc.pdf -r '' " + testDir,
 		},
 		{
 			name: "Overwriting newly renamed path",
@@ -119,7 +142,7 @@ func TestDetectConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"-f", "pdf|epub", "-r", "mobi", testDir},
+			args: "-f pdf|epub -r mobi " + testDir,
 		},
 	}
 
@@ -144,14 +167,7 @@ func TestFixConflicts(t *testing.T) {
 					Target:  "123 (4).txt",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc|xyz",
-				"-r",
-				"123",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
+			args: "-f abc|xyz -r 123 -F " + filepath.Join(testDir, "conflicts"),
 		},
 		{
 			name: "Fix path exists conflict",
@@ -167,14 +183,7 @@ func TestFixConflicts(t *testing.T) {
 					Target:  "abc (3).txt",
 				},
 			},
-			args: []string{
-				"-f",
-				"123",
-				"-r",
-				"abc",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
+			args: "-f 123 -r abc -F " + filepath.Join(testDir, "conflicts"),
 		},
 		{
 			name: "Fix overwriting new path conflict",
@@ -190,14 +199,7 @@ func TestFixConflicts(t *testing.T) {
 					Target:  "man (2).txt",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc|xyz",
-				"-r",
-				"man",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
+			args: "-f abc|xyz -r man -F " + filepath.Join(testDir, "conflicts"),
 		},
 		{
 			name: "Fix empty filename conflict",
@@ -208,12 +210,7 @@ func TestFixConflicts(t *testing.T) {
 					Target:  "xyz.txt",
 				},
 			},
-			args: []string{
-				"-f",
-				"xyz.txt",
-				"-F",
-				filepath.Join(testDir, "conflicts"),
-			},
+			args: "-f xyz.txt -F " + filepath.Join(testDir, "conflicts"),
 		},
 	}
 

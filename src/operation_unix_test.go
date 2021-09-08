@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package f2
@@ -21,7 +22,7 @@ func TestAutoDir(t *testing.T) {
 					Target:  "dir1/dir2/abc.epub",
 				},
 			},
-			args: []string{"-f", "(abc)", "-r", "dir1/dir2/$1", "-x", testDir},
+			args: "-f (abc) -r dir1/dir2/$1 -x " + testDir,
 		},
 	}
 

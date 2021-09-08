@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package f2
@@ -22,7 +23,7 @@ func TestDarwinSpecificConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"-f", "abc.pdf", "-r", ":::.pdf", testDir},
+			args: "-f abc.pdf -r.:::.pdf " + testDir,
 		},
 	}
 
@@ -42,14 +43,7 @@ func TestDarwinFixConflict(t *testing.T) {
 					Target:  "name.pdf",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc.pdf",
-				"-r",
-				"name:::.pdf",
-				"-F",
-				testDir,
-			},
+			args: "-f abc.pdf -r name:::.pdf -F " + testDir,
 		},
 	}
 

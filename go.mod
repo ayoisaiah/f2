@@ -8,6 +8,7 @@ require (
 	github.com/barasher/go-exiftool v1.5.0
 	github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63
 	github.com/google/go-cmp v0.5.4
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect

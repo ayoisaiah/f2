@@ -200,13 +200,7 @@ func TestReplaceExifVariables(t *testing.T) {
 					BaseDir: rootDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"tractor-raw.cr2",
-				"-r",
-				"{{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}}",
-				rootDir,
-			},
+			args: "-f tractor-raw.cr2 -r {{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}} " + rootDir,
 		},
 		{
 			name: "Use EXIF data to rename JPEG file",
@@ -216,13 +210,7 @@ func TestReplaceExifVariables(t *testing.T) {
 					BaseDir: rootDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"bike.jpeg",
-				"-r",
-				"{{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}}",
-				rootDir,
-			},
+			args: "-f bike.jpeg -r {{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}} " + rootDir,
 		},
 		{
 			name: "Use EXIF data to rename DNG file",
@@ -232,13 +220,7 @@ func TestReplaceExifVariables(t *testing.T) {
 					BaseDir: rootDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"proraw.dng",
-				"-r",
-				"{{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.h}}_h{{exif.w}}_{{exif.h}}x{{exif.w}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}}",
-				rootDir,
-			},
+			args: "-f proraw.dng -r {{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.h}}_h{{exif.w}}_{{exif.h}}x{{exif.w}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}} " + rootDir,
 		},
 	}
 
@@ -306,13 +288,7 @@ func TestReplaceID3Variables(t *testing.T) {
 					BaseDir: rootDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"sample_mp3.mp3",
-				"-r",
-				"{{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
-				rootDir,
-			},
+			args: "-f sample_mp3.mp3 -r {{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}} " + rootDir,
 		},
 		{
 			name: "Use ID3 tags to rename an ogg file",
@@ -322,13 +298,7 @@ func TestReplaceID3Variables(t *testing.T) {
 					BaseDir: rootDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"sample_ogg.ogg",
-				"-r",
-				"{{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
-				rootDir,
-			},
+			args: "-f sample_ogg.ogg -r {{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}} " + rootDir,
 		},
 		{
 			name: "Use ID3 tags to rename a flac file",
@@ -338,13 +308,7 @@ func TestReplaceID3Variables(t *testing.T) {
 					BaseDir: rootDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"sample_flac.flac",
-				"-r",
-				"{{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
-				rootDir,
-			},
+			args: "-f sample_flac.flac -r {{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}} " + rootDir,
 		},
 	}
 
@@ -397,13 +361,7 @@ func TestFileHash(t *testing.T) {
 					Target:  "6801e3de5f584028b8cd4292c6eca7ba_5b97fd595c700277315742bc91ac0ae67e5eb7a3",
 				},
 			},
-			args: []string{
-				"-f",
-				"bike.jpeg",
-				"-r",
-				"{{hash.md5}}_{{hash.sha1}}",
-				testDir,
-			},
+			args: "-f bike.jpeg -r {{hash.md5}}_{{hash.sha1}} " + testDir,
 		},
 		{
 			name: "Replace sha256 and sha512 hash",
@@ -414,13 +372,7 @@ func TestFileHash(t *testing.T) {
 					Target:  "55195ff447785e9af9dea2b0e4f3dc1e991f19dc224413f7a3e5718efb980d99_d53831330e6a70899ad36cbde793284d2cd0332ef090cf20dae86299ec9b8f5b50e06becd8bfadb65fce001d3fedb811d02d751cd9a8279cbaf88b46d25b6408",
 				},
 			},
-			args: []string{
-				"-f",
-				"proraw.dng",
-				"-r",
-				"{{hash.sha256}}_{{hash.sha512}}",
-				testDir,
-			},
+			args: "-f proraw.dng -r {{hash.sha256}}_{{hash.sha512}} " + testDir,
 		},
 	}
 
@@ -502,7 +454,7 @@ func TestReplaceTransformVariables(t *testing.T) {
 					IsDir:   true,
 				},
 			},
-			args: []string{"-f", `^docs.*`, "-r", "{{tr.up}}", "-D", testDir},
+			args: "-f '^docs.*' -r {{tr.up}} -D " + testDir,
 		},
 		{
 			name: "transform file name to uppercase",
@@ -518,7 +470,7 @@ func TestReplaceTransformVariables(t *testing.T) {
 					BaseDir: testDir,
 				},
 			},
-			args: []string{"-f", "abc.*", "-r", "{{tr.up}}", testDir},
+			args: "-f abc.* -r {{tr.up}} " + testDir,
 		},
 		{
 			name: "transform file extension to title case",
@@ -534,7 +486,7 @@ func TestReplaceTransformVariables(t *testing.T) {
 					BaseDir: testDir,
 				},
 			},
-			args: []string{"-f", "pdf|epub", "-r", "{{tr.ti}}", testDir},
+			args: "-f pdf|epub -r {{tr.ti}} " + testDir,
 		},
 		{
 			name: "transform file name to title case",
@@ -550,14 +502,7 @@ func TestReplaceTransformVariables(t *testing.T) {
 					BaseDir: testDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"abc.*",
-				"-r",
-				"{{tr.di}}_{{tr.lw}}_{{tr.up}}_{{tr.win}}_{{tr.mac}}",
-				"-e",
-				testDir,
-			},
+			args: "-f abc.* -r {{tr.di}}_{{tr.lw}}_{{tr.up}}_{{tr.win}}_{{tr.mac}} -e " + testDir,
 		},
 	}
 
@@ -581,13 +526,7 @@ func TestReplaceExifToolVariables(t *testing.T) {
 					BaseDir: rootDir,
 				},
 			},
-			args: []string{
-				"-f",
-				"proraw.dng",
-				"-r",
-				"{{xt.FOV}}_{{xt.ISO}}_{{xt.ImageWidth}}",
-				rootDir,
-			},
+			args: "-f proraw.dng -r {{xt.FOV}}_{{xt.ISO}}_{{xt.ImageWidth}} " + rootDir,
 		},
 	}
 

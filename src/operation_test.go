@@ -18,6 +18,7 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	shellquote "github.com/kballard/go-shellquote"
 	"github.com/pterm/pterm"
 	"github.com/sebdah/goldie/v2"
 	"github.com/urfave/cli/v2"
@@ -26,7 +27,7 @@ import (
 type testCase struct {
 	name           string
 	want           []Change
-	args           []string
+	args           string
 	undoArgs       []string
 	expectedErrors []renameError
 }
@@ -164,20 +165,26 @@ func sortChanges(s []Change) {
 func runFindReplace(t *testing.T, cases []testCase) {
 	t.Helper()
 
-	for _, v := range cases {
+	for _, tc := range cases {
 		args := os.Args[0:1]
-		args = append(args, v.args...)
+
+		argsSlice, err := shellquote.Split(tc.args)
+		if err != nil {
+			t.Fatalf("shellquote.Split error: %v", err)
+		}
+
+		args = append(args, argsSlice...)
 
 		result, err := action(args)
 		if err != nil {
-			t.Fatalf("Test (%s) — Unexpected error: %v", v.name, err)
+			t.Fatalf("Test (%s) — Unexpected error from F2: %v", tc.name, err)
 		}
 
-		if len(v.expectedErrors) != len(result.operationErrors) {
+		if len(tc.expectedErrors) != len(result.operationErrors) {
 			t.Fatalf(
 				"Test (%s) — Expected %d errors but got %d errors: %v",
-				v.name,
-				len(v.expectedErrors),
+				tc.name,
+				len(tc.expectedErrors),
 				len(result.operationErrors),
 				result.operationErrors,
 			)
@@ -186,24 +193,24 @@ func runFindReplace(t *testing.T, cases []testCase) {
 		if len(result.conflicts) > 0 {
 			t.Fatalf(
 				"Test (%s) — Expected no conflicts but got some: %v",
-				v.name,
+				tc.name,
 				result.conflicts,
 			)
 		}
 
-		sortChanges(v.want)
+		sortChanges(tc.want)
 		sortChanges(result.changes)
 
 		if !cmp.Equal(
-			v.want,
+			tc.want,
 			result.changes,
 			cmpopts.IgnoreUnexported(Change{}),
 		) &&
-			len(v.want) != 0 {
+			len(tc.want) != 0 {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
-				v.name,
-				prettyPrint(v.want),
+				tc.name,
+				prettyPrint(tc.want),
 				prettyPrint(result.changes),
 			)
 		}
@@ -212,6 +219,7 @@ func runFindReplace(t *testing.T, cases []testCase) {
 
 func TestFilePaths(t *testing.T) {
 	testDir := setupFileSystem(t)
+
 	cases := []testCase{
 		{
 			name: "Target a specific mkv file",
@@ -222,13 +230,10 @@ func TestFilePaths(t *testing.T) {
 					Target:  "No Pressure (2021) S1.E3.1080p.mp4",
 				},
 			},
-			args: []string{
-				"-f",
-				"mkv",
-				"-r",
-				"mp4",
-				filepath.Join(testDir, "No Pressure (2021) S1.E3.1080p.mkv"),
-			},
+			args: "-f mkv -r mp4 '" + filepath.Join(
+				testDir,
+				"No Pressure (2021) S1.E3.1080p.mkv",
+			) + "'",
 		},
 		{
 			name: "Combine file paths and directory paths",
@@ -249,14 +254,11 @@ func TestFilePaths(t *testing.T) {
 					Target:  "qqq.png",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc",
-				"-r",
-				"qqq",
+			args: "-f abc -r qqq " + testDir + " " + filepath.Join(
 				testDir,
-				filepath.Join(testDir, "images", "abc.png"),
-			},
+				"images",
+				"abc.png",
+			),
 		},
 		{
 			name: "No side effects should result from specifying a directory and a file inside the directory",
@@ -267,14 +269,14 @@ func TestFilePaths(t *testing.T) {
 					Target:  "qqq.png",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc",
-				"-r",
-				"qqq",
-				filepath.Join(testDir, "images"),
-				filepath.Join(testDir, "images", "abc.png"),
-			},
+			args: "-f abc -r qqq " + filepath.Join(
+				testDir,
+				"images",
+			) + " " + filepath.Join(
+				testDir,
+				"images",
+				"abc.png",
+			),
 		},
 		{
 			name: "Specifying a file path should be unaffected by recursion",
@@ -285,14 +287,7 @@ func TestFilePaths(t *testing.T) {
 					Target:  "qqq.pdf",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc",
-				"-r",
-				"qqq",
-				"-R",
-				filepath.Join(testDir, "abc.pdf"),
-			},
+			args: "-f abc -r qqq -R " + filepath.Join(testDir, "abc.pdf"),
 		},
 	}
 
@@ -311,7 +306,7 @@ func TestHidden(t *testing.T) {
 					Target:  "abc.pdf.bak",
 				},
 			},
-			args: []string{"-f", "pdf", "-r", "pdf.bak", "-R", testDir},
+			args: "-f pdf -r pdf.bak -R " + testDir,
 		},
 		{
 			name: "Hidden files are included",
@@ -332,7 +327,7 @@ func TestHidden(t *testing.T) {
 					Target:  ".forbidden.pdf.bak",
 				},
 			},
-			args: []string{"-f", "pdf", "-r", "pdf.bak", "-H", "-R", testDir},
+			args: "-f pdf -r pdf.bak -H -R " + testDir,
 		},
 	}
 
@@ -362,7 +357,7 @@ func TestRecursive(t *testing.T) {
 					Target:  "img.jpeg",
 				},
 			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", testDir},
+			args: "-f jpg -r jpeg -R " + testDir,
 		},
 		{
 			name: "Recursively match jpg files with max depth set to zero",
@@ -383,7 +378,7 @@ func TestRecursive(t *testing.T) {
 					Target:  "img.jpeg",
 				},
 			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-m", "0", testDir},
+			args: "-f jpg -r jpeg -R -m 0 " + testDir,
 		},
 		{
 			name: "Recursively match jpg files with max depth of 1",
@@ -394,7 +389,7 @@ func TestRecursive(t *testing.T) {
 					Target:  "a.jpeg",
 				},
 			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-m", "1", testDir},
+			args: "-f jpg -r jpeg -R -m 1 " + testDir,
 		},
 		{
 			name: "Recursively match jpg files with max depth set to 2",
@@ -415,7 +410,7 @@ func TestRecursive(t *testing.T) {
 					Target:  "img.jpeg",
 				},
 			},
-			args: []string{"-f", "jpg", "-r", "jpeg", "-R", "-m", "2", testDir},
+			args: "-f jpg -r jpeg -R -m 2 " + testDir,
 		},
 		{
 			name: "Recursively rename with multiple paths",
@@ -431,17 +426,13 @@ func TestRecursive(t *testing.T) {
 					Target:  "linux.mp4.bak",
 				},
 			},
-			args: []string{
-				"-f",
-				"mp4",
-				"-r",
-				"mp4.bak",
-				"-R",
-				"-m",
-				"1",
-				filepath.Join(testDir, "images"),
-				filepath.Join(testDir, "morepics"),
-			},
+			args: "-f mp4 -r mp4.bak -R -m 1 " + filepath.Join(
+				testDir,
+				"images",
+			) + " " + filepath.Join(
+				testDir,
+				"morepics",
+			),
 		},
 	}
 
@@ -466,16 +457,7 @@ func TestExcludeFilter(t *testing.T) {
 					Target:  "No Limits (2021) S1.E2.1080p.mkv",
 				},
 			},
-			args: []string{
-				"-f",
-				"Pressure",
-				"-r",
-				"Limits",
-				"-s",
-				"-E",
-				"S1.E3",
-				testDir,
-			},
+			args: "-f Pressure -r Limits -s -E S1.E3 " + testDir,
 		},
 		{
 			name: "Exclude files that contain any number",
@@ -491,16 +473,7 @@ func TestExcludeFilter(t *testing.T) {
 					Target:  "xyz.md",
 				},
 			},
-			args: []string{
-				"-f",
-				"txt",
-				"-r",
-				"md",
-				"-R",
-				"-E",
-				"\\d+",
-				testDir,
-			},
+			args: "-f txt -r md -R -E '\\d+' " + testDir,
 		},
 	}
 
@@ -520,26 +493,10 @@ func TestStringLiteralMode(t *testing.T) {
 					Target:  "100#-[boring_company].com.ng",
 				},
 			},
-			args: []string{
-				"-f",
-				"$",
-				"-r",
-				"#",
-				"-f",
-				"+",
-				"-r",
-				"_",
-				"-f",
-				"(",
-				"-r",
-				"[",
-				"-f",
-				")",
-				"-r",
-				"]",
-				"-se",
-				filepath.Join(testDir, "regex"),
-			},
+			args: "-f $ -r # -f + -r _ -f ( -r [ -f ) -r ] -se " + filepath.Join(
+				testDir,
+				"regex",
+			),
 		},
 		{
 			name: "String literal mode: Basic find and replace",
@@ -560,7 +517,7 @@ func TestStringLiteralMode(t *testing.T) {
 					Target:  "No Limits (2021) S1.E3.1080p.mkv",
 				},
 			},
-			args: []string{"-f", "Pressure", "-r", "Limits", "-s", testDir},
+			args: "-f Pressure -r Limits -s " + testDir,
 		},
 		{
 			name: "String literal mode: replace entire string if find pattern is empty",
@@ -581,13 +538,7 @@ func TestStringLiteralMode(t *testing.T) {
 					Target:  "003.mkv",
 				},
 			},
-			args: []string{
-				"-r",
-				"%03d{{ext}}",
-				"-sE",
-				"abc|pics",
-				testDir,
-			},
+			args: "-r %03d{{ext}} -sE abc|pics " + testDir,
 		},
 		{
 			name: "String literal mode: respect case insensitive option",
@@ -613,14 +564,7 @@ func TestStringLiteralMode(t *testing.T) {
 					Target:  "free.jpeg",
 				},
 			},
-			args: []string{
-				"-f",
-				"jpg",
-				"-r",
-				"jpeg",
-				"-siR",
-				filepath.Join(testDir, "images"),
-			},
+			args: "-f jpg -r jpeg -siR " + filepath.Join(testDir, "images"),
 		},
 	}
 
@@ -635,27 +579,14 @@ func TestApplyUndo(t *testing.T) {
 				{Source: "No Pressure (2021) S1.E2.1080p.mkv", Target: "2.mkv"},
 				{Source: "No Pressure (2021) S1.E3.1080p.mkv", Target: "3.mkv"},
 			},
-			args: []string{
-				"-f",
-				".*E(\\d+).*",
-				"-r",
-				"$1.mkv",
-				"-x",
-			},
+			args:     "-f .*E(\\d+).* -r $1.mkv -x",
 			undoArgs: []string{"-u", "-x"},
 		},
 		{
 			want: []Change{
 				{Source: "morepics", IsDir: true, Target: "moreimages"},
 			},
-			args: []string{
-				"-f",
-				"pic",
-				"-r",
-				"image",
-				"-d",
-				"-x",
-			},
+			args:     "-f pic -r image -d -x",
 			undoArgs: []string{"-u", "-x"},
 		},
 	}
@@ -667,10 +598,11 @@ func TestApplyUndo(t *testing.T) {
 			v.want[i].BaseDir = testDir
 		}
 
-		v.args = append(v.args, testDir)
+		argsSlice := strings.Split(v.args, " ")
+		argsSlice = append(argsSlice, testDir)
 
 		args := os.Args[0:1]
-		args = append(args, v.args...)
+		args = append(args, argsSlice...)
 		result, _ := action(args) // err will be nil
 
 		if len(result.conflicts) > 0 {
@@ -779,7 +711,7 @@ func TestHandleErrors(t *testing.T) {
 					err: errors.New("Missing permissions"),
 				},
 			},
-			args: []string{"-f", "Pressure", "-r", "Limits", "-s", testDir},
+			args: "-f Pressure -r Limits -s " + testDir,
 		},
 	}
 
@@ -826,7 +758,7 @@ func TestCSV(t *testing.T) {
 					Target:  "A book about africa.pdf",
 				},
 			},
-			args: []string{"-csv", csv, "-r", "{{csv.3}}{{ext}}", testDir},
+			args: "-csv " + csv + " -r {{csv.3}}{{ext}} " + testDir,
 		},
 	}
 
