@@ -528,9 +528,9 @@ func getExifDate(exifData *Exif, format string) string {
 	return dateTime.Format(dateTokens[format])
 }
 
-// getDecimalFromSlice reduces an exif values in the following format: [8/5]
+// getDecimalFromFraction converts a value in the following format: [8/5]
 // to its equivalent decimal value -> 1.6.
-func getDecimalFromSlice(slice []string) string {
+func getDecimalFromFraction(slice []string) string {
 	if len(slice) == 0 {
 		return ""
 	}
@@ -554,12 +554,9 @@ func getDecimalFromSlice(slice []string) string {
 
 	v := float64(numerator) / float64(denominator)
 
-	decimalValue, err := strconv.FormatFloat(v, 'f', -1, 64), nil
-	if err != nil {
-		return ""
-	}
+	bitSize := 64
 
-	return decimalValue
+	return strconv.FormatFloat(v, 'f', -1, bitSize)
 }
 
 // getExifDimensions retrieves the specified dimension
@@ -628,9 +625,13 @@ func replaceExifVariables(
 				value = getExifExposureTime(exifData)
 			}
 		case "fnum":
-			value = getDecimalFromSlice(exifData.FNumber)
+			if len(exifData.FNumber) > 0 {
+				value = getDecimalFromFraction(exifData.FNumber)
+			}
 		case "fl":
-			value = getDecimalFromSlice(exifData.FocalLength)
+			if len(exifData.FocalLength) > 0 {
+				value = getDecimalFromFraction(exifData.FocalLength)
+			}
 		case "fl35":
 			if len(exifData.FocalLengthIn35mmFilm) > 0 {
 				value = strconv.Itoa(exifData.FocalLengthIn35mmFilm[0])
@@ -735,11 +736,14 @@ func (op *Operation) replaceIndex(
 		case "r":
 			r = integerToRoman(num)
 		case "h":
-			r = strconv.FormatInt(n, 16)
+			base16 := 16
+			r = strconv.FormatInt(n, base16)
 		case "o":
-			r = strconv.FormatInt(n, 8)
+			base8 := 8
+			r = strconv.FormatInt(n, base8)
 		case "b":
-			r = strconv.FormatInt(n, 2)
+			base2 := 2
+			r = strconv.FormatInt(n, base2)
 		default:
 			r = fmt.Sprintf(current.index, num)
 		}
