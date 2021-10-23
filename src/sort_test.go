@@ -80,7 +80,7 @@ func TestSortBySize(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestDefaultSort(t *testing.T) {
@@ -161,5 +161,5 @@ func TestDefaultSort(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }

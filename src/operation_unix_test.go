@@ -26,5 +26,5 @@ func TestAutoDir(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }

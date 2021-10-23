@@ -258,7 +258,7 @@ func TestReplaceExifVariables(t *testing.T) {
 		c.want[0].Target = target
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestReplaceID3Variables(t *testing.T) {
@@ -345,7 +345,7 @@ func TestReplaceID3Variables(t *testing.T) {
 		c.want[0].Target = target
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestFileHash(t *testing.T) {
@@ -376,7 +376,7 @@ func TestFileHash(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestReplaceRandomVariable(t *testing.T) {
@@ -506,7 +506,7 @@ func TestReplaceTransformVariables(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestReplaceExifToolVariables(t *testing.T) {
@@ -555,5 +555,5 @@ func TestReplaceExifToolVariables(t *testing.T) {
 		c.want[0].Target = target
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }

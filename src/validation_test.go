@@ -30,7 +30,7 @@ func runConflictCheck(t *testing.T, table []conflictTable) {
 
 		args = append(args, argsSlice...)
 
-		result, err := action(args)
+		result, err := testRun(args)
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error: %v\n", tc.name, err)
 		}
@@ -70,7 +70,7 @@ func runFixConflict(t *testing.T, table []testCase) {
 
 		args = append(args, argsSlice...)
 
-		result, err := action(args) // err will be nil
+		result, err := testRun(args) // err will be nil
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error from F2: %v", tc.name, err)
 		}

@@ -42,7 +42,7 @@ var fileSystem []string
 func init() {
 	workingDir, err := filepath.Abs(".")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable to retrieve working directory: %v", err)
 	}
 
 	workingDir = strings.ReplaceAll(workingDir, "/", "_")
@@ -55,14 +55,15 @@ func init() {
 		filepath.Join("f2", "backups", workingDir+".json"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable to retrieve xdg data file directory: %v", err)
 	}
 
+	// Read filesystem contents from a text file
 	filesystemContent, err := os.ReadFile(
 		filepath.Join("..", "testdata", "filesystem.txt"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable to read contents of filesystem file: %v", err)
 	}
 
 	filesystemContent = bytes.TrimSpace(filesystemContent)
@@ -79,18 +80,18 @@ func setupFileSystem(tb testing.TB) string {
 
 	testDir, err := ioutil.TempDir(".", "")
 	if err != nil {
-		tb.Fatal(err)
+		tb.Fatalf("Unable to create temporary directory for test: %v", err)
 	}
 
 	absPath, err := filepath.Abs(testDir)
 	if err != nil {
-		tb.Fatal(err)
+		tb.Fatalf("Unable to get absolute path to test directory: %v", err)
 	}
 
 	tb.Cleanup(func() {
 		if err = os.RemoveAll(absPath); err != nil {
 			tb.Fatalf(
-				"An error occurred while cleaning up the filesystem: %s",
+				"Failure occurred while cleaning up the filesystem: %v",
 				err,
 			)
 		}
@@ -102,7 +103,11 @@ func setupFileSystem(tb testing.TB) string {
 
 		err = os.MkdirAll(filePath, os.ModePerm)
 		if err != nil {
-			tb.Fatal(err)
+			tb.Fatalf(
+				"Unable to create directories in path: '%s', due to err: %v",
+				filePath,
+				err,
+			)
 		}
 	}
 
@@ -110,14 +115,18 @@ func setupFileSystem(tb testing.TB) string {
 		pathToFile := filepath.Join(absPath, f)
 
 		if err = os.WriteFile(pathToFile, []byte{}, 0600); err != nil {
-			tb.Fatal(err)
+			tb.Fatalf(
+				"Unable to write to file: '%s', due to err: %v",
+				pathToFile,
+				err,
+			)
 		}
 	}
 
 	return absPath
 }
 
-type ActionResult struct {
+type testResult struct {
 	changes         []Change
 	conflicts       map[conflictType][]Conflict
 	backupFile      string
@@ -126,10 +135,12 @@ type ActionResult struct {
 	output          *bytes.Buffer
 }
 
-func action(args []string) (ActionResult, error) {
-	var result ActionResult
+func testRun(args []string) (testResult, error) {
+	var result testResult
 
 	app := GetApp()
+
+	// replace app action so as to capture test results
 	app.Action = func(c *cli.Context) error {
 		op, err := newOperation(c)
 		if err != nil {
@@ -162,7 +173,7 @@ func sortChanges(s []Change) {
 	})
 }
 
-func runFindReplace(t *testing.T, cases []testCase) {
+func runFindReplaceHelper(t *testing.T, cases []testCase) {
 	t.Helper()
 
 	for _, tc := range cases {
@@ -170,31 +181,40 @@ func runFindReplace(t *testing.T, cases []testCase) {
 
 		argsSlice, err := shellquote.Split(tc.args)
 		if err != nil {
-			t.Fatalf("shellquote.Split error: %v", err)
+			t.Fatalf(
+				"Test (%s) -> shellquote.Split(%s) yielded error: %v",
+				tc.name,
+				tc.args,
+				err,
+			)
 		}
 
 		args = append(args, argsSlice...)
 
-		result, err := action(args)
+		result, err := testRun(args)
 		if err != nil {
-			t.Fatalf("Test (%s) — Unexpected error from F2: %v", tc.name, err)
+			t.Fatalf(
+				"Test (%s) -> testRun(%+q) yielded error: %v",
+				tc.name,
+				tc.args,
+				err,
+			)
 		}
 
 		if len(tc.expectedErrors) != len(result.operationErrors) {
 			t.Fatalf(
-				"Test (%s) — Expected %d errors but got %d errors: %v",
+				"Test (%s) -> Expected errors to be: %s, but got: %s",
 				tc.name,
-				len(tc.expectedErrors),
-				len(result.operationErrors),
-				result.operationErrors,
+				prettyPrint(tc.expectedErrors),
+				prettyPrint(result.operationErrors),
 			)
 		}
 
 		if len(result.conflicts) > 0 {
 			t.Fatalf(
-				"Test (%s) — Expected no conflicts but got some: %v",
+				"Test (%s) -> Expected no conflicts but got some: %v",
 				tc.name,
-				result.conflicts,
+				prettyPrint(result.conflicts),
 			)
 		}
 
@@ -208,7 +228,7 @@ func runFindReplace(t *testing.T, cases []testCase) {
 		) &&
 			len(tc.want) != 0 {
 			t.Fatalf(
-				"Test (%s) — Expected: %+v, got: %+v\n",
+				"Test (%s) -> Expected results to be: %s, but got: %s\n",
 				tc.name,
 				prettyPrint(tc.want),
 				prettyPrint(result.changes),
@@ -291,7 +311,7 @@ func TestFilePaths(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestHidden(t *testing.T) {
@@ -331,7 +351,7 @@ func TestHidden(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestRecursive(t *testing.T) {
@@ -436,7 +456,7 @@ func TestRecursive(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestExcludeFilter(t *testing.T) {
@@ -477,7 +497,7 @@ func TestExcludeFilter(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestStringLiteralMode(t *testing.T) {
@@ -568,7 +588,7 @@ func TestStringLiteralMode(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestApplyUndo(t *testing.T) {
@@ -603,7 +623,7 @@ func TestApplyUndo(t *testing.T) {
 
 		args := os.Args[0:1]
 		args = append(args, argsSlice...)
-		result, _ := action(args) // err will be nil
+		result, _ := testRun(args) // err will be nil
 
 		if len(result.conflicts) > 0 {
 			t.Fatalf(
@@ -662,7 +682,7 @@ func TestApplyUndo(t *testing.T) {
 		args = os.Args[0:1]
 		args = append(args, v.undoArgs...)
 
-		result, err := action(args)
+		result, err := testRun(args)
 		if err != nil {
 			t.Fatalf("Test(%d) — Unexpected error in undo mode: %v\n", i+1, err)
 		}
@@ -715,23 +735,30 @@ func TestHandleErrors(t *testing.T) {
 		},
 	}
 
-	for _, v := range cases {
+	for _, tc := range cases {
 		var buf bytes.Buffer
 
 		op := &Operation{
 			writer: &buf,
 		}
-		op.matches = v.want
-		op.errors = v.expectedErrors
+		op.matches = tc.want
+		op.errors = tc.expectedErrors
 
 		err := op.handleErrors()
 		if err == nil {
-			t.Fatal("Expected an error not got nil")
+			t.Fatalf(
+				"Expected case '%s' to yield an error, but got nil",
+				tc.name,
+			)
 		}
 
 		str, err := op.retrieveBackupFile()
 		if err != nil {
-			t.Fatalf("Unexpected error while retrieving backup file: %v", err)
+			t.Fatalf(
+				"Test (%s) -> Error while retrieving backup file: %v",
+				tc.name,
+				err,
+			)
 		}
 
 		os.Remove(str)
@@ -762,7 +789,7 @@ func TestCSV(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestShortHelp(t *testing.T) {

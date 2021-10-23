@@ -264,7 +264,7 @@ func TestFindReplace(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestReplacementChaining(t *testing.T) {
@@ -315,7 +315,7 @@ func TestReplacementChaining(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestOverwritingFiles(t *testing.T) {
@@ -336,7 +336,7 @@ func TestOverwritingFiles(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestSimpleMode(t *testing.T) {
@@ -372,7 +372,7 @@ func TestSimpleMode(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestReplaceLongPath(t *testing.T) {
@@ -396,5 +396,5 @@ func TestReplaceLongPath(t *testing.T) {
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
