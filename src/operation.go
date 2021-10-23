@@ -254,6 +254,7 @@ func (op *Operation) rename() {
 			// consecutive slashes since `os.MkdirAll` handles that
 			dir := filepath.Dir(ch.Target)
 
+			//nolint:gomnd // number can be understood from context
 			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
 			if err != nil {
 				renameErr.err = err
