@@ -906,6 +906,8 @@ func setSimpleModeOptions(op *Operation, c *cli.Context) error {
 
 	op.findSlice = []string{args[0]}
 	op.replacementSlice = []string{args[1]}
+	op.includeDir = true
+	op.includeHidden = true
 
 	if len(args) > minArgs {
 		op.pathsToFilesOrDirs = args[minArgs:]
