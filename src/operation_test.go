@@ -114,7 +114,7 @@ func setupFileSystem(tb testing.TB) string {
 	for _, f := range fileSystem {
 		pathToFile := filepath.Join(absPath, f)
 
-		if err = os.WriteFile(pathToFile, []byte{}, 0600); err != nil {
+		if err = os.WriteFile(pathToFile, []byte{}, 0o600); err != nil {
 			tb.Fatalf(
 				"Unable to write to file: '%s', due to err: %v",
 				pathToFile,

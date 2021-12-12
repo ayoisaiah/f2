@@ -255,7 +255,7 @@ func (op *Operation) rename() {
 			dir := filepath.Dir(ch.Target)
 
 			//nolint:gomnd // number can be understood from context
-			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0750)
+			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0o750)
 			if err != nil {
 				renameErr.err = err
 				errs = append(errs, renameErr)
