@@ -23,7 +23,7 @@ func TestDarwinSpecificConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: "-f abc.pdf -r.:::.pdf " + testDir,
+			args: "-f abc.pdf -r ':::.pdf' " + testDir,
 		},
 	}
 
@@ -43,7 +43,7 @@ func TestDarwinFixConflict(t *testing.T) {
 					Target:  "name.pdf",
 				},
 			},
-			args: "-f abc.pdf -r name:::.pdf -F " + testDir,
+			args: "-f abc.pdf -r 'name:::.pdf' -F " + testDir,
 		},
 	}
 
