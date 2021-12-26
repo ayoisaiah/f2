@@ -142,6 +142,10 @@ func testRun(args []string) (testResult, error) {
 
 	// replace app action so as to capture test results
 	app.Action = func(c *cli.Context) error {
+		if c.NumFlags() == 0 {
+			app.Metadata["simple-mode"] = true
+		}
+
 		op, err := newOperation(c)
 		if err != nil {
 			return err

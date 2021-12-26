@@ -833,18 +833,9 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 	return nil
 }
 
-// setOptions applies the command line arguments
-// onto the operation.
-func setOptions(op *Operation, c *cli.Context) error {
-	if len(c.StringSlice("find")) == 0 &&
-		len(c.StringSlice("replace")) == 0 &&
-		c.String("csv") == "" &&
-		!c.Bool("undo") {
-		return errInvalidArgument
-	}
-
-	op.findSlice = c.StringSlice("find")
-	op.replacementSlice = c.StringSlice("replace")
+// setDefaultOpts applies the options that may be set through
+// F2_DEFAULT_OPTS.
+func setDefaultOpts(op *Operation, c *cli.Context) {
 	op.exec = c.Bool("exec")
 	op.fixConflicts = c.Bool("fix-conflicts")
 	op.includeDir = c.Bool("include-dir")
@@ -852,16 +843,13 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.ignoreCase = c.Bool("ignore-case")
 	op.ignoreExt = c.Bool("ignore-ext")
 	op.recursive = c.Bool("recursive")
-	op.pathsToFilesOrDirs = c.Args().Slice()
 	op.onlyDir = c.Bool("only-dir")
 	op.stringLiteralMode = c.Bool("string-mode")
 	op.excludeFilter = c.StringSlice("exclude")
 	op.maxDepth = int(c.Uint("max-depth"))
-	op.revert = c.Bool("undo")
 	op.verbose = c.Bool("verbose")
 	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
-	op.csvFilename = c.String("csv")
 	op.quiet = c.Bool("quiet")
 
 	// Sorting
@@ -875,6 +863,25 @@ func setOptions(op *Operation, c *cli.Context) error {
 	if op.onlyDir {
 		op.includeDir = true
 	}
+}
+
+// setOptions sets the options on the operation based on
+// command-line arguments.
+func setOptions(op *Operation, c *cli.Context) error {
+	if len(c.StringSlice("find")) == 0 &&
+		len(c.StringSlice("replace")) == 0 &&
+		c.String("csv") == "" &&
+		!c.Bool("undo") {
+		return errInvalidArgument
+	}
+
+	op.findSlice = c.StringSlice("find")
+	op.replacementSlice = c.StringSlice("replace")
+	op.csvFilename = c.String("csv")
+	op.revert = c.Bool("undo")
+	op.pathsToFilesOrDirs = c.Args().Slice()
+
+	setDefaultOpts(op, c)
 
 	// Ensure that each findString has a corresponding replacement.
 	// The replacement defaults to an empty string if unset
@@ -906,8 +913,8 @@ func setSimpleModeOptions(op *Operation, c *cli.Context) error {
 
 	op.findSlice = []string{args[0]}
 	op.replacementSlice = []string{args[1]}
-	op.includeDir = true
-	op.includeHidden = true
+
+	setDefaultOpts(op, c)
 
 	if len(args) > minArgs {
 		op.pathsToFilesOrDirs = args[minArgs:]
@@ -926,13 +933,13 @@ func newOperation(c *cli.Context) (*Operation, error) {
 
 	var err error
 
-	if c.NumFlags() > 0 {
-		err = setOptions(op, c)
+	if _, ok := c.App.Metadata["simple-mode"]; ok {
+		err = setSimpleModeOptions(op, c)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		err = setSimpleModeOptions(op, c)
+		err = setOptions(op, c)
 		if err != nil {
 			return nil, err
 		}
