@@ -30,7 +30,7 @@ func TestUnixSpecificConflicts(t *testing.T) {
 		},
 	}
 
-	runConflictCheck(t, table)
+	runConflictCheckHelper(t, table)
 }
 
 func TestUnixFixConflict(t *testing.T) {
@@ -50,5 +50,5 @@ func TestUnixFixConflict(t *testing.T) {
 		},
 	}
 
-	runFixConflict(t, table)
+	runFixConflictHelper(t, table)
 }

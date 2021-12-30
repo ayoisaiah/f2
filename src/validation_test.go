@@ -2,13 +2,11 @@ package f2
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	shellquote "github.com/kballard/go-shellquote"
 )
 
 type conflictTable struct {
@@ -17,18 +15,11 @@ type conflictTable struct {
 	args string
 }
 
-func runConflictCheck(t *testing.T, table []conflictTable) {
+func runConflictCheckHelper(t *testing.T, table []conflictTable) {
 	t.Helper()
 
 	for _, tc := range table {
-		args := os.Args[0:1]
-
-		argsSlice, err := shellquote.Split(tc.args)
-		if err != nil {
-			t.Fatalf("shellquote.Split error: %v", err)
-		}
-
-		args = append(args, argsSlice...)
+		args := parseArgs(t, tc.name, tc.args)
 
 		result, err := testRun(args)
 		if err != nil {
@@ -57,18 +48,11 @@ func runConflictCheck(t *testing.T, table []conflictTable) {
 	}
 }
 
-func runFixConflict(t *testing.T, table []testCase) {
+func runFixConflictHelper(t *testing.T, table []testCase) {
 	t.Helper()
 
 	for _, tc := range table {
-		args := os.Args[0:1]
-
-		argsSlice, err := shellquote.Split(tc.args)
-		if err != nil {
-			t.Fatalf("shellquote.Split error: %v", err)
-		}
-
-		args = append(args, argsSlice...)
+		args := parseArgs(t, tc.name, tc.args)
 
 		result, err := testRun(args) // err will be nil
 		if err != nil {
@@ -146,7 +130,7 @@ func TestDetectConflicts(t *testing.T) {
 		},
 	}
 
-	runConflictCheck(t, table)
+	runConflictCheckHelper(t, table)
 }
 
 func TestFixConflicts(t *testing.T) {
@@ -214,7 +198,7 @@ func TestFixConflicts(t *testing.T) {
 		},
 	}
 
-	runFixConflict(t, table)
+	runFixConflictHelper(t, table)
 }
 
 func TestReportConflicts(t *testing.T) {

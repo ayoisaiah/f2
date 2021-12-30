@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package f2
@@ -22,7 +23,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"-f", "abc.pdf", "-r", "<>.pdf", testDir},
+			args: "-f abc.pdf -r <>.pdf " + testDir,
 		},
 		{
 			name: "Directory or file name cannot contain trailing periods",
@@ -69,13 +70,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{
-				"-f",
-				`.* \((2021)\) .*`,
-				"-r",
-				"$1.../{{f}}{{ext}}",
-				testDir,
-			},
+			args: "-f '.* \\((2021)\\) .*' -r $1.../{{f}}{{ext}} " + testDir,
 		},
 		{
 			name: "File names must not contain :, |, or ? characters",
@@ -88,7 +83,7 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"-f", "abc.pdf", "-r", ":|?.pdf", testDir},
+			args: "-f abc.pdf -r :|?.pdf " + testDir,
 		},
 		{
 			name: "File names must not be more than 260 characters",
@@ -104,17 +99,11 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 					},
 				},
 			},
-			args: []string{
-				"-f",
-				"abc.pdf",
-				"-r",
-				"mSuhA166Od9QEPyZNr9YCGudIuxp7ousCVaTg4cNcOjuNjDZjKBNLJrjqwMhJhFFUM7Touvz054yah1hXkM7hKe6naBxg2FLfKO7YzdMpmgANN6yFF1jOyDGwPK7fn7uHymCG7NmpSXsS0QyURJMObjjTGfMKi6Zhd1l2fywyvyu0Oze8nNVdAve1HvXCyrqZJoczd5R84FIMDE2VK6zdM3D7Rbu6ZHj73tZnR476bc6q6pJiXiGaDzezx02Ngq6reI.c",
-				testDir,
-			},
+			args: "-f abc.pdf -r mSuhA166Od9QEPyZNr9YCGudIuxp7ousCVaTg4cNcOjuNjDZjKBNLJrjqwMhJhFFUM7Touvz054yah1hXkM7hKe6naBxg2FLfKO7YzdMpmgANN6yFF1jOyDGwPK7fn7uHymCG7NmpSXsS0QyURJMObjjTGfMKi6Zhd1l2fywyvyu0Oze8nNVdAve1HvXCyrqZJoczd5R84FIMDE2VK6zdM3D7Rbu6ZHj73tZnR476bc6q6pJiXiGaDzezx02Ngq6reI.c " + testDir,
 		},
 	}
 
-	runConflictCheck(t, table)
+	runConflictCheckHelper(t, table)
 }
 
 func TestWindowsNoConflict(t *testing.T) {
@@ -130,17 +119,11 @@ func TestWindowsNoConflict(t *testing.T) {
 					Target:  "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc.pdf",
-				"-r",
-				"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
-				testDir,
-			},
+			args: "-f abc.pdf -r 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀 " + testDir,
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestWindowsFixConflict(t *testing.T) {
@@ -156,14 +139,7 @@ func TestWindowsFixConflict(t *testing.T) {
 					Target:  "name.pdf",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc.pdf",
-				"-r",
-				"name<>?|.pdf",
-				"-F",
-				testDir,
-			},
+			args: "-f abc.pdf -r name<>?|.pdf -F " + testDir,
 		},
 		{
 			name: "Fix long file name conflict",
@@ -174,16 +150,9 @@ func TestWindowsFixConflict(t *testing.T) {
 					Target:  "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
 				},
 			},
-			args: []string{
-				"-f",
-				"abc.epub",
-				"-r",
-				"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
-				"-F",
-				testDir,
-			},
+			args: "-f abc.epub -r 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀 -F " + testDir,
 		},
 	}
 
-	runFixConflict(t, table)
+	runFixConflictHelper(t, table)
 }

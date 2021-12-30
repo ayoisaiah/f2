@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package f2
@@ -39,11 +40,11 @@ func TestAutoDirWindows_UnixSeparator(t *testing.T) {
 					Target:  `dir1\dir2\abc.epub`,
 				},
 			},
-			args: []string{"-f", "(abc)", "-r", `dir1/dir2/$1`, "-x", testDir},
+			args: "-f (abc) -r dir1/dir2/$1 -x " + testDir,
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestAutoDirWindows(t *testing.T) {
@@ -63,11 +64,11 @@ func TestAutoDirWindows(t *testing.T) {
 					Target:  `dir1\dir2\abc.epub`,
 				},
 			},
-			args: []string{"-f", "(abc)", "-r", `dir1\dir2\$1`, "-x", testDir},
+			args: "-f (abc) -r dir1\\dir2\\$1 -x " + testDir,
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }
 
 func TestHiddenWindows(t *testing.T) {
@@ -97,7 +98,7 @@ func TestHiddenWindows(t *testing.T) {
 					Target:  "321.txt",
 				},
 			},
-			args: []string{"-f", "abc", "-r", "321", "-R", testDir},
+			args: "-f abc -r 321 -R " + testDir,
 		},
 		{
 			name: "Hidden files are allowed",
@@ -123,9 +124,9 @@ func TestHiddenWindows(t *testing.T) {
 					Target:  "321.png",
 				},
 			},
-			args: []string{"-f", "abc", "-r", "321", "-H", "-R", testDir},
+			args: "-f abc -r 321 -H -R " + testDir,
 		},
 	}
 
-	runFindReplace(t, cases)
+	runFindReplaceHelper(t, cases)
 }

@@ -27,7 +27,7 @@ func TestDarwinSpecificConflicts(t *testing.T) {
 		},
 	}
 
-	runConflictCheck(t, table)
+	runConflictCheckHelper(t, table)
 }
 
 func TestDarwinFixConflict(t *testing.T) {
@@ -47,5 +47,5 @@ func TestDarwinFixConflict(t *testing.T) {
 		},
 	}
 
-	runFixConflict(t, table)
+	runFixConflictHelper(t, table)
 }
