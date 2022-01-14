@@ -11,12 +11,17 @@ import (
 	f2 "github.com/ayoisaiah/f2/src"
 )
 
-// supportedDefaultFlags are those that can be overridden through the
-// F2_DEFAULT_OPTS environmental variable.
+// supportedDefaultFlags contains those flags that can be
+// overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultFlags = []string{
 	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
 }
 
+// setDefaultOpts creates a new `cli.Context` that represents the
+// program's options if it were run solely with the flags and arguments
+// represented in the `F2_DEFAULT_OPTS` environmental variable.
+// If this variable does not exist in the env, the returned Context
+// is `nil`.
 func setDefaultOpts() *cli.Context {
 	var defaultCtx *cli.Context
 
@@ -58,29 +63,29 @@ func run(args []string) error {
 
 	defaultCtx := setDefaultOpts()
 
-	if defaultCtx == nil {
-		return app.Run(args)
-	}
-
 	app.Before = func(c *cli.Context) error {
 		if c.NumFlags() == 0 {
 			app.Metadata["simple-mode"] = true
 		}
 
-		for _, v := range supportedDefaultFlags {
-			value := fmt.Sprintf("%v", defaultCtx.Value(v))
+		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
+		// in the environment
+		if defaultCtx != nil {
+			for _, v := range supportedDefaultFlags {
+				value := fmt.Sprintf("%v", defaultCtx.Value(v))
 
-			if !c.IsSet(v) && defaultCtx.IsSet(v) {
-				if x, ok := defaultCtx.Value(v).(cli.StringSlice); ok {
-					value = strings.Join(x.Value(), "|")
-				}
+				if !c.IsSet(v) && defaultCtx.IsSet(v) {
+					if x, ok := defaultCtx.Value(v).(cli.StringSlice); ok {
+						value = strings.Join(x.Value(), "|")
+					}
 
-				err := c.Set(v, value)
-				if err != nil {
-					pterm.Warning.Printfln(
-						"Unable to set default option for: %s",
-						v,
-					)
+					err := c.Set(v, value)
+					if err != nil {
+						pterm.Warning.Printfln(
+							"Unable to set default option for: %s",
+							v,
+						)
+					}
 				}
 			}
 		}
