@@ -2,7 +2,7 @@
 
 Fixes:
 
-- Path not specified error in Windows when runnng on a long path has been fixed.
+- Path not specified error in Windows when running on a long path has been fixed.
 
 ## 1.7.1 (2021-08-05)
 
@@ -68,13 +68,13 @@ Feature enhancements:
 - Bug fixes for exif variables (prevent potential panic).
 - Improve `--help` output.
 - Improve error message when reverting an operation.
-- Replace slashes in exiftool output to prevent inadvertent directory creation.
+- Replace slashes in `exiftool` output to prevent inadvertent directory creation.
 
 ## 1.6.0 (2021-05-07)
 
 Feature enhancements:
 
-- Add exiftool support
+- Add `exiftool` support
 - Improve built-in exif variables
 
 ## 1.5.9 (2021-05-06)
