@@ -28,6 +28,7 @@ type testCase struct {
 	want           []Change
 	args           string
 	undoArgs       []string
+	defaultOpts    string
 	expectedErrors []renameError
 }
 
@@ -228,6 +229,10 @@ func runFindReplaceHelper(t *testing.T, cases []testCase) {
 	for _, tc := range cases {
 		args := parseArgs(t, tc.name, tc.args)
 
+		if tc.defaultOpts != "" {
+			os.Setenv("F2_DEFAULT_OPTS", tc.defaultOpts)
+		}
+
 		result, err := testRun(args)
 		if err != nil {
 			t.Fatalf(
@@ -270,6 +275,10 @@ func runFindReplaceHelper(t *testing.T, cases []testCase) {
 				prettyPrint(tc.want),
 				prettyPrint(result.changes),
 			)
+		}
+
+		if tc.defaultOpts != "" {
+			os.Setenv("F2_DEFAULT_OPTS", "")
 		}
 	}
 }
