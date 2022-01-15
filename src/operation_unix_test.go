@@ -3,7 +3,11 @@
 
 package f2
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sebdah/goldie/v2"
+)
 
 func TestAutoDir(t *testing.T) {
 	testDir := setupFileSystem(t)
@@ -27,4 +31,11 @@ func TestAutoDir(t *testing.T) {
 	}
 
 	runFindReplaceHelper(t, cases)
+}
+
+func TestShortHelp(t *testing.T) {
+	help := shortHelp(GetApp())
+
+	g := goldie.New(t, goldie.WithFixtureDir(fixtures))
+	g.Assert(t, "help", []byte(help))
 }
