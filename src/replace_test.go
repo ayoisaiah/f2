@@ -2,6 +2,7 @@ package f2
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -373,6 +374,40 @@ func TestSimpleMode(t *testing.T) {
 	}
 
 	runFindReplaceHelper(t, cases)
+}
+
+func TestDefaultOptions(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	os.Setenv("F2_DEFAULT_OPTS", "-HR")
+
+	cases := []testCase{
+		{
+			name: "Include hidden files",
+			want: []Change{
+				{
+					BaseDir: testDir,
+					Source:  "abc.pdf",
+					Target:  "abc.chm",
+				},
+				{
+					BaseDir: testDir,
+					Source:  ".forbidden.pdf",
+					Target:  ".forbidden.chm",
+				},
+				{
+					BaseDir: filepath.Join(testDir, ".dir"),
+					Source:  "sample.pdf",
+					Target:  "sample.chm",
+				},
+			},
+			args: "pdf chm " + testDir,
+		},
+	}
+
+	runFindReplaceHelper(t, cases)
+
+	os.Setenv("F2_DEFAULT_OPTS", "")
 }
 
 func TestReplaceLongPath(t *testing.T) {

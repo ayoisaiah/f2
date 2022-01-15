@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -20,7 +21,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/pterm/pterm"
-	"github.com/urfave/cli/v2"
 )
 
 type testCase struct {
@@ -33,7 +33,6 @@ type testCase struct {
 
 var (
 	backupFilePath string
-	fixtures       = filepath.Join("..", "testdata")
 )
 
 var fileSystem = []string{
@@ -158,37 +157,31 @@ type testResult struct {
 func testRun(args []string) (testResult, error) {
 	var result testResult
 
-	app := GetApp()
+	var buf bytes.Buffer
 
-	// replace app action so as to capture test results
-	app.Action = func(c *cli.Context) error {
-		if c.NumFlags() == 0 {
-			app.Metadata["simple-mode"] = true
-		}
+	app := GetApp(os.Stdin, &buf)
 
-		op, err := newOperation(c)
-		if err != nil {
-			return err
-		}
+	pterm.DisableOutput()
 
-		var buf bytes.Buffer
+	err := app.Run(args)
 
-		op.writer = &buf
-		op.quiet = true
-
-		pterm.DisableOutput()
-
-		result.applyError = op.run()
-		result.changes = op.matches
-		result.backupFile = backupFilePath
-		result.conflicts = op.conflicts
-		result.operationErrors = op.errors
-		result.output = &buf
-
-		return nil
+	v, ok := app.Metadata["op"]
+	if !ok {
+		return result, fmt.Errorf("Unable to access test result")
 	}
 
-	return result, app.Run(args)
+	op, ok := v.(*Operation)
+	if !ok {
+		return result, fmt.Errorf("Unable to assert test operation")
+	}
+
+	result.changes = op.matches
+	result.backupFile = backupFilePath
+	result.conflicts = op.conflicts
+	result.operationErrors = op.errors
+	result.output = &buf
+
+	return result, err
 }
 
 func sortChanges(s []Change) {

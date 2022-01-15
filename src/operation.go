@@ -931,6 +931,22 @@ func newOperation(c *cli.Context) (*Operation, error) {
 		reader: os.Stdin,
 	}
 
+	v, exists := c.App.Metadata["reader"]
+	if exists {
+		r, ok := v.(io.Reader)
+		if ok {
+			op.reader = r
+		}
+	}
+
+	v, exists = c.App.Metadata["writer"]
+	if exists {
+		w, ok := v.(io.Writer)
+		if ok {
+			op.writer = w
+		}
+	}
+
 	var err error
 
 	if _, ok := c.App.Metadata["simple-mode"]; ok {

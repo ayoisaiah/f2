@@ -2,13 +2,103 @@ package f2
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 )
+
+// supportedDefaultFlags contains those flags that can be
+// overridden through the `F2_DEFAULT_OPTS` environmental variable.
+var supportedDefaultFlags = []string{
+	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
+}
+
+// getDefaultOptsCtx creates a new `cli.Context` that represents the
+// program's options if it were run solely with the flags and arguments
+// represented in the `F2_DEFAULT_OPTS` environmental variable.
+// If this variable does not exist in the env, the returned Context
+// is `nil`.
+func getDefaultOptsCtx() *cli.Context {
+	var defaultCtx *cli.Context
+
+	if optsEnv, exists := os.LookupEnv("F2_DEFAULT_OPTS"); exists {
+		var defaultOpts = make([]string, len(os.Args))
+
+		copy(defaultOpts, os.Args)
+
+		defaultOpts = append(defaultOpts[:1], strings.Split(optsEnv, " ")...)
+
+		app := newApp()
+
+		app.Before = func(c *cli.Context) error {
+			if c.IsSet("find") || c.IsSet("replace") || c.IsSet("csv") ||
+				c.IsSet("undo") {
+				pterm.Warning.Printfln(
+					"%s are not supported as default options",
+					"'find', 'replace', 'csv' and 'undo'",
+				)
+			}
+
+			defaultCtx = c
+
+			return nil
+		}
+
+		app.Action = func(c *cli.Context) error {
+			return nil
+		}
+
+		_ = app.Run(defaultOpts)
+	}
+
+	return defaultCtx
+}
+
+func GetApp(reader io.Reader, writer io.Writer) *cli.App {
+	app := newApp()
+
+	defaultCtx := getDefaultOptsCtx()
+
+	app.Before = func(c *cli.Context) error {
+		if c.NumFlags() == 0 {
+			app.Metadata["simple-mode"] = true
+		}
+
+		app.Metadata["reader"] = reader
+		app.Metadata["writer"] = writer
+
+		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
+		// in the environment
+		if defaultCtx != nil {
+			for _, v := range supportedDefaultFlags {
+				value := fmt.Sprintf("%v", defaultCtx.Value(v))
+
+				if !c.IsSet(v) && defaultCtx.IsSet(v) {
+					if x, ok := defaultCtx.Value(v).(cli.StringSlice); ok {
+						value = strings.Join(x.Value(), "|")
+					}
+
+					err := c.Set(v, value)
+					if err != nil {
+						pterm.Warning.Printfln(
+							"Unable to set default option for: %s",
+							v,
+						)
+					}
+				}
+			}
+		}
+
+		return nil
+	}
+
+	return app
+}
 
 func init() {
 	// Override the default help template
@@ -18,7 +108,7 @@ func init() {
 	oldVersionPrinter := cli.VersionPrinter
 	cli.VersionPrinter = func(c *cli.Context) {
 		oldVersionPrinter(c)
-		checkForUpdates(GetApp())
+		checkForUpdates(newApp())
 	}
 
 	// Disable colour output if NO_COLOR is set
@@ -91,8 +181,8 @@ func checkForUpdates(app *cli.App) {
 	}
 }
 
-// GetApp retrieves the f2 app instance.
-func GetApp() *cli.App {
+// newApp creates a new app instance.
+func newApp() *cli.App {
 	usageText := `FLAGS [OPTIONS] [PATHS TO FILES OR DIRECTORIES...]
 or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 
@@ -252,6 +342,8 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			if err != nil {
 				return err
 			}
+
+			c.App.Metadata["op"] = op
 
 			return op.run()
 		},

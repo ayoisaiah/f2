@@ -2,6 +2,7 @@ package f2
 
 import (
 	"bytes"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -23,7 +24,9 @@ func runConflictCheckHelper(t *testing.T, table []conflictTable) {
 
 		result, err := testRun(args)
 		if err != nil {
-			t.Fatalf("Test (%s) — Unexpected error: %v\n", tc.name, err)
+			if !errors.Is(err, errConflictDetected) {
+				t.Fatalf("Test (%s) — Unexpected error: %v\n", tc.name, err)
+			}
 		}
 
 		if len(result.conflicts) == 0 {
@@ -54,7 +57,7 @@ func runFixConflictHelper(t *testing.T, table []testCase) {
 	for _, tc := range table {
 		args := parseArgs(t, tc.name, tc.args)
 
-		result, err := testRun(args) // err will be nil
+		result, err := testRun(args)
 		if err != nil {
 			t.Fatalf("Test (%s) — Unexpected error from F2: %v", tc.name, err)
 		}
