@@ -386,10 +386,6 @@ func (op *Operation) noMatches() {
 // A backup file is auto created as long as at least one file
 // was renamed and it wasn't an undo operation.
 func (op *Operation) execute() error {
-	if op.includeDir || op.revert {
-		op.sortMatches()
-	}
-
 	op.rename()
 
 	if len(op.errors) > 0 {
@@ -434,6 +430,10 @@ func (op *Operation) apply() error {
 		op.reportConflicts()
 
 		return errConflictDetected
+	}
+
+	if op.includeDir || op.revert {
+		op.sortMatches()
 	}
 
 	if op.simpleMode {
