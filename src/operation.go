@@ -977,6 +977,13 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	for _, v := range op.pathsToFilesOrDirs {
 		var f os.FileInfo
 
+		v = filepath.Clean(v)
+
+		// Skip paths that have already been processed
+		if _, ok := paths[v]; ok {
+			continue
+		}
+
 		f, err = os.Stat(v)
 		if err != nil {
 			return nil, err
