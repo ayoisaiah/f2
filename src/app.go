@@ -296,19 +296,19 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			},
 			&cli.StringFlag{
 				Name: "sort",
-				Usage: `Sort the matches according to the provided '<sort>'.
+				Usage: `Sort the matches in ascending order according to the provided '<sort>'.
 					Allowed sort values:
-						'default': alphabetical order
-						'size': file size
-						'mtime': file last modified time
-						'btime': file creation time (Windows and macOS only)
-						'atime': file last access time
-						'ctime': file metadata last change time`,
+						'default' : alphabetical order
+						'size'    : sort by file size
+						'mtime'   : sort by file last modified time
+						'btime'   : sort by file creation time
+						'atime'   : sort by file last access time
+						'ctime'   : sort by file metadata last change time`,
 				DefaultText: "<sort>",
 			},
 			&cli.StringFlag{
 				Name:        "sortr",
-				Usage:       "Same as --sort but presents the matches in the reverse order.",
+				Usage:       "Same options as --sort but presents the matches in the descending order.",
 				DefaultText: "<sort>",
 			},
 			&cli.BoolFlag{
@@ -346,6 +346,9 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			c.App.Metadata["op"] = op
 
 			return op.run()
+		},
+		OnUsageError: func(context *cli.Context, err error, isSubcommand bool) error {
+			return err
 		},
 	}
 }

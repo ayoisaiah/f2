@@ -103,6 +103,7 @@ func (op *Operation) sortByTime() (err error) {
 	return err
 }
 
+// TODO: Needs to be refactored.
 func (op *Operation) sortPaths(
 	paths map[string][]os.DirEntry,
 	sorted bool,
