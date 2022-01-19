@@ -1,9 +1,12 @@
 package f2
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
 func TestSortBySize(t *testing.T) {
-	testDir := "../testdata/images"
+	testDir := filepath.Join("..", "testdata", "images")
 
 	cases := []testCase{
 		{
@@ -84,7 +87,7 @@ func TestSortBySize(t *testing.T) {
 }
 
 func TestDefaultSort(t *testing.T) {
-	testDir := "../testdata/images"
+	testDir := filepath.Join("..", "testdata", "images")
 
 	cases := []testCase{
 		{
