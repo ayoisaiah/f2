@@ -108,7 +108,10 @@ func init() {
 	oldVersionPrinter := cli.VersionPrinter
 	cli.VersionPrinter = func(c *cli.Context) {
 		oldVersionPrinter(c)
-		checkForUpdates(newApp())
+
+		if _, found := os.LookupEnv("F2_UPDATE_NOTIFIER"); found {
+			checkForUpdates(newApp())
+		}
 	}
 
 	// Disable colour output if NO_COLOR is set
