@@ -12,6 +12,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const (
+	envUpdateNotifier = "F2_UPDATE_NOTIFIER"
+	envNoColor        = "NO_COLOR"
+	envF2NoColor      = "F2_NO_COLOR"
+	envDefaultOpts    = "F2_DEFAULT_OPTS"
+)
+
 // supportedDefaultFlags contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultFlags = []string{
@@ -26,7 +33,7 @@ var supportedDefaultFlags = []string{
 func getDefaultOptsCtx() *cli.Context {
 	var defaultCtx *cli.Context
 
-	if optsEnv, exists := os.LookupEnv("F2_DEFAULT_OPTS"); exists {
+	if optsEnv, exists := os.LookupEnv(envDefaultOpts); exists {
 		var defaultOpts = make([]string, len(os.Args))
 
 		copy(defaultOpts, os.Args)
@@ -101,6 +108,16 @@ func GetApp(reader io.Reader, writer io.Writer) *cli.App {
 }
 
 func init() {
+	// Disable colour output if NO_COLOR is set
+	if _, exists := os.LookupEnv(envNoColor); exists {
+		disableStyling()
+	}
+
+	// Disable colour output if F2_NO_COLOR is set
+	if _, exists := os.LookupEnv(envF2NoColor); exists {
+		disableStyling()
+	}
+
 	// Override the default help template
 	cli.AppHelpTemplate = helpText()
 
@@ -109,19 +126,12 @@ func init() {
 	cli.VersionPrinter = func(c *cli.Context) {
 		oldVersionPrinter(c)
 
-		if _, found := os.LookupEnv("F2_UPDATE_NOTIFIER"); found {
+		if _, found := os.LookupEnv(envUpdateNotifier); found {
 			checkForUpdates(newApp())
+		} else {
+			pterm.Printfln("See the latest updates: %s", pterm.Yellow("https://github.com/ayoisaiah/f2/releases"))
+			pterm.Printfln("Or set the %s variable in your env to any value opt into update notifications", pterm.Green(envUpdateNotifier))
 		}
-	}
-
-	// Disable colour output if NO_COLOR is set
-	if _, exists := os.LookupEnv("NO_COLOR"); exists {
-		disableStyling()
-	}
-
-	// Disable colour output if F2_NO_COLOR is set
-	if _, exists := os.LookupEnv("F2_NO_COLOR"); exists {
-		disableStyling()
 	}
 
 	pterm.Error.MessageStyle = pterm.NewStyle(pterm.FgRed)

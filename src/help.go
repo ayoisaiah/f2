@@ -38,6 +38,12 @@ func helpText() string {
 		pterm.Green("--{{.Name}} {{.DefaultText}}"),
 	)
 
+	env := fmt.Sprintf(
+		"%s\n\t\t%s\n\n",
+		pterm.Yellow("ENVIRONMENTAL VARIABLES"),
+		envHelp(),
+	)
+
 	docs := fmt.Sprintf(
 		"%s\n\t\t%s\n\n",
 		pterm.Yellow("DOCUMENTATION"),
@@ -48,7 +54,16 @@ func helpText() string {
 		pterm.Yellow("WEBSITE"),
 	)
 
-	return description + usage + author + version + flags + options + docs + website
+	return description + usage + author + version + flags + options + env + docs + website
+}
+
+func envHelp() string {
+	return `
+F2_DEFAULT_OPTS: override the default options according to your preferences.
+
+F2_NO_COLOR, NO_COLOR: set to any value to avoid printing ANSI escape sequences for color output.
+
+F2_UPDATE_NOTIFIER: set to any value to enable update notifications when using the -v or --version flag.`
 }
 
 func shortHelp(app *cli.App) string {
@@ -74,7 +89,7 @@ $ f2 Screenshot Image
 
 The first argument is the find string, while the second is the
 replacement string. Any other arguments are interpreted as paths
-to files or directories where the renaming operation should take 
+to files or directories where the renaming operation should take
 place. The current directory is used by default.
 
 F2 supports many command-line options. Use the --help flag to examine

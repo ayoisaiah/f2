@@ -230,7 +230,7 @@ func runFindReplaceHelper(t *testing.T, cases []testCase) {
 		args := parseArgs(t, tc.name, tc.args)
 
 		if tc.defaultOpts != "" {
-			os.Setenv("F2_DEFAULT_OPTS", tc.defaultOpts)
+			os.Setenv(envDefaultOpts, tc.defaultOpts)
 		}
 
 		result, err := testRun(args)
@@ -278,7 +278,7 @@ func runFindReplaceHelper(t *testing.T, cases []testCase) {
 		}
 
 		if tc.defaultOpts != "" {
-			os.Setenv("F2_DEFAULT_OPTS", "")
+			os.Setenv(envDefaultOpts, "")
 		}
 	}
 }
