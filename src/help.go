@@ -78,7 +78,7 @@ func shortHelp(app *cli.App) string {
 F2 helps you organise your filesystem through batch renaming.
 The simplest usage is to do a basic find and replace:
 
-$ f2 Screenshot Image
+$ f2 -f Screenshot -r Image
 +--------------------+---------------+--------+
 |       INPUT        |    OUTPUT     | STATUS |
 +--------------------+---------------+--------+
@@ -87,10 +87,10 @@ $ f2 Screenshot Image
 | Screenshot (3).png | Image (3).png | ok     |
 +--------------------+---------------+--------+
 
-The first argument is the find string, while the second is the
-replacement string. Any other arguments are interpreted as paths
-to files or directories where the renaming operation should take
-place. The current directory is used by default.
+The argument to -f is the find string, while the one to -r is the
+replacement string. The current directory is used by default, but
+you can pass relative or absolute paths to other files and
+directories.
 
 F2 supports many command-line options. Use the --help flag to examine
 the full list. For extensive usage examples, visit the project wiki:
