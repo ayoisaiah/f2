@@ -125,12 +125,13 @@ func init() {
 	oldVersionPrinter := cli.VersionPrinter
 	cli.VersionPrinter = func(c *cli.Context) {
 		oldVersionPrinter(c)
+		fmt.Printf(
+			"https://github.com/ayoisaiah/f2/releases/%s\n",
+			c.App.Version,
+		)
 
 		if _, found := os.LookupEnv(envUpdateNotifier); found {
-			checkForUpdates(newApp())
-		} else {
-			pterm.Printfln("See the latest updates: %s", pterm.Yellow("https://github.com/ayoisaiah/f2/releases"))
-			pterm.Printfln("Or set the %s variable in your env to any value opt into update notifications", pterm.Green(envUpdateNotifier))
+			checkForUpdates(c.App)
 		}
 	}
 
@@ -153,8 +154,7 @@ func disableStyling() {
 	pterm.Fatal.Prefix.Text = ""
 }
 
-// checkForUpdates alerts the user if an updated version of F2
-// is available.
+// checkForUpdates alerts the user if an updated version of F2 is available.
 func checkForUpdates(app *cli.App) {
 	spinner, _ := pterm.DefaultSpinner.Start("Checking for updates...")
 	c := http.Client{Timeout: 10 * time.Second}
@@ -200,14 +200,14 @@ func newApp() *cli.App {
 or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 
 	return &cli.App{
-		Name: "F2",
+		Name: "f2",
 		Authors: []*cli.Author{
 			{
 				Name:  "Ayooluwa Isaiah",
 				Email: "ayo@freshman.tech",
 			},
 		},
-		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely.",
+		Usage:                "f2 is a command-line tool for batch renaming multiple files and directories quickly and safely.",
 		UsageText:            usageText,
 		Version:              "v1.7.2",
 		EnableBashCompletion: true,
