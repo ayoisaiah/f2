@@ -3,11 +3,12 @@ package f2
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/olekukonko/tablewriter"
+	"github.com/pterm/pterm"
 )
 
 func removeHidden(
@@ -41,15 +42,23 @@ func contains(s []string, e string) bool {
 }
 
 func printTable(data [][]string, w io.Writer) {
-	table := tablewriter.NewWriter(w)
-	table.SetHeader([]string{"Input", "Output", "Status"})
-	table.SetAutoWrapText(false)
-
-	for _, v := range data {
-		table.Append(v)
+	d := [][]string{
+		{"ORIGINAL", "RENAMED", "STATUS"},
 	}
 
-	table.Render()
+	d = append(d, data...)
+
+	table := pterm.DefaultTable
+	table.HeaderRowSeparator = "*"
+	table.Boxed = true
+
+	str, err := table.WithHasHeader().WithData(d).Srender()
+	if err != nil {
+		pterm.Error.Printfln("Unable to print table: %s", err.Error())
+		return
+	}
+
+	fmt.Fprintln(w, str)
 }
 
 // filenameWithoutExtension returns the input file name
