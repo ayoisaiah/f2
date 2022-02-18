@@ -340,6 +340,8 @@ func TestOverwritingFiles(t *testing.T) {
 }
 
 func TestSimpleMode(t *testing.T) {
+	// simple mode runs in execute mode so changes
+	// are made to the filesystem
 	testDir := setupFileSystem(t)
 
 	cases := []testCase{
@@ -364,11 +366,11 @@ func TestSimpleMode(t *testing.T) {
 			want: []Change{
 				{
 					BaseDir: testDir,
-					Source:  "abc.pdf",
+					Source:  ".forbidden.pdf",
 					Target:  ".pdf",
 				},
 			},
-			args: "abc ' ' " + filepath.Join(testDir, "abc.pdf"),
+			args: ".forbidden ' ' " + filepath.Join(testDir, ".forbidden.pdf"),
 		},
 	}
 
@@ -399,10 +401,10 @@ func TestDefaultOptions(t *testing.T) {
 					Target:  "sample.chm",
 				},
 			},
-			args: "pdf chm " + testDir,
+			args: "-f pdf -r chm " + testDir,
 		},
 		{
-			name:        "Exclude files that contain 123",
+			name:        "Exclude files that contain 124",
 			defaultOpts: "-E 123",
 			want: []Change{
 				{

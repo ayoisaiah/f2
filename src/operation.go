@@ -439,18 +439,7 @@ func (op *Operation) apply() error {
 	if op.simpleMode {
 		op.printChanges()
 
-		if op.writer == os.Stdout {
-			fmt.Fprint(op.writer, "Press ENTER to apply the above changes")
-
-			reader := bufio.NewReader(op.reader)
-
-			_, err := reader.ReadString('\n')
-			if err != nil && !errors.Is(err, io.EOF) {
-				return err
-			}
-
-			return op.execute()
-		}
+		return op.execute()
 	}
 
 	if op.exec {
@@ -915,6 +904,9 @@ func setSimpleModeOptions(op *Operation, c *cli.Context) error {
 	op.replacementSlice = []string{args[1]}
 
 	setDefaultOpts(op, c)
+
+	op.includeDir = true
+	op.includeHidden = true
 
 	if len(args) > minArgs {
 		op.pathsToFilesOrDirs = args[minArgs:]

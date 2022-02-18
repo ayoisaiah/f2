@@ -168,12 +168,12 @@ func testRun(args []string) (testResult, error) {
 
 	v, ok := app.Metadata["op"]
 	if !ok {
-		return result, fmt.Errorf("Unable to access test result")
+		return result, fmt.Errorf("Unable to access test result: %w", err)
 	}
 
 	op, ok := v.(*Operation)
 	if !ok {
-		return result, fmt.Errorf("Unable to assert test operation")
+		return result, fmt.Errorf("Unable to assert test operation: %w", err)
 	}
 
 	result.changes = op.matches

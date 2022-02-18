@@ -72,16 +72,14 @@ func GetApp(reader io.Reader, writer io.Writer) *cli.App {
 	defaultCtx := getDefaultOptsCtx()
 
 	app.Before = func(c *cli.Context) error {
-		if c.NumFlags() == 0 {
-			app.Metadata["simple-mode"] = true
-		}
-
 		app.Metadata["reader"] = reader
 		app.Metadata["writer"] = writer
 
-		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
-		// in the environment
-		if defaultCtx != nil {
+		if c.NumFlags() == 0 {
+			app.Metadata["simple-mode"] = true
+		} else if defaultCtx != nil {
+			// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
+			// in the environment
 			for _, v := range supportedDefaultFlags {
 				value := fmt.Sprintf("%v", defaultCtx.Value(v))
 
