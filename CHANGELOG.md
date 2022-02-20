@@ -1,3 +1,14 @@
+## 1.8.0 (2022-02-21)
+
+- Add a "simple mode" for quick renaming operations in the current directory.
+- Ignore extension flag no longer affects directory names.
+- Default options can be changed via F2_DEFAULT_OPTS.
+- Fix duplicate paths when traversing directories to prevent unnecessary errors.
+- Output is now sorted in dry-run mode.
+- Update notification is now opt-in via F2_UPDATE_NOTIFIER
+- Version information is now more streamlined.
+- Dry run table output has been improved and made more compact.
+
 ## 1.7.2 (2021-08-23)
 
 Fixes:
