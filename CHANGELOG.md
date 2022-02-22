@@ -1,4 +1,4 @@
-## 1.8.0 (2022-02-21)
+## 1.8.0 (2022-02-22)
 
 - Add a "simple mode" for quick renaming operations in the current directory.
 - Ignore extension flag no longer affects directory names.
