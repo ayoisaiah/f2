@@ -92,7 +92,7 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(
-		`(\d+)?(%(\d?)+d)([borh])?(\d+)?(?:<(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)>)?`,
+		`(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(\d+)?(?:<(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)>)?`,
 	)
 	randomRegex = regexp.MustCompile(
 		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
@@ -711,6 +711,10 @@ func (op *Operation) replaceIndex(
 	for i := range nv.submatches {
 		current := nv.values[i]
 
+		if current.step == 0 && !containsInt(nv.capturVarIndex, i) {
+			current.step = 1
+		}
+
 		op.startNumber = current.startNumber
 		num := op.startNumber + (index * current.step) + op.numberOffset[i]
 
@@ -944,6 +948,20 @@ func (op *Operation) replaceVariables(
 
 	// Replace indexing scheme like %03d in the target
 	if indexRegex.MatchString(ch.Target) {
+		if len(vars.number.capturVarIndex) > 0 {
+			indices := make([]int, len(vars.number.capturVarIndex))
+
+			copy(indices, vars.number.capturVarIndex)
+
+			numVar, err := getNumberVar(ch.Target)
+			if err != nil {
+				return err
+			}
+
+			vars.number = numVar
+			vars.number.capturVarIndex = indices
+		}
+
 		ch.Target = op.replaceIndex(ch.Target, ch.index, vars.number)
 	}
 

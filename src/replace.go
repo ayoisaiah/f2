@@ -14,16 +14,19 @@ type numbersToSkip struct {
 	max int
 }
 
+type numberVarVal struct {
+	regex       *regexp.Regexp
+	startNumber int
+	index       string
+	format      string
+	step        int
+	skip        []numbersToSkip
+}
+
 type numberVar struct {
-	submatches [][]string
-	values     []struct {
-		regex       *regexp.Regexp
-		startNumber int
-		index       string
-		format      string
-		step        int
-		skip        []numbersToSkip
-	}
+	capturVarIndex []int
+	submatches     [][]string
+	values         []numberVarVal
 }
 
 type transformVar struct {
@@ -300,21 +303,14 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 
 	if indexRegex.MatchString(replacementInput) {
 		nv.submatches = indexRegex.FindAllStringSubmatch(replacementInput, -1)
-		expectedLength := 7
+		expectedLength := 8
 
-		for _, submatch := range nv.submatches {
+		for i, submatch := range nv.submatches {
 			if len(submatch) < expectedLength {
 				return nv, errInvalidSubmatches
 			}
 
-			var val struct {
-				regex       *regexp.Regexp
-				startNumber int
-				index       string
-				format      string
-				step        int
-				skip        []numbersToSkip
-			}
+			var val numberVarVal
 
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
@@ -324,7 +320,11 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 			val.regex = regex
 
 			if submatch[1] != "" {
-				val.startNumber, err = strconv.Atoi(submatch[1])
+				nv.capturVarIndex = append(nv.capturVarIndex, i)
+			}
+
+			if submatch[2] != "" {
+				val.startNumber, err = strconv.Atoi(submatch[2])
 				if err != nil {
 					return nv, err
 				}
@@ -332,18 +332,17 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 				val.startNumber = 1
 			}
 
-			val.index = submatch[2]
-			val.format = submatch[4]
-			val.step = 1
+			val.index = submatch[3]
+			val.format = submatch[5]
 
-			if submatch[5] != "" {
-				val.step, err = strconv.Atoi(submatch[5])
+			if submatch[6] != "" {
+				val.step, err = strconv.Atoi(submatch[6])
 				if err != nil {
 					return nv, err
 				}
 			}
 
-			skipNumbers := submatch[6]
+			skipNumbers := submatch[7]
 			if skipNumbers != "" {
 				slice := strings.Split(skipNumbers, ",")
 				for _, v := range slice {

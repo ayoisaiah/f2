@@ -454,3 +454,33 @@ func TestReplaceLongPath(t *testing.T) {
 
 	runFindReplaceHelper(t, cases)
 }
+
+func TestCaptureVariables(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Replace Pressure with Limits in string mode",
+			want: []Change{
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "S-001E1.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "S-001E2.mkv",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					BaseDir: testDir,
+					Target:  "S-001E3.mkv",
+				},
+			},
+			args: "-f '.+\\((\\d+)\\) S(\\d)\\.E(\\d)\\.1080p\\.mkv' -r 'S-$2%03dE$3.mkv' " + testDir,
+		},
+	}
+
+	runFindReplaceHelper(t, cases)
+}

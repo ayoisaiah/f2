@@ -41,6 +41,16 @@ func contains(s []string, e string) bool {
 	return false
 }
 
+func containsInt(sl []int, i int) bool {
+	for _, v := range sl {
+		if v == i {
+			return true
+		}
+	}
+
+	return false
+}
+
 func printTable(data [][]string, w io.Writer) {
 	d := [][]string{
 		{"ORIGINAL", "RENAMED", "STATUS"},
