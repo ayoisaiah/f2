@@ -22,6 +22,8 @@ import (
 	exiftool "github.com/barasher/go-exiftool"
 	"github.com/dhowden/tag"
 	"github.com/rwcarlsen/goexif/exif"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
@@ -782,10 +784,12 @@ func replaceTransformVariables(
 			case "lw":
 				target = regexReplace(r, target, strings.ToLower(v), 1)
 			case "ti":
+				c := cases.Title(language.English)
+
 				target = regexReplace(
 					r,
 					target,
-					strings.Title(strings.ToLower(v)),
+					c.String(strings.ToLower(v)),
 					1,
 				)
 			case "win":
