@@ -348,7 +348,7 @@ func (op *Operation) handleErrors() error {
 	}
 
 	if err == nil && len(op.matches) > 0 {
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	} else if err != nil && len(op.matches) > 0 {
 		return fmt.Errorf("The above files could not be renamed")
 	}
