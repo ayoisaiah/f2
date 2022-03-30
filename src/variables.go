@@ -92,7 +92,7 @@ var (
 	extensionRegex = regexp.MustCompile("{{ext}}")
 	parentDirRegex = regexp.MustCompile("{{p}}")
 	indexRegex     = regexp.MustCompile(
-		`(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(\d+)?(?:<(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)>)?`,
+		`(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)>)?`,
 	)
 	randomRegex = regexp.MustCompile(
 		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
@@ -711,20 +711,26 @@ func (op *Operation) replaceIndex(
 	for i := range nv.submatches {
 		current := nv.values[i]
 
-		if current.step == 0 && !containsInt(nv.capturVarIndex, i) {
-			current.step = 1
+		isCaptureVar := containsInt(nv.capturVarIndex, i)
+
+		if !current.step.isSet && !isCaptureVar {
+			current.step.value = 1
 		}
 
 		op.startNumber = current.startNumber
-		num := op.startNumber + (index * current.step) + op.numberOffset[i]
+		num := op.startNumber + (index * current.step.value) + op.numberOffset[i]
+
+		if isCaptureVar {
+			num = op.startNumber + (current.step.value) + op.numberOffset[i]
+		}
 
 		if len(current.skip) != 0 {
 		outer:
 			for {
 				for _, v := range current.skip {
 					if num >= v.min && num <= v.max {
-						num += current.step
-						op.numberOffset[i] += current.step
+						num += current.step.value
+						op.numberOffset[i] += current.step.value
 						continue outer
 					}
 				}

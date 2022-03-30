@@ -94,15 +94,18 @@ type Operation struct {
 	reverseSort        bool
 	errors             []renameError
 	revert             bool
-	numberOffset       []int
-	replaceLimit       int
-	allowOverwrites    bool
-	verbose            bool
-	csvFilename        string
-	quiet              bool
-	writer             io.Writer
-	reader             io.Reader
-	simpleMode         bool
+	// numberOffset is used to calculate the next number
+	// in an indexing sequence when numbers to skip
+	// are specified in the index variable
+	numberOffset    []int
+	replaceLimit    int
+	allowOverwrites bool
+	verbose         bool
+	csvFilename     string
+	quiet           bool
+	writer          io.Writer
+	reader          io.Reader
+	simpleMode      bool
 }
 
 type backupFile struct {

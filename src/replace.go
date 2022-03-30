@@ -19,8 +19,11 @@ type numberVarVal struct {
 	startNumber int
 	index       string
 	format      string
-	step        int
-	skip        []numbersToSkip
+	step        struct {
+		isSet bool
+		value int
+	}
+	skip []numbersToSkip
 }
 
 type numberVar struct {
@@ -336,7 +339,9 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 			val.format = submatch[5]
 
 			if submatch[6] != "" {
-				val.step, err = strconv.Atoi(submatch[6])
+				val.step.isSet = true
+
+				val.step.value, err = strconv.Atoi(submatch[6])
 				if err != nil {
 					return nv, err
 				}

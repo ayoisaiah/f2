@@ -60,6 +60,43 @@ func TestAutoIncrementingNumber(t *testing.T) {
 	}
 }
 
+func TestIndexingSequence(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	testDir = filepath.Join(testDir, "images")
+
+	cases := []testCase{
+		{
+			name: "Use negative step to decrement index",
+			want: []Change{
+				{
+					Source:  "456.webp",
+					BaseDir: testDir,
+					Target:  "00010",
+				},
+				{
+					Source:  "a.jpg",
+					BaseDir: testDir,
+					Target:  "00009",
+				},
+				{
+					Source:  "abc.png",
+					BaseDir: testDir,
+					Target:  "00008",
+				},
+				{
+					Source:  "b.jPg",
+					BaseDir: testDir,
+					Target:  "00005",
+				},
+			},
+			args: "-r '10%05d-1<6,7>' " + testDir,
+		},
+	}
+
+	runFindReplaceHelper(t, cases)
+}
+
 func TestReplaceFilenameVariables(t *testing.T) {
 	testDir := setupFileSystem(t)
 
