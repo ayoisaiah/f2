@@ -757,7 +757,12 @@ func (op *Operation) replaceIndex(
 			base2 := 2
 			r = strconv.FormatInt(n, base2)
 		default:
-			r = fmt.Sprintf(current.index, num)
+			if num < 0 {
+				num *= -1
+				r = "-" + fmt.Sprintf(current.index, num)
+			} else {
+				r = fmt.Sprintf(current.index, num)
+			}
 		}
 
 		target = current.regex.ReplaceAllString(target, r)
