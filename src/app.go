@@ -272,6 +272,10 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Aliases: []string{"e"},
 				Usage:   "Ignore the file extension when searching for matches.",
 			},
+			&cli.BoolFlag{
+				Name:  "json",
+				Usage: "Produce JSON output always",
+			},
 			&cli.UintFlag{
 				Name:        "max-depth",
 				Aliases:     []string{"m"},

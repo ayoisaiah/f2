@@ -655,6 +655,7 @@ func (op *Operation) replace() (err error) {
 		}
 
 		ch.Target = strings.TrimSpace(filepath.Clean(ch.Target))
+		ch.Status = statusOK
 		op.matches[i] = ch
 	}
 

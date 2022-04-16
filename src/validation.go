@@ -218,10 +218,12 @@ func (op *Operation) detectConflicts() {
 					target: targetPath,
 				},
 			)
+			op.matches[i].Status = statusEmptyFilename
 
 			if op.fixConflicts {
 				// The file is left unchanged
 				op.matches[i].Target = ch.Source
+				op.matches[i].Status = statusOK
 			}
 
 			continue
@@ -234,6 +236,7 @@ func (op *Operation) detectConflicts() {
 			i,
 		)
 		if detected && op.fixConflicts {
+			// going back an index allows rechecking the path for conflicts once more
 			i--
 			continue
 		}
@@ -310,9 +313,11 @@ func (op *Operation) checkPathExistsConflict(
 		)
 
 		conflictDetected = true
+		op.matches[i].Status = statusPathExists
 
 		if op.fixConflicts {
 			op.matches[i].Target = newTarget(ch, nil)
+			op.matches[i].Status = statusOK
 		}
 	}
 
@@ -333,6 +338,7 @@ func (op *Operation) checkOverwritingPathConflict(
 			var sources []string
 			for _, s := range v {
 				sources = append(sources, s.sourcePath)
+				op.matches[s.index].Status = statusOverwritingNewPath
 			}
 
 			op.conflicts[overwritingNewPath] = append(
@@ -363,9 +369,11 @@ func (op *Operation) checkOverwritingPathConflict(
 							index      int
 						}{}
 						op.matches[item.index].Target = target
+						op.matches[item.index].Status = statusOK
 					} else {
 						// repeat the last iteration to generate a new path
 						op.matches[item.index].Target = target
+						op.matches[item.index].Status = statusOK
 						i--
 						continue
 					}
@@ -438,6 +446,7 @@ func (op *Operation) checkTrailingPeriodConflict(
 					},
 				)
 				conflictDetected = true
+				op.matches[i].Status = statusTrailingPeriod
 
 				break
 			}
@@ -450,6 +459,7 @@ func (op *Operation) checkTrailingPeriodConflict(
 			}
 
 			op.matches[i].Target = strings.Join(strSlice, pathSeperator)
+			op.matches[i].Status = statusOK
 		}
 	}
 
@@ -473,6 +483,7 @@ func (op *Operation) checkPathLengthConflict(
 			},
 		)
 		conflictDetected = true
+		op.matches[i].Status = statusFilenameLengthExceeded
 
 		if op.fixConflicts {
 			if runtime.GOOS == windows {
@@ -500,6 +511,7 @@ func (op *Operation) checkPathLengthConflict(
 				}
 
 				op.matches[i].Target = filepath.Join(f, ext)
+				op.matches[i].Status = statusOK
 			}
 		}
 	}
@@ -525,6 +537,7 @@ func (op *Operation) checkForbiddenCharactersConflict(
 		)
 
 		conflictDetected = true
+		op.matches[i].Status = statusInvalidCharacters
 
 		if op.fixConflicts {
 			if runtime.GOOS == windows {
@@ -541,6 +554,8 @@ func (op *Operation) checkForbiddenCharactersConflict(
 					"",
 				)
 			}
+
+			op.matches[i].Status = statusOK
 		}
 	}
 

@@ -48,16 +48,32 @@ const (
 	dotCharacter = 46
 )
 
+type renameStatus string
+
+const (
+	statusOK                     renameStatus = "ok"
+	statusUnchanged              renameStatus = "unchanged"
+	statusOverwriting            renameStatus = "overwriting"
+	statusEmptyFilename          renameStatus = "empty filename"
+	statusTrailingPeriod         renameStatus = "trailing periods are prohibited"
+	statusPathExists             renameStatus = "path already exists"
+	statusOverwritingNewPath     renameStatus = "overwriting newly renamed path"
+	statusInvalidCharacters      renameStatus = "invalid characters present: (%s)"
+	statusFilenameLengthExceeded renameStatus = "max file name length exceeded: (%s)"
+)
+
 // Change represents a single filename change.
 type Change struct {
 	index          int
 	originalSource string
 	csvRow         []string
-	BaseDir        string `json:"base_dir"`
-	Source         string `json:"source"`
-	Target         string `json:"target"`
-	IsDir          bool   `json:"is_dir"`
-	WillOverwrite  bool   `json:"-"`
+	BaseDir        string       `json:"base_dir"`
+	Source         string       `json:"source"`
+	Target         string       `json:"target"`
+	IsDir          bool         `json:"is_dir"`
+	WillOverwrite  bool         `json:"-"`
+	Status         renameStatus `json:"status"`
+	Error          error        `json:"error"`
 }
 
 // renameError represents an error that occurs when
@@ -87,13 +103,15 @@ type Operation struct {
 	pathsToFilesOrDirs []string
 	recursive          bool
 	workingDir         string
-	stringLiteralMode  bool
-	excludeFilter      []string
-	maxDepth           int
-	sort               string
-	reverseSort        bool
-	errors             []renameError
-	revert             bool
+	// when the operation was carried out
+	date              time.Time
+	stringLiteralMode bool
+	excludeFilter     []string
+	maxDepth          int
+	sort              string
+	reverseSort       bool
+	errors            []renameError
+	revert            bool
 	// numberOffset is used to calculate the next number
 	// in an indexing sequence when numbers to skip
 	// are specified in the index variable
@@ -106,12 +124,22 @@ type Operation struct {
 	writer          io.Writer
 	reader          io.Reader
 	simpleMode      bool
+	json            bool
 }
 
 type backupFile struct {
 	WorkingDir string   `json:"working_dir"`
 	Date       string   `json:"date"`
 	Operations []Change `json:"operations"`
+}
+
+type jsonOutput struct {
+	WorkingDir string                      `json:"working_dir"`
+	Date       string                      `json:"date"`
+	DryRun     bool                        `json:"dry_run"`
+	Changes    []Change                    `json:"changes"`
+	Conflicts  map[conflictType][]Conflict `json:"conflicts"`
+	Errors     []renameError               `json:"errors"`
 }
 
 // writeToFile writes the details of a successful operation
@@ -202,6 +230,24 @@ func (op *Operation) undo(path string) error {
 	return nil
 }
 
+func (op *Operation) getJSONOutput() ([]byte, error) {
+	out := jsonOutput{
+		WorkingDir: op.workingDir,
+		Date:       op.date.Format(time.RFC3339),
+		DryRun:     !op.exec,
+		Changes:    op.matches,
+		Conflicts:  op.conflicts,
+		Errors:     op.errors,
+	}
+
+	b, err := json.MarshalIndent(out, "", "    ")
+	if err != nil {
+		return b, err
+	}
+
+	return b, nil
+}
+
 // printChanges displays the changes to be made in a
 // table format.
 func (op *Operation) printChanges() {
@@ -211,13 +257,9 @@ func (op *Operation) printChanges() {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
 
-		status := pterm.Green("ok")
-		if source == target {
-			status = pterm.Yellow("unchanged")
-		}
-
-		if v.WillOverwrite {
-			status = pterm.Yellow("overwriting")
+		status := pterm.Green(v.Status)
+		if v.Status != statusOK {
+			status = pterm.Yellow(v.Status)
 		}
 
 		d := []string{source, target, status}
@@ -431,6 +473,11 @@ func (op *Operation) apply() error {
 
 	if len(op.conflicts) > 0 && !op.fixConflicts {
 		op.reportConflicts()
+		if op.json {
+			js, _ := op.getJSONOutput()
+
+			fmt.Println(string(js))
+		}
 
 		return errConflictDetected
 	}
@@ -443,6 +490,12 @@ func (op *Operation) apply() error {
 		op.printChanges()
 
 		return op.execute()
+	}
+
+	if op.json {
+		js, _ := op.getJSONOutput()
+
+		fmt.Println(string(js))
 	}
 
 	if op.exec {
@@ -843,6 +896,7 @@ func setDefaultOpts(op *Operation, c *cli.Context) {
 	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
 	op.quiet = c.Bool("quiet")
+	op.json = c.Bool("json")
 
 	// Sorting
 	if c.String("sort") != "" {
@@ -924,6 +978,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	op := &Operation{
 		writer: os.Stdout,
 		reader: os.Stdin,
+		date:   time.Now(),
 	}
 
 	v, exists := c.App.Metadata["reader"]
