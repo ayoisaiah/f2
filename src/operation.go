@@ -48,6 +48,20 @@ const (
 	dotCharacter = 46
 )
 
+type renameStatus string
+
+const (
+	statusOK                     renameStatus = "ok"
+	statusUnchanged              renameStatus = "unchanged"
+	statusOverwriting            renameStatus = "overwriting"
+	statusEmptyFilename          renameStatus = "empty filename"
+	statusTrailingPeriod         renameStatus = "trailing periods are prohibited"
+	statusPathExists             renameStatus = "path already exists"
+	statusOverwritingNewPath     renameStatus = "overwriting newly renamed path"
+	statusInvalidCharacters      renameStatus = "invalid characters present: (%s)"
+	statusFilenameLengthExceeded renameStatus = "max file name length exceeded: (%s)"
+)
+
 // Change represents a single filename change.
 type Change struct {
 	index          int
@@ -211,13 +225,13 @@ func (op *Operation) printChanges() {
 		source := filepath.Join(v.BaseDir, v.Source)
 		target := filepath.Join(v.BaseDir, v.Target)
 
-		status := pterm.Green("ok")
+		status := pterm.Green(statusOK)
 		if source == target {
-			status = pterm.Yellow("unchanged")
+			status = pterm.Yellow(statusUnchanged)
 		}
 
 		if v.WillOverwrite {
-			status = pterm.Yellow("overwriting")
+			status = pterm.Yellow(statusOverwriting)
 		}
 
 		d := []string{source, target, status}

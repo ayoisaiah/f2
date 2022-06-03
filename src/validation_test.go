@@ -97,8 +97,8 @@ func TestDetectConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				fileExists: {
 					{
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(testDir, "abc.epub"),
+						Source: []string{filepath.Join(testDir, "abc.pdf")},
+						Target: filepath.Join(testDir, "abc.epub"),
 					},
 				},
 			},
@@ -109,8 +109,8 @@ func TestDetectConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				emptyFilename: {
 					{
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(testDir, ""),
+						Source: []string{filepath.Join(testDir, "abc.pdf")},
+						Target: filepath.Join(testDir, ""),
 					},
 				},
 			},
@@ -121,11 +121,11 @@ func TestDetectConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				overwritingNewPath: {
 					{
-						source: []string{
+						Source: []string{
 							filepath.Join(testDir, "abc.epub"),
 							filepath.Join(testDir, "abc.pdf"),
 						},
-						target: filepath.Join(testDir, "abc.mobi"),
+						Target: filepath.Join(testDir, "abc.mobi"),
 					},
 				},
 			},
@@ -210,43 +210,43 @@ func TestReportConflicts(t *testing.T) {
 	table := map[conflictType][]Conflict{
 		fileExists: {
 			{
-				source: []string{filepath.Join(testDir, "abc.pdf")},
-				target: filepath.Join(testDir, "abc.epub"),
+				Source: []string{filepath.Join(testDir, "abc.pdf")},
+				Target: filepath.Join(testDir, "abc.epub"),
 			},
 		},
 		emptyFilename: {
 			{
-				source: []string{filepath.Join(testDir, "abc.pdf")},
-				target: filepath.Join(testDir, ""),
+				Source: []string{filepath.Join(testDir, "abc.pdf")},
+				Target: filepath.Join(testDir, ""),
 			},
 		},
 		trailingPeriod: {
 			{
-				source: []string{filepath.Join(testDir, "abc.pdf")},
-				target: filepath.Join(testDir, "abc.pdf."),
+				Source: []string{filepath.Join(testDir, "abc.pdf")},
+				Target: filepath.Join(testDir, "abc.pdf."),
 			},
 		},
 		invalidCharacters: {
 			{
-				source: []string{filepath.Join(testDir, "abc.pdf")},
-				target: filepath.Join(testDir, "%^&*().pdf"),
+				Source: []string{filepath.Join(testDir, "abc.pdf")},
+				Target: filepath.Join(testDir, "%^&*().pdf"),
 			},
 		},
 		overwritingNewPath: {
 			{
-				source: []string{
+				Source: []string{
 					filepath.Join(testDir, "abc.epub"),
 					filepath.Join(testDir, "abc.pdf"),
 				},
-				target: filepath.Join(testDir, "abc.mobi"),
+				Target: filepath.Join(testDir, "abc.mobi"),
 			},
 		},
 		maxFilenameLengthExceeded: {
 			{
-				source: []string{
+				Source: []string{
 					filepath.Join(testDir, "abc.pdf"),
 				},
-				target: filepath.Join(
+				Target: filepath.Join(
 					testDir,
 					"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.mobi",
 				),

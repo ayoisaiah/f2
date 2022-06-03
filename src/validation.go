@@ -28,8 +28,10 @@ var (
 )
 
 const (
+	// max filename length of 260 characters in Windows.
 	windowsMaxLength = 260
-	unixMaxBytes     = 255
+	// max filename length of 255 bytes on Linux and other unix-based OSes.
+	unixMaxBytes = 255
 )
 
 type conflictType int
@@ -46,9 +48,9 @@ const (
 // Conflict represents a renaming operation conflict
 // such as duplicate targets or empty filenames.
 type Conflict struct {
-	source []string
-	target string
-	cause  string
+	Source []string `json:"source"`
+	Target string   `json:"target"`
+	Cause  string   `json:"cause"`
 }
 
 // newTarget appends a number to the target file name so that it
@@ -100,9 +102,9 @@ func (op *Operation) reportConflicts() {
 	if slice, exists := op.conflicts[emptyFilename]; exists {
 		for _, v := range slice {
 			slice := []string{
-				strings.Join(v.source, ""),
+				strings.Join(v.Source, ""),
 				"",
-				pterm.Red("empty filename"),
+				pterm.Red(statusEmptyFilename),
 			}
 			data = append(data, slice)
 		}
@@ -110,12 +112,12 @@ func (op *Operation) reportConflicts() {
 
 	if slice, exists := op.conflicts[trailingPeriod]; exists {
 		for _, v := range slice {
-			for _, s := range v.source {
+			for _, s := range v.Source {
 				slice := []string{
 					s,
-					v.target,
+					v.Target,
 					pterm.Red(
-						"trailing periods are prohibited",
+						statusTrailingPeriod,
 					),
 				}
 				data = append(data, slice)
@@ -126,9 +128,9 @@ func (op *Operation) reportConflicts() {
 	if slice, exists := op.conflicts[fileExists]; exists {
 		for _, v := range slice {
 			slice := []string{
-				strings.Join(v.source, ""),
-				v.target,
-				pterm.Red("path already exists"),
+				strings.Join(v.Source, ""),
+				v.Target,
+				pterm.Red(statusPathExists),
 			}
 			data = append(data, slice)
 		}
@@ -136,11 +138,11 @@ func (op *Operation) reportConflicts() {
 
 	if slice, exists := op.conflicts[overwritingNewPath]; exists {
 		for _, v := range slice {
-			for _, s := range v.source {
+			for _, s := range v.Source {
 				slice := []string{
 					s,
-					v.target,
-					pterm.Red("overwriting newly renamed path"),
+					v.Target,
+					pterm.Red(statusOverwritingNewPath),
 				}
 				data = append(data, slice)
 			}
@@ -149,14 +151,14 @@ func (op *Operation) reportConflicts() {
 
 	if slice, exists := op.conflicts[invalidCharacters]; exists {
 		for _, v := range slice {
-			for _, s := range v.source {
+			for _, s := range v.Source {
 				slice := []string{
 					s,
-					v.target,
+					v.Target,
 					pterm.Red(
 						fmt.Sprintf(
-							"invalid characters present: (%s)",
-							v.cause,
+							string(statusInvalidCharacters),
+							v.Cause,
 						),
 					),
 				}
@@ -167,14 +169,14 @@ func (op *Operation) reportConflicts() {
 
 	if slice, exists := op.conflicts[maxFilenameLengthExceeded]; exists {
 		for _, v := range slice {
-			for _, s := range v.source {
+			for _, s := range v.Source {
 				slice := []string{
 					s,
-					v.target,
+					v.Target,
 					pterm.Red(
 						fmt.Sprintf(
-							"max file name length exceeded: (%s)",
-							v.cause,
+							string(statusFilenameLengthExceeded),
+							v.Cause,
 						),
 					),
 				}
@@ -214,8 +216,8 @@ func (op *Operation) detectConflicts() {
 			op.conflicts[emptyFilename] = append(
 				op.conflicts[emptyFilename],
 				Conflict{
-					source: []string{sourcePath},
-					target: targetPath,
+					Source: []string{sourcePath},
+					Target: targetPath,
 				},
 			)
 
@@ -292,13 +294,13 @@ func (op *Operation) checkPathExistsConflict(
 		// Don't report a conflict for an unchanged filename
 		// Also handles case-insensitive filesystems
 		if strings.EqualFold(sourcePath, targetPath) {
-			return conflictDetected
+			return false
 		}
 
 		// Don't report a conflict if overwriting files are allowed
 		if op.allowOverwrites {
 			op.matches[i].WillOverwrite = true
-			return conflictDetected
+			return false
 		}
 
 		// Don't report a conflict if target path is changing
@@ -308,15 +310,15 @@ func (op *Operation) checkPathExistsConflict(
 			tp := filepath.Join(ch.BaseDir, ch.Target)
 
 			if targetPath == sp && !strings.EqualFold(sp, tp) {
-				return conflictDetected
+				return false
 			}
 		}
 
 		op.conflicts[fileExists] = append(
 			op.conflicts[fileExists],
 			Conflict{
-				source: []string{sourcePath},
-				target: targetPath,
+				Source: []string{sourcePath},
+				Target: targetPath,
 			},
 		)
 
@@ -349,8 +351,8 @@ func (op *Operation) checkOverwritingPathConflict(
 			op.conflicts[overwritingNewPath] = append(
 				op.conflicts[overwritingNewPath],
 				Conflict{
-					source: sources,
-					target: k,
+					Source: sources,
+					Target: k,
 				},
 			)
 
@@ -444,8 +446,8 @@ func (op *Operation) checkTrailingPeriodConflict(
 				op.conflicts[trailingPeriod] = append(
 					op.conflicts[trailingPeriod],
 					Conflict{
-						source: []string{sourcePath},
-						target: targetPath,
+						Source: []string{sourcePath},
+						Target: targetPath,
 					},
 				)
 				conflictDetected = true
@@ -478,9 +480,9 @@ func (op *Operation) checkPathLengthConflict(
 		op.conflicts[maxFilenameLengthExceeded] = append(
 			op.conflicts[maxFilenameLengthExceeded],
 			Conflict{
-				source: []string{sourcePath},
-				target: targetPath,
-				cause:  err.Error(),
+				Source: []string{sourcePath},
+				Target: targetPath,
+				Cause:  err.Error(),
 			},
 		)
 		conflictDetected = true
@@ -529,9 +531,9 @@ func (op *Operation) checkForbiddenCharactersConflict(
 		op.conflicts[invalidCharacters] = append(
 			op.conflicts[invalidCharacters],
 			Conflict{
-				source: []string{sourcePath},
-				target: targetPath,
-				cause:  err.Error(),
+				Source: []string{sourcePath},
+				Target: targetPath,
+				Cause:  err.Error(),
 			},
 		)
 
