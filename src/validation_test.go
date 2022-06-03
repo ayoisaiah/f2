@@ -344,3 +344,28 @@ func TestGetNewPath(t *testing.T) {
 		}
 	}
 }
+
+func TestExstingTargetChanging(t *testing.T) {
+	testDir := setupFileSystem(t)
+
+	cases := []testCase{
+		{
+			name: "Existing target paths that are changing should not trigger a conflict",
+			want: []Change{
+				{
+					BaseDir: filepath.Join(testDir, "morepics"),
+					Source:  "pic-1.avif",
+					Target:  "pic-2.avif",
+				},
+				{
+					BaseDir: filepath.Join(testDir, "morepics"),
+					Source:  "pic-2.avif",
+					Target:  "pic-3.avif",
+				},
+			},
+			args: "-f '\\d' -r 2%d " + filepath.Join(testDir, "morepics"),
+		},
+	}
+
+	runFindReplaceHelper(t, cases)
+}

@@ -301,6 +301,17 @@ func (op *Operation) checkPathExistsConflict(
 			return conflictDetected
 		}
 
+		// Don't report a conflict if target path is changing
+		for j := 0; j < len(op.matches); j++ {
+			ch := op.matches[j]
+			sp := filepath.Join(ch.BaseDir, ch.Source)
+			tp := filepath.Join(ch.BaseDir, ch.Target)
+
+			if targetPath == sp && !strings.EqualFold(sp, tp) {
+				return conflictDetected
+			}
+		}
+
 		op.conflicts[fileExists] = append(
 			op.conflicts[fileExists],
 			Conflict{
