@@ -17,9 +17,9 @@ func TestDarwinSpecificConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				invalidCharacters: {
 					{
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(testDir, ":::.pdf"),
-						cause:  ":",
+						Sources: []string{filepath.Join(testDir, "abc.pdf")},
+						Target:  filepath.Join(testDir, ":::.pdf"),
+						Cause:   ":",
 					},
 				},
 			},
