@@ -17,9 +17,9 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				invalidCharacters: {
 					{
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(testDir, "<>.pdf"),
-						cause:  "<,>",
+						Sources: []string{filepath.Join(testDir, "abc.pdf")},
+						Target:  filepath.Join(testDir, "<>.pdf"),
+						Cause:   "<,>",
 					},
 				},
 			},
@@ -30,43 +30,43 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				trailingPeriod: {
 					{
-						source: []string{
+						Sources: []string{
 							filepath.Join(
 								testDir,
 								"No Pressure (2021) S1.E1.1080p.mkv",
 							),
 						},
-						target: filepath.Join(
+						Target: filepath.Join(
 							testDir,
 							`2021...\No Pressure (2021) S1.E1.1080p.mkv`,
 						),
-						cause: "",
+						Cause: "",
 					},
 					{
-						source: []string{
+						Sources: []string{
 							filepath.Join(
 								testDir,
 								"No Pressure (2021) S1.E2.1080p.mkv",
 							),
 						},
-						target: filepath.Join(
+						Target: filepath.Join(
 							testDir,
 							`2021...\No Pressure (2021) S1.E2.1080p.mkv`,
 						),
-						cause: "",
+						Cause: "",
 					},
 					{
-						source: []string{
+						Sources: []string{
 							filepath.Join(
 								testDir,
 								"No Pressure (2021) S1.E3.1080p.mkv",
 							),
 						},
-						target: filepath.Join(
+						Target: filepath.Join(
 							testDir,
 							`2021...\No Pressure (2021) S1.E3.1080p.mkv`,
 						),
-						cause: "",
+						Cause: "",
 					},
 				},
 			},
@@ -77,9 +77,9 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				invalidCharacters: {
 					{
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(testDir, ":|?.pdf"),
-						cause:  ":,|,?",
+						Sources: []string{filepath.Join(testDir, "abc.pdf")},
+						Target:  filepath.Join(testDir, ":|?.pdf"),
+						Cause:   ":,|,?",
 					},
 				},
 			},
@@ -90,9 +90,9 @@ func TestWindowsSpecificConflicts(t *testing.T) {
 			want: map[conflictType][]Conflict{
 				maxFilenameLengthExceeded: {
 					{
-						cause:  "260 characters",
-						source: []string{filepath.Join(testDir, "abc.pdf")},
-						target: filepath.Join(
+						Cause:   "260 characters",
+						Sources: []string{filepath.Join(testDir, "abc.pdf")},
+						Target: filepath.Join(
 							testDir,
 							"mSuhA166Od9QEPyZNr9YCGudIuxp7ousCVaTg4cNcOjuNjDZjKBNLJrjqwMhJhFFUM7Touvz054yah1hXkM7hKe6naBxg2FLfKO7YzdMpmgANN6yFF1jOyDGwPK7fn7uHymCG7NmpSXsS0QyURJMObjjTGfMKi6Zhd1l2fywyvyu0Oze8nNVdAve1HvXCyrqZJoczd5R84FIMDE2VK6zdM3D7Rbu6ZHj73tZnR476bc6q6pJiXiGaDzezx02Ngq6reI.c",
 						),
