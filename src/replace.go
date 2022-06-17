@@ -631,8 +631,8 @@ func (op *Operation) replace() (err error) {
 		return err
 	}
 
-	for i, ch := range op.matches {
-		ch := ch // prevent memory aliasing problem when ch is referenced
+	for i := range op.matches {
+		ch := op.matches[i]
 		ch.index = i
 		originalName := ch.Source
 		fileExt := filepath.Ext(originalName)
@@ -655,6 +655,7 @@ func (op *Operation) replace() (err error) {
 		}
 
 		ch.Target = strings.TrimSpace(filepath.Clean(ch.Target))
+		ch.status = statusOK
 		op.matches[i] = ch
 	}
 

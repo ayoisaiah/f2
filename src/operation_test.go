@@ -29,7 +29,7 @@ type testCase struct {
 	args           string
 	undoArgs       []string
 	defaultOpts    string
-	expectedErrors []renameError
+	expectedErrors []int
 }
 
 var (
@@ -151,7 +151,7 @@ type testResult struct {
 	conflicts       map[conflictType][]Conflict
 	backupFile      string
 	applyError      error
-	operationErrors []renameError
+	operationErrors []int
 	output          *bytes.Buffer
 }
 
@@ -765,19 +765,11 @@ func TestHandleErrors(t *testing.T) {
 					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
 					BaseDir: testDir,
 					Target:  "No Limits (2021) S1.E3.1080p.mkv",
+					Error:   "renaming failed",
 				},
 			},
-			expectedErrors: []renameError{
-				{
-					entry: Change{
-						Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-						BaseDir: testDir,
-						Target:  "No Limits (2021) S1.E3.1080p.mkv",
-					},
-					err: errors.New("Missing permissions"),
-				},
-			},
-			args: "-f Pressure -r Limits -s " + testDir,
+			expectedErrors: []int{2},
+			args:           "-f Pressure -r Limits -s " + testDir,
 		},
 	}
 

@@ -14,7 +14,7 @@ func main() {
 	err := app.Run(os.Args)
 	if err != nil {
 		pterm.EnableOutput()
-		pterm.Error.Println(err)
+		pterm.Fprintln(os.Stderr, pterm.Error.Sprint(err))
 		os.Exit(1)
 	}
 }

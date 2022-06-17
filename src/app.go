@@ -22,7 +22,7 @@ const (
 // supportedDefaultFlags contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultFlags = []string{
-	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
+	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
 }
 
 // getDefaultOptsCtx creates a new `cli.Context` that represents the
@@ -45,9 +45,11 @@ func getDefaultOptsCtx() *cli.Context {
 		app.Before = func(c *cli.Context) error {
 			if c.IsSet("find") || c.IsSet("replace") || c.IsSet("csv") ||
 				c.IsSet("undo") {
-				pterm.Warning.Printfln(
-					"%s are not supported as default options",
-					"'find', 'replace', 'csv' and 'undo'",
+				pterm.Fprintln(os.Stderr,
+					pterm.Warning.Sprintf(
+						"%s are not supported as default options",
+						"'find', 'replace', 'csv' and 'undo'",
+					),
 				)
 			}
 
@@ -90,9 +92,11 @@ func GetApp(reader io.Reader, writer io.Writer) *cli.App {
 
 					err := c.Set(v, value)
 					if err != nil {
-						pterm.Warning.Printfln(
-							"Unable to set default option for: %s",
-							v,
+						pterm.Fprintln(os.Stderr,
+							pterm.Warning.Sprintf(
+								"Unable to set default option for: %s",
+								v,
+							),
 						)
 					}
 				}
@@ -123,8 +127,8 @@ func init() {
 	oldVersionPrinter := cli.VersionPrinter
 	cli.VersionPrinter = func(c *cli.Context) {
 		oldVersionPrinter(c)
-		fmt.Printf(
-			"https://github.com/ayoisaiah/f2/releases/%s\n",
+		pterm.Printfln(
+			"https://github.com/ayoisaiah/f2/releases/%s",
 			c.App.Version,
 		)
 
@@ -159,7 +163,11 @@ func checkForUpdates(app *cli.App) {
 
 	resp, err := c.Get("https://github.com/ayoisaiah/f2/releases/latest")
 	if err != nil {
-		pterm.Error.Println("Failed to check for update")
+		pterm.Fprintln(
+			os.Stderr,
+			pterm.Error.Sprint("Failed to check for update"),
+		)
+
 		return
 	}
 
@@ -173,7 +181,11 @@ func checkForUpdates(app *cli.App) {
 		&version,
 	)
 	if err != nil {
-		pterm.Error.Println("Failed to get latest version")
+		pterm.Fprintln(
+			os.Stderr,
+			pterm.Error.Sprint("Failed to get latest version"),
+		)
+
 		return
 	}
 
@@ -184,11 +196,11 @@ func checkForUpdates(app *cli.App) {
 		)
 		spinner.Success(text)
 	} else {
-		pterm.Warning.Prefix = pterm.Prefix{
+		pterm.Info.Prefix = pterm.Prefix{
 			Text:  "UPDATE AVAILABLE",
 			Style: pterm.NewStyle(pterm.BgYellow, pterm.FgBlack),
 		}
-		pterm.Warning.Printfln("A new release of F2 is available: %s at %s", version, resp.Request.URL.String())
+		pterm.Info.Printfln("A new release of F2 is available: %s at %s", version, resp.Request.URL.String())
 	}
 }
 
@@ -272,6 +284,10 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Aliases: []string{"e"},
 				Usage:   "Ignore the file extension when searching for matches.",
 			},
+			&cli.BoolFlag{
+				Name:  "json",
+				Usage: "Produce JSON output always",
+			},
 			&cli.UintFlag{
 				Name:        "max-depth",
 				Aliases:     []string{"m"},
@@ -341,7 +357,7 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				os.Exit(1)
 			}
 
-			if c.Bool("no-color") {
+			if c.Bool("no-color") || c.Bool("json") {
 				disableStyling()
 			}
 

@@ -71,15 +71,18 @@ type Change struct {
 	Source         string `json:"source"`
 	Target         string `json:"target"`
 	IsDir          bool   `json:"is_dir"`
-	WillOverwrite  bool   `json:"-"`
+	WillOverwrite  bool   `json:"will_overwrite"`
+	status         renameStatus
+	Error          string `json:"error,omitempty"`
 }
 
 // renameError represents an error that occurs when
 // renaming a file.
-type renameError struct {
-	entry Change
-	err   error
-}
+// type renameError struct {
+//   Index int `json:"in"`
+// 	Entry Change `json:"entry"`
+// 	Err   string  `json:"err"`
+// }
 
 // Operation represents a batch renaming operation.
 type Operation struct {
@@ -101,13 +104,15 @@ type Operation struct {
 	pathsToFilesOrDirs []string
 	recursive          bool
 	workingDir         string
-	stringLiteralMode  bool
-	excludeFilter      []string
-	maxDepth           int
-	sort               string
-	reverseSort        bool
-	errors             []renameError
-	revert             bool
+	// when the operation was carried out
+	date              time.Time
+	stringLiteralMode bool
+	excludeFilter     []string
+	maxDepth          int
+	sort              string
+	reverseSort       bool
+	errors            []int
+	revert            bool
 	// numberOffset is used to calculate the next number
 	// in an indexing sequence when numbers to skip
 	// are specified in the index variable
@@ -120,12 +125,22 @@ type Operation struct {
 	writer          io.Writer
 	reader          io.Reader
 	simpleMode      bool
+	json            bool
 }
 
 type backupFile struct {
 	WorkingDir string   `json:"working_dir"`
 	Date       string   `json:"date"`
 	Operations []Change `json:"operations"`
+}
+
+type jsonOutput struct {
+	WorkingDir string                      `json:"working_dir"`
+	Date       string                      `json:"date"`
+	DryRun     bool                        `json:"dry_run"`
+	Changes    []Change                    `json:"changes"`
+	Conflicts  map[conflictType][]Conflict `json:"conflicts,omitempty"`
+	Errors     []int                       `json:"errors,omitempty"`
 }
 
 // writeToFile writes the details of a successful operation
@@ -183,10 +198,14 @@ func (op *Operation) undo(path string) error {
 
 	op.matches = bf.Operations
 
-	for i, v := range op.matches {
-		ch := v
-		ch.Source = v.Target
-		ch.Target = v.Source
+	for i := range op.matches {
+		ch := op.matches[i]
+
+		target := ch.Target
+		source := ch.Source
+
+		ch.Source = target
+		ch.Target = source
 
 		op.matches[i] = ch
 	}
@@ -206,9 +225,11 @@ func (op *Operation) undo(path string) error {
 
 	if op.exec {
 		if err = os.Remove(path); err != nil {
-			pterm.Warning.Printfln(
-				"Unable to remove redundant backup file '%s' after successful undo operation.",
-				pterm.LightYellow(path),
+			pterm.Fprintln(os.Stderr,
+				pterm.Warning.Sprintf(
+					"Unable to remove redundant backup file '%s' after successful undo operation.",
+					pterm.LightYellow(path),
+				),
 			)
 		}
 	}
@@ -216,40 +237,65 @@ func (op *Operation) undo(path string) error {
 	return nil
 }
 
-// printChanges displays the changes to be made in a
-// table format.
-func (op *Operation) printChanges() {
-	var data = make([][]string, len(op.matches))
-
-	for i, v := range op.matches {
-		source := filepath.Join(v.BaseDir, v.Source)
-		target := filepath.Join(v.BaseDir, v.Target)
-
-		status := pterm.Green(statusOK)
-		if source == target {
-			status = pterm.Yellow(statusUnchanged)
-		}
-
-		if v.WillOverwrite {
-			status = pterm.Yellow(statusOverwriting)
-		}
-
-		d := []string{source, target, status}
-		data[i] = d
+func (op *Operation) getJSONOutput() ([]byte, error) {
+	out := jsonOutput{
+		WorkingDir: op.workingDir,
+		Date:       op.date.Format(time.RFC3339),
+		DryRun:     !op.exec,
+		Changes:    op.matches,
+		Conflicts:  op.conflicts,
+		Errors:     op.errors,
 	}
 
-	printTable(data, op.writer)
+	b, err := json.MarshalIndent(out, "", "    ")
+	if err != nil {
+		return b, err
+	}
+
+	return b, nil
+}
+
+// printChanges displays the changes to be made in a
+// table or json format.
+func (op *Operation) printChanges() {
+	if op.json {
+		o, err := op.getJSONOutput()
+		if err != nil {
+			pterm.Fprintln(os.Stderr, pterm.Error.Sprint(err))
+		}
+
+		pterm.Println(string(o))
+	} else {
+		var data = make([][]string, len(op.matches))
+
+		for i := range op.matches {
+			ch := op.matches[i]
+
+			source := filepath.Join(ch.BaseDir, ch.Source)
+			target := filepath.Join(ch.BaseDir, ch.Target)
+
+			status := pterm.Green(ch.status)
+			if ch.status != statusOK {
+				status = pterm.Yellow(ch.status)
+			}
+
+			d := []string{source, target, status}
+			data[i] = d
+		}
+
+		printTable(data, op.writer)
+	}
 }
 
 // rename iterates over all the matches and renames them on the filesystem
 // directories are auto-created if necessary.
 // Errors are aggregated instead of being reported one by one.
 func (op *Operation) rename() {
-	var errs []renameError
+	var errs []int
 
-	renamed := []Change{}
+	for i := range op.matches {
+		ch := op.matches[i]
 
-	for _, ch := range op.matches {
 		var source, target = ch.Source, ch.Target
 		source = filepath.Join(ch.BaseDir, source)
 		target = filepath.Join(ch.BaseDir, target)
@@ -257,10 +303,6 @@ func (op *Operation) rename() {
 		// skip unchanged file names
 		if source == target {
 			continue
-		}
-
-		renameErr := renameError{
-			entry: ch,
 		}
 
 		// If target contains a slash, create all missing
@@ -274,91 +316,98 @@ func (op *Operation) rename() {
 			//nolint:gomnd // number can be understood from context
 			err := os.MkdirAll(filepath.Join(ch.BaseDir, dir), 0o750)
 			if err != nil {
-				renameErr.err = err
-				errs = append(errs, renameErr)
+				errs = append(errs, i)
+				op.matches[i].Error = err.Error()
 
 				continue
 			}
 		}
 
 		if err := os.Rename(source, target); err != nil {
-			renameErr.err = err
-			errs = append(errs, renameErr)
+			errs = append(errs, i)
+			op.matches[i].Error = err.Error()
 
 			if op.verbose {
-				pterm.Error.Printfln(
-					"Failed to rename %s to %s",
-					source,
-					target,
+				pterm.Fprintln(os.Stderr,
+					pterm.Error.Sprintf(
+						"Failed to rename %s to %s",
+						source,
+						target,
+					),
 				)
 			}
-		} else if op.verbose {
-			pterm.Success.Printfln("Renamed %s to %s", source, target)
+		} else if op.verbose && !op.json {
+			pterm.Success.Printfln("Renamed '%s' to '%s'", pterm.Yellow(source), pterm.Yellow(target))
 		}
-
-		renamed = append(renamed, ch)
 	}
 
-	op.matches = renamed
 	op.errors = errs
 }
 
 // reportErrors displays the errors that occur during a renaming operation.
 func (op *Operation) reportErrors() {
-	var data = make([][]string, len(op.errors)+len(op.matches))
-
-	for i, v := range op.matches {
-		source := filepath.Join(v.BaseDir, v.Source)
-		target := filepath.Join(v.BaseDir, v.Target)
-		d := []string{source, target, pterm.Green("success")}
-		data[i] = d
-	}
-
-	for i, v := range op.errors {
-		source := filepath.Join(v.entry.BaseDir, v.entry.Source)
-		target := filepath.Join(v.entry.BaseDir, v.entry.Target)
-
-		msg := v.err.Error()
-		if strings.IndexByte(msg, ':') != -1 {
-			msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
+	if op.json {
+		o, err := op.getJSONOutput()
+		if err != nil {
+			pterm.Fprintln(os.Stderr, err)
+			return
 		}
 
-		d := []string{
-			source,
-			target,
-			pterm.Red(strings.TrimPrefix(msg, ": ")),
-		}
-		data[i+len(op.matches)] = d
-	}
+		pterm.Println(string(o))
+	} else {
+		var data [][]string
 
-	printTable(data, op.writer)
+		for i := range op.matches {
+			ch := op.matches[i]
+
+			if ch.Error != "" {
+				continue
+			}
+
+			source := filepath.Join(ch.BaseDir, ch.Source)
+			target := filepath.Join(ch.BaseDir, ch.Target)
+			d := []string{source, target, pterm.Green("success")}
+
+			data = append(data, d)
+		}
+
+		for _, num := range op.errors {
+			ch := op.matches[num]
+
+			source := filepath.Join(ch.BaseDir, ch.Source)
+			target := filepath.Join(ch.BaseDir, ch.Target)
+
+			msg := ch.Error
+			if strings.IndexByte(msg, ':') != -1 {
+				msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
+			}
+
+			d := []string{
+				source,
+				target,
+				pterm.Red(strings.TrimPrefix(msg, ": ")),
+			}
+			data = append(data, d)
+		}
+
+		printTable(data, op.writer)
+	}
 }
 
 // handleErrors is used to report the errors and write any successful
 // operations to a file.
 func (op *Operation) handleErrors() error {
-	// first remove the error entries from the matches so they are not confused
-	// with successful operations
-	for _, v := range op.errors {
-		target := v.entry.Target
-		for j := len(op.matches) - 1; j >= 0; j-- {
-			if target == op.matches[j].Target {
-				op.matches = append(op.matches[:j], op.matches[j+1:]...)
-			}
-		}
-	}
-
 	op.reportErrors()
 
 	var err error
-	if len(op.matches) > 0 && !op.revert {
+	if len(op.matches) > len(op.errors) && !op.revert {
 		err = op.backup()
 	}
 
-	msg := "Some files could not be renamed. To revert the changes, run: f2 -u"
+	msg := "Some files could not be renamed."
 
 	if op.revert {
-		msg = "Some files could not be reverted. See above table for the full explanation."
+		msg = "Some files could not be reverted."
 	}
 
 	if err == nil && len(op.matches) > 0 {
@@ -396,6 +445,10 @@ func (op *Operation) noMatches() {
 		msg = "No operations to undo"
 	}
 
+	if op.json {
+		msg = fmt.Sprintf("{\"info\": %q}", msg)
+	}
+
 	pterm.Info.Println(msg)
 }
 
@@ -426,9 +479,11 @@ func (op *Operation) dryRun() {
 		op.printChanges()
 	}
 
-	pterm.Info.Printfln(
-		"Use the -x or --exec flag to apply the above changes",
-	)
+	if !op.json {
+		pterm.Info.Printfln(
+			"Use the -x or --exec flag to apply the above changes",
+		)
+	}
 }
 
 // apply prints the changes to be made in dry-run mode
@@ -444,7 +499,11 @@ func (op *Operation) apply() error {
 	op.detectConflicts()
 
 	if len(op.conflicts) > 0 && !op.fixConflicts {
-		op.reportConflicts()
+		if op.json {
+			op.printChanges()
+		} else {
+			op.reportConflicts()
+		}
 
 		return errConflictDetected
 	}
@@ -472,7 +531,9 @@ func (op *Operation) apply() error {
 // in each filename. Hidden files and directories are exempted
 // by default.
 func (op *Operation) findMatches() error {
-	for _, ch := range op.paths {
+	for i := range op.paths {
+		ch := op.paths[i]
+
 		filename := filepath.Base(ch.Source)
 
 		if ch.IsDir && !op.includeDir {
@@ -521,9 +582,11 @@ func (op *Operation) filterMatches() error {
 		return err
 	}
 
-	for _, m := range op.matches {
-		if !regex.MatchString(m.Source) {
-			filtered = append(filtered, m)
+	for i := range op.matches {
+		ch := op.matches[i]
+
+		if !regex.MatchString(ch.Source) {
+			filtered = append(filtered, ch)
 		}
 	}
 
@@ -591,7 +654,9 @@ func (op *Operation) handleReplacementChain() error {
 			return err
 		}
 
-		for j, ch := range op.matches {
+		for j := range op.matches {
+			ch := op.matches[j]
+
 			// Update the source to the target from the previous replacement
 			// in preparation for the next replacement
 			if i != len(op.replacementSlice)-1 {
@@ -792,10 +857,12 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 		}
 
 		if !found && op.verbose {
-			pterm.Warning.Printfln(
-				"Source file '%s' was not found, so row '%d' was skipped",
-				source,
-				i+1,
+			pterm.Fprintln(os.Stderr,
+				pterm.Warning.Sprintf(
+					"Source file '%s' was not found, so row '%d' was skipped",
+					source,
+					i+1,
+				),
 			)
 		}
 
@@ -823,7 +890,9 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 			}
 
 			// ensure the same the same path is not added more than once
-			for _, v1 := range p {
+			for i := range p {
+				v1 := p[i]
+
 				fullPath := filepath.Join(v1.BaseDir, v1.Source)
 				if fullPath == k {
 					break loop
@@ -857,6 +926,7 @@ func setDefaultOpts(op *Operation, c *cli.Context) {
 	op.allowOverwrites = c.Bool("allow-overwrites")
 	op.replaceLimit = c.Int("replace-limit")
 	op.quiet = c.Bool("quiet")
+	op.json = c.Bool("json")
 
 	// Sorting
 	if c.String("sort") != "" {
@@ -938,6 +1008,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	op := &Operation{
 		writer: os.Stdout,
 		reader: os.Stdin,
+		date:   time.Now(),
 	}
 
 	v, exists := c.App.Metadata["reader"]
