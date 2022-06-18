@@ -36,6 +36,16 @@ var (
 	backupFilePath string
 )
 
+var newFileSystem = []string{
+	"ebooks/atomic-habits.pdf",
+	"ebooks/1984.pdf",
+	"ebooks/animal-farm.epub",
+	"ebooks/fear-of-life.EPUB",
+	"ebooks/.banned/.mein-kampf.pdf",
+	"ebooks/.banned/lolita.epub",
+	".golang.pdf",
+}
+
 var fileSystem = []string{
 	"No Pressure (2021) S1.E1.1080p.mkv",
 	"No Pressure (2021) S1.E2.1080p.mkv",
@@ -86,6 +96,64 @@ func init() {
 	}
 
 	rand.Seed(time.Now().UnixNano())
+}
+
+// setupNewFileSystem creates all required files and folders for
+// the tests and returns a function that is used as
+// a teardown function when the tests are done.
+func setupNewFileSystem(tb testing.TB) string {
+	tb.Helper()
+
+	testDir, err := ioutil.TempDir(".", "")
+	if err != nil {
+		tb.Fatalf("Unable to create temporary directory for test: %v", err)
+	}
+
+	absPath, err := filepath.Abs(testDir)
+	if err != nil {
+		tb.Fatalf("Unable to get absolute path to test directory: %v", err)
+	}
+
+	tb.Cleanup(func() {
+		if err = os.RemoveAll(absPath); err != nil {
+			tb.Fatalf(
+				"Failure occurred while cleaning up the filesystem: %v",
+				err,
+			)
+		}
+	})
+
+	for _, v := range newFileSystem {
+		dir := filepath.Dir(v)
+
+		filePath := filepath.Join(testDir, dir)
+
+		err = os.MkdirAll(filePath, os.ModePerm)
+		if err != nil {
+			tb.Fatalf(
+				"Unable to create directories in path: '%s', due to err: %v",
+				filePath,
+				err,
+			)
+		}
+	}
+
+	for _, f := range newFileSystem {
+		pathToFile := filepath.Join(absPath, f)
+
+		file, err := os.Create(pathToFile)
+		if err != nil {
+			tb.Fatalf(
+				"Unable to write to file: '%s', due to err: %v",
+				pathToFile,
+				err,
+			)
+		}
+
+		file.Close()
+	}
+
+	return absPath
 }
 
 // setupFileSystem creates all required files and folders for
@@ -155,6 +223,19 @@ type testResult struct {
 	output          *bytes.Buffer
 }
 
+func newTestRun(args []string) ([]byte, error) {
+	var buf bytes.Buffer
+
+	app := GetApp(os.Stdin, &buf)
+
+	err := app.Run(args)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 func testRun(args []string) (testResult, error) {
 	var result testResult
 
@@ -221,6 +302,144 @@ func parseArgs(t *testing.T, name, args string) []string {
 	result = append(result[:1], argsSlice...)
 
 	return result
+}
+
+type TestCase struct {
+	Name string   `json:"name"`
+	Want []Change `json:"want"`
+	Args string   `json:"args"`
+}
+
+type TestCase2 struct {
+	Name string   `json:"name"`
+	Want []string `json:"want"`
+	Args string   `json:"args"`
+}
+
+func h1(t *testing.T, filename string) []TestCase {
+	t.Helper()
+
+	var cases []TestCase
+
+	b, err := os.ReadFile(filepath.Join("..", "testdata", filename))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = json.Unmarshal(b, &cases)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return cases
+}
+
+func h2(t *testing.T, filename string) []TestCase {
+	t.Helper()
+
+	var cases []TestCase2
+
+	b, err := os.ReadFile(filepath.Join("..", "testdata", filename))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = json.Unmarshal(b, &cases)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := make([]TestCase, len(cases))
+
+	for i, v := range cases {
+		ca := TestCase{
+			Name: v.Name,
+			Args: v.Args,
+		}
+
+		for _, v2 := range v.Want {
+			var ch Change
+
+			sl := strings.Split(v2, "|")
+
+			for k, v3 := range sl {
+				if k == 0 {
+					ch.Source = v3
+				}
+
+				if k == 1 {
+					ch.Target = v3
+				}
+
+				if k == 2 {
+					ch.BaseDir = v3
+				}
+			}
+
+			ca.Want = append(ca.Want, ch)
+		}
+
+		c[i] = ca
+	}
+
+	return c
+}
+
+func h(t *testing.T, cases []TestCase) {
+	t.Helper()
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			testDir := setupNewFileSystem(t)
+
+			for j := range tc.Want {
+				ch := tc.Want[j]
+				if ch.BaseDir == "" {
+					tc.Want[j].BaseDir = testDir
+				} else {
+					tc.Want[j].BaseDir = filepath.Join(testDir, ch.BaseDir)
+				}
+			}
+
+			cargs := tc.Args + " --json " + testDir
+
+			args := parseArgs(t, tc.Name, cargs)
+
+			result, err := newTestRun(args)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var o jsonOutput
+
+			err = json.Unmarshal(result, &o)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			sortChanges(tc.Want)
+			sortChanges(o.Changes)
+
+			if !cmp.Equal(
+				tc.Want,
+				o.Changes,
+				cmpopts.IgnoreUnexported(Change{}),
+			) &&
+				len(tc.Want) != 0 {
+				t.Fatalf(
+					"Test (%s) -> Expected results to be: %s, but got: %s\n",
+					tc.Name,
+					prettyPrint(tc.Want),
+					prettyPrint(o.Changes),
+				)
+			}
+		})
+	}
+}
+
+func TestHidden(t *testing.T) {
+	cases := h2(t, "hidden.json")
+	h(t, cases)
 }
 
 func runFindReplaceHelper(t *testing.T, cases []testCase) {
@@ -354,46 +573,6 @@ func TestFilePaths(t *testing.T) {
 				},
 			},
 			args: "-f abc -r qqq -R " + filepath.Join(testDir, "abc.pdf"),
-		},
-	}
-
-	runFindReplaceHelper(t, cases)
-}
-
-func TestHidden(t *testing.T) {
-	testDir := setupFileSystem(t)
-	cases := []testCase{
-		{
-			name: "Hidden files are ignored by default",
-			want: []Change{
-				{
-					Source:  "abc.pdf",
-					BaseDir: testDir,
-					Target:  "abc.pdf.bak",
-				},
-			},
-			args: "-f pdf -r pdf.bak -R " + testDir,
-		},
-		{
-			name: "Hidden files are included",
-			want: []Change{
-				{
-					Source:  "abc.pdf",
-					BaseDir: testDir,
-					Target:  "abc.pdf.bak",
-				},
-				{
-					Source:  "sample.pdf",
-					BaseDir: filepath.Join(testDir, ".dir"),
-					Target:  "sample.pdf.bak",
-				},
-				{
-					Source:  ".forbidden.pdf",
-					BaseDir: testDir,
-					Target:  ".forbidden.pdf.bak",
-				},
-			},
-			args: "-f pdf -r pdf.bak -H -R " + testDir,
 		},
 	}
 

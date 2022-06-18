@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hidden files are not included by default",
+    "want": [
+      "atomic-habits.pdf|atomic-habits.pdf.bak|ebooks",
+      "1984.pdf|1984.pdf.bak|ebooks"
+    ],
+    "args": "-f pdf -r pdf.bak -R"
+  },
+  {
+    "name": "the -H flag enables hidden files",
+    "want": [
+      ".golang.pdf|.golang.pdf.bak",
+      "atomic-habits.pdf|atomic-habits.pdf.bak|ebooks",
+      "1984.pdf|1984.pdf.bak|ebooks",
+      ".mein-kampf.pdf|.mein-kampf.pdf.bak|ebooks/.banned"
+    ],
+    "args": "-f pdf -r pdf.bak -H -R"
+  },
+  {
+    "name": "hidden directories are traversed without the -H flag",
+    "want": ["lolita.epub|lolita-1955.epub|ebooks/.banned"],
+    "args": "-f lolita -r {{f}}-1955 -R -H"
+  }
+]
