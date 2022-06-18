@@ -264,7 +264,7 @@ func (op *Operation) printChanges() {
 			pterm.Fprintln(os.Stderr, pterm.Error.Sprint(err))
 		}
 
-		pterm.Println(string(o))
+		pterm.Fprintln(op.writer, string(o))
 	} else {
 		var data = make([][]string, len(op.matches))
 
