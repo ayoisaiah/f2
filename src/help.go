@@ -59,11 +59,13 @@ func helpText() string {
 
 func envHelp() string {
 	return `
-F2_DEFAULT_OPTS: override the default options according to your preferences.
+  F2_DEFAULT_OPTS: override the default options according to your preferences. 
+      For example, you can enable execute mode and ignore file extensions by default:
+      'export F2_DEFAULT_OPTS=--exec --ignore-ext'.
 
-F2_NO_COLOR, NO_COLOR: set to any value to avoid printing ANSI escape sequences for color output.
+  F2_NO_COLOR, NO_COLOR: set to any value to disable coloured output.
 
-F2_UPDATE_NOTIFIER: set to any value to enable update notifications when using the -v or --version flag.`
+  F2_UPDATE_NOTIFIER: set to any value to periodically check for updates.`
 }
 
 func shortHelp(app *cli.App) string {

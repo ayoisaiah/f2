@@ -230,13 +230,13 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			&cli.StringSliceFlag{
 				Name:        "find",
 				Aliases:     []string{"f"},
-				Usage:       "Search pattern. Treated as a regular expression by default unless --string-mode is also used.\n\t\t\t\tDefaults to the entire file name if omitted.",
+				Usage:       "Search pattern. Treated as a regular expression unless combined with s/--string-mode.\n\t\t\t\tDefaults to the entire file name if omitted.",
 				DefaultText: "<pattern>",
 			},
 			&cli.StringSliceFlag{
 				Name:        "replace",
 				Aliases:     []string{"r"},
-				Usage:       "Replacement string. If omitted, defaults to an empty string. Supports several kinds of variables.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Built-in-variables.",
+				Usage:       "Replacement string or pattern. Supports several kinds of variables.\n\t\t\t\tDefaults to an empty string if omitted.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Built-in-variables.",
 				DefaultText: "<string>",
 			},
 			&cli.BoolFlag{
@@ -246,38 +246,38 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			},
 			&cli.BoolFlag{
 				Name:  "allow-overwrites",
-				Usage: "Allow the overwriting of existing files.",
+				Usage: "Allow the renaming operation to overwite existing files.\n\t\t\t\tNote that using this option can lead to unrecoverable data loss in the renamed files.",
 			},
 			&cli.StringSliceFlag{
 				Name:        "exclude",
 				Aliases:     []string{"E"},
-				Usage:       "Exclude files/directories that match the given search pattern. Treated as a regular expression.\n\t\t\t\tMultiple exclude patterns can be specified by repeating this option.",
+				Usage:       "Exclude files and directories that match the provided regular expression pattern. \n\t\t\t\tMultiple exclude patterns can be specified by repeating this option in a command.\n\n\t\t\t\tE.g: `-E 'json' -E 'yml'` filters out JSON and YAML files from the matched files.\n\t\t\t\tIt is equivalent to `-E 'json|yaml'`.",
 				DefaultText: "<pattern>",
 			},
 			&cli.BoolFlag{
 				Name:    "exec",
 				Aliases: []string{"x"},
-				Usage:   "Commit the renaming operation to the filesystem.",
+				Usage:   "Execute the renaming operation and commit the changes to the filesystem.",
 			},
 			&cli.BoolFlag{
 				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
-				Usage:   "Automatically fix conflicts based on predefined rules.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection.",
+				Usage:   "Automatically fix renaming conflicts based on predefined rules.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection.",
 			},
 			&cli.BoolFlag{
 				Name:    "hidden",
 				Aliases: []string{"H"},
-				Usage:   "Include hidden files (they are skipped by default).",
+				Usage:   "Match hidden files (skipped by default) and search hidden directories for matches\n\t\t\t\t(if -R/--recursive is used).\n\t\t\t\tHidden files are those that start with a dot character '. (all OSes).\n\t\t\t\tOn Windows, files with the `hidden` attribute are also considered hidden.\n\t\t\t\tIf you want to match hidden directories as well, combine this the -d/--include-dir",
 			},
 			&cli.BoolFlag{
 				Name:    "include-dir",
 				Aliases: []string{"d"},
-				Usage:   "Include directories (they are exempted by default).",
+				Usage:   "Match directories in the renaming operation (they are exempted by default).",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-case",
 				Aliases: []string{"i"},
-				Usage:   "Search for matches case insensitively.",
+				Usage:   "Ignore string casing when searching for matches.",
 			},
 			&cli.BoolFlag{
 				Name:    "ignore-ext",
@@ -286,7 +286,7 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			},
 			&cli.BoolFlag{
 				Name:  "json",
-				Usage: "Produce JSON output always",
+				Usage: "Always produce JSON output except for error messages which go to the standard error",
 			},
 			&cli.UintFlag{
 				Name:        "max-depth",
@@ -302,12 +302,12 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			&cli.BoolFlag{
 				Name:    "only-dir",
 				Aliases: []string{"D"},
-				Usage:   "Rename only directories, not files (implies --include-dir).",
+				Usage:   "Rename only directories, not files (implies -d/--include-dir).",
 			},
 			&cli.BoolFlag{
 				Name:    "quiet",
 				Aliases: []string{"q"},
-				Usage:   "Don't print out any information (except errors).",
+				Usage:   "Don't print out any information to the standard output.\n\t\t\t\tErrors will continue being sent to the standard error",
 			},
 			&cli.BoolFlag{
 				Name:    "recursive",
@@ -317,7 +317,7 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			&cli.IntFlag{
 				Name:        "replace-limit",
 				Aliases:     []string{"l"},
-				Usage:       "Limit the number of replacements to be made on each matched file (replaces all matches if set to 0).\n\t\t\t\tCan be set to a negative integer to start replacing from the end of the file name.",
+				Usage:       "Limit the number of replacements to be made on each matched file.\n\t\t\t\tIt's set to 0 by default indicating that all matches should be replaced.\n\t\t\t\tCan be set to a negative integer to start replacing from the end of the file name.",
 				Value:       0,
 				DefaultText: "<integer>",
 			},
@@ -341,12 +341,12 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			&cli.BoolFlag{
 				Name:    "string-mode",
 				Aliases: []string{"s"},
-				Usage:   "Treats the search pattern as a non-regex string.",
+				Usage:   "Treats the search pattern (specified by -f/--find) as a non-regex string.",
 			},
 			&cli.BoolFlag{
 				Name:    "verbose",
 				Aliases: []string{"V"},
-				Usage:   "Enable verbose output.",
+				Usage:   "Enable verbose output during the renaming operation.",
 			},
 		},
 		UseShortOptionHandling: true,
