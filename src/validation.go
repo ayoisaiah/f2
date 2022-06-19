@@ -186,7 +186,7 @@ func (op *Operation) reportConflicts() {
 		}
 	}
 
-	printTable(data, op.writer)
+	printTable(data, op.stdout)
 }
 
 // detectConflicts detects any conflicts that occur

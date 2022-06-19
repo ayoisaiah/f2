@@ -122,8 +122,9 @@ type Operation struct {
 	verbose         bool
 	csvFilename     string
 	quiet           bool
-	writer          io.Writer
-	reader          io.Reader
+	stdout          io.Writer
+	stderr          io.Writer
+	stdin           io.Reader
 	simpleMode      bool
 	json            bool
 }
@@ -225,7 +226,7 @@ func (op *Operation) undo(path string) error {
 
 	if op.exec {
 		if err = os.Remove(path); err != nil {
-			pterm.Fprintln(os.Stderr,
+			pterm.Fprintln(op.stderr,
 				pterm.Warning.Sprintf(
 					"Unable to remove redundant backup file '%s' after successful undo operation.",
 					pterm.LightYellow(path),
@@ -266,10 +267,10 @@ func (op *Operation) printChanges() {
 	if op.json {
 		o, err := op.getJSONOutput()
 		if err != nil {
-			pterm.Fprintln(os.Stderr, pterm.Error.Sprint(err))
+			pterm.Fprintln(op.stderr, pterm.Error.Sprint(err))
 		}
 
-		pterm.Fprintln(op.writer, string(o))
+		pterm.Fprintln(op.stdout, string(o))
 	} else {
 		var data = make([][]string, len(op.matches))
 
@@ -288,7 +289,7 @@ func (op *Operation) printChanges() {
 			data[i] = d
 		}
 
-		printTable(data, op.writer)
+		printTable(data, op.stdout)
 	}
 }
 
@@ -333,7 +334,7 @@ func (op *Operation) rename() {
 			op.matches[i].Error = err.Error()
 
 			if op.verbose {
-				pterm.Fprintln(os.Stderr,
+				pterm.Fprintln(op.stderr,
 					pterm.Error.Sprintf(
 						"Failed to rename %s to %s",
 						source,
@@ -354,7 +355,7 @@ func (op *Operation) reportErrors() {
 	if op.json {
 		o, err := op.getJSONOutput()
 		if err != nil {
-			pterm.Fprintln(os.Stderr, err)
+			pterm.Fprintln(op.stderr, err)
 			return
 		}
 
@@ -395,7 +396,7 @@ func (op *Operation) reportErrors() {
 			data = append(data, d)
 		}
 
-		printTable(data, op.writer)
+		printTable(data, op.stdout)
 	}
 }
 
@@ -453,11 +454,11 @@ func (op *Operation) noMatches() {
 	if op.json {
 		b, err := op.getJSONOutput()
 		if err != nil {
-			pterm.Fprintln(os.Stderr, err)
+			pterm.Fprintln(op.stderr, err)
 			return
 		}
 
-		pterm.Fprintln(op.writer, string(b))
+		pterm.Fprintln(op.stdout, string(b))
 
 		return
 	}
@@ -870,7 +871,7 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 		}
 
 		if !found && op.verbose {
-			pterm.Fprintln(os.Stderr,
+			pterm.Fprintln(op.stderr,
 				pterm.Warning.Sprintf(
 					"Source file '%s' was not found, so row '%d' was skipped",
 					source,
@@ -1019,8 +1020,9 @@ func setSimpleModeOptions(op *Operation, c *cli.Context) error {
 // from command line flags & arguments.
 func newOperation(c *cli.Context) (*Operation, error) {
 	op := &Operation{
-		writer: os.Stdout,
-		reader: os.Stdin,
+		stdout: os.Stdout,
+		stderr: os.Stderr,
+		stdin:  os.Stdin,
 		date:   time.Now(),
 	}
 
@@ -1028,7 +1030,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	if exists {
 		r, ok := v.(io.Reader)
 		if ok {
-			op.reader = r
+			op.stdin = r
 		}
 	}
 
@@ -1036,7 +1038,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 	if exists {
 		w, ok := v.(io.Writer)
 		if ok {
-			op.writer = w
+			op.stdout = w
 		}
 	}
 

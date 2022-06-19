@@ -956,7 +956,7 @@ func TestHandleErrors(t *testing.T) {
 		var buf bytes.Buffer
 
 		op := &Operation{
-			writer: &buf,
+			stdout: &buf,
 		}
 		op.matches = tc.want
 		op.errors = tc.expectedErrors

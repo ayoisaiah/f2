@@ -257,7 +257,7 @@ func TestReportConflicts(t *testing.T) {
 	var buf bytes.Buffer
 
 	op := &Operation{
-		writer: &buf,
+		stdout: &buf,
 	}
 	op.conflicts = table
 
