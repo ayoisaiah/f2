@@ -76,14 +76,6 @@ type Change struct {
 	Error          string `json:"error,omitempty"`
 }
 
-// renameError represents an error that occurs when
-// renaming a file.
-// type renameError struct {
-//   Index int `json:"in"`
-// 	Entry Change `json:"entry"`
-// 	Err   string  `json:"err"`
-// }
-
 // Operation represents a batch renaming operation.
 type Operation struct {
 	paths              []Change
