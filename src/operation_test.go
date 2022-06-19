@@ -37,10 +37,15 @@ var (
 )
 
 var newFileSystem = []string{
+	"movies/No Pressure (2021) S1.E1.1080p.mkv",
+	"movies/No Pressure (2021) S1.E2.1080p.mkv",
+	"movies/No Pressure (2021) S1.E3.1080p.mkv",
+	"movies/green-mile_1999.mp4",
 	"ebooks/atomic-habits.pdf",
 	"ebooks/1984.pdf",
 	"ebooks/animal-farm.epub",
 	"ebooks/fear-of-life.EPUB",
+	"ebooks/green-mile_1996.mobi",
 	"ebooks/.banned/.mein-kampf.pdf",
 	"ebooks/.banned/lolita.epub",
 	".golang.pdf",
@@ -305,15 +310,17 @@ func parseArgs(t *testing.T, name, args string) []string {
 }
 
 type TestCase struct {
-	Name string   `json:"name"`
-	Want []Change `json:"want"`
-	Args string   `json:"args"`
+	Name     string   `json:"name"`
+	Want     []Change `json:"want"`
+	Args     string   `json:"args"`
+	PathArgs []string `json:"path_args"`
 }
 
 type TestCase2 struct {
-	Name string   `json:"name"`
-	Want []string `json:"want"`
-	Args string   `json:"args"`
+	Name     string   `json:"name"`
+	Want     []string `json:"want"`
+	Args     string   `json:"args"`
+	PathArgs []string `json:"path_args"`
 }
 
 func h1(t *testing.T, filename string) []TestCase {
@@ -353,8 +360,9 @@ func h2(t *testing.T, filename string) []TestCase {
 
 	for i, v := range cases {
 		ca := TestCase{
-			Name: v.Name,
-			Args: v.Args,
+			Name:     v.Name,
+			Args:     v.Args,
+			PathArgs: v.PathArgs,
 		}
 
 		for _, v2 := range v.Want {
@@ -401,7 +409,20 @@ func h(t *testing.T, cases []TestCase) {
 				}
 			}
 
-			cargs := tc.Args + " --json " + testDir
+			pathArgs := testDir
+			if len(tc.PathArgs) != 0 {
+				var res []string
+				for _, v := range tc.PathArgs {
+					res = append(
+						res,
+						fmt.Sprintf("'%s'", filepath.Join(testDir, v)),
+					)
+				}
+
+				pathArgs = strings.Join(res, " ")
+			}
+
+			cargs := tc.Args + " --json " + pathArgs
 
 			args := parseArgs(t, tc.Name, cargs)
 
@@ -437,8 +458,8 @@ func h(t *testing.T, cases []TestCase) {
 	}
 }
 
-func TestHidden(t *testing.T) {
-	cases := h2(t, "hidden.json")
+func TestF2(t *testing.T) {
+	cases := h2(t, "tests.json")
 	h(t, cases)
 }
 
@@ -500,83 +521,6 @@ func runFindReplaceHelper(t *testing.T, cases []testCase) {
 			os.Setenv(envDefaultOpts, "")
 		}
 	}
-}
-
-func TestFilePaths(t *testing.T) {
-	testDir := setupFileSystem(t)
-
-	cases := []testCase{
-		{
-			name: "Target a specific mkv file",
-			want: []Change{
-				{
-					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Pressure (2021) S1.E3.1080p.mp4",
-				},
-			},
-			args: "-f mkv -r mp4 '" + filepath.Join(
-				testDir,
-				"No Pressure (2021) S1.E3.1080p.mkv",
-			) + "'",
-		},
-		{
-			name: "Combine file paths and directory paths",
-			want: []Change{
-				{
-					Source:  "abc.pdf",
-					BaseDir: testDir,
-					Target:  "qqq.pdf",
-				},
-				{
-					Source:  "abc.epub",
-					BaseDir: testDir,
-					Target:  "qqq.epub",
-				},
-				{
-					Source:  "abc.png",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "qqq.png",
-				},
-			},
-			args: "-f abc -r qqq " + testDir + " " + filepath.Join(
-				testDir,
-				"images",
-				"abc.png",
-			),
-		},
-		{
-			name: "No side effects should result from specifying a directory and a file inside the directory",
-			want: []Change{
-				{
-					Source:  "abc.png",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "qqq.png",
-				},
-			},
-			args: "-f abc -r qqq " + filepath.Join(
-				testDir,
-				"images",
-			) + " " + filepath.Join(
-				testDir,
-				"images",
-				"abc.png",
-			),
-		},
-		{
-			name: "Specifying a file path should be unaffected by recursion",
-			want: []Change{
-				{
-					Source:  "abc.pdf",
-					BaseDir: testDir,
-					Target:  "qqq.pdf",
-				},
-			},
-			args: "-f abc -r qqq -R " + filepath.Join(testDir, "abc.pdf"),
-		},
-	}
-
-	runFindReplaceHelper(t, cases)
 }
 
 func TestRecursive(t *testing.T) {

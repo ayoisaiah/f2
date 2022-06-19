@@ -1,0 +1,66 @@
+[
+  {
+    "name": "hidden files are not included by default",
+    "want": [
+      "atomic-habits.pdf|atomic-habits.pdf.bak|ebooks",
+      "1984.pdf|1984.pdf.bak|ebooks"
+    ],
+    "args": "-f pdf -r pdf.bak -R"
+  },
+  {
+    "name": "the -H flag enables hidden files",
+    "want": [
+      ".golang.pdf|.golang.pdf.bak",
+      "atomic-habits.pdf|atomic-habits.pdf.bak|ebooks",
+      "1984.pdf|1984.pdf.bak|ebooks",
+      ".mein-kampf.pdf|.mein-kampf.pdf.bak|ebooks/.banned"
+    ],
+    "args": "-f pdf -r pdf.bak -H -R"
+  },
+  {
+    "name": "hidden directories not traversed without the -H flag",
+    "want": [],
+    "args": "-f lolita -r {{f}}-1955 -R"
+  },
+  {
+    "name": "hidden directories are traversed with the -H flag",
+    "want": ["lolita.epub|lolita-1955.epub|ebooks/.banned"],
+    "args": "-f lolita -r {{f}}-1955 -R -H"
+  },
+
+  {
+    "name": "target a specific file through a path argument",
+    "want": [
+      "No Pressure (2021) S1.E3.1080p.mkv|No Pressure (2021) S1.E3.1080p.mp4|movies"
+    ],
+    "args": "-f mkv -r mp4",
+    "path_args": ["movies/No Pressure (2021) S1.E3.1080p.mkv"]
+  },
+  {
+    "name": "combine file and directory path arguments",
+    "want": [
+      "green-mile_1999.mp4|green-mile_(1999).mp4|movies",
+      "green-mile_1996.mobi|green-mile_(1996).mobi|ebooks"
+    ],
+    "args": "-f '(199\\d)' -r ($1)",
+    "path_args": ["movies/", "ebooks/green-mile_1996.mobi"]
+  },
+  {
+    "name": "specifying a hidden file path argument should work without -H",
+    "want": [".golang.pdf|.go.pdf"],
+    "args": "-f lang",
+    "path_args": [".golang.pdf"]
+  },
+  {
+    "name": "directory path arguments can be combined with file paths in the same directory without duplicate matches",
+    "want": ["lolita.epub|lolita-1955.epub|ebooks/.banned"],
+    "args": "-f lolita -r {{f}}-1955",
+    "path_args": ["ebooks/.banned", "ebooks/.banned/lolita.epub"]
+  },
+  {
+    "name": "specifying a file path should be unaffected by recursion",
+    "want": ["1984.pdf|george-orwell-1984.pdf|ebooks"],
+    "args": "-f 1984 -r george-orwell-{{f}} -R",
+    "path_args": ["ebooks/1984.pdf"]
+  }
+]

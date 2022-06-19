@@ -552,13 +552,33 @@ func (op *Operation) findMatches() error {
 
 		// ignore dotfiles on unix and hidden files on windows
 		if !op.includeHidden {
-			r, err := isHidden(filename, ch.BaseDir)
+			hidden, err := isHidden(filename, ch.BaseDir)
 			if err != nil {
 				return err
 			}
 
-			if r {
-				continue
+			if hidden {
+				a, err := filepath.Abs(filepath.Join(ch.BaseDir, filename))
+				if err != nil {
+					return err
+				}
+
+				shouldSkip := true
+
+				for _, path := range op.pathsToFilesOrDirs {
+					absPath, err := filepath.Abs(path)
+					if err != nil {
+						return err
+					}
+
+					if strings.EqualFold(a, absPath) {
+						shouldSkip = false
+					}
+				}
+
+				if shouldSkip {
+					continue
+				}
 			}
 		}
 
