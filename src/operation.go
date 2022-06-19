@@ -247,6 +247,11 @@ func (op *Operation) getJSONOutput() ([]byte, error) {
 		Errors:     op.errors,
 	}
 
+	// prevent empty matches from being encoded as `null`
+	if out.Changes == nil {
+		out.Changes = make([]Change, 0)
+	}
+
 	b, err := json.MarshalIndent(out, "", "    ")
 	if err != nil {
 		return b, err
@@ -446,7 +451,15 @@ func (op *Operation) noMatches() {
 	}
 
 	if op.json {
-		msg = fmt.Sprintf("{\"info\": %q}", msg)
+		b, err := op.getJSONOutput()
+		if err != nil {
+			pterm.Fprintln(os.Stderr, err)
+			return
+		}
+
+		pterm.Fprintln(op.writer, string(b))
+
+		return
 	}
 
 	pterm.Info.Println(msg)
