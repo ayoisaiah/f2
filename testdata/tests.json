@@ -62,5 +62,38 @@
     "want": ["1984.pdf|george-orwell-1984.pdf|ebooks"],
     "args": "-f 1984 -r george-orwell-{{f}} -R",
     "path_args": ["ebooks/1984.pdf"]
+  },
+
+  {
+    "name": "recurse into subdirectories to find matches (no limit)",
+    "want": ["1984.pdf|george-orwell-1984.pdf|ebooks"],
+    "args": "-f 1984 -r george-orwell-{{f}} -R"
+  },
+  {
+    "name": "recurse into subdirectories to find matches (limit of 1 level)",
+    "want": [
+      "dsc-001.arw|sony-alpha-001.arw|images",
+      "dsc-002.arw|sony-alpha-002.arw|images"
+    ],
+    "args": "-f dsc -r sony-alpha -R -m 1"
+  },
+  {
+    "name": "recurse into subdirectories to find matches (limit of 2 levels)",
+    "want": [
+      "dsc-001.arw|sony-alpha-001.arw|images",
+      "dsc-002.arw|sony-alpha-002.arw|images",
+      "dsc-003.arw|sony-alpha-003.arw|images/sony"
+    ],
+    "args": "-f dsc -r sony-alpha -R -m 2"
+  },
+  {
+    "name": "recursively rename with multiple path arguments",
+    "want": [
+      "startrails1.jpg|startrails1.jpeg|images/canon",
+      "startrails2.jpg|startrails2.jpeg|images/canon",
+      "cover.jpg|cover.jpeg|music/Overgrown (2013)"
+    ],
+    "args": "-f jpg -r jpeg -R",
+    "path_args": ["images", "music"]
   }
 ]
