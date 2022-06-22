@@ -225,7 +225,8 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			&cli.StringFlag{
 				Name:        "csv",
 				Usage:       "Load a CSV file, and rename according to its contents.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file.",
-				DefaultText: "<csv file>",
+				DefaultText: "<path/to/csv/file>",
+				TakesFile:   true,
 			},
 			&cli.StringSliceFlag{
 				Name:        "find",

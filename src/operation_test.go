@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -37,6 +38,8 @@ var (
 )
 
 var newFileSystem = []string{
+	"docu.ments/job-contract.docx",
+	"special/$-(+)_file.txt",
 	"images/dsc-001.arw",
 	"images/dsc-002.arw",
 	"images/sony/dsc-003.arw",
@@ -47,7 +50,7 @@ var newFileSystem = []string{
 	"movies/No Pressure (2021) S1.E3.1080p.mkv",
 	"music/Overgrown (2013)/01 Overgrown.flac",
 	"music/Overgrown (2013)/02 I Am Sold.flac",
-	"music/Overgrown (2013)/cover.jpg",
+	"music/Overgrown (2013)/Cover.jpg",
 	"movies/green-mile_1999.mp4",
 	"ebooks/atomic-habits.pdf",
 	"ebooks/1984.pdf",
@@ -243,7 +246,7 @@ func newTestRun(args []string) ([]byte, error) {
 
 	err := app.Run(args)
 	if err != nil {
-		return nil, err
+		return buf.Bytes(), err
 	}
 
 	return buf.Bytes(), nil
@@ -318,35 +321,21 @@ func parseArgs(t *testing.T, name, args string) []string {
 }
 
 type TestCase struct {
-	Name     string   `json:"name"`
-	Want     []Change `json:"want"`
-	Args     string   `json:"args"`
-	PathArgs []string `json:"path_args"`
+	Name        string                      `json:"name"`
+	Want        []Change                    `json:"want"`
+	Args        string                      `json:"args"`
+	PathArgs    []string                    `json:"path_args"`
+	Conflicts   map[conflictType][]Conflict `json:"conflicts"`
+	DefaultOpts string                      `json:"default_opts"`
 }
 
 type TestCase2 struct {
-	Name     string   `json:"name"`
-	Want     []string `json:"want"`
-	Args     string   `json:"args"`
-	PathArgs []string `json:"path_args"`
-}
-
-func h1(t *testing.T, filename string) []TestCase {
-	t.Helper()
-
-	var cases []TestCase
-
-	b, err := os.ReadFile(filepath.Join("..", "testdata", filename))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = json.Unmarshal(b, &cases)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return cases
+	Name        string                      `json:"name"`
+	Want        []string                    `json:"want"`
+	Args        string                      `json:"args"`
+	PathArgs    []string                    `json:"path_args"`
+	Conflicts   map[conflictType][]Conflict `json:"conflicts"`
+	DefaultOpts string                      `json:"default_opts"`
 }
 
 func h2(t *testing.T, filename string) []TestCase {
@@ -368,9 +357,11 @@ func h2(t *testing.T, filename string) []TestCase {
 
 	for i, v := range cases {
 		ca := TestCase{
-			Name:     v.Name,
-			Args:     v.Args,
-			PathArgs: v.PathArgs,
+			Name:        v.Name,
+			Args:        v.Args,
+			PathArgs:    v.PathArgs,
+			Conflicts:   v.Conflicts,
+			DefaultOpts: v.DefaultOpts,
 		}
 
 		for _, v2 := range v.Want {
@@ -381,14 +372,35 @@ func h2(t *testing.T, filename string) []TestCase {
 			for k, v3 := range sl {
 				if k == 0 {
 					ch.Source = v3
+					continue
 				}
 
 				if k == 1 {
 					ch.Target = v3
+					continue
 				}
 
 				if k == 2 {
-					ch.BaseDir = v3
+					if v3 != "" {
+						ch.BaseDir = v3
+					}
+
+					continue
+				}
+
+				r, err := strconv.ParseBool(v3)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if k == 3 {
+					ch.IsDir = r
+					continue
+				}
+
+				if k == 4 {
+					ch.WillOverwrite = r
+					continue
 				}
 			}
 
@@ -407,6 +419,10 @@ func h(t *testing.T, cases []TestCase) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			testDir := setupNewFileSystem(t)
+
+			if tc.DefaultOpts != "" {
+				os.Setenv(envDefaultOpts, tc.DefaultOpts)
+			}
 
 			for j := range tc.Want {
 				ch := tc.Want[j]
@@ -430,13 +446,38 @@ func h(t *testing.T, cases []TestCase) {
 				pathArgs = strings.Join(res, " ")
 			}
 
-			cargs := tc.Args + " --json " + pathArgs
+			var cargs string
+			if strings.Contains(tc.Args, "-") {
+				cargs = tc.Args + " --json " + pathArgs
+			} else {
+				cargs = tc.Args + " " + pathArgs
+			}
 
 			args := parseArgs(t, tc.Name, cargs)
 
 			result, err := newTestRun(args)
 			if err != nil {
-				t.Fatal(err)
+				if len(tc.Conflicts) == 0 {
+					t.Log(string(result))
+					t.Fatal(err)
+				}
+			}
+
+			if tc.DefaultOpts != "" {
+				os.Setenv(envDefaultOpts, "")
+			}
+
+			for k, v := range tc.Conflicts {
+				for j, v2 := range v {
+					tc.Conflicts[k][j].Target = filepath.Join(
+						testDir,
+						v2.Target,
+					)
+					for l, v3 := range v2.Sources {
+						v3 = filepath.Join(testDir, v3)
+						tc.Conflicts[k][j].Sources[l] = v3
+					}
+				}
 			}
 
 			var o jsonOutput
@@ -444,6 +485,22 @@ func h(t *testing.T, cases []TestCase) {
 			err = json.Unmarshal(result, &o)
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			if len(tc.Conflicts) > 0 {
+				if !cmp.Equal(
+					tc.Conflicts,
+					o.Conflicts,
+				) {
+					t.Fatalf(
+						"Test (%s) — Expected: %+v, got: %+v\n",
+						tc.Name,
+						tc.Conflicts,
+						o.Conflicts,
+					)
+				}
+
+				return
 			}
 
 			sortChanges(tc.Want)
@@ -529,138 +586,6 @@ func runFindReplaceHelper(t *testing.T, cases []testCase) {
 			os.Setenv(envDefaultOpts, "")
 		}
 	}
-}
-
-func TestExcludeFilter(t *testing.T) {
-	testDir := setupFileSystem(t)
-
-	cases := []testCase{
-		{
-			name: "Exclude S1.E3 from matches",
-			want: []Change{
-				{
-					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E1.1080p.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E2.1080p.mkv",
-				},
-			},
-			args: "-f Pressure -r Limits -s -E S1.E3 " + testDir,
-		},
-		{
-			name: "Exclude files that contain any number",
-			want: []Change{
-				{
-					Source:  "abc.txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "abc.md",
-				},
-				{
-					Source:  "xyz.txt",
-					BaseDir: filepath.Join(testDir, "conflicts"),
-					Target:  "xyz.md",
-				},
-			},
-			args: "-f txt -r md -R -E '\\d+' " + testDir,
-		},
-	}
-
-	runFindReplaceHelper(t, cases)
-}
-
-func TestStringLiteralMode(t *testing.T) {
-	testDir := setupFileSystem(t)
-
-	cases := []testCase{
-		{
-			name: "String literal mode: match regex special characters without escaping them",
-			want: []Change{
-				{
-					Source:  "100$-(boring+company).com.ng",
-					BaseDir: filepath.Join(testDir, "regex"),
-					Target:  "100#-[boring_company].com.ng",
-				},
-			},
-			args: "-f $ -r # -f + -r _ -f ( -r [ -f ) -r ] -se " + filepath.Join(
-				testDir,
-				"regex",
-			),
-		},
-		{
-			name: "String literal mode: Basic find and replace",
-			want: []Change{
-				{
-					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E1.1080p.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E2.1080p.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E3.1080p.mkv",
-				},
-			},
-			args: "-f Pressure -r Limits -s " + testDir,
-		},
-		{
-			name: "String literal mode: replace entire string if find pattern is empty",
-			want: []Change{
-				{
-					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "001.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "002.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "003.mkv",
-				},
-			},
-			args: "-r %03d{{ext}} -sE abc|pics " + testDir,
-		},
-		{
-			name: "String literal mode: respect case insensitive option",
-			want: []Change{
-				{
-					Source:  "a.jpg",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "a.jpeg",
-				},
-				{
-					Source:  "b.jPg",
-					BaseDir: filepath.Join(testDir, "images"),
-					Target:  "b.jpeg",
-				},
-				{
-					Source:  "123.JPG",
-					BaseDir: filepath.Join(testDir, "images", "pics"),
-					Target:  "123.jpeg",
-				},
-				{
-					Source:  "free.jpg",
-					BaseDir: filepath.Join(testDir, "images", "pics"),
-					Target:  "free.jpeg",
-				},
-			},
-			args: "-f jpg -r jpeg -siR " + filepath.Join(testDir, "images"),
-		},
-	}
-
-	runFindReplaceHelper(t, cases)
 }
 
 func TestApplyUndo(t *testing.T) {
@@ -828,7 +753,6 @@ func TestHandleErrors(t *testing.T) {
 		os.Remove(str)
 	}
 }
-
 func TestCSV(t *testing.T) {
 	testDir := setupFileSystem(t)
 

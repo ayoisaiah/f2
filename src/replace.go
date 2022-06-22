@@ -349,7 +349,7 @@ func getNumberVar(replacementInput string) (numberVar, error) {
 
 			skipNumbers := submatch[7]
 			if skipNumbers != "" {
-				slice := strings.Split(skipNumbers, ",")
+				slice := strings.Split(skipNumbers, ";")
 				for _, v := range slice {
 					if strings.Contains(v, "-") {
 						sl := strings.Split(v, "-")

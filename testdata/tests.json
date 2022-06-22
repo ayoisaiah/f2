@@ -91,9 +91,237 @@
     "want": [
       "startrails1.jpg|startrails1.jpeg|images/canon",
       "startrails2.jpg|startrails2.jpeg|images/canon",
-      "cover.jpg|cover.jpeg|music/Overgrown (2013)"
+      "Cover.jpg|Cover.jpeg|music/Overgrown (2013)"
     ],
     "args": "-f jpg -r jpeg -R",
     "path_args": ["images", "music"]
+  },
+
+  {
+    "name": "exclude S1.E3 from matches",
+    "want": [
+      "No Pressure (2021) S1.E1.1080p.mkv|No Limits (2021) S1.E1.1080p.mkv|movies",
+      "No Pressure (2021) S1.E2.1080p.mkv|No Limits (2021) S1.E2.1080p.mkv|movies"
+    ],
+    "args": "-f Pressure -r Limits -E S1.E3",
+    "path_args": ["movies"]
+  },
+  {
+    "name": "exclude matches that contain any number",
+    "want": [
+      "atomic-habits.pdf|atomic-habits.pdf.bak|ebooks",
+      "animal-farm.epub|animal-farm.epub.bak|ebooks"
+    ],
+    "args": "-f '(pdf|epub)' -r '$1.bak' -E '\\d+'",
+    "path_args": ["ebooks"]
+  },
+
+  {
+    "name": "match regex special characters without escaping them",
+    "want": ["$-(+)_file.txt|#-[_]_file.txt|special"],
+    "args": "-f $ -r # -f + -r _ -f ( -r [ -f ) -r ] -se",
+    "path_args": ["special"]
+  },
+  {
+    "name": "respect case insensitve option in string literal mode",
+    "want": [
+      "animal-farm.epub|animal-farm.epub.bak|ebooks",
+      "fear-of-life.EPUB|fear-of-life.epub.bak|ebooks"
+    ],
+    "args": "-f epub -r epub.bak -siR"
+  },
+
+  {
+    "name": "replace dot in file name",
+    "want": [".golang.pdf|golang.pdf"],
+    "args": "-f '\\.' -He"
+  },
+  {
+    "name": "ignoring extensions should not affect directories",
+    "want": ["docu.ments|documents||true"],
+    "args": "-f '\\.' -ed"
+  },
+  {
+    "name": "replace the first match only",
+    "want": [
+      "dsc-001.arw|dsc-101.arw|images",
+      "dsc-002.arw|dsc-102.arw|images",
+      "dsc-003.arw|dsc-103.arw|images/sony"
+    ],
+    "args": "-f 0 -r 1 -l 1 -R",
+    "path_args": ["images"]
+  },
+  {
+    "name": "replace the last match only",
+    "want": [
+      "dsc-001.arw|dsc-011.arw|images",
+      "dsc-002.arw|dsc-012.arw|images",
+      "dsc-003.arw|dsc-013.arw|images/sony"
+    ],
+    "args": "-f 0 -r 1 -l -1 -R",
+    "path_args": ["images"]
+  },
+
+  {
+    "name": "rename with capture variables",
+    "want": [
+      "dsc-001.arw|001-dsc.arw|images",
+      "dsc-002.arw|002-dsc.arw|images",
+      "dsc-003.arw|003-dsc.arw|images/sony"
+    ],
+    "args": "-f '(dsc)(-)(\\d+)' -r '$3$2$1' -R",
+    "path_args": ["images"]
+  },
+  {
+    "name": "change numbering scheme",
+    "want": ["dsc-001.arw|dsc-I.arw|images", "dsc-002.arw|dsc-II.arw|images"],
+    "args": "-f '(\\d+)' -r '%dr'",
+    "path_args": ["images"]
+  },
+  {
+    "name": "include directory in replacement operation",
+    "want": [
+      "dsc-001.arw|dc-001.arw|images",
+      "dsc-002.arw|dc-002.arw|images",
+      "sony|ony|images|true"
+    ],
+    "args": "-f s -d",
+    "path_args": ["images"]
+  },
+  {
+    "name": "replace in only directories",
+    "want": ["sony|ony|images|true"],
+    "args": "-f s -D",
+    "path_args": ["images"]
+  },
+
+  {
+    "name": "test replacement chain and use capture variables",
+    "want": [
+      "Overgrown (2013)|2013/overgrown|music|true",
+      "01 Overgrown.flac|01-overgrown.flac|music/Overgrown (2013)",
+      "02 I Am Sold.flac|02-i-am-sold.flac|music/Overgrown (2013)",
+      "Cover.jpg|cover.jpg|music/Overgrown (2013)"
+    ],
+    "args": "-f .* -r {{tr.lw}} -f '\\s' -r '-' -f '([a-z]+)-\\((2\\d+)\\)' -r '$2/$1' -deR",
+    "path_args": ["music"]
+  },
+  {
+    "name": "allow existing files to be overwritten",
+    "want": ["dsc-001.arw|dsc-002.arw|images|false|true"],
+    "args": "-f 001 -r 002 --allow-overwrites",
+    "path_args": ["images"]
+  },
+  {
+    "name": "prevent existing files from being overwritten",
+    "want": ["dsc-001.arw|dsc-002.arw|images|false|true"],
+    "args": "-f 001 -r 002",
+    "path_args": ["images"],
+    "conflicts": {
+      "fileExists": [
+        {
+          "sources": ["images/dsc-001.arw"],
+          "target": "images/dsc-002.arw"
+        }
+      ]
+    }
+  },
+
+  {
+    "name": "use default opts to enable hidden files and recursion",
+    "want": [
+      ".golang.pdf|.golang.pdf.bak",
+      "1984.pdf|1984.pdf.bak|ebooks",
+      "atomic-habits.pdf|atomic-habits.pdf.bak|ebooks",
+      ".mein-kampf.pdf|.mein-kampf.pdf.bak|ebooks/.banned"
+    ],
+    "args": "-f pdf -r pdf.bak",
+    "default_opts": "-HR"
+  },
+  {
+    "name": "use default opts to exclude all PDF files",
+    "want": [],
+    "args": "-f pdf -r pdf.bak",
+    "default_opts": "-HR -E pdf"
+  },
+
+  {
+    "name": "rename with auto incrementing numbers (step by 1)",
+    "want": [
+      "1984.pdf|001.pdf|ebooks",
+      "animal-farm.epub|002.epub|ebooks",
+      "atomic-habits.pdf|003.pdf|ebooks",
+      "fear-of-life.EPUB|004.EPUB|ebooks",
+      "green-mile_1996.mobi|005.mobi|ebooks"
+    ],
+    "args": "-r %03d{{ext}}",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "rename with auto incrementing numbers (step by 5)",
+    "want": [
+      "1984.pdf|001.pdf|ebooks",
+      "animal-farm.epub|006.epub|ebooks",
+      "atomic-habits.pdf|011.pdf|ebooks",
+      "fear-of-life.EPUB|016.EPUB|ebooks",
+      "green-mile_1996.mobi|021.mobi|ebooks"
+    ],
+    "args": "-r %03d5{{ext}}",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "rename with auto incrementing numbers (step by 2, skip 1-10 and 17)",
+    "want": [
+      "1984.pdf|11.pdf|ebooks",
+      "animal-farm.epub|13.epub|ebooks",
+      "atomic-habits.pdf|15.pdf|ebooks",
+      "fear-of-life.EPUB|19.EPUB|ebooks",
+      "green-mile_1996.mobi|21.mobi|ebooks"
+    ],
+    "args": "-r %02d2<1-10;17>{{ext}}",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "rename with negative indexing",
+    "want": [
+      "1984.pdf|10.pdf|ebooks",
+      "animal-farm.epub|8.epub|ebooks",
+      "atomic-habits.pdf|6.pdf|ebooks",
+      "fear-of-life.EPUB|4.EPUB|ebooks",
+      "green-mile_1996.mobi|2.mobi|ebooks"
+    ],
+    "args": "-r 10%d-2{{ext}}",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "rename with binary indexing format",
+    "want": [
+      "1984.pdf|0.pdf|ebooks",
+      "animal-farm.epub|1.epub|ebooks",
+      "atomic-habits.pdf|10.pdf|ebooks",
+      "fear-of-life.EPUB|11.EPUB|ebooks",
+      "green-mile_1996.mobi|100.mobi|ebooks"
+    ],
+    "args": "-r 0%db{{ext}}",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "rename with capture variable indexing",
+    "want": [
+      "startrails1.jpg|startrails001.jpg|images/canon",
+      "startrails2.jpg|startrails002.jpg|images/canon"
+    ],
+    "args": "-f '(.*)(\\d)' -r $1$2%03d",
+    "path_args": ["images/canon"]
+  },
+  {
+    "name": "rename with filename, extensiona and parent directory variables",
+    "want": [
+      "dsc-001.arw|images.arw.dsc-001|images",
+      "dsc-002.arw|images.arw.dsc-002|images",
+      "green-mile_1999.mp4|movies.mp4.green-mile_1999|movies"
+    ],
+    "args": "-r {{p}}{{ext}}.{{f}}",
+    "path_args": ["images", "movies/green-mile_1999.mp4"]
   }
 ]
