@@ -420,6 +420,10 @@ func h(t *testing.T, cases []TestCase) {
 		t.Run(tc.Name, func(t *testing.T) {
 			testDir := setupNewFileSystem(t)
 
+			if strings.HasPrefix(tc.Name, "rootdir:") {
+				testDir = filepath.Join("..", "testdata")
+			}
+
 			if tc.DefaultOpts != "" {
 				os.Setenv(envDefaultOpts, tc.DefaultOpts)
 			}

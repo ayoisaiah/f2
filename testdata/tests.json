@@ -296,13 +296,13 @@
   {
     "name": "rename with binary indexing format",
     "want": [
-      "1984.pdf|0.pdf|ebooks",
-      "animal-farm.epub|1.epub|ebooks",
-      "atomic-habits.pdf|10.pdf|ebooks",
-      "fear-of-life.EPUB|11.EPUB|ebooks",
-      "green-mile_1996.mobi|100.mobi|ebooks"
+      "1984.pdf|0_1_1.pdf|ebooks",
+      "animal-farm.epub|1_2_2.epub|ebooks",
+      "atomic-habits.pdf|10_3_3.pdf|ebooks",
+      "fear-of-life.EPUB|11_4_4.EPUB|ebooks",
+      "green-mile_1996.mobi|100_5_5.mobi|ebooks"
     ],
-    "args": "-r 0%db{{ext}}",
+    "args": "-r 0%db_%do_%dh{{ext}}",
     "path_args": ["ebooks"]
   },
   {
@@ -315,7 +315,7 @@
     "path_args": ["images/canon"]
   },
   {
-    "name": "rename with filename, extensiona and parent directory variables",
+    "name": "rename with filename, extension, and parent directory variables",
     "want": [
       "dsc-001.arw|images.arw.dsc-001|images",
       "dsc-002.arw|images.arw.dsc-002|images",
@@ -323,5 +323,42 @@
     ],
     "args": "-r {{p}}{{ext}}.{{f}}",
     "path_args": ["images", "movies/green-mile_1999.mp4"]
+  },
+
+  {
+    "name": "rootdir: rename with built-in exif variables",
+    "want": [
+      "tractor-raw.cr2|2017_Canon_Canon EOS 5D Mark III_ISO200_w5760_h3840_5760x3840_1_125s_24mm_f3.5.cr2|images",
+      "bike.jpeg|2020_samsung_SM-G975F_ISO50_w4032_h3024_4032x3024_1_100s_4.32mm_f2.4.jpeg|images",
+      "proraw.dng|2020_Apple_iPhone 12 Pro Max_ISO32_w4032_h3024_4032x3024_1_121s_5.1mm_f1.6.dng|images"
+    ],
+    "args": "-f '.*\\.(cr2|jpeg|dng)' -r {{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}}",
+    "path_args": ["images"]
+  },
+  {
+    "name": "rootdir: rename with built-in id3 variables",
+    "want": [
+      "sample_mp3.mp3|Test Title_Test Artist_ID3v2.3_MP3_Test Album_Test AlbumArtist_3_6_2__2000|audio",
+      "sample_ogg.ogg|Test Title_Test Artist_VORBIS_OGG_Test Album_Test AlbumArtist_3_6_2__2000|audio",
+      "sample_flac.flac|Test Title_Test Artist_VORBIS_FLAC_Test Album_Test AlbumArtist_3_6_2__2000|audio"
+    ],
+    "args": "-f '.*\\.(mp3|ogg|flac)' -r {{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
+    "path_args": ["audio"]
+  },
+  {
+    "name": "rootdir: rename with built-in file hash variables (SHA1 and MD5)",
+    "want": [
+      "bike.jpeg|6801e3de5f584028b8cd4292c6eca7ba_5b97fd595c700277315742bc91ac0ae67e5eb7a3|images"
+    ],
+    "args": "-f bike.jpeg -r {{hash.md5}}_{{hash.sha1}}",
+    "path_args": ["images"]
+  },
+  {
+    "name": "rootdir: rename with built-in file hash variables (SHA256 and SHA512)",
+    "want": [
+      "proraw.dng|55195ff447785e9af9dea2b0e4f3dc1e991f19dc224413f7a3e5718efb980d99_d53831330e6a70899ad36cbde793284d2cd0332ef090cf20dae86299ec9b8f5b50e06becd8bfadb65fce001d3fedb811d02d751cd9a8279cbaf88b46d25b6408|images"
+    ],
+    "args": "-f proraw.dng -r {{hash.sha256}}_{{hash.sha512}}",
+    "path_args": ["images"]
   }
 ]
