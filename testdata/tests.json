@@ -360,5 +360,27 @@
     ],
     "args": "-f proraw.dng -r {{hash.sha256}}_{{hash.sha512}}",
     "path_args": ["images"]
+  },
+  {
+    "name": "use positional arguments for find and replace (simple mode)",
+    "want": [
+      "dsc-001.arw|sony-001.arw|images",
+      "dsc-002.arw|sony-002.arw|images"
+    ],
+    "args": "dsc sony",
+    "path_args": ["images"],
+    "default_opts": "--json"
+  },
+  {
+    "name": "hidden directories are not included by default in simple mode",
+    "want": [],
+    "args": "lang",
+    "default_opts": "--json"
+  },
+  {
+    "name": "hidden directories can be included in simple mode through a default option",
+    "want": [".golang.pdf|.go.pdf"],
+    "args": "lang",
+    "default_opts": "--json -H"
   }
 ]

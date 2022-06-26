@@ -5,44 +5,6 @@ import (
 	"testing"
 )
 
-func TestSimpleMode(t *testing.T) {
-	// simple mode runs in execute mode so changes
-	// are made to the filesystem
-	testDir := setupFileSystem(t)
-
-	cases := []testCase{
-		{
-			name: "Using positional arguments for find/replace",
-			want: []Change{
-				{
-					BaseDir: testDir,
-					Source:  "abc.pdf",
-					Target:  "123.pdf",
-				},
-				{
-					BaseDir: testDir,
-					Source:  "abc.epub",
-					Target:  "123.epub",
-				},
-			},
-			args: "abc 123 " + testDir,
-		},
-		{
-			name: "Strip out text",
-			want: []Change{
-				{
-					BaseDir: testDir,
-					Source:  ".forbidden.pdf",
-					Target:  ".pdf",
-				},
-			},
-			args: ".forbidden ' ' " + filepath.Join(testDir, ".forbidden.pdf"),
-		},
-	}
-
-	runFindReplaceHelper(t, cases)
-}
-
 func TestReplaceLongPath(t *testing.T) {
 	testDir := setupFileSystem(t)
 
