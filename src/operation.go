@@ -519,9 +519,9 @@ func (op *Operation) apply() error {
 	}
 
 	if op.simpleMode {
-		op.printChanges()
-
-		return op.execute()
+		if !op.quiet {
+			op.printChanges()
+		}
 	}
 
 	if op.exec {
@@ -937,7 +937,6 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 // setDefaultOpts applies the options that may be set through
 // F2_DEFAULT_OPTS.
 func setDefaultOpts(op *Operation, c *cli.Context) {
-	op.exec = c.Bool("exec")
 	op.fixConflicts = c.Bool("fix-conflicts")
 	op.includeDir = c.Bool("include-dir")
 	op.includeHidden = c.Bool("hidden")
@@ -982,6 +981,7 @@ func setOptions(op *Operation, c *cli.Context) error {
 	op.csvFilename = c.String("csv")
 	op.revert = c.Bool("undo")
 	op.pathsToFilesOrDirs = c.Args().Slice()
+	op.exec = c.Bool("exec")
 
 	setDefaultOpts(op, c)
 
@@ -1012,6 +1012,7 @@ func setSimpleModeOptions(op *Operation, c *cli.Context) error {
 	minArgs := 2
 
 	op.simpleMode = true
+	op.exec = true
 
 	op.findSlice = []string{args[0]}
 	op.replacementSlice = []string{args[1]}
@@ -1019,7 +1020,6 @@ func setSimpleModeOptions(op *Operation, c *cli.Context) error {
 	setDefaultOpts(op, c)
 
 	op.includeDir = true
-	op.includeHidden = true
 
 	if len(args) > minArgs {
 		op.pathsToFilesOrDirs = args[minArgs:]

@@ -79,7 +79,9 @@ func GetApp(reader io.Reader, writer io.Writer) *cli.App {
 
 		if c.NumFlags() == 0 {
 			app.Metadata["simple-mode"] = true
-		} else if defaultCtx != nil {
+		}
+
+		if defaultCtx != nil {
 			// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
 			// in the environment
 			for _, v := range supportedDefaultFlags {
