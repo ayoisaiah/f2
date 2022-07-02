@@ -326,7 +326,7 @@
   },
 
   {
-    "name": "rootdir: rename with built-in exif variables",
+    "name": "testdata: rename with built-in exif variables",
     "want": [
       "tractor-raw.cr2|2017_Canon_Canon EOS 5D Mark III_ISO200_w5760_h3840_5760x3840_1_125s_24mm_f3.5.cr2|images",
       "bike.jpeg|2020_samsung_SM-G975F_ISO50_w4032_h3024_4032x3024_1_100s_4.32mm_f2.4.jpeg|images",
@@ -336,7 +336,7 @@
     "path_args": ["images"]
   },
   {
-    "name": "rootdir: rename with built-in id3 variables",
+    "name": "testdata: rename with built-in id3 variables",
     "want": [
       "sample_mp3.mp3|Test Title_Test Artist_ID3v2.3_MP3_Test Album_Test AlbumArtist_3_6_2__2000|audio",
       "sample_ogg.ogg|Test Title_Test Artist_VORBIS_OGG_Test Album_Test AlbumArtist_3_6_2__2000|audio",
@@ -346,7 +346,7 @@
     "path_args": ["audio"]
   },
   {
-    "name": "rootdir: rename with built-in file hash variables (SHA1 and MD5)",
+    "name": "testdata: rename with built-in file hash variables (SHA1 and MD5)",
     "want": [
       "bike.jpeg|6801e3de5f584028b8cd4292c6eca7ba_5b97fd595c700277315742bc91ac0ae67e5eb7a3|images"
     ],
@@ -354,7 +354,7 @@
     "path_args": ["images"]
   },
   {
-    "name": "rootdir: rename with built-in file hash variables (SHA256 and SHA512)",
+    "name": "testdata: rename with built-in file hash variables (SHA256 and SHA512)",
     "want": [
       "proraw.dng|55195ff447785e9af9dea2b0e4f3dc1e991f19dc224413f7a3e5718efb980d99_d53831330e6a70899ad36cbde793284d2cd0332ef090cf20dae86299ec9b8f5b50e06becd8bfadb65fce001d3fedb811d02d751cd9a8279cbaf88b46d25b6408|images"
     ],
@@ -374,13 +374,307 @@
   {
     "name": "hidden directories are not included by default in simple mode",
     "want": [],
-    "args": "lang",
+    "args": "lang ''",
     "default_opts": "--json"
   },
   {
     "name": "hidden directories can be included in simple mode through a default option",
     "want": [".golang.pdf|.go.pdf"],
-    "args": "lang",
+    "args": "lang ''",
     "default_opts": "--json -H"
+  },
+  {
+    "name": "replace with csv file",
+    "want": [
+      "dsc-001.arw|Kigali in Rwanda — John Doe.arw|images",
+      "fear-of-life.EPUB|FEAR OF LIFE — Alexandar Lowen.EPUB|ebooks"
+    ],
+    "args": "-csv <csv> -r '{{csv.3}} — {{csv.2}}{{ext}}'"
+  },
+
+  {
+    "name": "detect empty file name conflict",
+    "want": ["1984.pdf||ebooks"],
+    "args": "-f 1984.pdf -r ''",
+    "path_args": ["ebooks"],
+    "conflicts": {
+      "emptyFilename": [
+        {
+          "sources": ["ebooks/1984.pdf"],
+          "target": "ebooks/"
+        }
+      ]
+    }
+  },
+  {
+    "name": "detect overwriting newly renamed path conflict",
+    "want": ["index.js|index.svelte|dev", "index.ts|index.svelte|dev"],
+    "args": "-f js|ts -r 'svelte'",
+    "path_args": ["dev"],
+    "conflicts": {
+      "overwritingNewPath": [
+        {
+          "sources": ["dev/index.js", "dev/index.ts"],
+          "target": "dev/index.svelte"
+        }
+      ]
+    }
+  },
+  {
+    "name": "windows: detect trailing period conflict in file names",
+    "want": ["index.js|index.js.|dev"],
+    "args": "-f index.js -r '{{f}}{{ext}}..'",
+    "path_args": ["dev"],
+    "conflicts": {
+      "trailingPeriod": [
+        {
+          "sources": ["dev/index.js"],
+          "target": "dev/index.js."
+        }
+      ]
+    }
+  },
+  {
+    "name": "windows: detect trailing period conflict in directories",
+    "want": [
+      "No Pressure (2021) S1.E1.1080p.mkv|2021.../No Pressure (2021) S1.E1.1080p.mkv|movies",
+      "No Pressure (2021) S1.E2.1080p.mkv|2021.../No Pressure (2021) S1.E2.1080p.mkv|movies",
+      "No Pressure (2021) S1.E3.1080p.mkv|2021.../No Pressure (2021) S1.E3.1080p.mp4|movies"
+    ],
+    "args": "-f '.* \\((2021)\\) .*' -r $1.../{{f}}{{ext}}",
+    "path_args": ["movies"],
+    "conflicts": {
+      "trailingPeriod": [
+        {
+          "sources": ["movies/No Pressure (2021) S1.E1.1080p.mkv"],
+          "target": "movies/2021.../No Pressure (2021) S1.E1.1080p.mkv"
+        },
+        {
+          "sources": ["movies/No Pressure (2021) S1.E2.1080p.mkv"],
+          "target": "movies/2021.../No Pressure (2021) S1.E2.1080p.mkv"
+        },
+        {
+          "sources": ["movies/No Pressure (2021) S1.E3.1080p.mkv"],
+          "target": "movies/2021.../No Pressure (2021) S1.E3.1080p.mkv"
+        }
+      ]
+    }
+  },
+  {
+    "name": "macos: detect forbidden characters in filename",
+    "want": ["index.js|index.:|dev"],
+    "args": "-f js -r ':'",
+    "path_args": ["dev"],
+    "conflicts": {
+      "invalidCharacters": [
+        {
+          "sources": ["dev/index.js"],
+          "target": "dev/index.:",
+          "cause": ":"
+        }
+      ]
+    }
+  },
+  {
+    "name": "macos: auto fix forbidden characters in filename",
+    "want": ["index.js|app.js|dev"],
+    "args": "-f index -r 'app:::' -F",
+    "path_args": ["dev/index.js"]
+  },
+  {
+    "name": "windows: detect forbidden characters in filename",
+    "want": ["atomic-habits.pdf|<>:?etc.pdf|ebooks"],
+    "args": "-f atomic-habits -r '<>:?etc'",
+    "path_args": ["ebooks"],
+    "conflicts": {
+      "invalidCharacters": [
+        {
+          "sources": ["ebooks/atomic-habits.pdf"],
+          "target": "ebooks/<>:?etc.pdf",
+          "cause": "<,>,:,?"
+        }
+      ]
+    }
+  },
+  {
+    "name": "windows: detect filename longer than 260 characters",
+    "want": [
+      "1984.pdf|It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him.pdf|ebooks"
+    ],
+    "args": "-f 1984 -r 'It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him'",
+    "path_args": ["ebooks"],
+    "conflicts": {
+      "maxFilenameLengthExceeded": [
+        {
+          "sources": ["ebooks/1984.pdf"],
+          "target": "ebooks/It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him.pdf",
+          "cause": "260 characters"
+        }
+      ]
+    }
+  },
+  {
+    "name": "windows: up to 260 emoji characters should not cause a conflict",
+    "want": [
+      "1984.pdf|😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀|ebooks"
+    ],
+    "args": "-f 1984.pdf -r '😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀'",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "windows: auto fix forbidden characters in filename",
+    "want": ["atomic-habits.pdf|etc.pdf|ebooks"],
+    "args": "-f atomic-habits -r '<>:|?etc' -F",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "windows: auto fix filename longer than 260 characters conflict",
+    "want": [
+      "1984.pdf|It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to preven.pdf|ebooks"
+    ],
+    "args": "-f 1984 -r 'It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him'",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "windows: auto fix name length conflict",
+    "want": [
+      "atomic-habits.pdf|😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀|ebooks"
+    ],
+    "args": "-f atomic-habits.pdf -r '😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀' -F",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "unix: detect filename longer than 255 bytes",
+    "want": [
+      "1984.pdf|😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.pdf|ebooks"
+    ],
+    "args": "-f 1984 -r '😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀'",
+    "path_args": ["ebooks"],
+    "conflicts": {
+      "maxFilenameLengthExceeded": [
+        {
+          "sources": ["ebooks/1984.pdf"],
+          "target": "ebooks/😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.pdf",
+          "cause": "255 bytes"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unix: auto fix name length conflict",
+    "want": [
+      "atomic-habits.pdf|😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.pdf|ebooks"
+    ],
+    "args": "-f atomic-habits.pdf -r '😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.pdf' -F",
+    "path_args": ["ebooks"]
+  },
+
+  {
+    "name": "test automatic creation of directories",
+    "want": ["index.ts|javascript/npm/typescript/index.ts|dev"],
+    "args": "-f (index.ts) -r javascript/npm/typescript/$1 -x",
+    "path_args": ["dev"],
+    "default_opts": "--json"
+  },
+  {
+    "name": "windows: test automatic creation of directories (backward slash)",
+    "want": ["index.ts|javascript\\npm\\typescript\\index.ts|dev"],
+    "args": "-f (index.ts) -r javascript\\npm\\typescript\\$1 -x",
+    "path_args": ["dev"],
+    "default_opts": "--json"
+  },
+
+  {
+    "name": "report conflict when target path exists but changes after the current file is renamed",
+    "want": [
+      "dsc-001.arw|dsc-002.arw|images",
+      "dsc-002.arw|dsc-003.arw|images"
+    ],
+    "args": "-f '\\d+' -r 2%03d",
+    "path_args": ["images"],
+    "conflicts": {
+      "fileExists": [
+        {
+          "sources": ["images/dsc-001.arw"],
+          "target": "images/dsc-002.arw"
+        }
+      ]
+    }
+  },
+  {
+    "name": "don't report conflict if target file exists but changes before the current file is renamed",
+    "want": [
+      "dsc-001.arw|dsc-000.arw|images",
+      "dsc-002.arw|dsc-001.arw|images"
+    ],
+    "args": "-f '\\d+' -r 0%03d",
+    "path_args": ["images"]
+  },
+  {
+    "name": "golden: test conflict reporting table output",
+    "args": "-f 'flac|mp3' -r ogg",
+    "path_args": ["audio"],
+    "golden_file": "conflicts"
+  },
+  {
+    "name": "golden: test dry run table output",
+    "args": "-f 'flac|mp3|ogg|_' -e",
+    "path_args": ["audio"],
+    "golden_file": "dry_run"
+  },
+  {
+    "name": "golden: test error handling",
+    "args": "-f 'flac|mp3|ogg|_' -e",
+    "path_args": ["audio"],
+    "golden_file": "dry_run"
+  },
+  {
+    "name": "testdata: sort by size (ascending order)",
+    "want": [
+      "bike.jpeg|001.jpeg|images",
+      "proraw.dng|002.dng|images",
+      "tractor-raw.cr2|003.cr2|images"
+    ],
+    "args": "-f .* -r %03d -e -sort size -E exiftool",
+    "path_args": ["images"]
+  },
+  {
+    "name": "testdata: sort by size (descending order)",
+    "want": [
+      "tractor-raw.cr2|001.cr2|images",
+      "proraw.dng|002.dng|images",
+      "bike.jpeg|003.jpeg|images"
+    ],
+    "args": "-f .* -r %03d -e -sortr size -E exiftool",
+    "path_args": ["images"]
+  },
+  {
+    "name": "auto fix path exists conflict",
+    "want": ["dsc-001.arw|dsc-002 (2).arw|images"],
+    "args": "-f 001 -r 002 -F",
+    "path_args": ["images"]
+  },
+  {
+    "name": "auto fix overwriting new path conflict",
+    "want": [
+      "dsc-001.arw|dsc-002 (2).arw|images",
+      "dsc-002.arw|dsc-003.arw|images"
+    ],
+    "args": "-f '\\d+' -r 2%03d -F",
+    "path_args": ["images"]
+  },
+  {
+    "name": "auto fix empty filename conflict",
+    "want": [
+      "dsc-001.arw|dsc-001.arw|images",
+      "dsc-002.arw|dsc-002.arw|images"
+    ],
+    "args": "-f .* -F",
+    "path_args": ["images"]
+  },
+  {
+    "name": "windows: test quiet mode",
+    "args": "--help",
+    "golden_file": "full_help"
   }
 ]

@@ -14,14 +14,16 @@ import (
 )
 
 var (
-	// windowsForbiddenCharRegex is used to match the strings that contain forbidden
+	// partialWindowsForbiddenCharRegex is used to match the strings that contain forbidden
 	// characters in Windows' file names. This does not include also forbidden
 	// forward and back slash characters because their presence will cause a new
 	// directory to be created.
-	windowsForbiddenCharRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*`)
-	// fullWindowsForbiddenCharRegex is like windowsForbiddenRegex but includes
+	partialWindowsForbiddenCharRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*`)
+	// completeWindowsForbiddenCharRegex is like windowsForbiddenRegex but includes
 	// forward and backslashes.
-	fullWindowsForbiddenCharRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*|/|\\`)
+	completeWindowsForbiddenCharRegex = regexp.MustCompile(
+		`<|>|:|"|\||\?|\*|/|\\`,
+	)
 	// macForbiddenCharRegex is used to match the strings that contain forbidden
 	// characters in macOS' file names.
 	macForbiddenCharRegex = regexp.MustCompile(`:`)
@@ -310,13 +312,14 @@ func (op *Operation) checkPathExistsConflict(
 			return false
 		}
 
-		// Don't report a conflict if target path is changing
+		// Don't report a conflict if target path is changing before
+		// the source path is renamed
 		for j := 0; j < len(op.matches); j++ {
 			ch := op.matches[j]
 			sp := filepath.Join(ch.BaseDir, ch.Source)
 			tp := filepath.Join(ch.BaseDir, ch.Target)
 
-			if targetPath == sp && !strings.EqualFold(sp, tp) {
+			if targetPath == sp && !strings.EqualFold(sp, tp) && i > j {
 				return false
 			}
 		}
@@ -404,10 +407,10 @@ func (op *Operation) checkOverwritingPathConflict(
 // do not contain forbidden characters for the current OS.
 func checkForbiddenCharacters(path string) error {
 	if runtime.GOOS == windows {
-		if windowsForbiddenCharRegex.MatchString(path) {
+		if partialWindowsForbiddenCharRegex.MatchString(path) {
 			return errors.New(
 				strings.Join(
-					windowsForbiddenCharRegex.FindAllString(path, -1),
+					partialWindowsForbiddenCharRegex.FindAllString(path, -1),
 					",",
 				),
 			)
@@ -442,7 +445,7 @@ func checktTargetLength(target string) error {
 }
 
 // checkTrailingPeriods reports if replacement operation results
-// in files or sub directories that end in trailing dots.
+// in files or sub directories that end in trailing dots. (windows only)
 func (op *Operation) checkTrailingPeriodConflict(
 	sourcePath, target, targetPath string,
 	i int,
@@ -527,7 +530,7 @@ func (op *Operation) checkPathLengthConflict(
 					break
 				}
 
-				op.matches[i].Target = filepath.Join(f, ext)
+				op.matches[i].Target = f + ext
 				op.matches[i].status = statusOK
 			}
 		}
@@ -558,7 +561,7 @@ func (op *Operation) checkForbiddenCharactersConflict(
 
 		if op.fixConflicts {
 			if runtime.GOOS == windows {
-				op.matches[i].Target = windowsForbiddenCharRegex.ReplaceAllString(
+				op.matches[i].Target = partialWindowsForbiddenCharRegex.ReplaceAllString(
 					target,
 					"",
 				)

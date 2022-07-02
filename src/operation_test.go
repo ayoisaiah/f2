@@ -22,7 +22,10 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/pterm/pterm"
+	"github.com/sebdah/goldie/v2"
 )
+
+var fixtures = filepath.Join("..", "testdata")
 
 type testCase struct {
 	name           string
@@ -38,6 +41,8 @@ var (
 )
 
 var newFileSystem = []string{
+	"dev/index.js",
+	"dev/index.ts",
 	"docu.ments/job-contract.docx",
 	"special/$-(+)_file.txt",
 	"images/dsc-001.arw",
@@ -48,7 +53,7 @@ var newFileSystem = []string{
 	"movies/No Pressure (2021) S1.E1.1080p.mkv",
 	"movies/No Pressure (2021) S1.E2.1080p.mkv",
 	"movies/No Pressure (2021) S1.E3.1080p.mkv",
-  "movies/green-mile_1999.mp4",
+	"movies/green-mile_1999.mp4",
 	"music/Overgrown (2013)/01 Overgrown.flac",
 	"music/Overgrown (2013)/02 I Am Sold.flac",
 	"music/Overgrown (2013)/Cover.jpg",
@@ -327,6 +332,7 @@ type TestCase struct {
 	PathArgs    []string                    `json:"path_args"`
 	Conflicts   map[conflictType][]Conflict `json:"conflicts"`
 	DefaultOpts string                      `json:"default_opts"`
+	GoldenFile  string                      `json:"golden_file"`
 }
 
 type TestCase2 struct {
@@ -336,6 +342,7 @@ type TestCase2 struct {
 	PathArgs    []string                    `json:"path_args"`
 	Conflicts   map[conflictType][]Conflict `json:"conflicts"`
 	DefaultOpts string                      `json:"default_opts"`
+	GoldenFile  string                      `json:"golden_file"`
 }
 
 func h2(t *testing.T, filename string) []TestCase {
@@ -343,7 +350,7 @@ func h2(t *testing.T, filename string) []TestCase {
 
 	var cases []TestCase2
 
-	b, err := os.ReadFile(filepath.Join("..", "testdata", filename))
+	b, err := os.ReadFile(filepath.Join(fixtures, filename))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -362,6 +369,7 @@ func h2(t *testing.T, filename string) []TestCase {
 			PathArgs:    v.PathArgs,
 			Conflicts:   v.Conflicts,
 			DefaultOpts: v.DefaultOpts,
+			GoldenFile:  v.GoldenFile,
 		}
 
 		for _, v2 := range v.Want {
@@ -420,8 +428,28 @@ func h(t *testing.T, cases []TestCase) {
 		t.Run(tc.Name, func(t *testing.T) {
 			testDir := setupNewFileSystem(t)
 
-			if strings.HasPrefix(tc.Name, "rootdir:") {
-				testDir = filepath.Join("..", "testdata")
+			var prefix string
+
+			colon := strings.Index(tc.Name, ":")
+			if colon != -1 {
+				prefix = tc.Name[:colon]
+
+				switch prefix {
+				case "testdata", "golden":
+					testDir = filepath.Join(fixtures)
+				case "windows":
+					if runtime.GOOS != windows {
+						return
+					}
+				case "macos":
+					if runtime.GOOS != darwin {
+						return
+					}
+				case "unix":
+					if runtime.GOOS == windows {
+						return
+					}
+				}
 			}
 
 			if tc.DefaultOpts != "" {
@@ -450,8 +478,16 @@ func h(t *testing.T, cases []TestCase) {
 				pathArgs = strings.Join(res, " ")
 			}
 
+			csvTestFile := filepath.Join(fixtures, "input.csv")
+
+			if strings.Contains(tc.Args, "<csv>") {
+				tc.Args = strings.ReplaceAll(tc.Args, "<csv>", csvTestFile)
+			}
+
 			var cargs string
-			if strings.Contains(tc.Args, "-") {
+			if prefix == "golden" {
+				cargs = tc.Args + " --no-color " + pathArgs
+			} else if strings.Contains(tc.Args, "-") {
 				cargs = tc.Args + " --json " + pathArgs
 			} else {
 				cargs = tc.Args + " " + pathArgs
@@ -461,7 +497,7 @@ func h(t *testing.T, cases []TestCase) {
 
 			result, err := newTestRun(args)
 			if err != nil {
-				if len(tc.Conflicts) == 0 {
+				if len(tc.Conflicts) == 0 && prefix != "golden" {
 					t.Log(string(result))
 					t.Fatal(err)
 				}
@@ -484,46 +520,61 @@ func h(t *testing.T, cases []TestCase) {
 				}
 			}
 
-			var o jsonOutput
-
-			err = json.Unmarshal(result, &o)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(tc.Conflicts) > 0 {
-				if !cmp.Equal(
-					tc.Conflicts,
-					o.Conflicts,
-				) {
-					t.Fatalf(
-						"Test (%s) — Expected: %+v, got: %+v\n",
-						tc.Name,
-						tc.Conflicts,
-						o.Conflicts,
-					)
-				}
-
-				return
-			}
-
-			sortChanges(tc.Want)
-			sortChanges(o.Changes)
-
-			if !cmp.Equal(
-				tc.Want,
-				o.Changes,
-				cmpopts.IgnoreUnexported(Change{}),
-			) &&
-				len(tc.Want) != 0 {
-				t.Fatalf(
-					"Test (%s) -> Expected results to be: %s, but got: %s\n",
-					tc.Name,
-					prettyPrint(tc.Want),
-					prettyPrint(o.Changes),
+			if prefix == "golden" {
+				g := goldie.New(
+					t,
+					goldie.WithFixtureDir(filepath.Join(fixtures)),
 				)
+
+				g.Assert(t, tc.GoldenFile, result)
+			} else {
+				jsonTest(t, &tc, result)
 			}
 		})
+	}
+}
+
+func jsonTest(t *testing.T, tc *TestCase, result []byte) {
+	t.Helper()
+
+	var o jsonOutput
+
+	err := json.Unmarshal(result, &o)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(tc.Conflicts) > 0 {
+		if !cmp.Equal(
+			tc.Conflicts,
+			o.Conflicts,
+		) {
+			t.Fatalf(
+				"Test (%s) — Expected: %+v, got: %+v\n",
+				tc.Name,
+				tc.Conflicts,
+				o.Conflicts,
+			)
+		}
+
+		return
+	}
+
+	sortChanges(tc.Want)
+	sortChanges(o.Changes)
+
+	if !cmp.Equal(
+		tc.Want,
+		o.Changes,
+		cmpopts.IgnoreUnexported(Change{}),
+	) &&
+		len(tc.Want) != 0 {
+		t.Fatalf(
+			"Test (%s) -> Expected results to be: %s, but got: %s\n",
+			tc.Name,
+			prettyPrint(tc.Want),
+			prettyPrint(o.Changes),
+		)
 	}
 }
 
@@ -757,29 +808,10 @@ func TestHandleErrors(t *testing.T) {
 		os.Remove(str)
 	}
 }
-func TestCSV(t *testing.T) {
-	testDir := setupFileSystem(t)
 
-	csv := filepath.Join("..", "testdata", "input.csv")
+func TestShortHelp(t *testing.T) {
+	help := shortHelp(newApp())
 
-	cases := []testCase{
-		{
-			name: "Rename from CSV file",
-			want: []Change{
-				{
-					Source:  "ios.mp4",
-					BaseDir: filepath.Join(testDir, "images", "pics"),
-					Target:  "a podcast on ios 15.mp4",
-				},
-				{
-					Source:  "abc.pdf",
-					BaseDir: testDir,
-					Target:  "A book about africa.pdf",
-				},
-			},
-			args: "-csv " + csv + " -r {{csv.3}}{{ext}} " + testDir,
-		},
-	}
-
-	runFindReplaceHelper(t, cases)
+	g := goldie.New(t, goldie.WithFixtureDir(fixtures))
+	g.Assert(t, "help", []byte(help))
 }

@@ -328,17 +328,21 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Name: "sort",
 				Usage: `Sort the matches in ascending order according to the provided '<sort>'.
 					Allowed sort values:
-						'default' : alphabetical order
-						'size'    : sort by file size
-						'mtime'   : sort by file last modified time
-						'btime'   : sort by file creation time
-						'atime'   : sort by file last access time
-						'ctime'   : sort by file metadata last change time`,
+						'default' : alphabetical order.
+						'size'    : sort by file size.
+						'mtime'   : sort by file last modified time.
+						'btime'   : sort by file creation time.
+						'atime'   : sort by file last access time.
+						'ctime'   : sort by file metadata last change time.
+
+        To sort results in reverse or descending order, use the --sortr flag. Also,
+        this flag overrides --sortr. 
+        `,
 				DefaultText: "<sort>",
 			},
 			&cli.StringFlag{
 				Name:        "sortr",
-				Usage:       "Same options as --sort but presents the matches in the descending order.",
+				Usage:       "Same options as --sort but presents the matches in the reverse order.",
 				DefaultText: "<sort>",
 			},
 			&cli.BoolFlag{

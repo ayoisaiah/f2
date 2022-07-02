@@ -1,0 +1,8 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+| ORIGINAL                           | RENAMED                          | STATUS                         |
+| ****************************************************************************************************** |
+| ../testdata/audio/sample_flac.flac | ../testdata/audio/sample_ogg.ogg | path already exists            |
+| ../testdata/audio/sample_mp3.mp3   | ../testdata/audio/sample_ogg.ogg | path already exists            |
+| ../testdata/audio/sample_flac.flac | ../testdata/audio/sample_ogg.ogg | overwriting newly renamed path |
+| ../testdata/audio/sample_mp3.mp3   | ../testdata/audio/sample_ogg.ogg | overwriting newly renamed path |
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘

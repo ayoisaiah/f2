@@ -801,7 +801,7 @@ func replaceTransformVariables(
 				target = regexReplace(
 					r,
 					target,
-					regexReplace(fullWindowsForbiddenCharRegex, v, "", 0),
+					regexReplace(completeWindowsForbiddenCharRegex, v, "", 0),
 					1,
 				)
 			case "mac":

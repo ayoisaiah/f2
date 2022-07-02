@@ -256,6 +256,10 @@ func (op *Operation) getJSONOutput() ([]byte, error) {
 // printChanges displays the changes to be made in a
 // table or json format.
 func (op *Operation) printChanges() {
+	if op.quiet {
+		return
+	}
+
 	if op.json {
 		o, err := op.getJSONOutput()
 		if err != nil {
@@ -458,22 +462,25 @@ func (op *Operation) noMatches() {
 	pterm.Info.Println(msg)
 }
 
-// execute applies the renaming operation to the filesystem.
+// commit applies the renaming operation to the filesystem.
 // A backup file is auto created as long as at least one file
 // was renamed and it wasn't an undo operation.
-func (op *Operation) execute() error {
+func (op *Operation) commit() error {
 	op.rename()
+
+	// print changes in simple mode
+	if len(op.errors) == 0 {
+		if op.simpleMode || op.json {
+			op.printChanges()
+		}
+	}
 
 	if len(op.errors) > 0 {
 		return op.handleErrors()
 	}
 
-	if len(op.matches) > 0 && !op.revert {
-		return op.backup()
-	}
-
 	if !op.revert {
-		pterm.Info.Println("No files were renamed")
+		return op.backup()
 	}
 
 	return nil
@@ -481,15 +488,18 @@ func (op *Operation) execute() error {
 
 // dryRun prints the changes to be made to the standard output.
 func (op *Operation) dryRun() {
-	if !op.quiet {
-		op.printChanges()
-	}
-
 	if !op.json {
+		pterm.Info.Prefix = pterm.Prefix{
+			Text:  "DRY RUN",
+			Style: pterm.NewStyle(pterm.BgBlue, pterm.FgBlack),
+		}
+
 		pterm.Info.Printfln(
-			"Use the -x or --exec flag to apply the above changes",
+			"Commit the changes below with the -x/--exec flag",
 		)
 	}
+
+	op.printChanges()
 }
 
 // apply prints the changes to be made in dry-run mode
@@ -518,14 +528,8 @@ func (op *Operation) apply() error {
 		op.sortMatches()
 	}
 
-	if op.simpleMode {
-		if !op.quiet {
-			op.printChanges()
-		}
-	}
-
 	if op.exec {
-		return op.execute()
+		return op.commit()
 	}
 
 	op.dryRun()
@@ -651,18 +655,7 @@ func (op *Operation) retrieveBackupFile() (string, error) {
 	file := dir + ".json"
 
 	fullPath, err := xdg.SearchDataFile(filepath.Join("f2", "backups", file))
-	if err == nil {
-		return fullPath, nil
-	}
-
-	// check the old location for backup files
-	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
-	}
-
-	fullPath = filepath.Join(homeDir, ".f2", "backups", file)
-	if _, err := os.Stat(fullPath); err != nil {
 		return "", err
 	}
 

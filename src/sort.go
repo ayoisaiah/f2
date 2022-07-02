@@ -43,10 +43,10 @@ func (op *Operation) sortBySize() (err error) {
 		jsize := jfile.Size()
 
 		if op.reverseSort {
-			return isize < jsize
+			return isize > jsize
 		}
 
-		return isize > jsize
+		return isize < jsize
 	})
 
 	return err
