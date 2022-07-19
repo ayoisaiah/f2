@@ -494,8 +494,11 @@ func (op *Operation) dryRun() {
 			Style: pterm.NewStyle(pterm.BgBlue, pterm.FgBlack),
 		}
 
-		pterm.Info.Printfln(
-			"Commit the changes below with the -x/--exec flag",
+		pterm.Fprintln(
+			op.stdout,
+			pterm.Info.Sprint(
+				"Commit the changes below with the -x/--exec flag",
+			),
 		)
 	}
 

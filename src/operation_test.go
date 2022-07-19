@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -41,6 +42,7 @@ var (
 )
 
 var newFileSystem = []string{
+	"docs/éèêëçñåēčŭ.xlsx",
 	"dev/index.js",
 	"dev/index.ts",
 	"docu.ments/job-contract.docx",
@@ -421,6 +423,24 @@ func h2(t *testing.T, filename string) []TestCase {
 	return c
 }
 
+func preTestSetup(testDir, name string) error {
+	if strings.Contains(name, "date variables") {
+		mtime := time.Date(2022, time.April, 10, 13, 0, 0, 0, time.UTC)
+		atime := time.Date(2023, time.July, 11, 13, 0, 0, 0, time.UTC)
+
+		for _, file := range newFileSystem {
+			path := filepath.Join(testDir, file)
+
+			err := os.Chtimes(path, atime, mtime)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func h(t *testing.T, cases []TestCase) {
 	t.Helper()
 
@@ -437,6 +457,13 @@ func h(t *testing.T, cases []TestCase) {
 				switch prefix {
 				case "testdata", "golden":
 					testDir = filepath.Join(fixtures)
+
+					if strings.Contains(tc.Name, "exiftool") {
+						_, err := exec.LookPath("exiftool")
+						if err != nil {
+							return
+						}
+					}
 				case "windows":
 					if runtime.GOOS != windows {
 						return
@@ -449,6 +476,8 @@ func h(t *testing.T, cases []TestCase) {
 					if runtime.GOOS == windows {
 						return
 					}
+				case "setup":
+					preTestSetup(testDir, tc.Name)
 				}
 			}
 

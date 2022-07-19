@@ -179,6 +179,15 @@
     "path_args": ["images"]
   },
   {
+    "name": "test that multiple indexing variables work correctly",
+    "want": [
+      "dsc-001.arw|dsc-MMMCMXCIX_10.arw|images",
+      "dsc-002.arw|dsc-4000_11.arw|images"
+    ],
+    "args": "-f '(\\d+)' -r '3999%dr_10%d'",
+    "path_args": ["images"]
+  },
+  {
     "name": "include directory in replacement operation",
     "want": [
       "dsc-001.arw|dc-001.arw|images",
@@ -328,21 +337,21 @@
   {
     "name": "testdata: rename with built-in exif variables",
     "want": [
-      "tractor-raw.cr2|2017_Canon_Canon EOS 5D Mark III_ISO200_w5760_h3840_5760x3840_1_125s_24mm_f3.5.cr2|images",
-      "bike.jpeg|2020_samsung_SM-G975F_ISO50_w4032_h3024_4032x3024_1_100s_4.32mm_f2.4.jpeg|images",
-      "proraw.dng|2020_Apple_iPhone 12 Pro Max_ISO32_w4032_h3024_4032x3024_1_121s_5.1mm_f1.6.dng|images"
+      "tractor-raw.cr2|2017_Canon_Canon EOS 5D Mark III_ISO200_w5760_h3840_5760x3840_1_125s_24mm(mm)_f3.5.cr2|images",
+      "bike.jpeg|2020_samsung_SM-G975F_ISO50_w4032_h3024_4032x3024_1_100s_4.32mm(26mm)_f2.4.jpeg|images",
+      "proraw.dng|2020_Apple_iPhone 12 Pro Max_ISO32_w4032_h3024_4032x3024_1_121s_5.1mm(26mm)_f1.6.dng|images"
     ],
-    "args": "-f '.*\\.(cr2|jpeg|dng)' -r {{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm_f{{exif.fnum}}{{ext}}",
+    "args": "-f '.*\\.(cr2|jpeg|dng)' -r {{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm({{exif.fl35}}mm)_f{{exif.fnum}}{{ext}}",
     "path_args": ["images"]
   },
   {
     "name": "testdata: rename with built-in id3 variables",
     "want": [
-      "sample_mp3.mp3|Test Title_Test Artist_ID3v2.3_MP3_Test Album_Test AlbumArtist_3_6_2__2000|audio",
-      "sample_ogg.ogg|Test Title_Test Artist_VORBIS_OGG_Test Album_Test AlbumArtist_3_6_2__2000|audio",
-      "sample_flac.flac|Test Title_Test Artist_VORBIS_FLAC_Test Album_Test AlbumArtist_3_6_2__2000|audio"
+      "sample_mp3.mp3|Test Title_Test Artist_ID3v2.3_MP3_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
+      "sample_ogg.ogg|Test Title_Test Artist_VORBIS_OGG_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
+      "sample_flac.flac|Test Title_Test Artist_VORBIS_FLAC_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio"
     ],
-    "args": "-f '.*\\.(mp3|ogg|flac)' -r {{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}",
+    "args": "-f '.*\\.(mp3|ogg|flac)' -r {{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}_{{id3.genre}}_{{id3.composer}}",
     "path_args": ["audio"]
   },
   {
@@ -673,8 +682,66 @@
     "path_args": ["images"]
   },
   {
-    "name": "windows: test quiet mode",
-    "args": "--help",
-    "golden_file": "full_help"
+    "name": "testdata: use exiftool variables for renaming",
+    "want": [
+      "proraw.dng|69.4 deg_32_iPhone 12 Pro Max back triple camera 5.1mm f_1.6|images"
+    ],
+    "args": "-f proraw.dng -r {{xt.FOV}}_{{xt.ISO}}_{{xt.LensModel}}",
+    "path_args": ["images"]
+  },
+  {
+    "name": "make file names all upper case",
+    "want": [
+      "animal-farm.epub|ANIMAL-FARM.EPUB|ebooks",
+      "fear-of-life.EPUB|FEAR-OF-LIFE.EPUB|ebooks"
+    ],
+    "args": "-f '.*\\.epub' -r {{tr.up}} -i",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "make file names all lower case",
+    "want": [
+      "animal-farm.epub|animal-farm.epub|ebooks",
+      "fear-of-life.EPUB|fear-of-life.epub|ebooks"
+    ],
+    "args": "-f '.*\\.epub' -r {{tr.lw}} -i",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "transform filename and extension to title case",
+    "want": [
+      "animal-farm.epub|Animal-Farm.epub|ebooks",
+      "fear-of-life.EPUB|Fear-Of-Life.epub|ebooks"
+    ],
+    "args": "-f '.*\\.epub' -r {{tr.ti}} -i",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "remove windows and macos forbidden characters",
+    "want": [
+      "animal-farm.epub|animal-farm.epub|ebooks",
+      "fear-of-life.EPUB|fear-of-life.EPUB|ebooks"
+    ],
+    "args": "-f '.*\\.epub' -r {{tr.win}} -r {{tr.mac}} -i",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "transform diacritic letters",
+    "want": ["éèêëçñåēčŭ.xlsx|eeeecnaecu.xlsx|docs"],
+    "args": "-f '.*' -r {{tr.di}} -i",
+    "path_args": ["docs"]
+  },
+
+  {
+    "name": "setup: rename with file date variables",
+    "want": ["green-mile_1999.mp4|Apr-10-2023.mp4|movies"],
+    "args": "-f green-mile_1999 -r {{mtime.MMM}}-{{mtime.DD}}-{{atime.YYYY}}",
+    "path_args": ["movies"]
+  },
+  {
+    "name": "rename with random variables",
+    "want": ["green-mile_1999.mp4|11111-22-ooo.mp4|movies"],
+    "args": "-f green-mile_1999 -r {{5r<1>}}-{{2r<2>}}-{{3r<o>}}",
+    "path_args": ["movies"]
   }
 ]

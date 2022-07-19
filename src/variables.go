@@ -97,7 +97,7 @@ var (
 		`(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?`,
 	)
 	randomRegex = regexp.MustCompile(
-		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?}}`,
+		`{{(\d+)?r(?:(_l|_d|_ld)|(?:<([^<>])>))?}}`,
 	)
 	hashRegex      = regexp.MustCompile(`{{hash.(sha1|sha256|sha512|md5)}}`)
 	transformRegex = regexp.MustCompile(`{{tr.(up|lw|ti|win|mac|di)}}`)
