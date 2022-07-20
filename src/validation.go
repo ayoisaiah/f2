@@ -445,7 +445,7 @@ func checktTargetLength(target string) error {
 }
 
 // checkTrailingPeriods reports if replacement operation results
-// in files or sub directories that end in trailing dots. (windows only)
+// in files or sub directories that end in trailing dots. (windows only).
 func (op *Operation) checkTrailingPeriodConflict(
 	sourcePath, target, targetPath string,
 	i int,

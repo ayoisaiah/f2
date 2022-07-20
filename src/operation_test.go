@@ -121,6 +121,11 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// needed to satisfy build in Unix.
+func setWindowsHidden(path string) error {
+	return nil
+}
+
 // setupNewFileSystem creates all required files and folders for
 // the tests and returns a function that is used as
 // a teardown function when the tests are done.
@@ -464,18 +469,6 @@ func h(t *testing.T, cases []TestCase) {
 							return
 						}
 					}
-				case "windows":
-					if runtime.GOOS != windows {
-						return
-					}
-				case "macos":
-					if runtime.GOOS != darwin {
-						return
-					}
-				case "unix":
-					if runtime.GOOS == windows {
-						return
-					}
 				case "setup":
 					preTestSetup(testDir, tc.Name)
 				}
@@ -607,69 +600,9 @@ func jsonTest(t *testing.T, tc *TestCase, result []byte) {
 	}
 }
 
-func TestF2(t *testing.T) {
-	cases := h2(t, "tests.json")
+func TestAllOSes(t *testing.T) {
+	cases := h2(t, "all.json")
 	h(t, cases)
-}
-
-func runFindReplaceHelper(t *testing.T, cases []testCase) {
-	t.Helper()
-
-	for _, tc := range cases {
-		args := parseArgs(t, tc.name, tc.args)
-
-		if tc.defaultOpts != "" {
-			os.Setenv(envDefaultOpts, tc.defaultOpts)
-		}
-
-		result, err := testRun(args)
-		if err != nil {
-			t.Fatalf(
-				"Test (%s) -> testRun(%v) yielded error: %v",
-				tc.name,
-				tc.args,
-				err,
-			)
-		}
-
-		if len(tc.expectedErrors) != len(result.operationErrors) {
-			t.Fatalf(
-				"Test (%s) -> Expected errors to be: %s, but got: %s",
-				tc.name,
-				prettyPrint(tc.expectedErrors),
-				prettyPrint(result.operationErrors),
-			)
-		}
-
-		if len(result.conflicts) > 0 {
-			t.Fatalf(
-				"Test (%s) -> Expected no conflicts but got some: %v",
-				tc.name,
-				prettyPrint(result.conflicts),
-			)
-		}
-
-		sortChanges(tc.want)
-		sortChanges(result.changes)
-
-		if !cmp.Equal(
-			tc.want,
-			result.changes,
-			cmpopts.IgnoreUnexported(Change{}),
-		) &&
-			len(tc.want) != 0 {
-			t.Fatalf(
-				"Test (%s) -> Expected results to be: %s, but got: %s\n",
-				tc.name,
-				prettyPrint(tc.want),
-				prettyPrint(result.changes),
-			)
-		}
-
-		if tc.defaultOpts != "" {
-			os.Setenv(envDefaultOpts, "")
-		}
-	}
 }
 
 func TestApplyUndo(t *testing.T) {
