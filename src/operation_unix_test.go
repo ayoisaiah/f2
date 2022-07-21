@@ -5,7 +5,12 @@ package f2
 
 import "testing"
 
+// dummy function necessary for compilation in Unix.
+func setHidden(path string) error {
+	return nil
+}
+
 func TestUnix(t *testing.T) {
-	cases := h2(t, "unix.json")
-	h(t, cases)
+	cases := retrieveTestCases(t, "unix.json")
+	runTestCases(t, cases)
 }

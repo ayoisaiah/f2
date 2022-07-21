@@ -109,13 +109,15 @@
     "default_opts": "--json"
   },
   {
-    "name": "windows_hidden: hidden files are ignored",
+    "name": "hidden files are ignored",
+    "setup": ["windows_hidden"],
     "want": [],
     "args": "-f dsc -r sony",
     "path_args": ["images"]
   },
   {
-    "name": "windows_hidden: hidden files are allowed",
+    "name": "hidden files are allowed",
+    "setup": ["windows_hidden"],
     "want": [
       "dsc-001.arw|sony-001.arw|images",
       "dsc-002.arw|sony-002.arw|images"

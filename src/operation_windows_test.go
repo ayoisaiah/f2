@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func setWindowsHidden(path string) error {
+func setHidden(path string) error {
 	filenameW, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
 		return err
@@ -23,6 +23,6 @@ func setWindowsHidden(path string) error {
 }
 
 func TestWindows(t *testing.T) {
-	cases := h2(t, "windows.json")
-	h(t, cases)
+	cases := retrieveTestCases(t, "windows.json")
+	runTestCases(t, cases)
 }

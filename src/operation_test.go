@@ -26,14 +26,35 @@ import (
 	"github.com/sebdah/goldie/v2"
 )
 
-var fixtures = filepath.Join("..", "testdata")
+func init() {
+	workingDir, err := filepath.Abs(".")
+	if err != nil {
+		log.Fatalf("Unable to retrieve working directory: %v", err)
+	}
+
+	workingDir = strings.ReplaceAll(workingDir, "/", "_")
+	if runtime.GOOS == windows {
+		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
+		workingDir = strings.ReplaceAll(workingDir, ":", "_")
+	}
+
+	backupFilePath, err = xdg.DataFile(
+		filepath.Join("f2", "backups", workingDir+".json"),
+	)
+	if err != nil {
+		log.Fatalf("Unable to retrieve xdg data file directory: %v", err)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+}
+
+var testFixtures = filepath.Join("..", "testdata")
 
 type testCase struct {
 	name           string
 	want           []Change
 	args           string
 	undoArgs       []string
-	defaultOpts    string
 	expectedErrors []int
 }
 
@@ -41,7 +62,7 @@ var (
 	backupFilePath string
 )
 
-var newFileSystem = []string{
+var fileSystem = []string{
 	"docs/éèêëçñåēčŭ.xlsx",
 	"dev/index.js",
 	"dev/index.ts",
@@ -67,121 +88,6 @@ var newFileSystem = []string{
 	"ebooks/.banned/.mein-kampf.pdf",
 	"ebooks/.banned/lolita.epub",
 	".golang.pdf",
-}
-
-var fileSystem = []string{
-	"No Pressure (2021) S1.E1.1080p.mkv",
-	"No Pressure (2021) S1.E2.1080p.mkv",
-	"No Pressure (2021) S1.E3.1080p.mkv",
-	"docs.03.05.period/word.docx",
-	"images/a.jpg",
-	"images/b.jPg",
-	"images/abc.png",
-	"images/456.webp",
-	"images/pics/123.JPG",
-	"images/pics/free.jpg",
-	"images/pics/ios.mp4",
-	"morepics/pic-1.avif",
-	"morepics/pic-2.avif",
-	"morepics/nested/img.jpg",
-	"morepics/nested/linux.mp4",
-	"scripts/index.js",
-	"scripts/main.js",
-	"abc.pdf",
-	"abc.epub",
-	".forbidden.pdf",
-	".dir/sample.pdf",
-	"conflicts/abc.txt",
-	"conflicts/xyz.txt",
-	"conflicts/123.txt",
-	"conflicts/123 (3).txt",
-	"regex/100$-(boring+company).com.ng",
-	"weirdo/Data Structures and Algorithms/1. Asymptotic Analysis and Insertion Sort, Merge Sort/2.Sorting & Searching why bother with these simple tasks/this is a long path/1. Sorting & Searching- why bother with these simple tasks- - Data Structure & Algorithms - Part-2.mp4",
-}
-
-func init() {
-	workingDir, err := filepath.Abs(".")
-	if err != nil {
-		log.Fatalf("Unable to retrieve working directory: %v", err)
-	}
-
-	workingDir = strings.ReplaceAll(workingDir, "/", "_")
-	if runtime.GOOS == windows {
-		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
-		workingDir = strings.ReplaceAll(workingDir, ":", "_")
-	}
-
-	backupFilePath, err = xdg.DataFile(
-		filepath.Join("f2", "backups", workingDir+".json"),
-	)
-	if err != nil {
-		log.Fatalf("Unable to retrieve xdg data file directory: %v", err)
-	}
-
-	rand.Seed(time.Now().UnixNano())
-}
-
-// needed to satisfy build in Unix.
-func setWindowsHidden(path string) error {
-	return nil
-}
-
-// setupNewFileSystem creates all required files and folders for
-// the tests and returns a function that is used as
-// a teardown function when the tests are done.
-func setupNewFileSystem(tb testing.TB) string {
-	tb.Helper()
-
-	testDir, err := ioutil.TempDir(".", "")
-	if err != nil {
-		tb.Fatalf("Unable to create temporary directory for test: %v", err)
-	}
-
-	absPath, err := filepath.Abs(testDir)
-	if err != nil {
-		tb.Fatalf("Unable to get absolute path to test directory: %v", err)
-	}
-
-	tb.Cleanup(func() {
-		if err = os.RemoveAll(absPath); err != nil {
-			tb.Fatalf(
-				"Failure occurred while cleaning up the filesystem: %v",
-				err,
-			)
-		}
-	})
-
-	for _, v := range newFileSystem {
-		dir := filepath.Dir(v)
-
-		filePath := filepath.Join(testDir, dir)
-
-		err = os.MkdirAll(filePath, os.ModePerm)
-		if err != nil {
-			tb.Fatalf(
-				"Unable to create directories in path: '%s', due to err: %v",
-				filePath,
-				err,
-			)
-		}
-	}
-
-	for _, f := range newFileSystem {
-		pathToFile := filepath.Join(absPath, f)
-
-		file, err := os.Create(pathToFile)
-		if err != nil {
-			tb.Fatalf(
-				"Unable to write to file: '%s', due to err: %v",
-				pathToFile,
-				err,
-			)
-		}
-
-		file.Close()
-	}
-
-	return absPath
 }
 
 // setupFileSystem creates all required files and folders for
@@ -334,30 +240,22 @@ func parseArgs(t *testing.T, name, args string) []string {
 
 type TestCase struct {
 	Name        string                      `json:"name"`
-	Want        []Change                    `json:"want"`
-	Args        string                      `json:"args"`
-	PathArgs    []string                    `json:"path_args"`
-	Conflicts   map[conflictType][]Conflict `json:"conflicts"`
-	DefaultOpts string                      `json:"default_opts"`
-	GoldenFile  string                      `json:"golden_file"`
-}
-
-type TestCase2 struct {
-	Name        string                      `json:"name"`
+	Changes     []Change                    `json:"changes"`
 	Want        []string                    `json:"want"`
 	Args        string                      `json:"args"`
 	PathArgs    []string                    `json:"path_args"`
 	Conflicts   map[conflictType][]Conflict `json:"conflicts"`
 	DefaultOpts string                      `json:"default_opts"`
 	GoldenFile  string                      `json:"golden_file"`
+	Setup       []string                    `json:"setup"`
 }
 
-func h2(t *testing.T, filename string) []TestCase {
+func retrieveTestCases(t *testing.T, filename string) []TestCase {
 	t.Helper()
 
-	var cases []TestCase2
+	var cases []TestCase
 
-	b, err := os.ReadFile(filepath.Join(fixtures, filename))
+	b, err := os.ReadFile(filepath.Join(testFixtures, filename))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -367,123 +265,126 @@ func h2(t *testing.T, filename string) []TestCase {
 		t.Fatal(err)
 	}
 
-	c := make([]TestCase, len(cases))
+	for i := range cases {
+		tc := cases[i]
 
-	for i, v := range cases {
-		ca := TestCase{
-			Name:        v.Name,
-			Args:        v.Args,
-			PathArgs:    v.PathArgs,
-			Conflicts:   v.Conflicts,
-			DefaultOpts: v.DefaultOpts,
-			GoldenFile:  v.GoldenFile,
-		}
-
-		for _, v2 := range v.Want {
+		for _, v := range tc.Want {
 			var ch Change
 
-			sl := strings.Split(v2, "|")
+			tokens := strings.Split(v, "|")
 
-			for k, v3 := range sl {
-				if k == 0 {
-					ch.Source = v3
+			for j, token := range tokens {
+				if j == 0 {
+					ch.Source = token
 					continue
 				}
 
-				if k == 1 {
-					ch.Target = v3
+				if j == 1 {
+					ch.Target = token
 					continue
 				}
 
-				if k == 2 {
-					if v3 != "" {
-						ch.BaseDir = v3
+				if j == 2 {
+					if token != "" {
+						ch.BaseDir = token
 					}
 
 					continue
 				}
 
-				r, err := strconv.ParseBool(v3)
+				r, err := strconv.ParseBool(token)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				if k == 3 {
+				if j == 3 {
 					ch.IsDir = r
 					continue
 				}
 
-				if k == 4 {
+				if j == 4 {
 					ch.WillOverwrite = r
 					continue
 				}
 			}
 
-			ca.Want = append(ca.Want, ch)
+			tc.Changes = append(tc.Changes, ch)
 		}
-
-		c[i] = ca
 	}
 
-	return c
+	return cases
 }
 
-func preTestSetup(testDir, name string) error {
-	if strings.Contains(name, "date variables") {
+func preTestSetup(
+	t *testing.T,
+	testDir string,
+	setup []string,
+) (string, error) {
+	t.Helper()
+
+	if contains(setup, "testdata") || contains(setup, "golden") {
+		testDir = testFixtures
+	}
+
+	if contains(setup, "windows_hidden") {
+		err := setHidden(filepath.Join(testDir, "images"))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if contains(setup, "exiftool") {
+		_, err := exec.LookPath("exiftool")
+		if err != nil {
+			t.SkipNow()
+		}
+	}
+
+	if contains(setup, "date variables") {
 		mtime := time.Date(2022, time.April, 10, 13, 0, 0, 0, time.UTC)
 		atime := time.Date(2023, time.July, 11, 13, 0, 0, 0, time.UTC)
 
-		for _, file := range newFileSystem {
+		for _, file := range fileSystem {
 			path := filepath.Join(testDir, file)
 
 			err := os.Chtimes(path, atime, mtime)
 			if err != nil {
-				return err
+				return "", err
 			}
 		}
 	}
 
-	return nil
+	return testDir, nil
 }
 
-func h(t *testing.T, cases []TestCase) {
+func runTestCases(t *testing.T, cases []TestCase) {
 	t.Helper()
 
-	for _, tc := range cases {
+	for i := range cases {
+		tc := cases[i]
+
 		t.Run(tc.Name, func(t *testing.T) {
-			testDir := setupNewFileSystem(t)
+			testDir := setupFileSystem(t)
 
-			var prefix string
-
-			colon := strings.Index(tc.Name, ":")
-			if colon != -1 {
-				prefix = tc.Name[:colon]
-
-				switch prefix {
-				case "testdata", "golden":
-					testDir = filepath.Join(fixtures)
-
-					if strings.Contains(tc.Name, "exiftool") {
-						_, err := exec.LookPath("exiftool")
-						if err != nil {
-							return
-						}
-					}
-				case "setup":
-					preTestSetup(testDir, tc.Name)
+			if len(tc.Setup) > 0 {
+				v, err := preTestSetup(t, testDir, tc.Setup)
+				if err != nil {
+					t.Fatal(err)
 				}
+
+				testDir = v
 			}
 
 			if tc.DefaultOpts != "" {
 				os.Setenv(envDefaultOpts, tc.DefaultOpts)
 			}
 
-			for j := range tc.Want {
-				ch := tc.Want[j]
+			for j := range tc.Changes {
+				ch := tc.Changes[j]
 				if ch.BaseDir == "" {
-					tc.Want[j].BaseDir = testDir
+					tc.Changes[j].BaseDir = testDir
 				} else {
-					tc.Want[j].BaseDir = filepath.Join(testDir, ch.BaseDir)
+					tc.Changes[j].BaseDir = filepath.Join(testDir, ch.BaseDir)
 				}
 			}
 
@@ -500,14 +401,15 @@ func h(t *testing.T, cases []TestCase) {
 				pathArgs = strings.Join(res, " ")
 			}
 
-			csvTestFile := filepath.Join(fixtures, "input.csv")
+			csvTestFile := filepath.Join(testFixtures, "input.csv")
 
 			if strings.Contains(tc.Args, "<csv>") {
 				tc.Args = strings.ReplaceAll(tc.Args, "<csv>", csvTestFile)
 			}
 
 			var cargs string
-			if prefix == "golden" {
+
+			if contains(tc.Setup, "golden") {
 				cargs = tc.Args + " --no-color " + pathArgs
 			} else if strings.Contains(tc.Args, "-") {
 				cargs = tc.Args + " --json " + pathArgs
@@ -519,7 +421,7 @@ func h(t *testing.T, cases []TestCase) {
 
 			result, err := newTestRun(args)
 			if err != nil {
-				if len(tc.Conflicts) == 0 && prefix != "golden" {
+				if len(tc.Conflicts) == 0 && !contains(tc.Setup, "golden") {
 					t.Log(string(result))
 					t.Fatal(err)
 				}
@@ -542,10 +444,10 @@ func h(t *testing.T, cases []TestCase) {
 				}
 			}
 
-			if prefix == "golden" {
+			if contains(tc.Setup, "golden") {
 				g := goldie.New(
 					t,
-					goldie.WithFixtureDir(filepath.Join(fixtures)),
+					goldie.WithFixtureDir(testFixtures),
 				)
 
 				g.Assert(t, tc.GoldenFile, result)
@@ -582,45 +484,57 @@ func jsonTest(t *testing.T, tc *TestCase, result []byte) {
 		return
 	}
 
-	sortChanges(tc.Want)
+	sortChanges(tc.Changes)
 	sortChanges(o.Changes)
 
 	if !cmp.Equal(
-		tc.Want,
+		tc.Changes,
 		o.Changes,
 		cmpopts.IgnoreUnexported(Change{}),
 	) &&
-		len(tc.Want) != 0 {
+		len(tc.Changes) != 0 {
 		t.Fatalf(
 			"Test (%s) -> Expected results to be: %s, but got: %s\n",
 			tc.Name,
-			prettyPrint(tc.Want),
+			prettyPrint(tc.Changes),
 			prettyPrint(o.Changes),
 		)
 	}
 }
 
 func TestAllOSes(t *testing.T) {
-	cases := h2(t, "all.json")
-	h(t, cases)
+	cases := retrieveTestCases(t, "all.json")
+	runTestCases(t, cases)
 }
 
 func TestApplyUndo(t *testing.T) {
 	table := []testCase{
 		{
 			want: []Change{
-				{Source: "No Pressure (2021) S1.E1.1080p.mkv", Target: "1.mkv"},
-				{Source: "No Pressure (2021) S1.E2.1080p.mkv", Target: "2.mkv"},
-				{Source: "No Pressure (2021) S1.E3.1080p.mkv", Target: "3.mkv"},
+				{
+					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
+					Target:  "1.mkv",
+					BaseDir: "movies",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
+					Target:  "2.mkv",
+					BaseDir: "movies",
+				},
+				{
+					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
+					Target:  "3.mkv",
+					BaseDir: "movies",
+				},
 			},
-			args:     "-f .*E(\\d+).* -r $1.mkv -x",
+			args:     "-f .*E(\\d+).* -r $1.mkv -x -R",
 			undoArgs: []string{"-u", "-x"},
 		},
 		{
 			want: []Change{
-				{Source: "morepics", IsDir: true, Target: "moreimages"},
+				{Source: "ebooks", IsDir: true, Target: "pdfs"},
 			},
-			args:     "-f pic -r image -d -x",
+			args:     "-f ebooks -r pdfs -d -x",
 			undoArgs: []string{"-u", "-x"},
 		},
 	}
@@ -774,6 +688,6 @@ func TestHandleErrors(t *testing.T) {
 func TestShortHelp(t *testing.T) {
 	help := shortHelp(newApp())
 
-	g := goldie.New(t, goldie.WithFixtureDir(fixtures))
+	g := goldie.New(t, goldie.WithFixtureDir(testFixtures))
 	g.Assert(t, "help", []byte(help))
 }

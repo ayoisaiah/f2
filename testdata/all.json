@@ -335,7 +335,8 @@
   },
 
   {
-    "name": "testdata: rename with built-in exif variables",
+    "name": "rename with built-in exif variables",
+    "setup": ["testdata"],
     "want": [
       "tractor-raw.cr2|2017_Canon_Canon EOS 5D Mark III_ISO200_w5760_h3840_5760x3840_1_125s_24mm(mm)_f3.5.cr2|images",
       "bike.jpeg|2020_samsung_SM-G975F_ISO50_w4032_h3024_4032x3024_1_100s_4.32mm(26mm)_f2.4.jpeg|images",
@@ -345,7 +346,8 @@
     "path_args": ["images"]
   },
   {
-    "name": "testdata: rename with built-in id3 variables",
+    "name": "rename with built-in id3 variables",
+    "setup": ["testdata"],
     "want": [
       "sample_mp3.mp3|Test Title_Test Artist_ID3v2.3_MP3_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
       "sample_ogg.ogg|Test Title_Test Artist_VORBIS_OGG_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
@@ -355,7 +357,8 @@
     "path_args": ["audio"]
   },
   {
-    "name": "testdata: rename with built-in file hash variables (SHA1 and MD5)",
+    "name": "rename with built-in file hash variables (SHA1 and MD5)",
+    "setup": ["testdata"],
     "want": [
       "bike.jpeg|6801e3de5f584028b8cd4292c6eca7ba_5b97fd595c700277315742bc91ac0ae67e5eb7a3|images"
     ],
@@ -363,7 +366,8 @@
     "path_args": ["images"]
   },
   {
-    "name": "testdata: rename with built-in file hash variables (SHA256 and SHA512)",
+    "name": "rename with built-in file hash variables (SHA256 and SHA512)",
+    "setup": ["testdata"],
     "want": [
       "proraw.dng|55195ff447785e9af9dea2b0e4f3dc1e991f19dc224413f7a3e5718efb980d99_d53831330e6a70899ad36cbde793284d2cd0332ef090cf20dae86299ec9b8f5b50e06becd8bfadb65fce001d3fedb811d02d751cd9a8279cbaf88b46d25b6408|images"
     ],
@@ -463,25 +467,29 @@
     "path_args": ["images"]
   },
   {
-    "name": "golden: test conflict reporting table output",
+    "name": "test conflict reporting table output",
+    "setup": ["golden"],
     "args": "-f 'flac|mp3' -r ogg",
     "path_args": ["audio"],
     "golden_file": "conflicts"
   },
   {
-    "name": "golden: test dry run table output",
+    "name": "test dry run table output",
+    "setup": ["golden"],
     "args": "-f 'flac|mp3|ogg|_' -e",
     "path_args": ["audio"],
     "golden_file": "dry_run"
   },
   {
-    "name": "golden: test error handling",
+    "name": "test error handling output",
+    "setup": ["golden"],
     "args": "-f 'flac|mp3|ogg|_' -e",
     "path_args": ["audio"],
     "golden_file": "dry_run"
   },
   {
-    "name": "testdata: sort by size (ascending order)",
+    "name": "sort by size (ascending order)",
+    "setup": ["testdata"],
     "want": [
       "bike.jpeg|001.jpeg|images",
       "proraw.dng|002.dng|images",
@@ -491,7 +499,8 @@
     "path_args": ["images"]
   },
   {
-    "name": "testdata: sort by size (descending order)",
+    "name": "sort by size (descending order)",
+    "setup": ["testdata"],
     "want": [
       "tractor-raw.cr2|001.cr2|images",
       "proraw.dng|002.dng|images",
@@ -525,7 +534,8 @@
     "path_args": ["images"]
   },
   {
-    "name": "testdata: use exiftool variables for renaming",
+    "name": "use exiftool variables for renaming",
+    "setup": ["testdata"],
     "want": [
       "proraw.dng|69.4 deg_32_iPhone 12 Pro Max back triple camera 5.1mm f_1.6|images"
     ],
@@ -576,7 +586,8 @@
   },
 
   {
-    "name": "setup: rename with file date variables",
+    "name": "rename with file date variables",
+    "setup": ["date variables"],
     "want": ["green-mile_1999.mp4|Apr-10-2023.mp4|movies"],
     "args": "-f green-mile_1999 -r {{mtime.MMM}}-{{mtime.DD}}-{{atime.YYYY}}",
     "path_args": ["movies"]
