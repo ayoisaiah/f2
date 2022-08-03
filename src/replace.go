@@ -15,15 +15,15 @@ type numbersToSkip struct {
 }
 
 type numberVarVal struct {
-	regex       *regexp.Regexp
-	startNumber int
-	index       string
-	format      string
-	step        struct {
+	regex  *regexp.Regexp
+	index  string
+	format string
+	skip   []numbersToSkip
+	step   struct {
 		isSet bool
 		value int
 	}
-	skip []numbersToSkip
+	startNumber int
 }
 
 type numberVar struct {
@@ -86,8 +86,8 @@ type randomVar struct {
 	submatches [][]string
 	values     []struct {
 		regex      *regexp.Regexp
-		length     int
 		characters string
+		length     int
 	}
 }
 
@@ -476,8 +476,8 @@ func getRandomVar(replacementInput string) (randomVar, error) {
 
 			var val struct {
 				regex      *regexp.Regexp
-				length     int
 				characters string
+				length     int
 			}
 
 			val.length = 10

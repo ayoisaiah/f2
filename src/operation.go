@@ -64,61 +64,57 @@ const (
 
 // Change represents a single filename change.
 type Change struct {
-	index          int
 	originalSource string
-	csvRow         []string
+	status         renameStatus
 	BaseDir        string `json:"base_dir"`
 	Source         string `json:"source"`
 	Target         string `json:"target"`
-	IsDir          bool   `json:"is_dir"`
-	WillOverwrite  bool   `json:"will_overwrite"`
-	status         renameStatus
 	Error          string `json:"error,omitempty"`
+	csvRow         []string
+	index          int
+	IsDir          bool `json:"is_dir"`
+	WillOverwrite  bool `json:"will_overwrite"`
 }
 
 // Operation represents a batch renaming operation.
 type Operation struct {
-	paths              []Change
-	matches            []Change
-	conflicts          map[conflictType][]Conflict
-	findSlice          []string
-	replacement        string
-	replacementSlice   []string
-	startNumber        int
-	exec               bool
-	fixConflicts       bool
-	includeHidden      bool
-	includeDir         bool
-	onlyDir            bool
-	ignoreCase         bool
-	ignoreExt          bool
+	date               time.Time
+	stdin              io.Reader
+	stderr             io.Writer
+	stdout             io.Writer
 	searchRegex        *regexp.Regexp
-	pathsToFilesOrDirs []string
-	recursive          bool
+	conflicts          map[conflictType][]Conflict
+	csvFilename        string
+	sort               string
+	replacement        string
 	workingDir         string
-	// when the operation was carried out
-	date              time.Time
-	stringLiteralMode bool
-	excludeFilter     []string
-	maxDepth          int
-	sort              string
-	reverseSort       bool
-	errors            []int
-	revert            bool
-	// numberOffset is used to calculate the next number
-	// in an indexing sequence when numbers to skip
-	// are specified in the index variable
-	numberOffset    []int
-	replaceLimit    int
-	allowOverwrites bool
-	verbose         bool
-	csvFilename     string
-	quiet           bool
-	stdout          io.Writer
-	stderr          io.Writer
-	stdin           io.Reader
-	simpleMode      bool
-	json            bool
+	matches            []Change
+	errors             []int
+	findSlice          []string
+	excludeFilter      []string
+	replacementSlice   []string
+	pathsToFilesOrDirs []string
+	numberOffset       []int
+	paths              []Change
+	maxDepth           int
+	startNumber        int
+	replaceLimit       int
+	recursive          bool
+	ignoreCase         bool
+	reverseSort        bool
+	onlyDir            bool
+	revert             bool
+	includeDir         bool
+	ignoreExt          bool
+	allowOverwrites    bool
+	verbose            bool
+	includeHidden      bool
+	quiet              bool
+	fixConflicts       bool
+	exec               bool
+	stringLiteralMode  bool
+	simpleMode         bool
+	json               bool
 }
 
 type backupFile struct {
@@ -128,12 +124,12 @@ type backupFile struct {
 }
 
 type jsonOutput struct {
+	Conflicts  map[conflictType][]Conflict `json:"conflicts,omitempty"`
 	WorkingDir string                      `json:"working_dir"`
 	Date       string                      `json:"date"`
-	DryRun     bool                        `json:"dry_run"`
 	Changes    []Change                    `json:"changes"`
-	Conflicts  map[conflictType][]Conflict `json:"conflicts,omitempty"`
 	Errors     []int                       `json:"errors,omitempty"`
+	DryRun     bool                        `json:"dry_run"`
 }
 
 // writeToFile writes the details of a successful operation

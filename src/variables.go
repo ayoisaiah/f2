@@ -54,22 +54,22 @@ const (
 
 // Exif represents exif information from an image file.
 type Exif struct {
-	ISOSpeedRatings       []int
+	Latitude              string
 	DateTimeOriginal      string
 	Make                  string
 	Model                 string
-	ExposureTime          []string
-	FocalLength           []string
-	FNumber               []string
-	ImageWidth            []int
-	ImageLength           []int // the image height
-	LensModel             string
+	Longitude             string
 	Software              string
+	LensModel             string
+	ImageLength           []int
+	ImageWidth            []int
+	FNumber               []string
+	FocalLength           []string
 	FocalLengthIn35mmFilm []int
 	PixelYDimension       []int
 	PixelXDimension       []int
-	Longitude             string
-	Latitude              string
+	ExposureTime          []string
+	ISOSpeedRatings       []int
 }
 
 // ID3 represents id3 data from an audio file.
@@ -203,22 +203,22 @@ func integerToRoman(integer int) string {
 	}
 
 	conversions := []struct {
-		value int
 		digit string
+		value int
 	}{
-		{1000, "M"},
-		{900, "CM"},
-		{500, "D"},
-		{400, "CD"},
-		{100, "C"},
-		{90, "XC"},
-		{50, "L"},
-		{40, "XL"},
-		{10, "X"},
-		{9, "IX"},
-		{5, "V"},
-		{4, "IV"},
-		{1, "I"},
+		{"M", 1000},
+		{"CM", 900},
+		{"D", 500},
+		{"CD", 400},
+		{"C", 100},
+		{"XC", 90},
+		{"L", 50},
+		{"XL", 40},
+		{"X", 10},
+		{"IX", 9},
+		{"V", 5},
+		{"IV", 4},
+		{"I", 1},
 	}
 
 	var roman strings.Builder

@@ -20,6 +20,9 @@ linters-settings:
         checks: argument,case,condition,return
   govet:
     check-shadowing: true
+    enable:
+      - fieldalignment
+
   nolintlint:
     require-explanation: true
     require-specific: true
@@ -75,11 +78,11 @@ issues:
         - gosec
         - dupl
     - linters:
-      - gosec
-      text: "weak cryptographic primitive"
+        - gosec
+      text: 'weak cryptographic primitive'
     - linters:
-      - stylecheck
-      text: "error strings should not be capitalized"
+        - stylecheck
+      text: 'error strings should not be capitalized'
 
   max-issues-per-linter: 0
   max-same-issues: 0

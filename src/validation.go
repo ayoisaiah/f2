@@ -50,9 +50,9 @@ const (
 // Conflict represents a renaming operation conflict
 // such as duplicate targets or empty filenames.
 type Conflict struct {
-	Sources []string `json:"sources"`
 	Target  string   `json:"target"`
 	Cause   string   `json:"cause"`
+	Sources []string `json:"sources"`
 }
 
 // newTarget appends a number to the target file name so that it
