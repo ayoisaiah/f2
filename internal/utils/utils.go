@@ -1,4 +1,4 @@
-package f2
+package utils
 
 import (
 	"encoding/csv"
@@ -11,27 +11,9 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func removeHidden(
-	de []os.DirEntry,
-	baseDir string,
-) (ret []os.DirEntry, err error) {
-	for _, e := range de {
-		r, err := isHidden(e.Name(), baseDir)
-		if err != nil {
-			return nil, err
-		}
-
-		if !r {
-			ret = append(ret, e)
-		}
-	}
-
-	return ret, nil
-}
-
 // contains checks if a string is present in
 // a string slice.
-func contains(s []string, e string) bool {
+func Contains(s []string, e string) bool {
 	for _, a := range s {
 		if a == e {
 			return true
@@ -41,7 +23,7 @@ func contains(s []string, e string) bool {
 	return false
 }
 
-func containsInt(sl []int, i int) bool {
+func ContainsInt(sl []int, i int) bool {
 	for _, v := range sl {
 		if v == i {
 			return true
@@ -51,7 +33,7 @@ func containsInt(sl []int, i int) bool {
 	return false
 }
 
-func printTable(data [][]string, w io.Writer) {
+func PrintTable(data [][]string, writer io.Writer) {
 	d := [][]string{
 		{"ORIGINAL", "RENAMED", "STATUS"},
 	}
@@ -68,30 +50,31 @@ func printTable(data [][]string, w io.Writer) {
 		return
 	}
 
-	fmt.Fprintln(w, str)
+	fmt.Fprintln(writer, str)
 }
 
 // filenameWithoutExtension returns the input file name
 // without its extension.
-func filenameWithoutExtension(fileName string) string {
+func FilenameWithoutExtension(fileName string) string {
 	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }
 
-func prettyPrint(i interface{}) string {
+func PrettyPrint(i interface{}) string {
+	//nolint:errchkjson // no need to check error
 	s, _ := json.MarshalIndent(i, "", "\t")
 	return string(s)
 }
 
-func greatestCommonDivisor(a, b int) int {
+func GreatestCommonDivisor(a, b int) int {
 	precision := 0.0001
 	if float64(b) < precision {
 		return a
 	}
 
-	return greatestCommonDivisor(b, a%b)
+	return GreatestCommonDivisor(b, a%b)
 }
 
-func readCSVFile(filePath string) ([][]string, error) {
+func ReadCSVFile(filePath string) ([][]string, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err

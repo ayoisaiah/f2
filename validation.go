@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/pterm/pterm"
+
+	"github.com/ayoisaiah/f2/internal/utils"
 )
 
 var (
@@ -36,15 +38,15 @@ const (
 	unixMaxBytes = 255
 )
 
-type conflictType string
+type ConflictType string
 
 const (
-	emptyFilename             conflictType = "emptyFilename"
-	fileExists                conflictType = "fileExists"
-	overwritingNewPath        conflictType = "overwritingNewPath"
-	maxFilenameLengthExceeded conflictType = "maxFilenameLengthExceeded"
-	invalidCharacters         conflictType = "invalidCharacters"
-	trailingPeriod            conflictType = "trailingPeriod"
+	emptyFilename             ConflictType = "emptyFilename"
+	fileExists                ConflictType = "fileExists"
+	overwritingNewPath        ConflictType = "overwritingNewPath"
+	maxFilenameLengthExceeded ConflictType = "maxFilenameLengthExceeded"
+	invalidCharacters         ConflictType = "invalidCharacters"
+	trailingPeriod            ConflictType = "trailingPeriod"
 )
 
 // Conflict represents a renaming operation conflict
@@ -62,21 +64,21 @@ func newTarget(ch *Change, renamedPaths map[string][]struct {
 	sourcePath string
 	index      int
 }) string {
-	f := filenameWithoutExtension(filepath.Base(ch.Target))
-	re := regexp.MustCompile(`\(\d+\)$`)
+	fileNoExt := utils.FilenameWithoutExtension(filepath.Base(ch.Target))
+	regex := regexp.MustCompile(`\(\d+\)$`)
 	// Extract the numbered index at the end of the filename (if any)
-	match := re.FindStringSubmatch(f)
+	match := regex.FindStringSubmatch(fileNoExt)
 	num := 2
 
 	if len(match) > 0 {
 		_, _ = fmt.Sscanf(match[0], "(%d)", &num)
 		num++
 	} else {
-		f += " (" + strconv.Itoa(num) + ")"
+		fileNoExt += " (" + strconv.Itoa(num) + ")"
 	}
 
 	for {
-		target := re.ReplaceAllString(f, "("+strconv.Itoa(num)+")")
+		target := regex.ReplaceAllString(fileNoExt, "("+strconv.Itoa(num)+")")
 		target += filepath.Ext(ch.Target)
 		target = filepath.Join(filepath.Dir(ch.Target), target)
 		targetPath := filepath.Join(ch.BaseDir, target)
@@ -188,14 +190,14 @@ func (op *Operation) reportConflicts() {
 		}
 	}
 
-	printTable(data, op.stdout)
+	utils.PrintTable(data, op.stdout)
 }
 
 // detectConflicts detects any conflicts that occur
 // after renaming a file. Conflicts are automatically
 // fixed if specified in the operation.
 func (op *Operation) detectConflicts() {
-	op.conflicts = make(map[conflictType][]Conflict)
+	op.conflicts = make(map[ConflictType][]Conflict)
 
 	// renamedPaths is used to detect overwriting file paths
 	// after the renaming operation. The key of the map
@@ -353,10 +355,10 @@ func (op *Operation) checkOverwritingPathConflict(
 	},
 ) {
 	// Report duplicate targets if any
-	for k, v := range renamedPaths {
-		if len(v) > 1 {
+	for targetPath, source := range renamedPaths {
+		if len(source) > 1 {
 			var sources []string
-			for _, s := range v {
+			for _, s := range source {
 				sources = append(sources, s.sourcePath)
 				op.matches[s.index].status = statusOverwritingNewPath
 			}
@@ -365,13 +367,13 @@ func (op *Operation) checkOverwritingPathConflict(
 				op.conflicts[overwritingNewPath],
 				Conflict{
 					Sources: sources,
-					Target:  k,
+					Target:  targetPath,
 				},
 			)
 
 			if op.fixConflicts {
-				for i := 0; i < len(v); i++ {
-					item := v[i]
+				for i := 0; i < len(source); i++ {
+					item := source[i]
 
 					if i == 0 {
 						continue
@@ -406,7 +408,7 @@ func (op *Operation) checkOverwritingPathConflict(
 // checkForbiddenCharacters is responsible for ensuring that target file names
 // do not contain forbidden characters for the current OS.
 func checkForbiddenCharacters(path string) error {
-	if runtime.GOOS == windows {
+	if runtime.GOOS == Windows {
 		if partialWindowsForbiddenCharRegex.MatchString(path) {
 			return errors.New(
 				strings.Join(
@@ -417,7 +419,7 @@ func checkForbiddenCharacters(path string) error {
 		}
 	}
 
-	if runtime.GOOS == darwin {
+	if runtime.GOOS == Darwin {
 		if strings.Contains(path, ":") {
 			return fmt.Errorf("%s", ":")
 		}
@@ -433,10 +435,10 @@ func checktTargetLength(target string) error {
 	filename := filepath.Base(target)
 
 	// max length of 260 characters in windows
-	if runtime.GOOS == windows &&
+	if runtime.GOOS == Windows &&
 		len([]rune(filename)) > windowsMaxLength {
 		return fmt.Errorf("%d characters", windowsMaxLength)
-	} else if runtime.GOOS != windows && len([]byte(filename)) > unixMaxBytes {
+	} else if runtime.GOOS != Windows && len([]byte(filename)) > unixMaxBytes {
 		// max length of 255 bytes on Linux and other unix-based OSes
 		return fmt.Errorf("%d bytes", unixMaxBytes)
 	}
@@ -452,7 +454,7 @@ func (op *Operation) checkTrailingPeriodConflict(
 ) bool {
 	var conflictDetected bool
 
-	if runtime.GOOS == windows {
+	if runtime.GOOS == Windows {
 		strSlice := strings.Split(target, pathSeperator)
 		for _, v := range strSlice {
 			s := strings.TrimRight(v, ".")
@@ -506,11 +508,11 @@ func (op *Operation) checkPathLengthConflict(
 		op.matches[i].status = statusFilenameLengthExceeded
 
 		if op.fixConflicts {
-			if runtime.GOOS == windows {
+			if runtime.GOOS == Windows {
 				// trim filename so that it's less than 260 characters
 				filename := []rune(filepath.Base(target))
 				ext := []rune(filepath.Ext(string(filename)))
-				f := []rune(filenameWithoutExtension(string(filename)))
+				f := []rune(utils.FilenameWithoutExtension(string(filename)))
 				index := windowsMaxLength - len(ext)
 				f = f[:index]
 				op.matches[i].Target = filepath.Join(string(f), string(ext))
@@ -518,19 +520,19 @@ func (op *Operation) checkPathLengthConflict(
 				// trim filename so that it's no more than 255 bytes
 				filename := filepath.Base(target)
 				ext := filepath.Ext(filename)
-				f := filenameWithoutExtension(filename)
+				fileNoExt := utils.FilenameWithoutExtension(filename)
 				index := unixMaxBytes - len([]byte(ext))
 				for {
-					if len([]byte(f)) > index {
-						frune := []rune(f)
-						f = string(frune[:len(frune)-1])
+					if len([]byte(fileNoExt)) > index {
+						frune := []rune(fileNoExt)
+						fileNoExt = string(frune[:len(frune)-1])
 						continue
 					}
 
 					break
 				}
 
-				op.matches[i].Target = f + ext
+				op.matches[i].Target = fileNoExt + ext
 				op.matches[i].status = statusOK
 			}
 		}
@@ -560,14 +562,14 @@ func (op *Operation) checkForbiddenCharactersConflict(
 		op.matches[i].status = statusInvalidCharacters
 
 		if op.fixConflicts {
-			if runtime.GOOS == windows {
+			if runtime.GOOS == Windows {
 				op.matches[i].Target = partialWindowsForbiddenCharRegex.ReplaceAllString(
 					target,
 					"",
 				)
 			}
 
-			if runtime.GOOS == darwin {
+			if runtime.GOOS == Darwin {
 				op.matches[i].Target = strings.ReplaceAll(
 					target,
 					":",

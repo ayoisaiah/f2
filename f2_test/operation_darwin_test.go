@@ -1,7 +1,7 @@
 //go:build darwin
 // +build darwin
 
-package f2
+package f2_test
 
 import "testing"
 

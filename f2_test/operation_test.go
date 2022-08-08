@@ -1,15 +1,14 @@
-package f2
+package f2_test
 
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
+	stdpath "path"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -22,18 +21,30 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	shellquote "github.com/kballard/go-shellquote"
-	"github.com/pterm/pterm"
 	"github.com/sebdah/goldie/v2"
+
+	"github.com/ayoisaiah/f2"
+	"github.com/ayoisaiah/f2/internal/utils"
 )
 
 func init() {
+	//nolint:dogsled // necessary for testing setup
+	_, filename, _, _ := runtime.Caller(0)
+
+	dir := stdpath.Join(stdpath.Dir(filename), "..")
+
+	err := os.Chdir(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	workingDir, err := filepath.Abs(".")
 	if err != nil {
 		log.Fatalf("Unable to retrieve working directory: %v", err)
 	}
 
 	workingDir = strings.ReplaceAll(workingDir, "/", "_")
-	if runtime.GOOS == windows {
+	if runtime.GOOS == f2.Windows {
 		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
@@ -48,15 +59,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-var testFixtures = filepath.Join("..", "testdata")
-
-type testCase struct {
-	name           string
-	want           []Change
-	args           string
-	undoArgs       []string
-	expectedErrors []int
-}
+var testFixtures = "testdata"
 
 var (
 	backupFilePath string
@@ -96,10 +99,7 @@ var fileSystem = []string{
 func setupFileSystem(tb testing.TB) string {
 	tb.Helper()
 
-	testDir, err := ioutil.TempDir(".", "")
-	if err != nil {
-		tb.Fatalf("Unable to create temporary directory for test: %v", err)
-	}
+	testDir := tb.TempDir()
 
 	absPath, err := filepath.Abs(testDir)
 	if err != nil {
@@ -148,19 +148,10 @@ func setupFileSystem(tb testing.TB) string {
 	return absPath
 }
 
-type testResult struct {
-	changes         []Change
-	conflicts       map[conflictType][]Conflict
-	backupFile      string
-	applyError      error
-	operationErrors []int
-	output          *bytes.Buffer
-}
-
 func newTestRun(args []string) ([]byte, error) {
 	var buf bytes.Buffer
 
-	app := GetApp(os.Stdin, &buf)
+	app := f2.GetApp(os.Stdin, &buf)
 
 	err := app.Run(args)
 	if err != nil {
@@ -170,37 +161,7 @@ func newTestRun(args []string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func testRun(args []string) (testResult, error) {
-	var result testResult
-
-	var buf bytes.Buffer
-
-	app := GetApp(os.Stdin, &buf)
-
-	pterm.DisableOutput()
-
-	err := app.Run(args)
-
-	v, ok := app.Metadata["op"]
-	if !ok {
-		return result, fmt.Errorf("Unable to access test result: %w", err)
-	}
-
-	op, ok := v.(*Operation)
-	if !ok {
-		return result, fmt.Errorf("Unable to assert test operation: %w", err)
-	}
-
-	result.changes = op.matches
-	result.backupFile = backupFilePath
-	result.conflicts = op.conflicts
-	result.operationErrors = op.errors
-	result.output = &buf
-
-	return result, err
-}
-
-func sortChanges(s []Change) {
+func sortChanges(s []f2.Change) {
 	sort.Slice(s, func(i, j int) bool {
 		return s[i].Source < s[j].Source
 	})
@@ -213,7 +174,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 
 	copy(result, os.Args)
 
-	if runtime.GOOS == windows {
+	if runtime.GOOS == f2.Windows {
 		args = strings.ReplaceAll(args, `\`, `₦`)
 	}
 
@@ -227,7 +188,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 		)
 	}
 
-	if runtime.GOOS == windows {
+	if runtime.GOOS == f2.Windows {
 		for i, v := range argsSlice {
 			argsSlice[i] = strings.ReplaceAll(v, `₦`, `\`)
 		}
@@ -239,15 +200,15 @@ func parseArgs(t *testing.T, name, args string) []string {
 }
 
 type TestCase struct {
-	Name        string                      `json:"name"`
-	Changes     []Change                    `json:"changes"`
-	Want        []string                    `json:"want"`
-	Args        string                      `json:"args"`
-	PathArgs    []string                    `json:"path_args"`
-	Conflicts   map[conflictType][]Conflict `json:"conflicts"`
-	DefaultOpts string                      `json:"default_opts"`
-	GoldenFile  string                      `json:"golden_file"`
-	Setup       []string                    `json:"setup"`
+	Name        string                            `json:"name"`
+	Changes     []f2.Change                       `json:"changes"`
+	Want        []string                          `json:"want"`
+	Args        string                            `json:"args"`
+	PathArgs    []string                          `json:"path_args"`
+	Conflicts   map[f2.ConflictType][]f2.Conflict `json:"conflicts"`
+	DefaultOpts string                            `json:"default_opts"`
+	GoldenFile  string                            `json:"golden_file"`
+	Setup       []string                          `json:"setup"`
 }
 
 func retrieveTestCases(t *testing.T, filename string) []TestCase {
@@ -269,7 +230,7 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 		tc := cases[i]
 
 		for _, v := range tc.Want {
-			var ch Change
+			var ch f2.Change
 
 			tokens := strings.Split(v, "|")
 
@@ -322,25 +283,25 @@ func preTestSetup(
 ) (string, error) {
 	t.Helper()
 
-	if contains(setup, "testdata") || contains(setup, "golden") {
+	if utils.Contains(setup, "testdata") || utils.Contains(setup, "golden") {
 		testDir = testFixtures
 	}
 
-	if contains(setup, "windows_hidden") {
+	if utils.Contains(setup, "windows_hidden") {
 		err := setHidden(filepath.Join(testDir, "images"))
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	if contains(setup, "exiftool") {
+	if utils.Contains(setup, "exiftool") {
 		_, err := exec.LookPath("exiftool")
 		if err != nil {
 			t.SkipNow()
 		}
 	}
 
-	if contains(setup, "date variables") {
+	if utils.Contains(setup, "date variables") {
 		mtime := time.Date(2022, time.April, 10, 13, 0, 0, 0, time.UTC)
 		atime := time.Date(2023, time.July, 11, 13, 0, 0, 0, time.UTC)
 
@@ -376,7 +337,7 @@ func runTestCases(t *testing.T, cases []TestCase) {
 			}
 
 			if tc.DefaultOpts != "" {
-				os.Setenv(envDefaultOpts, tc.DefaultOpts)
+				os.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
 			}
 
 			for j := range tc.Changes {
@@ -409,7 +370,8 @@ func runTestCases(t *testing.T, cases []TestCase) {
 
 			var cargs string
 
-			if contains(tc.Setup, "golden") {
+			//nolint:gocritic // if-else more appropriate
+			if utils.Contains(tc.Setup, "golden") {
 				cargs = tc.Args + " --no-color " + pathArgs
 			} else if strings.Contains(tc.Args, "-") {
 				cargs = tc.Args + " --json " + pathArgs
@@ -421,14 +383,15 @@ func runTestCases(t *testing.T, cases []TestCase) {
 
 			result, err := newTestRun(args)
 			if err != nil {
-				if len(tc.Conflicts) == 0 && !contains(tc.Setup, "golden") {
+				if len(tc.Conflicts) == 0 &&
+					!utils.Contains(tc.Setup, "golden") {
 					t.Log(string(result))
 					t.Fatal(err)
 				}
 			}
 
 			if tc.DefaultOpts != "" {
-				os.Setenv(envDefaultOpts, "")
+				os.Setenv(f2.EnvDefaultOpts, "")
 			}
 
 			for k, v := range tc.Conflicts {
@@ -444,7 +407,7 @@ func runTestCases(t *testing.T, cases []TestCase) {
 				}
 			}
 
-			if contains(tc.Setup, "golden") {
+			if utils.Contains(tc.Setup, "golden") {
 				g := goldie.New(
 					t,
 					goldie.WithFixtureDir(testFixtures),
@@ -461,9 +424,9 @@ func runTestCases(t *testing.T, cases []TestCase) {
 func jsonTest(t *testing.T, tc *TestCase, result []byte) {
 	t.Helper()
 
-	var o jsonOutput
+	var output f2.JSONOutput
 
-	err := json.Unmarshal(result, &o)
+	err := json.Unmarshal(result, &output)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,13 +434,13 @@ func jsonTest(t *testing.T, tc *TestCase, result []byte) {
 	if len(tc.Conflicts) > 0 {
 		if !cmp.Equal(
 			tc.Conflicts,
-			o.Conflicts,
+			output.Conflicts,
 		) {
 			t.Fatalf(
 				"Test (%s) — Expected: %+v, got: %+v\n",
 				tc.Name,
 				tc.Conflicts,
-				o.Conflicts,
+				output.Conflicts,
 			)
 		}
 
@@ -485,19 +448,19 @@ func jsonTest(t *testing.T, tc *TestCase, result []byte) {
 	}
 
 	sortChanges(tc.Changes)
-	sortChanges(o.Changes)
+	sortChanges(output.Changes)
 
 	if !cmp.Equal(
 		tc.Changes,
-		o.Changes,
-		cmpopts.IgnoreUnexported(Change{}),
+		output.Changes,
+		cmpopts.IgnoreUnexported(f2.Change{}),
 	) &&
 		len(tc.Changes) != 0 {
 		t.Fatalf(
 			"Test (%s) -> Expected results to be: %s, but got: %s\n",
 			tc.Name,
-			prettyPrint(tc.Changes),
-			prettyPrint(o.Changes),
+			utils.PrettyPrint(tc.Changes),
+			utils.PrettyPrint(output.Changes),
 		)
 	}
 }
@@ -507,186 +470,8 @@ func TestAllOSes(t *testing.T) {
 	runTestCases(t, cases)
 }
 
-func TestApplyUndo(t *testing.T) {
-	table := []testCase{
-		{
-			want: []Change{
-				{
-					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					Target:  "1.mkv",
-					BaseDir: "movies",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					Target:  "2.mkv",
-					BaseDir: "movies",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					Target:  "3.mkv",
-					BaseDir: "movies",
-				},
-			},
-			args:     "-f .*E(\\d+).* -r $1.mkv -x -R",
-			undoArgs: []string{"-u", "-x"},
-		},
-		{
-			want: []Change{
-				{Source: "ebooks", IsDir: true, Target: "pdfs"},
-			},
-			args:     "-f ebooks -r pdfs -d -x",
-			undoArgs: []string{"-u", "-x"},
-		},
-	}
-
-	for i, v := range table {
-		testDir := setupFileSystem(t)
-
-		for i := range v.want {
-			v.want[i].BaseDir = testDir
-		}
-
-		argsSlice := strings.Split(v.args, " ")
-		argsSlice = append(argsSlice, testDir)
-
-		args := os.Args[0:1]
-		args = append(args, argsSlice...)
-		result, _ := testRun(args) // err will be nil
-
-		if len(result.conflicts) > 0 {
-			t.Fatalf(
-				"Test(%d) — Expected no conflicts but got some: %v",
-				i+1,
-				result.conflicts,
-			)
-		}
-
-		if result.applyError != nil {
-			t.Fatalf(
-				"Test(%d) — Unexpected apply error: %v\n",
-				i+1,
-				result.applyError,
-			)
-		}
-
-		// Test if the backup file was written successfully
-		if result.backupFile != "" {
-			file, err := os.ReadFile(result.backupFile)
-			if err != nil {
-				t.Fatalf(
-					"Test (%s) — Unexpected error when trying to read backup file: %v\n",
-					v.name,
-					err,
-				)
-			}
-
-			var bf backupFile
-
-			err = json.Unmarshal(file, &bf)
-			if err != nil {
-				t.Fatalf(
-					"Test (%s) — Unexpected error when trying to unmarshal map file contents: %v\n",
-					v.name,
-					err,
-				)
-			}
-
-			ch := bf.Operations
-
-			sortChanges(ch)
-
-			if !cmp.Equal(v.want, ch, cmpopts.IgnoreUnexported(Change{})) &&
-				len(v.want) != 0 {
-				t.Fatalf(
-					"Test (%s) — Expected: %+v, got: %+v\n",
-					v.name,
-					prettyPrint(v.want),
-					prettyPrint(ch),
-				)
-			}
-		}
-
-		// Test Undo function
-		args = os.Args[0:1]
-		args = append(args, v.undoArgs...)
-
-		result, err := testRun(args)
-		if err != nil {
-			t.Fatalf("Test(%d) — Unexpected error in undo mode: %v\n", i+1, err)
-		}
-
-		if _, err := os.Stat(result.backupFile); err == nil ||
-			errors.Is(err, os.ErrExist) {
-			t.Fatalf(
-				"Test (%d) - Backup file was not removed after undo operation: %v",
-				i+1,
-				err,
-			)
-		}
-	}
-}
-
-func TestHandleErrors(t *testing.T) {
-	testDir := setupFileSystem(t)
-
-	cases := []testCase{
-		{
-			name: "Replace Pressure with Limits in string mode",
-			want: []Change{
-				{
-					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E1.1080p.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E2.1080p.mkv",
-				},
-				{
-					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
-					BaseDir: testDir,
-					Target:  "No Limits (2021) S1.E3.1080p.mkv",
-					Error:   "renaming failed",
-				},
-			},
-			expectedErrors: []int{2},
-			args:           "-f Pressure -r Limits -s " + testDir,
-		},
-	}
-
-	for _, tc := range cases {
-		var buf bytes.Buffer
-
-		op := &Operation{
-			stdout: &buf,
-		}
-		op.matches = tc.want
-		op.errors = tc.expectedErrors
-
-		err := op.handleErrors()
-		if err == nil {
-			t.Fatalf(
-				"Expected case '%s' to yield an error, but got nil",
-				tc.name,
-			)
-		}
-
-		str, err := op.retrieveBackupFile()
-		if err != nil {
-			t.Fatalf(
-				"Test (%s) -> Error while retrieving backup file: %v",
-				tc.name,
-				err,
-			)
-		}
-
-		os.Remove(str)
-	}
-}
-
 func TestShortHelp(t *testing.T) {
-	help := shortHelp(newApp())
+	help := f2.ShortHelp(f2.NewApp())
 
 	g := goldie.New(t, goldie.WithFixtureDir(testFixtures))
 	g.Assert(t, "help", []byte(help))

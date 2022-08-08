@@ -108,7 +108,7 @@ func (op *Operation) sortPaths(
 	paths map[string][]os.DirEntry,
 	sorted bool,
 ) []Change {
-	var p []Change
+	var sortedPaths []Change
 
 	if sorted {
 		type KeyValue struct {
@@ -117,23 +117,31 @@ func (op *Operation) sortPaths(
 		}
 
 		// create an empty slice of key-value pairs
-		s := make([]KeyValue, 0, len(paths))
+		dirPaths := make([]KeyValue, 0, len(paths))
 		// append all map keys-value pairs to the slice
 		for k, v := range paths {
-			s = append(s, KeyValue{k, v})
+			dirPaths = append(dirPaths, KeyValue{k, v})
 		}
 
 		// sort map keys
-		sort.SliceStable(s, func(i, j int) bool {
+		sort.SliceStable(dirPaths, func(i, j int) bool {
 			if op.reverseSort {
-				return strings.ToLower(s[i].Key) > strings.ToLower(s[j].Key)
+				return strings.ToLower(
+					dirPaths[i].Key,
+				) > strings.ToLower(
+					dirPaths[j].Key,
+				)
 			}
 
-			return strings.ToLower(s[i].Key) < strings.ToLower(s[j].Key)
+			return strings.ToLower(
+				dirPaths[i].Key,
+			) < strings.ToLower(
+				dirPaths[j].Key,
+			)
 		})
 
-		for _, v := range s {
-			k := v.Key
+		for _, v := range dirPaths {
+			dirPath := v.Key
 			val := paths[v.Key]
 
 			// sort directory entries
@@ -155,17 +163,17 @@ func (op *Operation) sortPaths(
 
 			for _, f := range val {
 				var change = Change{
-					BaseDir:        k,
+					BaseDir:        dirPath,
 					IsDir:          f.IsDir(),
 					Source:         filepath.Clean(f.Name()),
 					originalSource: filepath.Clean(f.Name()),
 				}
 
-				p = append(p, change)
+				sortedPaths = append(sortedPaths, change)
 			}
 		}
 
-		return p
+		return sortedPaths
 	}
 
 	for k, v := range paths {
@@ -177,11 +185,11 @@ func (op *Operation) sortPaths(
 				originalSource: filepath.Clean(f.Name()),
 			}
 
-			p = append(p, change)
+			sortedPaths = append(sortedPaths, change)
 		}
 	}
 
-	return p
+	return sortedPaths
 }
 
 // sortBy delegates the sorting of matches to the appropriate method.

@@ -5,7 +5,7 @@ import (
 
 	"github.com/pterm/pterm"
 
-	f2 "github.com/ayoisaiah/f2/src"
+	"github.com/ayoisaiah/f2"
 )
 
 func main() {

@@ -1,8 +1,8 @@
 DRY RUN: Commit the changes below with the -x/--exec flag
-┌─────────────────────────────────────────────────────────────────────────────┐
-| ORIGINAL                           | RENAMED                       | STATUS |
-| *************************************************************************** |
-| ../testdata/audio/sample_flac.flac | ../testdata/audio/sample.flac | ok     |
-| ../testdata/audio/sample_mp3.mp3   | ../testdata/audio/sample.mp3  | ok     |
-| ../testdata/audio/sample_ogg.ogg   | ../testdata/audio/sample.ogg  | ok     |
-└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+| ORIGINAL                        | RENAMED                    | STATUS |
+| ********************************************************************* |
+| testdata/audio/sample_flac.flac | testdata/audio/sample.flac | ok     |
+| testdata/audio/sample_mp3.mp3   | testdata/audio/sample.mp3  | ok     |
+| testdata/audio/sample_ogg.ogg   | testdata/audio/sample.ogg  | ok     |
+└───────────────────────────────────────────────────────────────────────┘

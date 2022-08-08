@@ -17,6 +17,8 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
+
+	"github.com/ayoisaiah/f2/internal/utils"
 )
 
 var (
@@ -40,8 +42,8 @@ var (
 )
 
 const (
-	windows = "windows"
-	darwin  = "darwin"
+	Windows = "windows"
+	Darwin  = "darwin"
 )
 
 const (
@@ -62,7 +64,7 @@ const (
 	statusFilenameLengthExceeded renameStatus = "max file name length exceeded: (%s)"
 )
 
-// Change represents a single filename change.
+// Change represents a single match in a renaming operation.
 type Change struct {
 	originalSource string
 	status         renameStatus
@@ -83,7 +85,7 @@ type Operation struct {
 	stderr             io.Writer
 	stdout             io.Writer
 	searchRegex        *regexp.Regexp
-	conflicts          map[conflictType][]Conflict
+	conflicts          map[ConflictType][]Conflict
 	csvFilename        string
 	sort               string
 	replacement        string
@@ -123,8 +125,8 @@ type backupFile struct {
 	Operations []Change `json:"operations"`
 }
 
-type jsonOutput struct {
-	Conflicts  map[conflictType][]Conflict `json:"conflicts,omitempty"`
+type JSONOutput struct {
+	Conflicts  map[ConflictType][]Conflict `json:"conflicts,omitempty"`
 	WorkingDir string                      `json:"working_dir"`
 	Date       string                      `json:"date"`
 	Changes    []Change                    `json:"changes"`
@@ -227,7 +229,7 @@ func (op *Operation) undo(path string) error {
 }
 
 func (op *Operation) getJSONOutput() ([]byte, error) {
-	out := jsonOutput{
+	out := JSONOutput{
 		WorkingDir: op.workingDir,
 		Date:       op.date.Format(time.RFC3339),
 		DryRun:     !op.exec,
@@ -281,7 +283,7 @@ func (op *Operation) printChanges() {
 			data[i] = d
 		}
 
-		printTable(data, op.stdout)
+		utils.PrintTable(data, op.stdout)
 	}
 }
 
@@ -306,7 +308,7 @@ func (op *Operation) rename() {
 		// If target contains a slash, create all missing
 		// directories before renaming the file
 		if strings.Contains(ch.Target, "/") ||
-			strings.Contains(ch.Target, `\`) && runtime.GOOS == windows {
+			strings.Contains(ch.Target, `\`) && runtime.GOOS == Windows {
 			// No need to check if the `dir` exists or if there are several
 			// consecutive slashes since `os.MkdirAll` handles that
 			dir := filepath.Dir(ch.Target)
@@ -388,7 +390,7 @@ func (op *Operation) reportErrors() {
 			data = append(data, d)
 		}
 
-		printTable(data, op.stdout)
+		utils.PrintTable(data, op.stdout)
 	}
 }
 
@@ -421,7 +423,7 @@ func (op *Operation) handleErrors() error {
 // will be written to.
 func (op *Operation) backup() error {
 	workingDir := strings.ReplaceAll(op.workingDir, pathSeperator, "_")
-	if runtime.GOOS == windows {
+	if runtime.GOOS == Windows {
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
 
@@ -561,7 +563,9 @@ func (op *Operation) findMatches() error {
 			}
 
 			if hidden {
-				a, err := filepath.Abs(filepath.Join(ch.BaseDir, filename))
+				absPath1, err := filepath.Abs(
+					filepath.Join(ch.BaseDir, filename),
+				)
 				if err != nil {
 					return err
 				}
@@ -569,12 +573,12 @@ func (op *Operation) findMatches() error {
 				shouldSkip := true
 
 				for _, path := range op.pathsToFilesOrDirs {
-					absPath, err := filepath.Abs(path)
+					absPath2, err := filepath.Abs(path)
 					if err != nil {
 						return err
 					}
 
-					if strings.EqualFold(a, absPath) {
+					if strings.EqualFold(absPath1, absPath2) {
 						shouldSkip = false
 					}
 				}
@@ -587,7 +591,7 @@ func (op *Operation) findMatches() error {
 
 		f := filename
 		if op.ignoreExt && !ch.IsDir {
-			f = filenameWithoutExtension(f)
+			f = utils.FilenameWithoutExtension(f)
 		}
 
 		matched := op.searchRegex.MatchString(f)
@@ -627,7 +631,7 @@ func (op *Operation) filterMatches() error {
 // setPaths creates a Change struct for each path.
 func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 	if op.exec {
-		if !indexRegex.MatchString(op.replacement) {
+		if !indexVarRegex.MatchString(op.replacement) {
 			op.paths = op.sortPaths(paths, false)
 			return
 		}
@@ -647,7 +651,7 @@ func (op *Operation) setPaths(paths map[string][]os.DirEntry) {
 // backup file for the current directory.
 func (op *Operation) retrieveBackupFile() (string, error) {
 	dir := strings.ReplaceAll(op.workingDir, pathSeperator, "_")
-	if runtime.GOOS == windows {
+	if runtime.GOOS == Windows {
 		dir = strings.ReplaceAll(dir, ":", "_")
 	}
 
@@ -768,6 +772,24 @@ func (op *Operation) setFindStringRegex(replacementIndex int) error {
 	return nil
 }
 
+func removeHidden(
+	de []os.DirEntry,
+	baseDir string,
+) (ret []os.DirEntry, err error) {
+	for _, e := range de {
+		r, err := isHidden(e.Name(), baseDir)
+		if err != nil {
+			return nil, err
+		}
+
+		if !r {
+			ret = append(ret, e)
+		}
+	}
+
+	return ret, nil
+}
+
 // walk is used to navigate directories recursively
 // and include their contents in the pool of paths in
 // which to find matches. It respects the following properties
@@ -787,7 +809,7 @@ loop:
 	// The goal of each iteration is to created entries for each
 	// unaccounted directory in the current level
 	for dir, dirContents := range paths {
-		if contains(recursedPaths, dir) {
+		if utils.Contains(recursedPaths, dir) {
 			continue
 		}
 
@@ -836,29 +858,29 @@ loop:
 // handleCSV reads the provided CSV file, and finds all the
 // valid candidates for replacement.
 func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
-	records, err := readCSVFile(op.csvFilename)
+	records, err := utils.ReadCSVFile(op.csvFilename)
 	if err != nil {
 		return err
 	}
 
-	var p []Change
+	var csvPaths []Change
 
-	for i, v := range records {
-		if len(v) == 0 {
+	for i, record := range records {
+		if len(record) == 0 {
 			continue
 		}
 
-		source := strings.TrimSpace(v[0])
+		source := strings.TrimSpace(record[0])
 
 		var targetName string
 
 		var found bool
 
-		if len(v) > 1 {
-			targetName = strings.TrimSpace(v[1])
+		if len(record) > 1 {
+			targetName = strings.TrimSpace(record[1])
 		}
 
-		m := make(map[string]os.FileInfo)
+		pathMap := make(map[string]os.FileInfo)
 
 		for k := range paths {
 			fullPath := source
@@ -869,7 +891,7 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 
 			if f, err := os.Stat(fullPath); err == nil ||
 				errors.Is(err, os.ErrExist) {
-				m[fullPath] = f
+				pathMap[fullPath] = f
 				found = true
 			}
 		}
@@ -885,8 +907,8 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 		}
 
 	loop:
-		for k, f := range m {
-			dir := filepath.Dir(k)
+		for path, fileInfo := range pathMap {
+			dir := filepath.Dir(path)
 
 			vars, err := extractVariables(targetName)
 			if err != nil {
@@ -895,10 +917,10 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 
 			ch := Change{
 				BaseDir:        dir,
-				Source:         filepath.Clean(f.Name()),
-				originalSource: filepath.Clean(f.Name()),
-				csvRow:         v,
-				IsDir:          f.IsDir(),
+				Source:         filepath.Clean(fileInfo.Name()),
+				originalSource: filepath.Clean(fileInfo.Name()),
+				csvRow:         record,
+				IsDir:          fileInfo.IsDir(),
 				Target:         targetName,
 			}
 
@@ -908,20 +930,20 @@ func (op *Operation) handleCSV(paths map[string][]fs.DirEntry) error {
 			}
 
 			// ensure the same the same path is not added more than once
-			for i := range p {
-				v1 := p[i]
+			for i := range csvPaths {
+				v1 := csvPaths[i]
 
 				fullPath := filepath.Join(v1.BaseDir, v1.Source)
-				if fullPath == k {
+				if fullPath == path {
 					break loop
 				}
 			}
 
-			p = append(p, ch)
+			csvPaths = append(csvPaths, ch)
 		}
 	}
 
-	op.paths = p
+	op.paths = csvPaths
 
 	return nil
 }
@@ -1073,23 +1095,23 @@ func newOperation(c *cli.Context) (*Operation, error) {
 
 	var paths = make(map[string][]os.DirEntry)
 
-	for _, v := range op.pathsToFilesOrDirs {
-		var f os.FileInfo
+	for _, path := range op.pathsToFilesOrDirs {
+		var fileInfo os.FileInfo
 
-		v = filepath.Clean(v)
+		path = filepath.Clean(path)
 
 		// Skip paths that have already been processed
-		if _, ok := paths[v]; ok {
+		if _, ok := paths[path]; ok {
 			continue
 		}
 
-		f, err = os.Stat(v)
+		fileInfo, err = os.Stat(path)
 		if err != nil {
 			return nil, err
 		}
 
-		if f.IsDir() {
-			paths[v], err = os.ReadDir(v)
+		if fileInfo.IsDir() {
+			paths[path], err = os.ReadDir(path)
 			if err != nil {
 				return nil, err
 			}
@@ -1097,7 +1119,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 			continue
 		}
 
-		dir := filepath.Dir(v)
+		dir := filepath.Dir(path)
 
 		var dirEntry []fs.DirEntry
 
@@ -1108,11 +1130,11 @@ func newOperation(c *cli.Context) (*Operation, error) {
 
 	entryLoop:
 		for _, entry := range dirEntry {
-			if entry.Name() == f.Name() {
+			if entry.Name() == fileInfo.Name() {
 				// Ensure that the file is not already
 				// present in the directory entry
 				for _, e := range paths[dir] {
-					if e.Name() == f.Name() {
+					if e.Name() == fileInfo.Name() {
 						break entryLoop
 					}
 				}

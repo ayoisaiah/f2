@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	envUpdateNotifier = "F2_UPDATE_NOTIFIER"
-	envNoColor        = "NO_COLOR"
-	envF2NoColor      = "F2_NO_COLOR"
-	envDefaultOpts    = "F2_DEFAULT_OPTS"
+	EnvUpdateNotifier = "F2_UPDATE_NOTIFIER"
+	EnvNoColor        = "NO_COLOR"
+	EnvF2NoColor      = "F2_NO_COLOR"
+	EnvDefaultOpts    = "F2_DEFAULT_OPTS"
 )
 
 // supportedDefaultFlags contains those flags that can be
@@ -33,14 +33,14 @@ var supportedDefaultFlags = []string{
 func getDefaultOptsCtx() *cli.Context {
 	var defaultCtx *cli.Context
 
-	if optsEnv, exists := os.LookupEnv(envDefaultOpts); exists {
+	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
 		var defaultOpts = make([]string, len(os.Args))
 
 		copy(defaultOpts, os.Args)
 
 		defaultOpts = append(defaultOpts[:1], strings.Split(optsEnv, " ")...)
 
-		app := newApp()
+		app := NewApp()
 
 		app.Before = func(c *cli.Context) error {
 			if c.IsSet("find") || c.IsSet("replace") || c.IsSet("csv") ||
@@ -69,7 +69,7 @@ func getDefaultOptsCtx() *cli.Context {
 }
 
 func GetApp(reader io.Reader, writer io.Writer) *cli.App {
-	app := newApp()
+	app := NewApp()
 
 	defaultCtx := getDefaultOptsCtx()
 
@@ -81,26 +81,28 @@ func GetApp(reader io.Reader, writer io.Writer) *cli.App {
 			app.Metadata["simple-mode"] = true
 		}
 
-		if defaultCtx != nil {
-			// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
-			// in the environment
-			for _, v := range supportedDefaultFlags {
-				value := fmt.Sprintf("%v", defaultCtx.Value(v))
+		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
+		// in the environment
+		if defaultCtx == nil {
+			return nil
+		}
 
-				if !c.IsSet(v) && defaultCtx.IsSet(v) {
-					if x, ok := defaultCtx.Value(v).(cli.StringSlice); ok {
-						value = strings.Join(x.Value(), "|")
-					}
+		for _, defaultFlag := range supportedDefaultFlags {
+			value := fmt.Sprintf("%v", defaultCtx.Value(defaultFlag))
 
-					err := c.Set(v, value)
-					if err != nil {
-						pterm.Fprintln(os.Stderr,
-							pterm.Warning.Sprintf(
-								"Unable to set default option for: %s",
-								v,
-							),
-						)
-					}
+			if !c.IsSet(defaultFlag) && defaultCtx.IsSet(defaultFlag) {
+				if x, ok := defaultCtx.Value(defaultFlag).(cli.StringSlice); ok {
+					value = strings.Join(x.Value(), "|")
+				}
+
+				err := c.Set(defaultFlag, value)
+				if err != nil {
+					pterm.Fprintln(os.Stderr,
+						pterm.Warning.Sprintf(
+							"Unable to set default option for: %s",
+							defaultFlag,
+						),
+					)
 				}
 			}
 		}
@@ -113,12 +115,12 @@ func GetApp(reader io.Reader, writer io.Writer) *cli.App {
 
 func init() {
 	// Disable colour output if NO_COLOR is set
-	if _, exists := os.LookupEnv(envNoColor); exists {
+	if _, exists := os.LookupEnv(EnvNoColor); exists {
 		disableStyling()
 	}
 
 	// Disable colour output if F2_NO_COLOR is set
-	if _, exists := os.LookupEnv(envF2NoColor); exists {
+	if _, exists := os.LookupEnv(EnvF2NoColor); exists {
 		disableStyling()
 	}
 
@@ -134,7 +136,7 @@ func init() {
 			c.App.Version,
 		)
 
-		if _, found := os.LookupEnv(envUpdateNotifier); found {
+		if _, found := os.LookupEnv(EnvUpdateNotifier); found {
 			checkForUpdates(c.App)
 		}
 	}
@@ -206,8 +208,8 @@ func checkForUpdates(app *cli.App) {
 	}
 }
 
-// newApp creates a new app instance.
-func newApp() *cli.App {
+// NewApp creates a new app instance.
+func NewApp() *cli.App {
 	usageText := `FLAGS [OPTIONS] [PATHS TO FILES OR DIRECTORIES...]
 or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 
@@ -360,7 +362,7 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 		Action: func(c *cli.Context) error {
 			// print short help if no arguments or flags are present
 			if c.NumFlags() == 0 && !c.Args().Present() {
-				pterm.Println(shortHelp(c.App))
+				pterm.Println(ShortHelp(c.App))
 				os.Exit(1)
 			}
 

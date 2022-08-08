@@ -68,7 +68,7 @@ func envHelp() string {
   F2_UPDATE_NOTIFIER: set to any value to periodically check for updates.`
 }
 
-func shortHelp(app *cli.App) string {
+func ShortHelp(app *cli.App) string {
 	heading := fmt.Sprintf(
 		"F2 — Command-line bulk renaming tool [version %s]\n\n",
 		app.Version,

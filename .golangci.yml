@@ -1,3 +1,63 @@
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - bidichk
+    - decorder
+    - containedctx
+    - contextcheck
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - errchkjson
+    - errname
+    - execinquery
+    - errorlint
+    - exportloopref
+    - exhaustive
+    - goconst
+    - godot
+    - gocritic
+    - gofmt
+    - goimports
+    - gomnd
+    - gocyclo
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ireturn
+    - ineffassign
+    - misspell
+    - nestif
+    - nilerr
+    - nilnil
+    - nakedret
+    - nolintlint
+    - prealloc
+    - predeclared
+    - rowserrcheck
+    - revive
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - sqlclosecheck
+    - thelper
+    - tagliatelle
+    - tparallel
+    - testpackage
+    - tenv
+    - typecheck
+    - unconvert
+    - usestdlibvars
+    - unparam
+    - varcheck
+    - varnamelen
+    - whitespace
+    - wsl
+
 linters-settings:
   errcheck:
     check-type-assertions: true
@@ -12,6 +72,8 @@ linters-settings:
       - performance
       - style
   goimports:
+    # ensure placement of imports with this prefix after all other imports
+    # corresponds to `goimports -local`
     local-prefixes: github.com/ayoisaiah/f2
   gomnd:
     settings:
@@ -22,52 +84,25 @@ linters-settings:
     check-shadowing: true
     enable:
       - fieldalignment
-
+  nestif:
+    min-complexity: 15
   nolintlint:
     require-explanation: true
     require-specific: true
-
-linters:
-  disable-all: true
-  enable:
-    - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
-    - dupl
-    - errcheck
-    # - errorlint
-    - exportloopref
-    - exhaustive
-    - goconst
-    - godot
-    - gocritic
-    - gofmt
-    - goimports
-    - gomnd
-    - gocyclo
-    - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
-    - misspell
-    - nakedret
-    - nolintlint
-    - prealloc
-    - predeclared
-    - revive
-    - staticcheck
-    - structcheck
-    - stylecheck
-    - thelper
-    - tparallel
-    - typecheck
-    - unconvert
-    - unparam
-    - varcheck
-    - whitespace
-    - wsl
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+  varnamelen:
+    max-distance: 10
+    ignore-decls:
+      - t testing.T
+      - i int
+      - j int
+      - ch Change
+      - ch *Change
+      - c *cli.Context
+      - op *Operation
 
 issues:
   fix: true
@@ -77,6 +112,7 @@ issues:
         - gocyclo
         - gosec
         - dupl
+        - varnamelen
     - linters:
         - gosec
       text: 'weak cryptographic primitive'
