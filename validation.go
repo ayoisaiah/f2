@@ -63,7 +63,8 @@ type Conflict struct {
 func newTarget(ch *Change, renamedPaths map[string][]struct {
 	sourcePath string
 	index      int
-}) string {
+},
+) string {
 	fileNoExt := utils.FilenameWithoutExtension(filepath.Base(ch.Target))
 	regex := regexp.MustCompile(`\(\d+\)$`)
 	// Extract the numbered index at the end of the filename (if any)

@@ -266,7 +266,7 @@ func (op *Operation) printChanges() {
 
 		pterm.Fprintln(op.stdout, string(o))
 	} else {
-		var data = make([][]string, len(op.matches))
+		data := make([][]string, len(op.matches))
 
 		for i := range op.matches {
 			ch := op.matches[i]
@@ -296,7 +296,7 @@ func (op *Operation) rename() {
 	for i := range op.matches {
 		ch := op.matches[i]
 
-		var source, target = ch.Source, ch.Target
+		source, target := ch.Source, ch.Target
 		source = filepath.Join(ch.BaseDir, source)
 		target = filepath.Join(ch.BaseDir, target)
 
@@ -803,7 +803,7 @@ func (op *Operation) walk(paths map[string][]os.DirEntry) error {
 
 	// currentLevel represents the current level of directories
 	// and their contents
-	var currentLevel = make(map[string][]os.DirEntry)
+	currentLevel := make(map[string][]os.DirEntry)
 
 loop:
 	// The goal of each iteration is to created entries for each
@@ -1093,7 +1093,7 @@ func newOperation(c *cli.Context) (*Operation, error) {
 		return op, nil
 	}
 
-	var paths = make(map[string][]os.DirEntry)
+	paths := make(map[string][]os.DirEntry)
 
 	for _, path := range op.pathsToFilesOrDirs {
 		var fileInfo os.FileInfo

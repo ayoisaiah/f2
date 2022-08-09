@@ -34,7 +34,7 @@ func getDefaultOptsCtx() *cli.Context {
 	var defaultCtx *cli.Context
 
 	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
-		var defaultOpts = make([]string, len(os.Args))
+		defaultOpts := make([]string, len(os.Args))
 
 		copy(defaultOpts, os.Args)
 

@@ -127,9 +127,7 @@ type variables struct {
 	csv       csvVars
 }
 
-var (
-	errInvalidSubmatches = errors.New("Invalid number of submatches")
-)
+var errInvalidSubmatches = errors.New("Invalid number of submatches")
 
 // getCSVVars retrieves all the csv variables in the replacement
 // string if any.

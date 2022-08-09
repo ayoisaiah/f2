@@ -61,9 +61,7 @@ func init() {
 
 var testFixtures = "testdata"
 
-var (
-	backupFilePath string
-)
+var backupFilePath string
 
 var fileSystem = []string{
 	"docs/éèêëçñåēčŭ.xlsx",
