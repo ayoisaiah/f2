@@ -3,6 +3,7 @@
 *.exe~
 *.dll
 *.so
+*.swp
 *.dylib
 bin/
 dist/
