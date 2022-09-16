@@ -429,9 +429,9 @@ func checkForbiddenCharacters(path string) error {
 	return nil
 }
 
-// checktTargetLength is responsible for ensuring that the target name length
+// checkTargetLength is responsible for ensuring that the target name length
 // does not exceed the maximum value on each supported operating system.
-func checktTargetLength(target string) error {
+func checkTargetLength(target string) error {
 	// Get the standalone filename
 	filename := filepath.Base(target)
 
@@ -495,7 +495,7 @@ func (op *Operation) checkPathLengthConflict(
 ) bool {
 	var conflictDetected bool
 
-	err := checktTargetLength(target)
+	err := checkTargetLength(target)
 	if err != nil {
 		op.conflicts[maxFilenameLengthExceeded] = append(
 			op.conflicts[maxFilenameLengthExceeded],
