@@ -27,7 +27,6 @@
     "want": ["lolita.epub|lolita-1955.epub|ebooks/.banned"],
     "args": "-f lolita -r {{f}}-1955 -R -H"
   },
-
   {
     "name": "target a specific file through a path argument",
     "want": [
@@ -63,7 +62,6 @@
     "args": "-f 1984 -r george-orwell-{{f}} -R",
     "path_args": ["ebooks/1984.pdf"]
   },
-
   {
     "name": "recurse into subdirectories to find matches (no limit)",
     "want": ["1984.pdf|george-orwell-1984.pdf|ebooks"],
@@ -96,7 +94,6 @@
     "args": "-f jpg -r jpeg -R",
     "path_args": ["images", "music"]
   },
-
   {
     "name": "exclude S1.E3 from matches",
     "want": [
@@ -115,7 +112,6 @@
     "args": "-f '(pdf|epub)' -r '$1.bak' -E '\\d+'",
     "path_args": ["ebooks"]
   },
-
   {
     "name": "match regex special characters without escaping them",
     "want": ["$-(+)_file.txt|#-[_]_file.txt|special"],
@@ -130,7 +126,6 @@
     ],
     "args": "-f epub -r epub.bak -siR"
   },
-
   {
     "name": "replace dot in file name",
     "want": [".golang.pdf|golang.pdf"],
@@ -161,7 +156,6 @@
     "args": "-f 0 -r 1 -l -1 -R",
     "path_args": ["images"]
   },
-
   {
     "name": "rename with capture variables",
     "want": [
@@ -203,7 +197,6 @@
     "args": "-f s -D",
     "path_args": ["images"]
   },
-
   {
     "name": "test replacement chain and use capture variables",
     "want": [
@@ -235,7 +228,6 @@
       ]
     }
   },
-
   {
     "name": "use default opts to enable hidden files and recursion",
     "want": [
@@ -253,7 +245,6 @@
     "args": "-f pdf -r pdf.bak",
     "default_opts": "-HR -E pdf"
   },
-
   {
     "name": "rename with auto incrementing numbers (step by 1)",
     "want": [
@@ -333,7 +324,6 @@
     "args": "-r {{p}}{{ext}}.{{f}}",
     "path_args": ["images", "movies/green-mile_1999.mp4"]
   },
-
   {
     "name": "rename with built-in exif variables",
     "setup": ["testdata"],
@@ -398,13 +388,13 @@
   },
   {
     "name": "replace with csv file",
+    "setup": ["testdata"],
     "want": [
       "dsc-001.arw|Kigali in Rwanda — John Doe.arw|images",
       "fear-of-life.EPUB|FEAR OF LIFE — Alexandar Lowen.EPUB|ebooks"
     ],
-    "args": "-csv <csv> -r '{{csv.3}} — {{csv.2}}{{ext}}'"
+    "args": "-csv testdata/input.csv -r '{{csv.3}} — {{csv.2}}{{ext}}'"
   },
-
   {
     "name": "detect empty file name conflict",
     "want": ["1984.pdf||ebooks"],
@@ -468,21 +458,21 @@
   },
   {
     "name": "test conflict reporting table output",
-    "setup": ["golden"],
+    "setup": ["testdata"],
     "args": "-f 'flac|mp3' -r ogg",
     "path_args": ["audio"],
     "golden_file": "conflicts"
   },
   {
     "name": "test dry run table output",
-    "setup": ["golden"],
+    "setup": ["testdata"],
     "args": "-f 'flac|mp3|ogg|_' -e",
     "path_args": ["audio"],
     "golden_file": "dry_run"
   },
   {
     "name": "test error handling output",
-    "setup": ["golden"],
+    "setup": ["testdata"],
     "args": "-f 'flac|mp3|ogg|_' -e",
     "path_args": ["audio"],
     "golden_file": "dry_run"
@@ -584,7 +574,6 @@
     "args": "-f '.*' -r {{tr.di}} -i",
     "path_args": ["docs"]
   },
-
   {
     "name": "rename with file date variables",
     "setup": ["date variables"],

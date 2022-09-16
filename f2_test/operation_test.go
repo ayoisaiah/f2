@@ -33,14 +33,11 @@ func init() {
 
 	dir := stdpath.Join(stdpath.Dir(filename), "..")
 
-	err := os.Chdir(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
+	projectRoot = dir
 
 	workingDir, err := filepath.Abs(".")
 	if err != nil {
-		log.Fatalf("Unable to retrieve working directory: %v", err)
+		log.Fatalf("Unable to retrieve test working directory: %v", err)
 	}
 
 	workingDir = strings.ReplaceAll(workingDir, "/", "_")
@@ -58,6 +55,8 @@ func init() {
 
 	rand.Seed(time.Now().UnixNano())
 }
+
+var projectRoot string
 
 var testFixtures = "testdata"
 
@@ -92,33 +91,24 @@ var fileSystem = []string{
 }
 
 // setupFileSystem creates all required files and folders for
-// the tests and returns a function that is used as
-// a teardown function when the tests are done.
+// the tests and returns the absolute path to the root directory.
 func setupFileSystem(tb testing.TB) string {
 	tb.Helper()
 
 	testDir := tb.TempDir()
 
-	absPath, err := filepath.Abs(testDir)
+	// change to testDir directory
+	err := os.Chdir(testDir)
 	if err != nil {
-		tb.Fatalf("Unable to get absolute path to test directory: %v", err)
+		tb.Fatal(err)
 	}
-
-	tb.Cleanup(func() {
-		if err = os.RemoveAll(absPath); err != nil {
-			tb.Fatalf(
-				"Failure occurred while cleaning up the filesystem: %v",
-				err,
-			)
-		}
-	})
 
 	for _, v := range fileSystem {
 		dir := filepath.Dir(v)
 
 		filePath := filepath.Join(testDir, dir)
 
-		err = os.MkdirAll(filePath, os.ModePerm)
+		err := os.MkdirAll(filePath, os.ModePerm)
 		if err != nil {
 			tb.Fatalf(
 				"Unable to create directories in path: '%s', due to err: %v",
@@ -129,7 +119,7 @@ func setupFileSystem(tb testing.TB) string {
 	}
 
 	for _, f := range fileSystem {
-		pathToFile := filepath.Join(absPath, f)
+		pathToFile := filepath.Join(testDir, f)
 
 		file, err := os.Create(pathToFile)
 		if err != nil {
@@ -143,10 +133,10 @@ func setupFileSystem(tb testing.TB) string {
 		file.Close()
 	}
 
-	return absPath
+	return testDir
 }
 
-func newTestRun(args []string) ([]byte, error) {
+func executeTest(args []string) ([]byte, error) {
 	var buf bytes.Buffer
 
 	app := f2.GetApp(os.Stdin, &buf)
@@ -214,7 +204,7 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 
 	var cases []TestCase
 
-	b, err := os.ReadFile(filepath.Join(testFixtures, filename))
+	b, err := os.ReadFile(filepath.Join(projectRoot, testFixtures, filename))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,15 +264,22 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 	return cases
 }
 
-func preTestSetup(
+// modifyTestingEnv changes some properties of the test environment
+// based on the setup parameter.
+func modifyTestingEnv(
 	t *testing.T,
 	testDir string,
 	setup []string,
 ) (string, error) {
 	t.Helper()
 
-	if utils.Contains(setup, "testdata") || utils.Contains(setup, "golden") {
+	if utils.Contains(setup, "testdata") {
 		testDir = testFixtures
+		// change test directory
+		err := os.Chdir(projectRoot)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if utils.Contains(setup, "windows_hidden") {
@@ -316,6 +313,77 @@ func preTestSetup(
 	return testDir, nil
 }
 
+// preTestSetup ensures that each test case is set up correctly.
+func preTestSetup(
+	t *testing.T,
+	tc *TestCase,
+) []string {
+	t.Helper()
+
+	testDir := setupFileSystem(t)
+
+	if len(tc.Setup) > 0 {
+		v, err := modifyTestingEnv(t, testDir, tc.Setup)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testDir = v
+	}
+
+	if tc.DefaultOpts != "" {
+		os.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
+	}
+
+	// make the base directory for each file relative to the test
+	// directory root
+	for j := range tc.Changes {
+		ch := tc.Changes[j]
+		if ch.BaseDir == "" {
+			tc.Changes[j].BaseDir = testDir
+		} else {
+			tc.Changes[j].BaseDir = filepath.Join(testDir, ch.BaseDir)
+		}
+	}
+
+	// make conflict paths relative to the test directory root
+	for k, v := range tc.Conflicts {
+		for j, v2 := range v {
+			tc.Conflicts[k][j].Target = filepath.Join(
+				testDir,
+				v2.Target,
+			)
+
+			for l, v3 := range v2.Sources {
+				v3 = filepath.Join(testDir, v3)
+				tc.Conflicts[k][j].Sources[l] = v3
+			}
+		}
+	}
+
+	var pathArgs string
+
+	for _, v := range tc.PathArgs {
+		p := fmt.Sprintf("'%s'", filepath.Join(testDir, v))
+		pathArgs = strings.TrimSpace(pathArgs + " " + p)
+	}
+
+	var args string
+
+	//nolint:gocritic // if-else more appropriate
+	if tc.GoldenFile != "" {
+		args = tc.Args + " --no-color " + pathArgs
+	} else if strings.Contains(tc.Args, "-") {
+		args = tc.Args + " --json " + pathArgs
+	} else {
+		args = tc.Args + " " + pathArgs
+	}
+
+	argsSlice := parseArgs(t, tc.Name, args)
+
+	return argsSlice
+}
+
 func runTestCases(t *testing.T, cases []TestCase) {
 	t.Helper()
 
@@ -323,89 +391,18 @@ func runTestCases(t *testing.T, cases []TestCase) {
 		tc := cases[i]
 
 		t.Run(tc.Name, func(t *testing.T) {
-			testDir := setupFileSystem(t)
+			argsSlice := preTestSetup(t, &tc)
 
-			if len(tc.Setup) > 0 {
-				v, err := preTestSetup(t, testDir, tc.Setup)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				testDir = v
-			}
-
-			if tc.DefaultOpts != "" {
-				os.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
-			}
-
-			for j := range tc.Changes {
-				ch := tc.Changes[j]
-				if ch.BaseDir == "" {
-					tc.Changes[j].BaseDir = testDir
-				} else {
-					tc.Changes[j].BaseDir = filepath.Join(testDir, ch.BaseDir)
-				}
-			}
-
-			pathArgs := testDir
-			if len(tc.PathArgs) != 0 {
-				var res []string
-				for _, v := range tc.PathArgs {
-					res = append(
-						res,
-						fmt.Sprintf("'%s'", filepath.Join(testDir, v)),
-					)
-				}
-
-				pathArgs = strings.Join(res, " ")
-			}
-
-			csvTestFile := filepath.Join(testFixtures, "input.csv")
-
-			if strings.Contains(tc.Args, "<csv>") {
-				tc.Args = strings.ReplaceAll(tc.Args, "<csv>", csvTestFile)
-			}
-
-			var cargs string
-
-			//nolint:gocritic // if-else more appropriate
-			if utils.Contains(tc.Setup, "golden") {
-				cargs = tc.Args + " --no-color " + pathArgs
-			} else if strings.Contains(tc.Args, "-") {
-				cargs = tc.Args + " --json " + pathArgs
-			} else {
-				cargs = tc.Args + " " + pathArgs
-			}
-
-			args := parseArgs(t, tc.Name, cargs)
-
-			result, err := newTestRun(args)
+			result, err := executeTest(argsSlice)
 			if err != nil {
 				if len(tc.Conflicts) == 0 &&
-					!utils.Contains(tc.Setup, "golden") {
+					tc.GoldenFile == "" {
 					t.Log(string(result))
 					t.Fatal(err)
 				}
 			}
 
-			if tc.DefaultOpts != "" {
-				os.Setenv(f2.EnvDefaultOpts, "")
-			}
-
-			for k, v := range tc.Conflicts {
-				for j, v2 := range v {
-					tc.Conflicts[k][j].Target = filepath.Join(
-						testDir,
-						v2.Target,
-					)
-					for l, v3 := range v2.Sources {
-						v3 = filepath.Join(testDir, v3)
-						tc.Conflicts[k][j].Sources[l] = v3
-					}
-				}
-			}
-
-			if utils.Contains(tc.Setup, "golden") {
+			if tc.GoldenFile != "" {
 				g := goldie.New(
 					t,
 					goldie.WithFixtureDir(testFixtures),
@@ -413,13 +410,18 @@ func runTestCases(t *testing.T, cases []TestCase) {
 
 				g.Assert(t, tc.GoldenFile, result)
 			} else {
-				jsonTest(t, &tc, result)
+				assertJSON(t, &tc, result)
+			}
+
+			// Reset default opts before next test
+			if tc.DefaultOpts != "" {
+				os.Setenv(f2.EnvDefaultOpts, "")
 			}
 		})
 	}
 }
 
-func jsonTest(t *testing.T, tc *TestCase, result []byte) {
+func assertJSON(t *testing.T, tc *TestCase, result []byte) {
 	t.Helper()
 
 	var output f2.JSONOutput
@@ -471,6 +473,9 @@ func TestAllOSes(t *testing.T) {
 func TestShortHelp(t *testing.T) {
 	help := f2.ShortHelp(f2.NewApp())
 
-	g := goldie.New(t, goldie.WithFixtureDir(testFixtures))
+	g := goldie.New(
+		t,
+		goldie.WithFixtureDir(filepath.Join(projectRoot, testFixtures)),
+	)
 	g.Assert(t, "help", []byte(help))
 }
