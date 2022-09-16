@@ -3,7 +3,7 @@ name: Release F2
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   build:
@@ -16,10 +16,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go 1.16
+      - name: Set up Go 1.19
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.19
         id: go
 
       - name: Create GitHub Release
