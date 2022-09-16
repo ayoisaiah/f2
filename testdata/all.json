@@ -525,7 +525,7 @@
   },
   {
     "name": "use exiftool variables for renaming",
-    "setup": ["testdata"],
+    "setup": ["testdata", "exiftool"],
     "want": [
       "proraw.dng|69.4 deg_32_iPhone 12 Pro Max back triple camera 5.1mm f_1.6|images"
     ],
