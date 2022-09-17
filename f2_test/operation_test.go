@@ -335,18 +335,8 @@ func preTestSetup(
 		os.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
 	}
 
-	// make the base directory for each file relative to the test
-	// directory root
-	for j := range tc.Changes {
-		ch := tc.Changes[j]
-		if ch.BaseDir == "" {
-			tc.Changes[j].BaseDir = testDir
-		} else {
-			tc.Changes[j].BaseDir = filepath.Join(testDir, ch.BaseDir)
-		}
-	}
-
 	// make conflict paths relative to the test directory root
+	// to match the expected output from F2
 	for k, v := range tc.Conflicts {
 		for j, v2 := range v {
 			tc.Conflicts[k][j].Target = filepath.Join(
