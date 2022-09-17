@@ -410,6 +410,8 @@ func (op *Operation) checkOverwritingPathConflict(
 // do not contain forbidden characters for the current OS.
 func checkForbiddenCharacters(path string) error {
 	if runtime.GOOS == Windows {
+		// partialWindowsForbiddenCharRegex is used here as forward and backward
+		// slashes are used for auto creating directories
 		if partialWindowsForbiddenCharRegex.MatchString(path) {
 			return errors.New(
 				strings.Join(
@@ -542,6 +544,11 @@ func (op *Operation) checkPathLengthConflict(
 	return conflictDetected
 }
 
+// checkForbiddenCharactersConflict is used to detect if forbidden characters
+// are present in the target path for a file or directory according to the
+// naming rules of the respective OS. This detection excludes forward and
+// backward slashes as their presence has a special meaning in the renaming
+// operation (automatic directory creation).
 func (op *Operation) checkForbiddenCharactersConflict(
 	sourcePath, target, targetPath string,
 	i int,

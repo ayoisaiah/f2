@@ -21,26 +21,6 @@ import (
 	"github.com/ayoisaiah/f2/internal/utils"
 )
 
-var (
-	errInvalidArgument = errors.New(
-		"Invalid argument: one of `-f`, `-r`, `-csv` or `-u` must be present and set to a non empty string value. Use 'f2 --help' for more information",
-	)
-
-	errInvalidSimpleModeArgs = errors.New(
-		"At least one argument must be specified in simple mode",
-	)
-
-	errConflictDetected = errors.New(
-		"Resolve conflicts before proceeding or use the -F flag to auto fix all conflicts",
-	)
-
-	errCSVReadFailed = errors.New("Unable to read CSV file")
-
-	errBackupNotFound = errors.New(
-		"Unable to find the backup file for the current directory",
-	)
-)
-
 const (
 	Windows = "windows"
 	Darwin  = "darwin"
@@ -125,6 +105,8 @@ type backupFile struct {
 	Operations []Change `json:"operations"`
 }
 
+// JSONOutput represents the structure of the output produced by the
+// `--json` flag.
 type JSONOutput struct {
 	Conflicts  map[ConflictType][]Conflict `json:"conflicts,omitempty"`
 	WorkingDir string                      `json:"working_dir"`
@@ -134,7 +116,7 @@ type JSONOutput struct {
 	DryRun     bool                        `json:"dry_run"`
 }
 
-// writeToFile writes the details of a successful operation
+// writeToFile records the details of a successful operation
 // to the specified output file, creating it if necessary.
 func (op *Operation) writeToFile(outputFile string) (err error) {
 	// Create or truncate file
@@ -394,8 +376,9 @@ func (op *Operation) reportErrors() {
 	}
 }
 
-// handleErrors is used to report the errors and write any successful
-// operations to a file.
+// handleErrors is used to report errors that occurred while each file was being
+// renamed. Successful operations are preserved in a file such that reverting
+// the entire process is possible.
 func (op *Operation) handleErrors() error {
 	op.reportErrors()
 

@@ -1,7 +1,6 @@
 package f2
 
 import (
-	"errors"
 	"math"
 	"path/filepath"
 	"regexp"
@@ -126,8 +125,6 @@ type variables struct {
 	transform transformVars
 	csv       csvVars
 }
-
-var errInvalidSubmatches = errors.New("Invalid number of submatches")
 
 // getCSVVars retrieves all the csv variables in the replacement
 // string if any.
