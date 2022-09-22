@@ -20,8 +20,7 @@ builds:
         goarch: arm64
     main: ./cmd/f2
 archives:
-  -
-    replacements:
+  - replacements:
       darwin: darwin
       linux: linux
       windows: windows
@@ -34,10 +33,11 @@ archives:
       - LICENCE
       - README.md
       - CHANGELOG.md
+      - scripts/completions/*
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: '{{ .Tag }}-next'
 changelog:
   sort: asc
   filters:
@@ -45,30 +45,65 @@ changelog:
       - '^docs:'
       - '^test:'
 nfpms:
-  -
-    id: f2
+  - id: f2
     package_name: f2
-    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    file_name_template:
+      '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     vendor: Freshman
     homepage: https://github.com/ayoisaiah/
     maintainer: Ayooluwa Isaiah <ayo@freshman.tech>
-    description: F2 is a cross-platform command-line tool for batch renaming files and directories quickly and safely
+    description:
+      F2 is a cross-platform command-line tool for batch renaming files and
+      directories quickly and safely
     license: MIT
     formats:
       - deb
       - rpm
+      - termux.deb
     recommends:
       - exiftool
+    contents:
+      - src: .scripts/completions/f2.bash
+        dst: /usr/share/bash-completion/completions/f2
+        file_info:
+          mode: 0644
+      - src: .scripts/completions/f2.fish
+        dst: /usr/share/fish/vendor_completions.d/f2.fish
+        file_info:
+          mode: 0644
+      - src: .scripts/completions/f2.zsh
+        dst: /usr/share/zsh/vendor-completions/_f2
+        file_info:
+          mode: 0644
 scoop:
-  url_template: "https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  url_template:
+    'https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{
+    .ArtifactName }}'
   bucket:
     owner: ayoisaiah
     name: scoop-bucket
-    token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+    token: '{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}'
   commit_author:
     name: goreleaserbot
     email: goreleaser@carlosbecker.com
-  commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
-  homepage: "https://github.com/ayoisaiah/f2"
-  description: "F2 is a cross-platform command-line tool for batch renaming files and directories quickly and safely"
+  commit_msg_template: 'Scoop update for {{ .ProjectName }} version {{ .Tag }}'
+  homepage: 'https://github.com/ayoisaiah/f2'
+  description:
+    'F2 is a cross-platform command-line tool for batch renaming files and
+    directories quickly and safely'
   license: MIT
+
+brews:
+  - install: |-
+      bin.install "f2"
+      bash_completion.install "scripts/completions/f2.bash" => "f2"
+      zsh_completion.install "scripts/completions/f2.zsh" => "_f2"
+      fish_completion.install "scripts/completions/f2.fish"
+
+    homepage: 'https://github.com/ayoisaiah/f2'
+
+    license: 'MIT'
+
+    dependencies:
+      - name: exiftool
+        type: optional
