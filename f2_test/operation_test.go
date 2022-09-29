@@ -92,13 +92,20 @@ var fileSystem = []string{
 
 // setupFileSystem creates all required files and folders for
 // the tests and returns the absolute path to the root directory.
-func setupFileSystem(tb testing.TB) string {
+func setupFileSystem(tb testing.TB, testName string) string {
 	tb.Helper()
 
-	testDir := tb.TempDir()
+	testDir, err := os.MkdirTemp(os.TempDir(), testName)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	tb.Cleanup(func() {
+		_ = os.RemoveAll(testDir)
+	})
 
 	// change to testDir directory
-	err := os.Chdir(testDir)
+	err = os.Chdir(testDir)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -320,7 +327,7 @@ func preTestSetup(
 ) []string {
 	t.Helper()
 
-	testDir := setupFileSystem(t)
+	testDir := setupFileSystem(t, utils.CleanString(tc.Name))
 
 	if len(tc.Setup) > 0 {
 		v, err := modifyTestingEnv(t, testDir, tc.Setup)

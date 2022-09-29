@@ -7,9 +7,16 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/pterm/pterm"
 )
+
+var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
+
+func CleanString(str string) string {
+	return nonAlphanumericRegex.ReplaceAllString(str, "_")
+}
 
 // contains checks if a string is present in
 // a string slice.
