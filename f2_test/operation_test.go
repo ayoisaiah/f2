@@ -369,6 +369,10 @@ func preTestSetup(
 
 	//nolint:gocritic // if-else more appropriate
 	if tc.GoldenFile != "" {
+		if runtime.GOOS == f2.Windows {
+			t.SkipNow()
+		}
+
 		args = tc.Args + " --no-color " + pathArgs
 	} else if strings.Contains(tc.Args, "-") {
 		args = tc.Args + " --json " + pathArgs
@@ -469,6 +473,10 @@ func TestAllOSes(t *testing.T) {
 
 func TestShortHelp(t *testing.T) {
 	help := f2.ShortHelp(f2.NewApp())
+
+	if runtime.GOOS == f2.Windows {
+		t.SkipNow()
+	}
 
 	g := goldie.New(
 		t,
