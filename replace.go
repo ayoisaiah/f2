@@ -34,9 +34,10 @@ type indexVars struct {
 }
 
 type transformVarMatch struct {
-	regex *regexp.Regexp
-	token string
-	val   []string
+	regex      *regexp.Regexp
+	token      string
+	captureVar string
+	val        []string
 }
 
 type transformVars struct {
@@ -44,9 +45,10 @@ type transformVars struct {
 }
 
 type exiftoolVarMatch struct {
-	regex *regexp.Regexp
-	attr  string
-	val   []string
+	regex          *regexp.Regexp
+	attr           string
+	transformToken string
+	val            []string
 }
 
 type exiftoolVars struct {
@@ -54,10 +56,11 @@ type exiftoolVars struct {
 }
 
 type exifVarMatch struct {
-	regex   *regexp.Regexp
-	attr    string
-	timeStr string
-	val     []string
+	regex          *regexp.Regexp
+	attr           string
+	timeStr        string
+	transformToken string
+	val            []string
 }
 
 type exifVars struct {
@@ -65,9 +68,10 @@ type exifVars struct {
 }
 
 type id3VarMatch struct {
-	regex *regexp.Regexp
-	tag   string
-	val   []string
+	regex          *regexp.Regexp
+	tag            string
+	transformToken string
+	val            []string
 }
 
 type id3Vars struct {
@@ -75,10 +79,11 @@ type id3Vars struct {
 }
 
 type dateVarMatch struct {
-	regex *regexp.Regexp
-	attr  string
-	token string
-	val   []string
+	regex          *regexp.Regexp
+	attr           string
+	token          string
+	transformToken string
+	val            []string
 }
 
 type dateVars struct {
@@ -86,9 +91,10 @@ type dateVars struct {
 }
 
 type hashVarMatch struct {
-	regex  *regexp.Regexp
-	hashFn hashAlgorithm
-	val    []string
+	regex          *regexp.Regexp
+	hashFn         hashAlgorithm
+	transformToken string
+	val            []string
 }
 
 type hashVars struct {
@@ -96,22 +102,54 @@ type hashVars struct {
 }
 
 type randomVarMatch struct {
-	regex      *regexp.Regexp
-	characters string
-	val        []string
-	length     int
+	regex          *regexp.Regexp
+	characters     string
+	transformToken string
+	val            []string
+	length         int
 }
 
 type randomVars struct {
 	matches []randomVarMatch
 }
 
+type csvVarMatch struct {
+	regex          *regexp.Regexp
+	transformToken string
+	column         int
+}
+
 type csvVars struct {
 	submatches [][]string
-	values     []struct {
-		regex  *regexp.Regexp
-		column int
-	}
+	values     []csvVarMatch
+}
+
+type filenameVarMatch struct {
+	regex          *regexp.Regexp
+	transformToken string
+}
+
+type filenameVars struct {
+	matches []filenameVarMatch
+}
+
+type extVarMatch struct {
+	regex          *regexp.Regexp
+	transformToken string
+}
+
+type extVars struct {
+	matches []extVarMatch
+}
+
+type parentDirVarMatch struct {
+	regex          *regexp.Regexp
+	transformToken string
+	parent         int
+}
+
+type parentDirVars struct {
+	matches []parentDirVarMatch
 }
 
 type variables struct {
@@ -124,6 +162,9 @@ type variables struct {
 	random    randomVars
 	transform transformVars
 	csv       csvVars
+	filename  filenameVars
+	ext       extVars
+	parentDir parentDirVars
 }
 
 // getCSVVars retrieves all the csv variables in the replacement
@@ -132,17 +173,14 @@ func getCSVVars(replacementInput string) (csvVars, error) {
 	var csv csvVars
 	if csvVarRegex.MatchString(replacementInput) {
 		csv.submatches = csvVarRegex.FindAllStringSubmatch(replacementInput, -1)
-		expectedLength := 2
+		expectedLength := 3
 
 		for _, submatch := range csv.submatches {
 			if len(submatch) < expectedLength {
 				return csv, errInvalidSubmatches
 			}
 
-			var match struct {
-				regex  *regexp.Regexp
-				column int
-			}
+			var match csvVarMatch
 
 			regex, err := regexp.Compile(submatch[0])
 			if err != nil {
@@ -157,6 +195,8 @@ func getCSVVars(replacementInput string) (csvVars, error) {
 			}
 
 			match.column = n
+			match.transformToken = submatch[2]
+
 			csv.values = append(csv.values, match)
 		}
 	}
@@ -177,7 +217,7 @@ func getDateVars(replacementInput string) (dateVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 3
+	expectedLength := 4
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -195,6 +235,7 @@ func getDateVars(replacementInput string) (dateVars, error) {
 		match.val = submatch
 		match.attr = submatch[1]
 		match.token = submatch[2]
+		match.transformToken = submatch[3]
 
 		dateVarMatches.matches = append(dateVarMatches.matches, match)
 	}
@@ -215,7 +256,7 @@ func getHashVars(replacementInput string) (hashVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 2
+	expectedLength := 3
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -232,6 +273,8 @@ func getHashVars(replacementInput string) (hashVars, error) {
 		match.regex = regex
 		match.val = submatch
 		match.hashFn = hashAlgorithm(submatch[1])
+		match.transformToken = submatch[2]
+
 		hashMatches.matches = append(hashMatches.matches, match)
 	}
 
@@ -251,7 +294,7 @@ func getTransformVars(replacementInput string) (transformVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 2
+	expectedLength := 5
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -267,7 +310,8 @@ func getTransformVars(replacementInput string) (transformVars, error) {
 
 		match.regex = regex
 		match.val = submatch
-		match.token = submatch[1]
+		match.captureVar = submatch[2]
+		match.token = submatch[4]
 		transformVarMatches.matches = append(transformVarMatches.matches, match)
 	}
 
@@ -287,7 +331,7 @@ func getExifVars(replacementInput string) (exifVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 3
+	expectedLength := 4
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -304,15 +348,14 @@ func getExifVars(replacementInput string) (exifVars, error) {
 		match.regex = regex
 		match.val = submatch
 
-		if strings.Contains(submatch[0], "exif.dt") ||
-			strings.Contains(submatch[0], "x.dt") {
-			submatch = append(submatch[:1], submatch[1+1:]...)
+		match.attr = submatch[1]
+		if submatch[2] != "" {
+			match.attr = submatch[2]
 		}
 
-		match.attr = submatch[1]
-		if match.attr == "dt" {
-			match.timeStr = submatch[2]
-		}
+		match.timeStr = submatch[3]
+
+		match.transformToken = submatch[4]
 
 		exifMatches.matches = append(exifMatches.matches, match)
 	}
@@ -431,7 +474,7 @@ func getExifToolVars(replacementInput string) (exiftoolVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 2
+	expectedLength := 3
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -448,6 +491,7 @@ func getExifToolVars(replacementInput string) (exiftoolVars, error) {
 		match.regex = regex
 		match.attr = submatch[1]
 		match.val = submatch
+		match.transformToken = submatch[2]
 
 		exiftoolMatches.matches = append(exiftoolMatches.matches, match)
 	}
@@ -484,6 +528,7 @@ func getID3Vars(replacementInput string) (id3Vars, error) {
 
 		match.regex = regex
 		match.tag = submatch[1]
+		match.transformToken = submatch[2]
 		match.val = submatch
 
 		id3Matches.matches = append(id3Matches.matches, match)
@@ -505,7 +550,7 @@ func getRandomVars(replacementInput string) (randomVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 4
+	expectedLength := 5
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -538,10 +583,119 @@ func getRandomVars(replacementInput string) (randomVars, error) {
 			match.characters = submatch[3]
 		}
 
+		match.transformToken = submatch[4]
+
 		rvMatches.matches = append(rvMatches.matches, match)
 	}
 
 	return rvMatches, nil
+}
+
+func getExtVars(replacementInput string) (extVars, error) {
+	var evMatches extVars
+
+	if !extensionVarRegex.MatchString(replacementInput) {
+		return evMatches, nil
+	}
+
+	submatches := extensionVarRegex.FindAllStringSubmatch(replacementInput, -1)
+
+	expectedLength := 2
+
+	for _, submatch := range submatches {
+		if len(submatch) < expectedLength {
+			return evMatches, errInvalidSubmatches
+		}
+
+		var match extVarMatch
+
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return evMatches, err
+		}
+
+		match.regex = regex
+
+		match.transformToken = submatch[1]
+
+		evMatches.matches = append(evMatches.matches, match)
+	}
+
+	return evMatches, nil
+}
+
+func getParentDirVars(replacementInput string) (parentDirVars, error) {
+	var pvMatches parentDirVars
+
+	if !parentDirVarRegex.MatchString(replacementInput) {
+		return pvMatches, nil
+	}
+
+	submatches := parentDirVarRegex.FindAllStringSubmatch(replacementInput, -1)
+
+	expectedLength := 3
+
+	for _, submatch := range submatches {
+		if len(submatch) < expectedLength {
+			return pvMatches, errInvalidSubmatches
+		}
+
+		var match parentDirVarMatch
+
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return pvMatches, err
+		}
+
+		match.regex = regex
+		match.parent = 1
+
+		if submatch[1] != "" {
+			match.parent, err = strconv.Atoi(submatch[1])
+			if err != nil {
+				return pvMatches, err
+			}
+		}
+
+		match.transformToken = submatch[2]
+
+		pvMatches.matches = append(pvMatches.matches, match)
+	}
+
+	return pvMatches, nil
+}
+
+func getFilenameVars(replacementInput string) (filenameVars, error) {
+	var fvMatches filenameVars
+
+	if !filenameVarRegex.MatchString(replacementInput) {
+		return fvMatches, nil
+	}
+
+	submatches := filenameVarRegex.FindAllStringSubmatch(replacementInput, -1)
+
+	expectedLength := 2
+
+	for _, submatch := range submatches {
+		if len(submatch) < expectedLength {
+			return fvMatches, errInvalidSubmatches
+		}
+
+		var match filenameVarMatch
+
+		regex, err := regexp.Compile(submatch[0])
+		if err != nil {
+			return fvMatches, err
+		}
+
+		match.regex = regex
+
+		match.transformToken = submatch[1]
+
+		fvMatches.matches = append(fvMatches.matches, match)
+	}
+
+	return fvMatches, nil
 }
 
 // extractVariables retrieves all the variables present in the replacement
@@ -550,6 +704,21 @@ func extractVariables(replacement string) (variables, error) {
 	var vars variables
 
 	var err error
+
+	vars.filename, err = getFilenameVars(replacement)
+	if err != nil {
+		return vars, err
+	}
+
+	vars.ext, err = getExtVars(replacement)
+	if err != nil {
+		return vars, err
+	}
+
+	vars.parentDir, err = getParentDirVars(replacement)
+	if err != nil {
+		return vars, err
+	}
 
 	vars.exif, err = getExifVars(replacement)
 	if err != nil {
