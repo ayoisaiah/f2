@@ -1,4 +1,3 @@
-DRY RUN: Commit the changes below with the -x/--exec flag
 ┌───────────────────────────────────────────────────────────────────────┐
 | ORIGINAL                        | RENAMED                    | STATUS |
 | ********************************************************************* |
@@ -6,3 +5,4 @@ DRY RUN: Commit the changes below with the -x/--exec flag
 | testdata/audio/sample_mp3.mp3   | testdata/audio/sample.mp3  | ok     |
 | testdata/audio/sample_ogg.ogg   | testdata/audio/sample.ogg  | ok     |
 └───────────────────────────────────────────────────────────────────────┘
+DRY RUN: Commit the above changes with the -x/--exec flag

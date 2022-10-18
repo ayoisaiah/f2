@@ -451,7 +451,7 @@ func (op *Operation) commit() error {
 
 	// print changes in simple mode
 	if len(op.errors) == 0 {
-		if op.simpleMode || op.json {
+		if op.json {
 			op.printChanges()
 		}
 	}
@@ -469,6 +469,8 @@ func (op *Operation) commit() error {
 
 // dryRun prints the changes to be made to the standard output.
 func (op *Operation) dryRun() {
+	op.printChanges()
+
 	if !op.json {
 		pterm.Info.Prefix = pterm.Prefix{
 			Text:  "DRY RUN",
@@ -478,12 +480,10 @@ func (op *Operation) dryRun() {
 		pterm.Fprintln(
 			op.stdout,
 			pterm.Info.Sprint(
-				"Commit the changes below with the -x/--exec flag",
+				"Commit the above changes with the -x/--exec flag",
 			),
 		)
 	}
-
-	op.printChanges()
 }
 
 // apply prints the changes to be made in dry-run mode
@@ -513,6 +513,21 @@ func (op *Operation) apply() error {
 	}
 
 	if op.exec {
+		if op.simpleMode && !op.json {
+			op.printChanges()
+
+			reader := bufio.NewReader(os.Stdin)
+
+			fmt.Print("\033[s")
+			fmt.Print("Press ENTER to commit the above changes")
+
+			// Block until user input before beginning next session
+			_, err := reader.ReadString('\n')
+			if err != nil && !errors.Is(err, io.EOF) {
+				return err
+			}
+		}
+
 		return op.commit()
 	}
 

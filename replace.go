@@ -312,6 +312,7 @@ func getTransformVars(replacementInput string) (transformVars, error) {
 		match.val = submatch
 		match.captureVar = submatch[2]
 		match.token = submatch[4]
+
 		transformVarMatches.matches = append(transformVarMatches.matches, match)
 	}
 
