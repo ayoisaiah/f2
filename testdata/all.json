@@ -634,7 +634,7 @@
       "fear-of-life.EPUB|FEAR-OF-LIFE_hello.Epub|ebooks",
       "green-mile_1996.mobi|GREEN-MILE_1996_hello.Mobi|ebooks"
     ],
-    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}_{{{<HELLO>.lw}}}{<$2>.TI}'",
+    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}_{{{<HELLO>.lw}}}{<$2>.ti}'",
     "path_args": ["ebooks"]
   },
   {
