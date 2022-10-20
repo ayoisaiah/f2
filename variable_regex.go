@@ -25,7 +25,7 @@ var (
 	)
 	randomVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+(\\d+)?r(?:(_l|_d|_ld)|(?:<(.*)>))?(?:.%s)?}+",
+			"{+(\\d+)?r(?:(_l|_d|_ld)|(?:<([^>])>))?(?:.%s)?}+",
 			transformTokens,
 		),
 	)
