@@ -617,6 +617,16 @@
     "path_args": ["ebooks"]
   },
   {
+    "name": "prefix parent directory variable with a number",
+    "want": [
+      "dsc-003.arw|images_sony_dsc-003.arw",
+      "startrails1.jpg|images_canon_startrails1.jpg",
+      "startrails2.jpg|images_canon_startrails2.jpg"
+    ],
+    "args": "-r '{100p}{2p}_{1p}_{f}{ext}{1000p}'",
+    "path_args": ["images/sony", "images/canon"]
+  },
+  {
     "name": "transform arbitrary text within angle brackets",
     "want": [
       "atomic-habits.pdf|ATOMIC-HABITS_hello.Pdf|ebooks",
