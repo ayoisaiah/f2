@@ -38,7 +38,7 @@ var (
 		),
 	)
 	transformVarRegex = regexp.MustCompile(
-		fmt.Sprintf("{{((\\$\\d+)|(.*)).%s}}", transformTokens),
+		fmt.Sprintf("{{(?:(\\$\\d+)|([^\\.]+))?\\.%s}}", transformTokens),
 	)
 	csvVarRegex = regexp.MustCompile(
 		fmt.Sprintf("{{csv.(\\d+)(?:.%s)}}", transformTokens),

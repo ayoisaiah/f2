@@ -205,7 +205,7 @@
       "02 I Am Sold.flac|02-i-am-sold.flac|music/Overgrown (2013)",
       "Cover.jpg|cover.jpg|music/Overgrown (2013)"
     ],
-    "args": "-f .* -r {{tr.lw}} -f '\\s' -r '-' -f '([a-z]+)-\\((2\\d+)\\)' -r '$2/$1' -deR",
+    "args": "-f .* -r {{.lw}} -f '\\s' -r '-' -f '([a-z]+)-\\((2\\d+)\\)' -r '$2/$1' -deR",
     "path_args": ["music"]
   },
   {
@@ -538,7 +538,7 @@
       "animal-farm.epub|ANIMAL-FARM.EPUB|ebooks",
       "fear-of-life.EPUB|FEAR-OF-LIFE.EPUB|ebooks"
     ],
-    "args": "-f '.*\\.epub' -r {{tr.up}} -i",
+    "args": "-f '.*\\.epub' -r {{.up}} -i",
     "path_args": ["ebooks"]
   },
   {
@@ -547,7 +547,7 @@
       "animal-farm.epub|animal-farm.epub|ebooks",
       "fear-of-life.EPUB|fear-of-life.epub|ebooks"
     ],
-    "args": "-f '.*\\.epub' -r {{tr.lw}} -i",
+    "args": "-f '.*\\.epub' -r {{.lw}} -i",
     "path_args": ["ebooks"]
   },
   {
@@ -556,7 +556,7 @@
       "animal-farm.epub|Animal-Farm.epub|ebooks",
       "fear-of-life.EPUB|Fear-Of-Life.epub|ebooks"
     ],
-    "args": "-f '.*\\.epub' -r {{tr.ti}} -i",
+    "args": "-f '.*\\.epub' -r {{.ti}} -i",
     "path_args": ["ebooks"]
   },
   {
@@ -565,13 +565,13 @@
       "animal-farm.epub|animal-farm.epub|ebooks",
       "fear-of-life.EPUB|fear-of-life.EPUB|ebooks"
     ],
-    "args": "-f '.*\\.epub' -r {{tr.win}} -r {{tr.mac}} -i",
+    "args": "-f '.*\\.epub' -r {{.win}} -r {{.mac}} -i",
     "path_args": ["ebooks"]
   },
   {
     "name": "transform diacritic letters",
     "want": ["éèêëçñåēčŭ.xlsx|eeeecnaecu.xlsx|docs"],
-    "args": "-f '.*' -r {{tr.di}} -i",
+    "args": "-f '.*' -r {{.di}} -i",
     "path_args": ["docs"]
   },
   {

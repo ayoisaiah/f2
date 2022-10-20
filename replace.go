@@ -37,6 +37,7 @@ type transformVarMatch struct {
 	regex      *regexp.Regexp
 	token      string
 	captureVar string
+	inputStr   string
 	val        []string
 }
 
@@ -294,7 +295,7 @@ func getTransformVars(replacementInput string) (transformVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 5
+	expectedLength := 4
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -310,8 +311,9 @@ func getTransformVars(replacementInput string) (transformVars, error) {
 
 		match.regex = regex
 		match.val = submatch
-		match.captureVar = submatch[2]
-		match.token = submatch[4]
+		match.captureVar = submatch[1]
+		match.inputStr = submatch[2]
+		match.token = submatch[3]
 
 		transformVarMatches.matches = append(transformVarMatches.matches, match)
 	}

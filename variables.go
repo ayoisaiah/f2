@@ -748,69 +748,84 @@ func transformString(source, token string) string {
 	return source
 }
 
-// replaceTransformVariables handles string transformations like uppercase,
+// replaceTransformVars handles string transformations like uppercase,
 // lowercase, stripping characters, e.t.c.
-func replaceTransformVariables(
+func replaceTransformVars(
 	target string,
-	matches []string,
+	source string,
 	tv transformVars,
-) string {
-	for i := range matches {
+) (string, error) {
+	// if capture variables are present, they would have been replaced by now
+	// so updated transform vars must be retrieved again
+	t, err := getTransformVars(target)
+	if err != nil {
+		return "", err
+	}
+
+	for i := range tv.matches {
 		current := tv.matches[i]
+		if current.captureVar != "" {
+			current = t.matches[i]
+		}
+
 		regex := current.regex
 
-		for _, match := range matches {
-			switch current.token {
-			case "up":
-				target = regexReplace(regex, target, strings.ToUpper(match), 1)
-			case "lw":
-				target = regexReplace(regex, target, strings.ToLower(match), 1)
-			case "ti":
-				c := cases.Title(language.English)
+		match := current.inputStr
+		// if there's no input to be transformed, use the entire filename
+		if match == "" {
+			match = source
+		}
 
-				target = regexReplace(
-					regex,
-					target,
-					c.String(strings.ToLower(match)),
-					1,
-				)
-			case "win":
-				target = regexReplace(
-					regex,
-					target,
-					regexReplace(
-						completeWindowsForbiddenCharRegex,
-						match,
-						"",
-						0,
-					),
-					1,
-				)
-			case "mac":
-				target = regexReplace(
-					regex,
-					target,
-					regexReplace(macForbiddenCharRegex, match, "", 0),
-					1,
-				)
-			case "di":
-				t := transform.Chain(
-					norm.NFD,
-					runes.Remove(runes.In(unicode.Mn)),
-					norm.NFC,
-				)
+		switch current.token {
+		case "up":
+			target = regexReplace(regex, target, strings.ToUpper(match), 1)
+		case "lw":
+			target = regexReplace(regex, target, strings.ToLower(match), 1)
+		case "ti":
+			c := cases.Title(language.English)
 
-				result, _, err := transform.String(t, match)
-				if err != nil {
-					return match
-				}
+			target = regexReplace(
+				regex,
+				target,
+				c.String(strings.ToLower(match)),
+				1,
+			)
+		case "win":
+			target = regexReplace(
+				regex,
+				target,
+				regexReplace(
+					completeWindowsForbiddenCharRegex,
+					match,
+					"",
+					0,
+				),
+				1,
+			)
+		case "mac":
+			target = regexReplace(
+				regex,
+				target,
+				regexReplace(macForbiddenCharRegex, match, "", 0),
+				1,
+			)
+		case "di":
+			t := transform.Chain(
+				norm.NFD,
+				runes.Remove(runes.In(unicode.Mn)),
+				norm.NFC,
+			)
 
-				target = regexReplace(regex, target, result, 1)
+			result, _, err := transform.String(t, match)
+			if err != nil {
+				return match, err
 			}
+
+			target = regexReplace(regex, target, result, 1)
 		}
 	}
 
-	return target
+	return target, nil
 }
 
 // replaceCSVVars inserts the appropriate CSV column
@@ -988,11 +1003,16 @@ func (op *Operation) replaceVariables(
 			sourceName = utils.FilenameWithoutExtension(sourceName)
 		}
 
-		ch.Target = replaceTransformVariables(
+		out, err := replaceTransformVars(
 			ch.Target,
-			op.searchRegex.FindAllString(sourceName, -1),
+			sourceName,
 			vars.transform,
 		)
+		if err != nil {
+			return err
+		}
+
+		ch.Target = out
 	}
 
 	// Replace indexing scheme like %03d in the target
