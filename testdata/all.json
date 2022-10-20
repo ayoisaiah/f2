@@ -339,20 +339,20 @@
     "name": "rename with built-in id3 variables",
     "setup": ["testdata"],
     "want": [
-      "sample_mp3.mp3|Test Title_Test Artist_ID3v2.3_MP3_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
-      "sample_ogg.ogg|Test Title_Test Artist_VORBIS_OGG_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
-      "sample_flac.flac|Test Title_Test Artist_VORBIS_FLAC_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio"
+      "sample_mp3.mp3|TEST TITLE_Test Artist_ID3v2.3_MP3_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
+      "sample_ogg.ogg|TEST TITLE_Test Artist_VORBIS_OGG_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio",
+      "sample_flac.flac|TEST TITLE_Test Artist_VORBIS_FLAC_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer|audio"
     ],
-    "args": "-f '.*\\.(mp3|ogg|flac)' -r {{id3.title}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}_{{id3.genre}}_{{id3.composer}}",
+    "args": "-f '.*\\.(mp3|ogg|flac)' -r {{id3.title.up}}_{{id3.artist}}_{{id3.format}}_{{id3.type}}_{{id3.album}}_{{id3.album_artist}}_{{id3.track}}_{{id3.total_tracks}}_{{id3.disc}}_{{id3.total_discs}}_{{id3.year}}_{{id3.genre}}_{{id3.composer}}",
     "path_args": ["audio"]
   },
   {
     "name": "rename with built-in file hash variables (SHA1 and MD5)",
     "setup": ["testdata"],
     "want": [
-      "bike.jpeg|6801e3de5f584028b8cd4292c6eca7ba_5b97fd595c700277315742bc91ac0ae67e5eb7a3|images"
+      "bike.jpeg|6801E3DE5F584028B8CD4292C6ECA7BA_5b97fd595c700277315742bc91ac0ae67e5eb7a3|images"
     ],
-    "args": "-f bike.jpeg -r {{hash.md5}}_{{hash.sha1}}",
+    "args": "-f bike.jpeg -r {{hash.md5.up}}_{{hash.sha1}}",
     "path_args": ["images"]
   },
   {
@@ -390,10 +390,10 @@
     "name": "replace with csv file",
     "setup": ["testdata"],
     "want": [
-      "dsc-001.arw|Kigali in Rwanda — John Doe.arw|images",
-      "fear-of-life.EPUB|FEAR OF LIFE — Alexandar Lowen.EPUB|ebooks"
+      "dsc-001.arw|kigali in rwanda — John Doe.arw|images",
+      "fear-of-life.EPUB|fear of life — Alexandar Lowen.EPUB|ebooks"
     ],
-    "args": "-csv testdata/input.csv -r '{{csv.3}} — {{csv.2}}{{ext}}'"
+    "args": "-csv testdata/input.csv -r '{{csv.3.lw}} — {{csv.2}}{{ext}}'"
   },
   {
     "name": "detect empty file name conflict",
@@ -527,9 +527,9 @@
     "name": "use exiftool variables for renaming",
     "setup": ["testdata", "exiftool"],
     "want": [
-      "proraw.dng|69.4 deg_32_iPhone 12 Pro Max back triple camera 5.1mm f_1.6|images"
+      "proraw.dng|69.4 deg_32_IPHONE 12 PRO MAX BACK TRIPLE CAMERA 5.1MM F_1.6|images"
     ],
-    "args": "-f proraw.dng -r {{xt.FOV}}_{{xt.ISO}}_{{xt.LensModel}}",
+    "args": "-f proraw.dng -r {xt.FOV}_{{xt.ISO}}_{{xt.LensModel.up}}",
     "path_args": ["images"]
   },
   {
@@ -547,7 +547,7 @@
       "animal-farm.epub|animal-farm.epub|ebooks",
       "fear-of-life.EPUB|fear-of-life.epub|ebooks"
     ],
-    "args": "-f '.*\\.epub' -r {{.lw}} -i",
+    "args": "-f '.*\\.epub' -r {.lw} -i",
     "path_args": ["ebooks"]
   },
   {
@@ -577,14 +577,60 @@
   {
     "name": "rename with file date variables",
     "setup": ["date variables"],
-    "want": ["green-mile_1999.mp4|Apr-10-2023.mp4|movies"],
-    "args": "-f green-mile_1999 -r {{mtime.MMM}}-{{mtime.DD}}-{{atime.YYYY}}",
+    "want": ["green-mile_1999.mp4|APR-10-2023.mp4|movies"],
+    "args": "-f green-mile_1999 -r {mtime.MMM.up}-{{mtime.DD}}-{{atime.YYYY}}",
     "path_args": ["movies"]
   },
   {
     "name": "rename with random variables",
     "want": ["green-mile_1999.mp4|11111-22-ooo.mp4|movies"],
-    "args": "-f green-mile_1999 -r {{5r<1>}}-{{2r<2>}}-{{3r<o>}}",
+    "args": "-f green-mile_1999 -r {{5r<1>}}-{2r<2>}-{{3r<o>}}",
     "path_args": ["movies"]
+  },
+  {
+    "name": "use simplified variable syntax",
+    "want": ["index.js|index-dev.js|dev", "index.ts|index-dev.ts|dev"],
+    "args": "-r {f}-{p}{ext}",
+    "path_args": ["dev"]
+  },
+  {
+    "name": "mix variable syntax",
+    "want": ["index.js|index-dev.js|dev", "index.ts|index-dev.ts|dev"],
+    "args": "-r {f}-{{{{{{{{p}{{ext}}}",
+    "path_args": ["dev"]
+  },
+  {
+    "name": "transform built-in variables",
+    "want": ["index.js|INDEX-DEV.JS|dev", "index.ts|INDEX-DEV.TS|dev"],
+    "args": "-r {f.up}-{p.up}{{ext.up}}",
+    "path_args": ["dev"]
+  },
+  {
+    "name": "transform capture variables",
+    "want": [
+      "atomic-habits.pdf|ATOMIC-HABITS.Pdf|ebooks",
+      "1984.pdf|1984.Pdf|ebooks",
+      "fear-of-life.EPUB|FEAR-OF-LIFE.Epub|ebooks",
+      "green-mile_1996.mobi|GREEN-MILE_1996.Mobi|ebooks"
+    ],
+    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}{<$2>.ti}'",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "transform arbitrary text within angle brackets",
+    "want": [
+      "atomic-habits.pdf|ATOMIC-HABITS_hello.Pdf|ebooks",
+      "1984.pdf|1984_hello.Pdf|ebooks",
+      "fear-of-life.EPUB|FEAR-OF-LIFE_hello.Epub|ebooks",
+      "green-mile_1996.mobi|GREEN-MILE_1996_hello.Mobi|ebooks"
+    ],
+    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}_{{{<HELLO>.lw}}}{<$2>.TI}'",
+    "path_args": ["ebooks"]
+  },
+  {
+    "name": "ensure capture variables that expand to built-in variables are not substituted",
+    "want": ["fear-of-life.EPUB|{f.up}|ebooks"],
+    "args": "-f '^(f)' -r '{$1.up}'",
+    "path_args": ["ebooks"]
   }
 ]
