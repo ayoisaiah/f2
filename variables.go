@@ -861,14 +861,22 @@ func replaceParentDirVars(
 
 		var count int
 
+		sp := absSourcePath
+
 		for {
 			count++
 
-			absSourcePath = filepath.Dir(absSourcePath)
+			sp = filepath.Dir(sp)
 
-			parentDir = filepath.Base(absSourcePath)
+			parentDir = filepath.Base(sp)
 
 			if current.parent == count {
+				break
+			}
+
+			// break if we get to the root
+			if parentDir == "/" {
+				parentDir = ""
 				break
 			}
 		}

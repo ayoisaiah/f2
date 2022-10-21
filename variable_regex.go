@@ -12,26 +12,26 @@ var transformTokens = "(up|lw|ti|win|mac|di)"
 
 var (
 	filenameVarRegex = regexp.MustCompile(
-		fmt.Sprintf("{+f(?:.%s)?}+", transformTokens),
+		fmt.Sprintf("{+f(?:\\.%s)?}+", transformTokens),
 	)
 	extensionVarRegex = regexp.MustCompile(
-		fmt.Sprintf("{+ext(?:.%s)?}+", transformTokens),
+		fmt.Sprintf("{+ext(?:\\.%s)?}+", transformTokens),
 	)
 	parentDirVarRegex = regexp.MustCompile(
-		fmt.Sprintf("{+(\\d+)?p(?:.%s)?}+", transformTokens),
+		fmt.Sprintf("{+(\\d+)?p(?:\\.%s)?}+", transformTokens),
 	)
 	indexVarRegex = regexp.MustCompile(
 		`(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?`,
 	)
 	randomVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+(\\d+)?r(?:(_l|_d|_ld)|(?:<([^>])>))?(?:.%s)?}+",
+			"{+(\\d+)?r(?:(_l|_d|_ld)|(?:<([^>])>))?(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
 	hashVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+hash.(sha1|sha256|sha512|md5)(?:.%s)?}+",
+			"{+hash.(sha1|sha256|sha512|md5)(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
@@ -39,17 +39,17 @@ var (
 		fmt.Sprintf("{+(?:<(?:(\\$\\d+)|([^\\.]+))>)?\\.%s}+", transformTokens),
 	)
 	csvVarRegex = regexp.MustCompile(
-		fmt.Sprintf("{+csv.(\\d+)(?:.%s)}+", transformTokens),
+		fmt.Sprintf("{+csv.(\\d+)(?:\\.%s)?}+", transformTokens),
 	)
 	exiftoolVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+xt\\.([0-9a-zA-Z]+)(?:.%s)}+",
+			"{+xt\\.([0-9a-zA-Z]+)(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
 	id3VarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+id3\\.(format|type|title|album|album_artist|artist|genre|year|composer|track|disc|total_tracks|total_discs)(?:.%s)?}+",
+			"{+id3\\.(format|type|title|album|album_artist|artist|genre|year|composer|track|disc|total_tracks|total_discs)(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
@@ -88,14 +88,14 @@ func init() {
 	tokenString := strings.Join(tokens, "|")
 	dateVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+("+modTime+"|"+changeTime+"|"+birthTime+"|"+accessTime+"|"+currentTime+")\\.("+tokenString+")(?:.%s)?}+",
+			"{+("+modTime+"|"+changeTime+"|"+birthTime+"|"+accessTime+"|"+currentTime+")\\.("+tokenString+")(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
 
 	exifVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+(?:exif|x)\\.(?:(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)|(?:(dt)\\.("+tokenString+")))(?:.%s)?}+",
+			"{+(?:exif|x)\\.(?:(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)|(?:(dt)\\.("+tokenString+")))(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)

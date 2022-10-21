@@ -226,6 +226,7 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 
 		for _, v := range tc.Want {
 			var ch f2.Change
+			ch.BaseDir = "." // default to current directory
 
 			tokens := strings.Split(v, "|")
 
@@ -266,6 +267,8 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 
 			tc.Changes = append(tc.Changes, ch)
 		}
+
+		cases[i] = tc
 	}
 
 	return cases
@@ -282,6 +285,14 @@ func modifyTestingEnv(
 
 	if utils.Contains(setup, "testdata") {
 		testDir = testFixtures
+		// change test directory
+		err := os.Chdir(projectRoot)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if utils.Contains(setup, "csv") {
 		// change test directory
 		err := os.Chdir(projectRoot)
 		if err != nil {
@@ -342,6 +353,13 @@ func preTestSetup(
 		os.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
 	}
 
+	// modify the base directory
+	for i := range tc.Changes {
+		ch := tc.Changes[i]
+		ch.BaseDir = filepath.Join(testDir, ch.BaseDir)
+		tc.Changes[i] = ch
+	}
+
 	// make conflict paths relative to the test directory root
 	// to match the expected output from F2
 	for k, v := range tc.Conflicts {
@@ -359,6 +377,9 @@ func preTestSetup(
 	}
 
 	var pathArgs string
+	if len(tc.PathArgs) == 0 {
+		pathArgs = testDir
+	}
 
 	for _, v := range tc.PathArgs {
 		p := fmt.Sprintf("'%s'", filepath.Join(testDir, v))

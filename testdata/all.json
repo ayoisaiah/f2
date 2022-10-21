@@ -388,7 +388,7 @@
   },
   {
     "name": "replace with csv file",
-    "setup": ["testdata"],
+    "setup": ["csv"],
     "want": [
       "dsc-001.arw|kigali in rwanda — John Doe.arw|images",
       "fear-of-life.EPUB|fear of life — Alexandar Lowen.EPUB|ebooks"
@@ -609,19 +609,20 @@
     "name": "transform capture variables",
     "want": [
       "atomic-habits.pdf|ATOMIC-HABITS.Pdf|ebooks",
+      "animal-farm.epub|ANIMAL-FARM.Epub|ebooks",
       "1984.pdf|1984.Pdf|ebooks",
       "fear-of-life.EPUB|FEAR-OF-LIFE.Epub|ebooks",
       "green-mile_1996.mobi|GREEN-MILE_1996.Mobi|ebooks"
     ],
-    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}{<$2>.ti}'",
+    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}.{<$2>.ti}'",
     "path_args": ["ebooks"]
   },
   {
     "name": "prefix parent directory variable with a number",
     "want": [
-      "dsc-003.arw|images_sony_dsc-003.arw",
-      "startrails1.jpg|images_canon_startrails1.jpg",
-      "startrails2.jpg|images_canon_startrails2.jpg"
+      "dsc-003.arw|images_sony_dsc-003.arw|images/sony",
+      "startrails1.jpg|images_canon_startrails1.jpg|images/canon",
+      "startrails2.jpg|images_canon_startrails2.jpg|images/canon"
     ],
     "args": "-r '{100p}{2p}_{1p}_{f}{ext}{1000p}'",
     "path_args": ["images/sony", "images/canon"]
@@ -630,17 +631,18 @@
     "name": "transform arbitrary text within angle brackets",
     "want": [
       "atomic-habits.pdf|ATOMIC-HABITS_hello.Pdf|ebooks",
+      "animal-farm.epub|ANIMAL-FARM_hello.Epub|ebooks",
       "1984.pdf|1984_hello.Pdf|ebooks",
       "fear-of-life.EPUB|FEAR-OF-LIFE_hello.Epub|ebooks",
       "green-mile_1996.mobi|GREEN-MILE_1996_hello.Mobi|ebooks"
     ],
-    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}_{{{<HELLO>.lw}}}{<$2>.ti}'",
+    "args": "-f '(.*)\\.(.*)' -r '{<$1>.up}_{{{<HELLO>.lw}}}.{<$2>.ti}'",
     "path_args": ["ebooks"]
   },
   {
     "name": "ensure capture variables that expand to built-in variables are not substituted",
     "want": ["fear-of-life.EPUB|{f.up}|ebooks"],
-    "args": "-f '^(f)' -r '{$1.up}'",
+    "args": "-f '^(f).*' -r '{$1.up}'",
     "path_args": ["ebooks"]
   }
 ]
