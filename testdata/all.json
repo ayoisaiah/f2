@@ -198,6 +198,13 @@
     "path_args": ["images"]
   },
   {
+    "name": "test automatic creation of directories",
+    "want": ["index.ts|javascript/npm/typescript/index.ts|dev"],
+    "args": "-f (index.ts) -r javascript/npm/typescript/$1 -x",
+    "path_args": ["dev"],
+    "default_opts": "--json"
+  },
+  {
     "name": "test replacement chain and use capture variables",
     "want": [
       "Overgrown (2013)|2013/overgrown|music|true",
@@ -422,13 +429,6 @@
         }
       ]
     }
-  },
-  {
-    "name": "test automatic creation of directories",
-    "want": ["index.ts|javascript/npm/typescript/index.ts|dev"],
-    "args": "-f (index.ts) -r javascript/npm/typescript/$1 -x",
-    "path_args": ["dev"],
-    "default_opts": "--json"
   },
   {
     "name": "report conflict when target path exists but changes after the current file is renamed",

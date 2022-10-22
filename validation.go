@@ -518,7 +518,7 @@ func (op *Operation) checkPathLengthConflict(
 				f := []rune(utils.FilenameWithoutExtension(string(filename)))
 				index := windowsMaxLength - len(ext)
 				f = f[:index]
-				op.matches[i].Target = filepath.Join(string(f), string(ext))
+				op.matches[i].Target = string(f) + string(ext)
 			} else {
 				// trim filename so that it's no more than 255 bytes
 				filename := filepath.Base(target)

@@ -237,7 +237,7 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 				}
 
 				if j == 1 {
-					ch.Target = token
+					ch.Target = filepath.Clean(token)
 					continue
 				}
 

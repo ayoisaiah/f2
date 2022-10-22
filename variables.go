@@ -875,7 +875,7 @@ func replaceParentDirVars(
 			}
 
 			// break if we get to the root
-			if parentDir == "/" {
+			if parentDir == "/" || parentDir == "\\" {
 				parentDir = ""
 				break
 			}
