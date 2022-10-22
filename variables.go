@@ -284,6 +284,8 @@ func getID3Tags(sourcePath string) (*ID3, error) {
 		return nil, err
 	}
 
+	defer f.Close()
+
 	metadata, err := tag.ReadFrom(f)
 	if err != nil {
 		// empty ID3 instance which means the variables are replaced with empty strings
