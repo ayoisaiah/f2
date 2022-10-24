@@ -395,10 +395,10 @@
   },
   {
     "name": "replace with csv file",
-    "setup": ["csv"],
+    "setup": ["testdata", "csv"],
     "want": [
-      "dsc-001.arw|kigali in rwanda — John Doe.arw|images",
-      "fear-of-life.EPUB|fear of life — Alexandar Lowen.EPUB|ebooks"
+      "bike.jpeg|kigali in rwanda — John Doe.jpeg|images",
+      "sample_flac.flac|fear of life — Alexandar Lowen.flac|audio"
     ],
     "args": "-csv testdata/input.csv -r '{{csv.3.lw}} — {{csv.2}}{{ext}}'"
   },

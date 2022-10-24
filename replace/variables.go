@@ -1,4 +1,4 @@
-package f2
+package replace
 
 import (
 	"crypto/md5"
@@ -21,6 +21,7 @@ import (
 	exiftool "github.com/barasher/go-exiftool"
 	"github.com/dhowden/tag"
 	"github.com/rwcarlsen/goexif/exif"
+	"golang.org/x/exp/slices"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"golang.org/x/text/runes"
@@ -28,6 +29,10 @@ import (
 	"golang.org/x/text/unicode/norm"
 	"gopkg.in/djherbis/times.v1"
 
+	internaltime "github.com/ayoisaiah/f2/internal/time"
+
+	"github.com/ayoisaiah/f2/config"
+	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/utils"
 )
 
@@ -38,14 +43,6 @@ const (
 	sha256Hash hashAlgorithm = "sha256"
 	sha512Hash hashAlgorithm = "sha512"
 	md5Hash    hashAlgorithm = "md5"
-)
-
-const (
-	modTime     = "mtime"
-	accessTime  = "atime"
-	birthTime   = "btime"
-	changeTime  = "ctime"
-	currentTime = "now"
 )
 
 const (
@@ -171,8 +168,8 @@ func integerToRoman(integer int) string {
 }
 
 // getHash retrieves the appropriate hash value for the specified file.
-func getHash(file string, hashValue hashAlgorithm) (string, error) {
-	openedFile, err := os.Open(file)
+func getHash(filePath string, hashValue hashAlgorithm) (string, error) {
+	openedFile, err := os.Open(filePath)
 	if err != nil {
 		return "", err
 	}
@@ -242,27 +239,27 @@ func replaceDateVars(
 		var timeStr string
 
 		switch current.attr {
-		case modTime:
+		case internaltime.Mod:
 			modTime := timeSpec.ModTime()
 			timeStr = modTime.Format(dateTokens[token])
-		case birthTime:
+		case internaltime.Birth:
 			birthTime := timeSpec.ModTime()
 			if timeSpec.HasBirthTime() {
 				birthTime = timeSpec.BirthTime()
 			}
 
 			timeStr = birthTime.Format(dateTokens[token])
-		case accessTime:
+		case internaltime.Access:
 			accessTime := timeSpec.AccessTime()
 			timeStr = accessTime.Format(dateTokens[token])
-		case changeTime:
+		case internaltime.Change:
 			changeTime := timeSpec.ModTime()
 			if timeSpec.HasChangeTime() {
 				changeTime = timeSpec.ChangeTime()
 			}
 
 			timeStr = changeTime.Format(dateTokens[token])
-		case currentTime:
+		case internaltime.Current:
 			currentTime := time.Now()
 			timeStr = currentTime.Format(dateTokens[token])
 		}
@@ -642,31 +639,36 @@ func replaceExifToolVars(
 // replaceIndex replaces indexing variables in the target with their
 // corresponding values. The `changeIndex` argument is used in conjunction with
 // other values to increment the current index.
-func (op *Operation) replaceIndex(
+func replaceIndex(
 	target string,
 	changeIndex int, // position of change in the entire renaming operation
 	indexing indexVars,
 ) string {
-	if len(op.numberOffset) == 0 {
+	conf := config.Get()
+
+	numberOffset := conf.NumberOffset()
+
+	if len(numberOffset) == 0 {
 		for range indexing.matches {
-			op.numberOffset = append(op.numberOffset, 0)
+			numberOffset = append(numberOffset, 0)
+			conf.SetNumberOffset(numberOffset)
 		}
 	}
 
 	for i := range indexing.matches {
 		current := indexing.matches[i]
 
-		isCaptureVar := utils.ContainsInt(indexing.capturVarIndex, i)
+		isCaptureVar := slices.Contains(indexing.capturVarIndex, i)
 
 		if !current.step.isSet && !isCaptureVar {
 			current.step.value = 1
 		}
 
-		op.startNumber = current.startNumber
-		num := op.startNumber + (changeIndex * current.step.value) + op.numberOffset[i]
+		startNumber := current.startNumber
+		num := startNumber + (changeIndex * current.step.value) + numberOffset[i]
 
 		if isCaptureVar {
-			num = op.startNumber + (current.step.value) + op.numberOffset[i]
+			num = startNumber + (current.step.value) + numberOffset[i]
 		}
 
 		if len(current.skip) != 0 {
@@ -675,7 +677,8 @@ func (op *Operation) replaceIndex(
 				for _, v := range current.skip {
 					if num >= v.min && num <= v.max {
 						num += current.step.value
-						op.numberOffset[i] += current.step.value
+						numberOffset[i] += current.step.value
+						conf.SetNumberOffset(numberOffset)
 						continue outer
 					}
 				}
@@ -725,13 +728,13 @@ func transformString(source, token string) string {
 		return c.String(strings.ToLower(source))
 	case "win":
 		return regexReplace(
-			completeWindowsForbiddenCharRegex,
+			utils.CompleteWindowsForbiddenCharRegex,
 			source,
 			"",
 			0,
 		)
 	case "mac":
-		return regexReplace(macForbiddenCharRegex, source, "", 0)
+		return regexReplace(utils.MacForbiddenCharRegex, source, "", 0)
 	case "di":
 		t := transform.Chain(
 			norm.NFD,
@@ -797,7 +800,7 @@ func replaceTransformVars(
 				regex,
 				target,
 				regexReplace(
-					completeWindowsForbiddenCharRegex,
+					utils.CompleteWindowsForbiddenCharRegex,
 					match,
 					"",
 					0,
@@ -808,7 +811,7 @@ func replaceTransformVars(
 			target = regexReplace(
 				regex,
 				target,
-				regexReplace(macForbiddenCharRegex, match, "", 0),
+				regexReplace(utils.MacForbiddenCharRegex, match, "", 0),
 				1,
 			)
 		case "di":
@@ -919,23 +922,24 @@ func replaceExtVars(target, fileExt string, ev extVars) string {
 
 // replaceVariables checks if any variables are present in the target filename
 // and delegates the variable replacement to the appropriate function.
-func (op *Operation) replaceVariables(
-	ch *Change,
+func replaceVariables(
+	change *file.Change,
 	vars *variables,
 ) error {
-	fileExt := filepath.Ext(ch.originalSource)
-	sourcePath := filepath.Join(ch.BaseDir, ch.originalSource)
+	conf := config.Get()
+	fileExt := filepath.Ext(change.OriginalSource)
+	sourcePath := filepath.Join(change.BaseDir, change.OriginalSource)
 
 	if len(vars.filename.matches) > 0 {
-		ch.Target = replaceFilenameVars(
-			ch.Target,
+		change.Target = replaceFilenameVars(
+			change.Target,
 			filepath.Base(sourcePath),
 			vars.filename,
 		)
 	}
 
 	if len(vars.ext.matches) > 0 {
-		ch.Target = replaceExtVars(ch.Target, fileExt, vars.ext)
+		change.Target = replaceExtVars(change.Target, fileExt, vars.ext)
 	}
 
 	if len(vars.parentDir.matches) > 0 {
@@ -944,22 +948,26 @@ func (op *Operation) replaceVariables(
 			return err
 		}
 
-		ch.Target = replaceParentDirVars(ch.Target, abspath, vars.parentDir)
+		change.Target = replaceParentDirVars(
+			change.Target,
+			abspath,
+			vars.parentDir,
+		)
 	}
 
 	// handle date variables (e.g {{mtime.DD}})
 	if len(vars.date.matches) > 0 {
-		out, err := replaceDateVars(ch.Target, sourcePath, vars.date)
+		out, err := replaceDateVars(change.Target, sourcePath, vars.date)
 		if err != nil {
 			return err
 		}
 
-		ch.Target = out
+		change.Target = out
 	}
 
 	if len(vars.exiftool.matches) > 0 {
 		out, err := replaceExifToolVars(
-			ch.Target,
+			change.Target,
 			sourcePath,
 			vars.exiftool,
 		)
@@ -967,54 +975,54 @@ func (op *Operation) replaceVariables(
 			return err
 		}
 
-		ch.Target = out
+		change.Target = out
 	}
 
 	if len(vars.exif.matches) > 0 {
-		out, err := replaceExifVars(ch.Target, sourcePath, vars.exif)
+		out, err := replaceExifVars(change.Target, sourcePath, vars.exif)
 		if err != nil {
 			return err
 		}
 
-		ch.Target = out
+		change.Target = out
 	}
 
 	if len(vars.id3.matches) > 0 {
-		out, err := replaceID3Variables(ch.Target, sourcePath, vars.id3)
+		out, err := replaceID3Variables(change.Target, sourcePath, vars.id3)
 		if err != nil {
 			return err
 		}
 
-		ch.Target = out
+		change.Target = out
 	}
 
-	if csvVarRegex.MatchString(ch.Target) {
-		out := replaceCSVVars(ch.Target, ch.csvRow, vars.csv)
+	if csvVarRegex.MatchString(change.Target) {
+		out := replaceCSVVars(change.Target, change.CSVRow, vars.csv)
 
-		ch.Target = out
+		change.Target = out
 	}
 
 	if len(vars.hash.matches) > 0 {
-		out, err := replaceFileHashVars(ch.Target, sourcePath, vars.hash)
+		out, err := replaceFileHashVars(change.Target, sourcePath, vars.hash)
 		if err != nil {
 			return err
 		}
 
-		ch.Target = out
+		change.Target = out
 	}
 
 	if len(vars.random.matches) > 0 {
-		ch.Target = replaceRandomVars(ch.Target, vars.random)
+		change.Target = replaceRandomVars(change.Target, vars.random)
 	}
 
-	if transformVarRegex.MatchString(ch.Target) {
-		sourceName := ch.Source
-		if op.ignoreExt && !ch.IsDir {
+	if transformVarRegex.MatchString(change.Target) {
+		sourceName := change.Source
+		if conf.IgnoreExt() && !change.IsDir {
 			sourceName = utils.FilenameWithoutExtension(sourceName)
 		}
 
 		out, err := replaceTransformVars(
-			ch.Target,
+			change.Target,
 			sourceName,
 			vars.transform,
 		)
@@ -1022,17 +1030,17 @@ func (op *Operation) replaceVariables(
 			return err
 		}
 
-		ch.Target = out
+		change.Target = out
 	}
 
 	// Replace indexing scheme like %03d in the target
-	if indexVarRegex.MatchString(ch.Target) {
+	if indexVarRegex.MatchString(change.Target) {
 		if len(vars.index.capturVarIndex) > 0 {
 			indices := make([]int, len(vars.index.capturVarIndex))
 
 			copy(indices, vars.index.capturVarIndex)
 
-			numVar, err := getIndexingVars(ch.Target)
+			numVar, err := getIndexingVars(change.Target)
 			if err != nil {
 				return err
 			}
@@ -1041,7 +1049,7 @@ func (op *Operation) replaceVariables(
 			vars.index.capturVarIndex = indices
 		}
 
-		ch.Target = op.replaceIndex(ch.Target, ch.index, vars.index)
+		change.Target = replaceIndex(change.Target, change.Index, vars.index)
 	}
 
 	return nil

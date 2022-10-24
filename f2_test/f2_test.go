@@ -22,8 +22,13 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/sebdah/goldie/v2"
+	"golang.org/x/exp/slices"
+
+	"github.com/ayoisaiah/f2/internal/file"
+	internaljson "github.com/ayoisaiah/f2/internal/json"
 
 	"github.com/ayoisaiah/f2"
+	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/utils"
 )
 
@@ -41,7 +46,7 @@ func init() {
 	}
 
 	workingDir = strings.ReplaceAll(workingDir, "/", "_")
-	if runtime.GOOS == f2.Windows {
+	if runtime.GOOS == utils.Windows {
 		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
@@ -95,13 +100,18 @@ var fileSystem = []string{
 func setupFileSystem(tb testing.TB, testName string) string {
 	tb.Helper()
 
-	testDir, err := os.MkdirTemp(os.TempDir(), testName)
+	tempDir := filepath.Join(os.TempDir(), "f2")
+
+	testDir, err := os.MkdirTemp(tempDir, testName)
 	if err != nil {
 		tb.Fatal(err)
 	}
 
 	tb.Cleanup(func() {
-		_ = os.RemoveAll(testDir)
+		err = os.RemoveAll(testDir)
+		if err != nil {
+			tb.Log(err)
+		}
 	})
 
 	// change to testDir directory
@@ -128,7 +138,7 @@ func setupFileSystem(tb testing.TB, testName string) string {
 	for _, f := range fileSystem {
 		pathToFile := filepath.Join(testDir, f)
 
-		file, err := os.Create(pathToFile)
+		testFile, err := os.Create(pathToFile)
 		if err != nil {
 			tb.Fatalf(
 				"Unable to write to file: '%s', due to err: %v",
@@ -137,7 +147,7 @@ func setupFileSystem(tb testing.TB, testName string) string {
 			)
 		}
 
-		file.Close()
+		testFile.Close()
 	}
 
 	return testDir
@@ -156,7 +166,7 @@ func executeTest(args []string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func sortChanges(s []f2.Change) {
+func sortChanges(s []*file.Change) {
 	sort.Slice(s, func(i, j int) bool {
 		return s[i].Source < s[j].Source
 	})
@@ -169,7 +179,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 
 	copy(result, os.Args)
 
-	if runtime.GOOS == f2.Windows {
+	if runtime.GOOS == utils.Windows {
 		args = strings.ReplaceAll(args, `\`, `₦`)
 	}
 
@@ -183,7 +193,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 		)
 	}
 
-	if runtime.GOOS == f2.Windows {
+	if runtime.GOOS == utils.Windows {
 		for i, v := range argsSlice {
 			argsSlice[i] = strings.ReplaceAll(v, `₦`, `\`)
 		}
@@ -195,15 +205,15 @@ func parseArgs(t *testing.T, name, args string) []string {
 }
 
 type TestCase struct {
-	Name        string                            `json:"name"`
-	Changes     []f2.Change                       `json:"changes"`
-	Want        []string                          `json:"want"`
-	Args        string                            `json:"args"`
-	PathArgs    []string                          `json:"path_args"`
-	Conflicts   map[f2.ConflictType][]f2.Conflict `json:"conflicts"`
-	DefaultOpts string                            `json:"default_opts"`
-	GoldenFile  string                            `json:"golden_file"`
-	Setup       []string                          `json:"setup"`
+	Name        string              `json:"name"`
+	Changes     []*file.Change      `json:"changes"`
+	Want        []string            `json:"want"`
+	Args        string              `json:"args"`
+	PathArgs    []string            `json:"path_args"`
+	Conflicts   conflict.Collection `json:"conflicts"`
+	DefaultOpts string              `json:"default_opts"`
+	GoldenFile  string              `json:"golden_file"`
+	Setup       []string            `json:"setup"`
 }
 
 func retrieveTestCases(t *testing.T, filename string) []TestCase {
@@ -225,7 +235,7 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 		tc := cases[i]
 
 		for _, v := range tc.Want {
-			var ch f2.Change
+			ch := &file.Change{}
 			ch.BaseDir = "." // default to current directory
 
 			tokens := strings.Split(v, "|")
@@ -283,7 +293,7 @@ func modifyTestingEnv(
 ) (string, error) {
 	t.Helper()
 
-	if utils.Contains(setup, "testdata") {
+	if slices.Contains(setup, "testdata") {
 		testDir = testFixtures
 		// change test directory
 		err := os.Chdir(projectRoot)
@@ -292,29 +302,21 @@ func modifyTestingEnv(
 		}
 	}
 
-	if utils.Contains(setup, "csv") {
-		// change test directory
-		err := os.Chdir(projectRoot)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if utils.Contains(setup, "windows_hidden") {
+	if slices.Contains(setup, "windows_hidden") {
 		err := setHidden(filepath.Join(testDir, "images"))
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	if utils.Contains(setup, "exiftool") {
+	if slices.Contains(setup, "exiftool") {
 		_, err := exec.LookPath("exiftool")
 		if err != nil {
 			t.SkipNow()
 		}
 	}
 
-	if utils.Contains(setup, "date variables") {
+	if slices.Contains(setup, "date variables") {
 		mtime := time.Date(2022, time.April, 10, 13, 0, 0, 0, time.UTC)
 		atime := time.Date(2023, time.July, 11, 13, 0, 0, 0, time.UTC)
 
@@ -356,7 +358,19 @@ func preTestSetup(
 	// modify the base directory
 	for i := range tc.Changes {
 		ch := tc.Changes[i]
-		ch.BaseDir = filepath.Join(testDir, ch.BaseDir)
+		baseDir := ch.BaseDir
+
+		ch.BaseDir = filepath.Join(testDir, baseDir)
+
+		if slices.Contains(tc.Setup, "csv") {
+			absPath, err := filepath.Abs(filepath.Join(testDir, baseDir))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ch.BaseDir = absPath
+		}
+
 		tc.Changes[i] = ch
 	}
 
@@ -390,7 +404,7 @@ func preTestSetup(
 
 	//nolint:gocritic // if-else more appropriate
 	if tc.GoldenFile != "" {
-		if runtime.GOOS == f2.Windows {
+		if runtime.GOOS == utils.Windows {
 			t.SkipNow()
 		}
 
@@ -446,7 +460,7 @@ func runTestCases(t *testing.T, cases []TestCase) {
 func assertJSON(t *testing.T, tc *TestCase, result []byte) {
 	t.Helper()
 
-	var output f2.JSONOutput
+	var output internaljson.Output
 
 	err := json.Unmarshal(result, &output)
 	if err != nil {
@@ -475,7 +489,7 @@ func assertJSON(t *testing.T, tc *TestCase, result []byte) {
 	if !cmp.Equal(
 		tc.Changes,
 		output.Changes,
-		cmpopts.IgnoreUnexported(f2.Change{}),
+		cmpopts.IgnoreUnexported(file.Change{}),
 	) &&
 		len(tc.Changes) != 0 {
 		t.Fatalf(
@@ -495,7 +509,7 @@ func TestAllOSes(t *testing.T) {
 func TestShortHelp(t *testing.T) {
 	help := f2.ShortHelp(f2.NewApp())
 
-	if runtime.GOOS == f2.Windows {
+	if runtime.GOOS == utils.Windows {
 		t.SkipNow()
 	}
 

@@ -1,4 +1,4 @@
-package f2
+package replace
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	internaltime "github.com/ayoisaiah/f2/internal/time"
 )
 
 var transformTokens = "(up|lw|ti|win|mac|di)"
@@ -88,7 +90,7 @@ func init() {
 	tokenString := strings.Join(tokens, "|")
 	dateVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+("+modTime+"|"+changeTime+"|"+birthTime+"|"+accessTime+"|"+currentTime+")\\.("+tokenString+")(?:\\.%s)?}+",
+			"{+("+internaltime.Mod+"|"+internaltime.Change+"|"+internaltime.Birth+"|"+internaltime.Access+"|"+internaltime.Current+")\\.("+tokenString+")(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)

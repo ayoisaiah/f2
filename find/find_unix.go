@@ -1,9 +1,7 @@
 //go:build !windows
 // +build !windows
 
-package f2
-
-const pathSeperator = "/"
+package find
 
 // isHidden checks if a file is hidden on Unix operating systems
 // the nil error is returned to match the signature of the Windows

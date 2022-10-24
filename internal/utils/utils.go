@@ -12,32 +12,31 @@ import (
 	"github.com/pterm/pterm"
 )
 
+var (
+	// PartialWindowsForbiddenCharRegex is used to match the strings that contain forbidden
+	// characters in Windows' file names. This does not include also forbidden
+	// forward and back slash characters because their presence will cause a new
+	// directory to be created.
+	PartialWindowsForbiddenCharRegex = regexp.MustCompile(`<|>|:|"|\||\?|\*`)
+	// CompleteWindowsForbiddenCharRegex is like windowsForbiddenRegex but includes
+	// forward and backslashes.
+	CompleteWindowsForbiddenCharRegex = regexp.MustCompile(
+		`<|>|:|"|\||\?|\*|/|\\`,
+	)
+	// MacForbiddenCharRegex is used to match the strings that contain forbidden
+	// characters in macOS' file names.
+	MacForbiddenCharRegex = regexp.MustCompile(`:`)
+)
+
+const (
+	Windows = "windows"
+	Darwin  = "darwin"
+)
+
 var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 
 func CleanString(str string) string {
 	return nonAlphanumericRegex.ReplaceAllString(str, "_")
-}
-
-// contains checks if a string is present in
-// a string slice.
-func Contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsInt(sl []int, i int) bool {
-	for _, v := range sl {
-		if v == i {
-			return true
-		}
-	}
-
-	return false
 }
 
 func PrintTable(data [][]string, writer io.Writer) {

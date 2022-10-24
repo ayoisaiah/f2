@@ -1,14 +1,26 @@
-package f2
+// Package replace substitutes each match according to the configured
+// replacement directives which could be plain strings, builtin variables, or
+// regex capture variables
+package replace
 
 import (
+	"errors"
 	"math"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/ayoisaiah/f2/config"
+	"github.com/ayoisaiah/f2/find"
+	"github.com/ayoisaiah/f2/internal/file"
+	internalpath "github.com/ayoisaiah/f2/internal/path"
+	"github.com/ayoisaiah/f2/internal/sort"
+	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/ayoisaiah/f2/internal/utils"
 )
+
+var errInvalidSubmatches = errors.New("Invalid number of submatches")
 
 type numbersToSkip struct {
 	min int
@@ -820,50 +832,145 @@ func regexReplace(
 
 // replaceString replaces all matches in the filename
 // with the replacement string.
-func (op *Operation) replaceString(originalName string) string {
+func replaceString(originalName string) string {
+	conf := config.Get()
+
 	return regexReplace(
-		op.searchRegex,
+		conf.SearchRegex(),
 		originalName,
-		op.replacement,
-		op.replaceLimit,
+		conf.Replacement(),
+		conf.ReplaceLimit(),
 	)
 }
 
-// replace handles the replacement of matches in each file with the
+// replaceMatches handles the replacement of matches in each file with the
 // replacement string.
-func (op *Operation) replace() (err error) {
-	vars, err := extractVariables(op.replacement)
+func replaceMatches(matches []*file.Change) ([]*file.Change, error) {
+	conf := config.Get()
+
+	vars, err := extractVariables(conf.Replacement())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for i := range op.matches {
-		ch := op.matches[i]
-		ch.index = i
-		originalName := ch.Source
+	for i := range matches {
+		change := matches[i]
+		change.Index = i
+		originalName := change.Source
 		fileExt := filepath.Ext(originalName)
 
-		if op.ignoreExt && !ch.IsDir {
+		if conf.IgnoreExt() && !change.IsDir {
 			originalName = utils.FilenameWithoutExtension(originalName)
 		}
 
-		ch.Target = op.replaceString(originalName)
+		change.Target = replaceString(originalName)
 
 		// Replace any variables present with their corresponding values
-		err = op.replaceVariables(&ch, &vars)
+		err = replaceVariables(change, &vars)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Reattach the original extension to the new file name
-		if op.ignoreExt && !ch.IsDir {
-			ch.Target += fileExt
+		if conf.IgnoreExt() && !change.IsDir {
+			change.Target += fileExt
 		}
 
-		ch.Target = strings.TrimSpace(filepath.Clean(ch.Target))
-		ch.status = statusOK
-		op.matches[i] = ch
+		change.Target = strings.TrimSpace(filepath.Clean(change.Target))
+		change.Status = status.OK
+		matches[i] = change
 	}
 
-	return nil
+	return matches, nil
+}
+
+func handleReplacementChain(
+	matches []*file.Change,
+) ([]*file.Change, error) {
+	conf := config.Get()
+	replacementSlice := conf.ReplacementSlice()
+
+	for i, v := range replacementSlice {
+		conf.SetReplacement(v)
+
+		var err error
+
+		matches, err = replaceMatches(matches)
+		if err != nil {
+			return nil, err
+		}
+
+		for j := range matches {
+			change := matches[j]
+
+			// Update the source to the target from the previous replacement
+			// in preparation for the next replacement
+			if i != len(replacementSlice)-1 {
+				matches[j].Source = change.Target
+			}
+
+			// After the last replacement, update the Source
+			// back to the original
+			if i > 0 && i == len(replacementSlice)-1 {
+				matches[j].Source = change.OriginalSource
+			}
+		}
+
+		if i != len(replacementSlice)-1 {
+			err := conf.SetFindStringRegex(i + 1)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return matches, nil
+}
+
+// c creates a file.Change struct for each match.
+func c(matches internalpath.Collection) []*file.Change {
+	conf := config.Get()
+
+	var changes []*file.Change
+
+	rows := find.GetCSVRows()
+
+	for path, dirEntry := range matches {
+		for _, entry := range dirEntry {
+			filename := filepath.Clean(entry.Name())
+			change := &file.Change{
+				BaseDir:        path,
+				IsDir:          entry.IsDir(),
+				Source:         filename,
+				OriginalSource: filename,
+			}
+
+			if conf.CSVFilename() != "" {
+				absPath := filepath.Join(path, filename)
+				change.CSVRow = rows[absPath]
+			}
+
+			changes = append(changes, change)
+		}
+	}
+
+	return changes
+}
+
+func Replace(matches internalpath.Collection) ([]*file.Change, error) {
+	var err error
+
+	var changes []*file.Change
+
+	changes, err = sort.Changes(c(matches))
+	if err != nil {
+		return nil, err
+	}
+
+	changes, err = handleReplacementChain(changes)
+	if err != nil {
+		return nil, err
+	}
+
+	return changes, nil
 }

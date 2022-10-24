@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package f2
+package find
 
 import (
 	"path/filepath"

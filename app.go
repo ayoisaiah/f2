@@ -1,6 +1,7 @@
 package f2
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,21 @@ import (
 
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
+
+	"github.com/ayoisaiah/f2/config"
+	"github.com/ayoisaiah/f2/find"
+	"github.com/ayoisaiah/f2/rename"
+	"github.com/ayoisaiah/f2/replace"
+	"github.com/ayoisaiah/f2/report"
+	"github.com/ayoisaiah/f2/validate"
+)
+
+var errConflictDetected = errors.New(
+	"Resolve conflicts before proceeding or use the -F flag to auto fix all conflicts",
+)
+
+var errRenameFailed = errors.New(
+	"The renaming operation failed due to the above errors",
 )
 
 const (
@@ -359,29 +375,69 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			},
 		},
 		UseShortOptionHandling: true,
-		Action: func(c *cli.Context) error {
+		Action: func(ctx *cli.Context) error {
 			// print short help if no arguments or flags are present
-			if c.NumFlags() == 0 && !c.Args().Present() {
-				pterm.Println(ShortHelp(c.App))
+			if ctx.NumFlags() == 0 && !ctx.Args().Present() {
+				pterm.Println(ShortHelp(ctx.App))
 				os.Exit(1)
 			}
 
-			if c.Bool("no-color") || c.Bool("json") {
+			if ctx.Bool("no-color") || ctx.Bool("json") {
 				disableStyling()
 			}
 
-			if c.Bool("quiet") {
+			if ctx.Bool("quiet") {
 				pterm.DisableOutput()
 			}
 
-			op, err := newOperation(c)
+			conf, err := config.Init(ctx)
 			if err != nil {
 				return err
 			}
 
-			c.App.Metadata["op"] = op
+			if conf.ShouldRevert() {
+				return rename.Undo()
+			}
 
-			return op.run()
+			paths, err := find.Find()
+			if err != nil {
+				return err
+			}
+
+			if len(paths) == 0 {
+				report.NoMatches()
+				return nil
+			}
+
+			changes, err := replace.Replace(paths)
+			if err != nil {
+				return err
+			}
+
+			conflicts := validate.Validate(changes)
+			if len(conflicts) > 0 {
+				report.Conflicts(conflicts)
+				return errConflictDetected
+			}
+
+			if !conf.ShouldExec() {
+				report.Dry(changes)
+				return nil
+			}
+
+			renameErrs := rename.Execute(changes)
+
+			if !conf.SimpleMode() {
+				if conf.JSON() || len(renameErrs) > 0 {
+					report.Changes(changes, renameErrs)
+				}
+			}
+
+			if len(renameErrs) > 0 {
+				return errRenameFailed
+			}
+
+			return nil
 		},
 		OnUsageError: func(context *cli.Context, err error, isSubcommand bool) error {
 			return err
