@@ -100,9 +100,7 @@ var fileSystem = []string{
 func setupFileSystem(tb testing.TB, testName string) string {
 	tb.Helper()
 
-	tempDir := filepath.Join(os.TempDir(), "f2")
-
-	testDir, err := os.MkdirTemp(tempDir, testName)
+	testDir, err := os.MkdirTemp(os.TempDir(), testName)
 	if err != nil {
 		tb.Fatal(err)
 	}
