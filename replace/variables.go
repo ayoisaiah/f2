@@ -29,11 +29,12 @@ import (
 	"golang.org/x/text/unicode/norm"
 	"gopkg.in/djherbis/times.v1"
 
+	internalpath "github.com/ayoisaiah/f2/internal/path"
 	internaltime "github.com/ayoisaiah/f2/internal/time"
 
 	"github.com/ayoisaiah/f2/config"
 	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/utils"
+	internalos "github.com/ayoisaiah/f2/internal/os"
 
 	"github.com/araddon/dateparse"
 )
@@ -87,6 +88,15 @@ type ID3 struct {
 	TotalTracks int
 	Disc        int
 	TotalDiscs  int
+}
+
+func greatestCommonDivisor(a, b int) int {
+	precision := 0.0001
+	if float64(b) < precision {
+		return a
+	}
+
+	return greatestCommonDivisor(b, a%b)
 }
 
 // getRandString returns a random string of the specified length
@@ -435,7 +445,7 @@ func getExifExposureTime(exifData *Exif) string {
 		return ""
 	}
 
-	divisor := utils.GreatestCommonDivisor(numerator, denominator)
+	divisor := greatestCommonDivisor(numerator, denominator)
 	if (numerator/divisor)%(denominator/divisor) == 0 {
 		return fmt.Sprintf(
 			"%d",
@@ -730,13 +740,13 @@ func transformString(source, token string) string {
 		return c.String(strings.ToLower(source))
 	case "win":
 		return regexReplace(
-			utils.CompleteWindowsForbiddenCharRegex,
+			internalos.CompleteWindowsForbiddenCharRegex,
 			source,
 			"",
 			0,
 		)
 	case "mac":
-		return regexReplace(utils.MacForbiddenCharRegex, source, "", 0)
+		return regexReplace(internalos.MacForbiddenCharRegex, source, "", 0)
 	case "di":
 		t := transform.Chain(
 			norm.NFD,
@@ -871,7 +881,7 @@ func replaceParentDirVars(
 }
 
 func replaceFilenameVars(target, sourcePath string, fv filenameVars) string {
-	sourceName := utils.FilenameWithoutExtension(sourcePath)
+	sourceName := internalpath.FilenameWithoutExtension(sourcePath)
 
 	for i := range fv.matches {
 		current := fv.matches[i]
@@ -994,7 +1004,7 @@ func replaceVariables(
 	if transformVarRegex.MatchString(change.Target) {
 		sourceName := change.Source
 		if conf.IgnoreExt() && !change.IsDir {
-			sourceName = utils.FilenameWithoutExtension(sourceName)
+			sourceName = internalpath.FilenameWithoutExtension(sourceName)
 		}
 
 		out, err := replaceTransformVars(

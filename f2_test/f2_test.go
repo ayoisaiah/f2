@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	stdpath "path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -29,7 +30,7 @@ import (
 
 	"github.com/ayoisaiah/f2"
 	"github.com/ayoisaiah/f2/internal/conflict"
-	"github.com/ayoisaiah/f2/internal/utils"
+	internalos "github.com/ayoisaiah/f2/internal/os"
 )
 
 func init() {
@@ -46,7 +47,7 @@ func init() {
 	}
 
 	workingDir = strings.ReplaceAll(workingDir, "/", "_")
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
@@ -60,6 +61,8 @@ func init() {
 
 	rand.Seed(time.Now().UnixNano())
 }
+
+var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 
 var projectRoot string
 
@@ -177,7 +180,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 
 	copy(result, os.Args)
 
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		args = strings.ReplaceAll(args, `\`, `₦`)
 	}
 
@@ -191,7 +194,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 		)
 	}
 
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		for i, v := range argsSlice {
 			argsSlice[i] = strings.ReplaceAll(v, `₦`, `\`)
 		}
@@ -338,7 +341,7 @@ func preTestSetup(
 ) []string {
 	t.Helper()
 
-	testDir := setupFileSystem(t, utils.CleanString(tc.Name))
+	testDir := setupFileSystem(t, cleanString(tc.Name))
 
 	if len(tc.Setup) > 0 {
 		v, err := modifyTestingEnv(t, testDir, tc.Setup)
@@ -402,7 +405,7 @@ func preTestSetup(
 
 	//nolint:gocritic // if-else more appropriate
 	if tc.GoldenFile != "" {
-		if runtime.GOOS == utils.Windows {
+		if runtime.GOOS == internalos.Windows {
 			t.SkipNow()
 		}
 
@@ -455,6 +458,16 @@ func runTestCases(t *testing.T, cases []TestCase) {
 	}
 }
 
+func prettyPrint(i interface{}) string {
+	//nolint:errchkjson // no need to check error
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
+}
+
+func cleanString(str string) string {
+	return nonAlphanumericRegex.ReplaceAllString(str, "_")
+}
+
 func assertJSON(t *testing.T, tc *TestCase, result []byte) {
 	t.Helper()
 
@@ -493,8 +506,8 @@ func assertJSON(t *testing.T, tc *TestCase, result []byte) {
 		t.Fatalf(
 			"Test (%s) -> Expected results to be: %s, but got: %s\n",
 			tc.Name,
-			utils.PrettyPrint(tc.Changes),
-			utils.PrettyPrint(output.Changes),
+			prettyPrint(tc.Changes),
+			prettyPrint(output.Changes),
 		)
 	}
 }
@@ -507,7 +520,7 @@ func TestAllOSes(t *testing.T) {
 func TestShortHelp(t *testing.T) {
 	help := f2.ShortHelp(f2.NewApp())
 
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		t.SkipNow()
 	}
 

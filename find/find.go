@@ -4,6 +4,7 @@
 package find
 
 import (
+	"encoding/csv"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/ayoisaiah/f2/config"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
-	"github.com/ayoisaiah/f2/internal/utils"
 )
 
 const (
@@ -25,6 +25,24 @@ const (
 // with a file renaming change. The key is the absolute path of the source file
 // and the value is the correspoding row in the CSV file.
 var csvRows = make(map[string][]string)
+
+func readCSVFile(filePath string) ([][]string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+
+	csvReader := csv.NewReader(f)
+
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}
 
 // filterMatches filters out files that do not match the find string or one
 // that matches any exclusion patterns.
@@ -91,7 +109,7 @@ func filterMatches(pathsToSearch internalpath.Collection) error {
 			}
 
 			if conf.IgnoreExt() && !entryIsDir {
-				filename = utils.FilenameWithoutExtension(filename)
+				filename = internalpath.FilenameWithoutExtension(filename)
 			}
 
 			if excludeFilter != "" && excludeMatchRegex.MatchString(filename) {
@@ -273,7 +291,7 @@ func handleCSV() (internalpath.Collection, error) {
 
 	paths := make(internalpath.Collection)
 
-	records, err := utils.ReadCSVFile(conf.CSVFilename())
+	records, err := readCSVFile(conf.CSVFilename())
 	if err != nil {
 		return nil, err
 	}

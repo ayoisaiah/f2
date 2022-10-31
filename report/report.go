@@ -16,7 +16,6 @@ import (
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
 	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/internal/utils"
 )
 
 func printTable(data [][]string, writer io.Writer) {
@@ -79,7 +78,7 @@ func Changes(changes []*file.Change, errs []int) {
 		data[i] = d
 	}
 
-	utils.PrintTable(data, conf.Stdout())
+	printTable(data, conf.Stdout())
 }
 
 // Conflicts prints any detected conflicts to the standard output in table format.

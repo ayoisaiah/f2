@@ -17,7 +17,6 @@ import (
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 	"github.com/ayoisaiah/f2/internal/sort"
 	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/internal/utils"
 )
 
 var errInvalidSubmatches = errors.New("Invalid number of submatches")
@@ -862,7 +861,7 @@ func replaceMatches(matches []*file.Change) ([]*file.Change, error) {
 		fileExt := filepath.Ext(originalName)
 
 		if conf.IgnoreExt() && !change.IsDir {
-			originalName = utils.FilenameWithoutExtension(originalName)
+			originalName = internalpath.FilenameWithoutExtension(originalName)
 		}
 
 		change.Target = replaceString(originalName)

@@ -2,9 +2,10 @@ package path
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
 
-	"github.com/ayoisaiah/f2/internal/utils"
+	internalos "github.com/ayoisaiah/f2/internal/os"
 )
 
 // Collection represents a collection of paths and their respective
@@ -15,7 +16,13 @@ type Collection map[string][]os.DirEntry
 var Separator = "/"
 
 func init() {
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		Separator = `\`
 	}
+}
+
+// FilenameWithoutExtension returns the input file name
+// without its extension.
+func FilenameWithoutExtension(fileName string) string {
+	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }

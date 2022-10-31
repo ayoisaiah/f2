@@ -20,9 +20,9 @@ import (
 	"github.com/ayoisaiah/f2/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
+	internalos "github.com/ayoisaiah/f2/internal/os"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 	internalsort "github.com/ayoisaiah/f2/internal/sort"
-	"github.com/ayoisaiah/f2/internal/utils"
 	"github.com/ayoisaiah/f2/report"
 )
 
@@ -49,7 +49,7 @@ func rename(changes []*file.Change) []int {
 		// directories before renaming the file
 		if strings.Contains(change.Target, "/") ||
 			strings.Contains(change.Target, `\`) &&
-				runtime.GOOS == utils.Windows {
+				runtime.GOOS == internalos.Windows {
 			// No need to check if the `dir` exists or if there are several
 			// consecutive slashes since `os.MkdirAll` handles that
 			dir := filepath.Dir(change.Target)
@@ -95,7 +95,7 @@ func backupChanges(changes []*file.Change, errs []int) error {
 		internalpath.Separator,
 		"_",
 	)
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
 

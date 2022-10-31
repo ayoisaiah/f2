@@ -27,9 +27,9 @@ import (
 	"github.com/ayoisaiah/f2/config"
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
+	internalos "github.com/ayoisaiah/f2/internal/os"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/internal/utils"
 )
 
 var conflicts conflict.Collection
@@ -62,7 +62,9 @@ func newTarget(change *file.Change, renamedPaths map[string][]struct {
 	index      int
 },
 ) string {
-	fileNoExt := utils.FilenameWithoutExtension(filepath.Base(change.Target))
+	fileNoExt := internalpath.FilenameWithoutExtension(
+		filepath.Base(change.Target),
+	)
 	regex := regexp.MustCompile(`\(\d+\)$`)
 	// Extract the numbered index at the end of the filename (if any)
 	match := regex.FindStringSubmatch(fileNoExt)
@@ -255,12 +257,12 @@ func checkOverwritingPathConflict(renamedPaths renamedPathsType) {
 // checkForbiddenCharacters is responsible for ensuring that target file names
 // do not contain forbidden characters for the current OS.
 func checkForbiddenCharacters(path string) string {
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		// partialWindowsForbiddenCharRegex is used here as forward and backward
 		// slashes are used for auto creating directories
-		if utils.PartialWindowsForbiddenCharRegex.MatchString(path) {
+		if internalos.PartialWindowsForbiddenCharRegex.MatchString(path) {
 			return strings.Join(
-				utils.PartialWindowsForbiddenCharRegex.FindAllString(
+				internalos.PartialWindowsForbiddenCharRegex.FindAllString(
 					path,
 					-1,
 				),
@@ -269,7 +271,7 @@ func checkForbiddenCharacters(path string) string {
 		}
 	}
 
-	if runtime.GOOS == utils.Darwin {
+	if runtime.GOOS == internalos.Darwin {
 		if strings.Contains(path, ":") {
 			return ":"
 		}
@@ -285,12 +287,13 @@ func isTargetLengthExceeded(target string) bool {
 	filename := filepath.Base(target)
 
 	// max length of 260 characters in windows
-	if runtime.GOOS == utils.Windows &&
+	if runtime.GOOS == internalos.Windows &&
 		len([]rune(filename)) > windowsMaxFileCharLength {
 		return true
 	}
 
-	if runtime.GOOS != utils.Windows && len([]byte(filename)) > unixMaxBytes {
+	if runtime.GOOS != internalos.Windows &&
+		len([]byte(filename)) > unixMaxBytes {
 		// max length of 255 bytes on Linux and other unix-based OSes
 		return true
 	}
@@ -309,7 +312,7 @@ func checkTrailingPeriodConflict(
 	sourcePath := filepath.Join(change.BaseDir, change.Source)
 	targetPath := filepath.Join(change.BaseDir, change.Target)
 
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		pathComponents := strings.Split(change.Target, internalpath.Separator)
 
 		for _, v := range pathComponents {
@@ -362,11 +365,13 @@ func checkFileNameLengthConflict(
 	exceeded := isTargetLengthExceeded(change.Target)
 	if exceeded {
 		if conf.FixConflicts() {
-			if runtime.GOOS == utils.Windows {
+			if runtime.GOOS == internalos.Windows {
 				// trim filename so that it's less than 255 characters
 				filename := []rune(filepath.Base(change.Target))
 				ext := []rune(filepath.Ext(string(filename)))
-				f := []rune(utils.FilenameWithoutExtension(string(filename)))
+				f := []rune(
+					internalpath.FilenameWithoutExtension(string(filename)),
+				)
 				index := windowsMaxFileCharLength - len(ext)
 				f = f[:index]
 				change.Target = string(f) + string(ext)
@@ -374,7 +379,7 @@ func checkFileNameLengthConflict(
 				// trim filename so that it's no more than 255 bytes
 				filename := filepath.Base(change.Target)
 				ext := filepath.Ext(filename)
-				fileNoExt := utils.FilenameWithoutExtension(filename)
+				fileNoExt := internalpath.FilenameWithoutExtension(filename)
 				index := unixMaxBytes - len([]byte(ext))
 				for {
 					if len([]byte(fileNoExt)) > index {
@@ -425,14 +430,14 @@ func checkForbiddenCharactersConflict(
 	forbiddenChars := checkForbiddenCharacters(change.Target)
 	if forbiddenChars != "" {
 		if conf.FixConflicts() {
-			if runtime.GOOS == utils.Windows {
-				change.Target = utils.PartialWindowsForbiddenCharRegex.ReplaceAllString(
+			if runtime.GOOS == internalos.Windows {
+				change.Target = internalos.PartialWindowsForbiddenCharRegex.ReplaceAllString(
 					change.Target,
 					"",
 				)
 			}
 
-			if runtime.GOOS == utils.Darwin {
+			if runtime.GOOS == internalos.Darwin {
 				change.Target = strings.ReplaceAll(
 					change.Target,
 					":",

@@ -13,9 +13,9 @@ import (
 
 	"github.com/ayoisaiah/f2/config"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
+	internalos "github.com/ayoisaiah/f2/internal/os"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 	internalsort "github.com/ayoisaiah/f2/internal/sort"
-	"github.com/ayoisaiah/f2/internal/utils"
 	"github.com/ayoisaiah/f2/report"
 )
 
@@ -29,7 +29,7 @@ func Undo() error {
 	conf := config.Get()
 
 	dir := strings.ReplaceAll(conf.WorkingDir(), internalpath.Separator, "_")
-	if runtime.GOOS == utils.Windows {
+	if runtime.GOOS == internalos.Windows {
 		dir = strings.ReplaceAll(dir, ":", "_")
 	}
 
