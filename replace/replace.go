@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ayoisaiah/f2/config"
 	"github.com/ayoisaiah/f2/find"
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 	"github.com/ayoisaiah/f2/internal/sort"

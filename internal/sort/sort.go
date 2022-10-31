@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/djherbis/times.v1"
 
-	"github.com/ayoisaiah/f2/config"
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internaltime "github.com/ayoisaiah/f2/internal/time"
 )

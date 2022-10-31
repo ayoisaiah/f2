@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/ayoisaiah/f2/config"
+	"github.com/ayoisaiah/f2/internal/config"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 )
 

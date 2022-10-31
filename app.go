@@ -12,8 +12,8 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 
-	"github.com/ayoisaiah/f2/config"
 	"github.com/ayoisaiah/f2/find"
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/rename"
 	"github.com/ayoisaiah/f2/replace"
 	"github.com/ayoisaiah/f2/report"

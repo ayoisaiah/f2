@@ -32,7 +32,7 @@ import (
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 	internaltime "github.com/ayoisaiah/f2/internal/time"
 
-	"github.com/ayoisaiah/f2/config"
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internalos "github.com/ayoisaiah/f2/internal/os"
 

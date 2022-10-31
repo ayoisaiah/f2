@@ -17,7 +17,7 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/config"
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
 	internalos "github.com/ayoisaiah/f2/internal/os"
