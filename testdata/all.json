@@ -339,7 +339,7 @@
       "bike.jpeg|2020_samsung_SM-G975F_ISO50_w4032_h3024_4032x3024_1_100s_4.32mm(26mm)_f2.4.jpeg|images",
       "proraw.dng|2020_Apple_iPhone 12 Pro Max_ISO32_w4032_h3024_4032x3024_1_121s_5.1mm(26mm)_f1.6.dng|images"
     ],
-    "args": "-f '.*\\.(cr2|jpeg|dng)' -r {{exif.dt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm({{exif.fl35}}mm)_f{{exif.fnum}}{{ext}}",
+    "args": "-f '.*\\.(cr2|jpeg|dng)' -r {{exif.cdt.YYYY}}_{{exif.make}}_{{exif.model}}_ISO{{exif.iso}}_w{{exif.w}}_h{{exif.h}}_{{exif.wh}}_{{exif.et}}s_{{exif.fl}}mm({{exif.fl35}}mm)_f{{exif.fnum}}{{ext}}",
     "path_args": ["images"]
   },
   {

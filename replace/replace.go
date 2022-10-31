@@ -50,6 +50,7 @@ type transformVarMatch struct {
 	token      string
 	captureVar string
 	inputStr   string
+	timeStr    string
 	val        []string
 }
 
@@ -307,7 +308,7 @@ func getTransformVars(replacementInput string) (transformVars, error) {
 		replacementInput,
 		-1,
 	)
-	expectedLength := 4
+	expectedLength := 5
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -326,6 +327,7 @@ func getTransformVars(replacementInput string) (transformVars, error) {
 		match.captureVar = submatch[1]
 		match.inputStr = submatch[2]
 		match.token = submatch[3]
+		match.timeStr = submatch[4]
 
 		transformVarMatches.matches = append(transformVarMatches.matches, match)
 	}

@@ -34,6 +34,8 @@ import (
 	"github.com/ayoisaiah/f2/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/utils"
+
+	"github.com/araddon/dateparse"
 )
 
 type hashAlgorithm string
@@ -545,7 +547,7 @@ func replaceExifVars(
 		var exifTag string
 
 		switch current.attr {
-		case "dt":
+		case "cdt":
 			exifTag = getExifDate(exifData, current.timeStr)
 		case "soft":
 			exifTag = exifData.Software
@@ -750,6 +752,21 @@ func transformString(source, token string) string {
 		return result
 	}
 
+	if strings.HasPrefix(token, "dt.") {
+		dateTime, err := dateparse.ParseAny(source)
+		if err != nil {
+			return source
+		}
+
+		format := strings.TrimPrefix(token, "dt.")
+
+		if _, ok := dateTokens[format]; !ok {
+			return source
+		}
+
+		return dateTime.Format(dateTokens[format])
+	}
+
 	return source
 }
 
@@ -781,53 +798,12 @@ func replaceTransformVars(
 			match = source
 		}
 
-		switch current.token {
-		case "up":
-			target = regexReplace(regex, target, strings.ToUpper(match), 1)
-		case "lw":
-			target = regexReplace(regex, target, strings.ToLower(match), 1)
-		case "ti":
-			c := cases.Title(language.English)
-
-			target = regexReplace(
-				regex,
-				target,
-				c.String(strings.ToLower(match)),
-				1,
-			)
-		case "win":
-			target = regexReplace(
-				regex,
-				target,
-				regexReplace(
-					utils.CompleteWindowsForbiddenCharRegex,
-					match,
-					"",
-					0,
-				),
-				1,
-			)
-		case "mac":
-			target = regexReplace(
-				regex,
-				target,
-				regexReplace(utils.MacForbiddenCharRegex, match, "", 0),
-				1,
-			)
-		case "di":
-			t := transform.Chain(
-				norm.NFD,
-				runes.Remove(runes.In(unicode.Mn)),
-				norm.NFC,
-			)
-
-			result, _, err := transform.String(t, match)
-			if err != nil {
-				return match, err
-			}
-
-			target = regexReplace(regex, target, result, 1)
-		}
+		target = regexReplace(
+			regex,
+			target,
+			transformString(match, current.token),
+			1,
+		)
 	}
 
 	return target, nil

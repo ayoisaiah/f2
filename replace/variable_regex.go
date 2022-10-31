@@ -10,9 +10,58 @@ import (
 	internaltime "github.com/ayoisaiah/f2/internal/time"
 )
 
-var transformTokens = "(up|lw|ti|win|mac|di)"
+var transformTokens string
 
 var (
+	filenameVarRegex  *regexp.Regexp
+	extensionVarRegex *regexp.Regexp
+	parentDirVarRegex *regexp.Regexp
+	indexVarRegex     *regexp.Regexp
+	randomVarRegex    *regexp.Regexp
+	hashVarRegex      *regexp.Regexp
+	transformVarRegex *regexp.Regexp
+	csvVarRegex       *regexp.Regexp
+	exiftoolVarRegex  *regexp.Regexp
+	id3VarRegex       *regexp.Regexp
+	exifVarRegex      *regexp.Regexp
+	dateVarRegex      *regexp.Regexp
+)
+
+var dateTokens = map[string]string{
+	"YYYY": "2006",
+	"YY":   "06",
+	"MMMM": "January",
+	"MMM":  "Jan",
+	"MM":   "01",
+	"M":    "1",
+	"DDDD": "Monday",
+	"DDD":  "Mon",
+	"DD":   "02",
+	"D":    "2",
+	"H":    "15",
+	"hh":   "03",
+	"h":    "3",
+	"mm":   "04",
+	"m":    "4",
+	"ss":   "05",
+	"s":    "5",
+	"A":    "PM",
+	"a":    "pm",
+}
+
+func init() {
+	tokens := make([]string, 0, len(dateTokens))
+	for key := range dateTokens {
+		tokens = append(tokens, key)
+	}
+
+	tokenString := strings.Join(tokens, "|")
+
+	transformTokens = fmt.Sprintf(
+		"(up|lw|ti|win|mac|di|(?:dt\\.(%s)))",
+		tokenString,
+	)
+
 	filenameVarRegex = regexp.MustCompile(
 		fmt.Sprintf("{+f(?:\\.%s)?}+", transformTokens),
 	)
@@ -55,39 +104,7 @@ var (
 			transformTokens,
 		),
 	)
-	exifVarRegex *regexp.Regexp
-	dateVarRegex *regexp.Regexp
-)
 
-var dateTokens = map[string]string{
-	"YYYY": "2006",
-	"YY":   "06",
-	"MMMM": "January",
-	"MMM":  "Jan",
-	"MM":   "01",
-	"M":    "1",
-	"DDDD": "Monday",
-	"DDD":  "Mon",
-	"DD":   "02",
-	"D":    "2",
-	"H":    "15",
-	"hh":   "03",
-	"h":    "3",
-	"mm":   "04",
-	"m":    "4",
-	"ss":   "05",
-	"s":    "5",
-	"A":    "PM",
-	"a":    "pm",
-}
-
-func init() {
-	tokens := make([]string, 0, len(dateTokens))
-	for key := range dateTokens {
-		tokens = append(tokens, key)
-	}
-
-	tokenString := strings.Join(tokens, "|")
 	dateVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
 			"{+("+internaltime.Mod+"|"+internaltime.Change+"|"+internaltime.Birth+"|"+internaltime.Access+"|"+internaltime.Current+")\\.("+tokenString+")(?:\\.%s)?}+",
@@ -97,7 +114,7 @@ func init() {
 
 	exifVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+(?:exif|x)\\.(?:(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)|(?:(dt)\\.("+tokenString+")))(?:\\.%s)?}+",
+			"{+(?:exif|x)\\.(?:(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)|(?:(cdt)\\.("+tokenString+")))(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
