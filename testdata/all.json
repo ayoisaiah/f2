@@ -217,7 +217,7 @@
   },
   {
     "name": "allow existing files to be overwritten",
-    "want": ["dsc-001.arw|dsc-002.arw|images|false|true"],
+    "want": ["dsc-001.arw|dsc-002.arw|images|false|true|overwriting"],
     "args": "-f 001 -r 002 --allow-overwrites",
     "path_args": ["images"]
   },
@@ -517,8 +517,8 @@
   {
     "name": "auto fix empty filename conflict",
     "want": [
-      "dsc-001.arw|dsc-001.arw|images",
-      "dsc-002.arw|dsc-002.arw|images"
+      "dsc-001.arw|dsc-001.arw|images|false|false|unchanged",
+      "dsc-002.arw|dsc-002.arw|images|false|false|unchanged"
     ],
     "args": "-f .* -F",
     "path_args": ["images"]
@@ -544,7 +544,7 @@
   {
     "name": "make file names all lower case",
     "want": [
-      "animal-farm.epub|animal-farm.epub|ebooks",
+      "animal-farm.epub|animal-farm.epub|ebooks|false|false|unchanged",
       "fear-of-life.EPUB|fear-of-life.epub|ebooks"
     ],
     "args": "-f '.*\\.epub' -r {.lw} -i",
@@ -562,8 +562,8 @@
   {
     "name": "remove windows and macos forbidden characters",
     "want": [
-      "animal-farm.epub|animal-farm.epub|ebooks",
-      "fear-of-life.EPUB|fear-of-life.EPUB|ebooks"
+      "animal-farm.epub|animal-farm.epub|ebooks|false|false|unchanged",
+      "fear-of-life.EPUB|fear-of-life.EPUB|ebooks|false|false|unchanged"
     ],
     "args": "-f '.*\\.epub' -r {{.win}} -r {{.mac}} -i",
     "path_args": ["ebooks"]

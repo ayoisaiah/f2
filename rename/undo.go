@@ -68,9 +68,12 @@ func Undo() error {
 		changes[i] = ch
 	}
 
-	// Sort only in dry-run mode
+	internalsort.FilesBeforeDirs(changes)
+
 	if !conf.ShouldExec() {
-		internalsort.Alphabetically(changes)
+		report.Dry(changes)
+
+		return nil
 	}
 
 	errs := commit(changes)

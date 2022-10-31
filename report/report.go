@@ -15,6 +15,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
+	internalsort "github.com/ayoisaiah/f2/internal/sort"
 	"github.com/ayoisaiah/f2/internal/status"
 )
 
@@ -212,6 +213,10 @@ func NoMatches() {
 // Dry prints a report of the renaming changes to be made.
 func Dry(changes []*file.Change) {
 	conf := config.Get()
+
+	if conf.IncludeDir() {
+		internalsort.FilesBeforeDirs(changes)
+	}
 
 	Changes(changes, nil)
 

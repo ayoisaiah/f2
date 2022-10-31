@@ -6,7 +6,7 @@
 // 2. Target destination contains forbidden characters (varies based on the operating system).
 // 3. Target destination already exists on the file system (except if
 // --allow-overwrite is specified)
-// 4. Target name exceeds the maximum allowed length (260 characters in windows, and 255 bytes on Linux and macOS).
+// 4. Target name exceeds the maximum allowed length (255 characters in windows, and 255 bytes on Linux and macOS).
 // 5. Target destination contains trailing periods in any of the sub paths (Windows only).
 // 6. Target destination is empty.
 //
@@ -286,7 +286,7 @@ func isTargetLengthExceeded(target string) bool {
 	// Get the standalone filename
 	filename := filepath.Base(target)
 
-	// max length of 260 characters in windows
+	// max length of 255 characters in windows
 	if runtime.GOOS == internalos.Windows &&
 		len([]rune(filename)) > windowsMaxFileCharLength {
 		return true
@@ -398,12 +398,17 @@ func checkFileNameLengthConflict(
 			return
 		}
 
+		cause := "255 bytes"
+		if runtime.GOOS == internalos.Windows {
+			cause = "255 characters"
+		}
+
 		conflicts[conflict.MaxFilenameLengthExceeded] = append(
 			conflicts[conflict.MaxFilenameLengthExceeded],
 			conflict.Conflict{
 				Sources: []string{sourcePath},
 				Target:  targetPath,
-				Cause:   "",
+				Cause:   cause,
 			},
 		)
 		conflictDetected = true

@@ -5,7 +5,7 @@ import "github.com/ayoisaiah/f2/internal/status"
 // Change represents a single renaming change.
 type Change struct {
 	OriginalSource string        `json:"-"`
-	Status         status.Status `json:"-"`
+	Status         status.Status `json:"status"`
 	BaseDir        string        `json:"base_dir"`
 	Source         string        `json:"source"`
 	Target         string        `json:"target"`

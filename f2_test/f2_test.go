@@ -27,6 +27,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
+	"github.com/ayoisaiah/f2/internal/status"
 
 	"github.com/ayoisaiah/f2"
 	"github.com/ayoisaiah/f2/internal/conflict"
@@ -237,6 +238,7 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 
 		for _, v := range tc.Want {
 			ch := &file.Change{}
+			ch.Status = status.OK
 			ch.BaseDir = "." // default to current directory
 
 			tokens := strings.Split(v, "|")
@@ -261,18 +263,29 @@ func retrieveTestCases(t *testing.T, filename string) []TestCase {
 				}
 
 				r, err := strconv.ParseBool(token)
-				if err != nil {
-					t.Fatal(err)
-				}
 
 				if j == 3 {
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					ch.IsDir = r
+
 					continue
 				}
 
 				if j == 4 {
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					ch.WillOverwrite = r
+
 					continue
+				}
+
+				if j == 5 {
+					ch.Status = status.Status(token)
 				}
 			}
 
