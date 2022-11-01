@@ -644,5 +644,35 @@
     "want": ["fear-of-life.EPUB|{f.up}|ebooks"],
     "args": "-f '^(f).*' -r '{$1.up}'",
     "path_args": ["ebooks"]
+  },
+  {
+    "name": "sort files before directories in dry run output",
+    "setup": ["testdata"],
+    "args": "-f 'audio|sample' -r music -d",
+    "path_args": ["audio", "."],
+    "golden_file": "files_before_dir"
+  },
+  {
+    "name": "parse arbitrary text as date",
+    "setup": ["testdata", "exiftool"],
+    "want": ["tractor-raw.cr2|2017_April_20|images"],
+    "args": "-r {xt.SubSecCreateDate.dt.YYYY}_{xt.SubSecCreateDate.dt.MMMM}_{xt.SubSecCreateDate.dt.DD}",
+    "path_args": ["images/tractor-raw.cr2"]
+  },
+  {
+    "name": "fallback to source text if arbitrary text cannot be parsed as date",
+    "setup": ["testdata", "exiftool"],
+    "want": ["tractor-raw.cr2|Stops at AF Area Edges_Enable_100|images"],
+    "args": "-r {xt.ManualAFPointSelPattern.dt.YYYY}_{xt.AFAssistBeam.dt.MMMM}_{xt.DistortionCorrectionValue.dt.DD}",
+    "path_args": ["images/tractor-raw.cr2"]
+  },
+  {
+    "name": "slashes in exiftool variables are replaced with underscores",
+    "setup": ["testdata", "exiftool"],
+    "want": [
+      "tractor-raw.cr2|10 (1DX_5DmkIII_6D_70D_100D_650D_700D_M_M2)|images"
+    ],
+    "args": "-r {xt.ColorDataVersion}",
+    "path_args": ["images/tractor-raw.cr2"]
   }
 ]

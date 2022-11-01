@@ -1,0 +1,9 @@
+┌───────────────────────────────────────────────────────────────────────────┐
+| ORIGINAL                        | RENAMED                        | STATUS |
+| ************************************************************************* |
+| testdata/audio/sample_ogg.ogg   | testdata/audio/music_ogg.ogg   | ok     |
+| testdata/audio/sample_mp3.mp3   | testdata/audio/music_mp3.mp3   | ok     |
+| testdata/audio/sample_flac.flac | testdata/audio/music_flac.flac | ok     |
+| testdata/audio                  | testdata/music                 | ok     |
+└───────────────────────────────────────────────────────────────────────────┘
+DRY RUN: Commit the above changes with the -x/--exec flag
