@@ -146,9 +146,14 @@ func checkPathExistsConflict(change *file.Change) (conflictDetected bool) {
 	if _, err := os.Stat(targetPath); err == nil ||
 		errors.Is(err, os.ErrExist) {
 		// Don't report a conflict for an unchanged filename
-		// Also handles case-insensitive filesystems
-		if strings.EqualFold(sourcePath, targetPath) {
+		if sourcePath == targetPath {
 			change.Status = status.Unchanged
+			return
+		}
+
+		// Case-insensitive filesystems should not report conflicts
+		// if only the case of the filename is being changed.
+		if strings.EqualFold(sourcePath, targetPath) {
 			return
 		}
 

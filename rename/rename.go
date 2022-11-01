@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/adrg/xdg"
 	"github.com/pterm/pterm"
@@ -36,13 +37,28 @@ func rename(changes []*file.Change) []int {
 	for i := range changes {
 		change := changes[i]
 
-		source, target := change.Source, change.Target
-		source = filepath.Join(change.BaseDir, source)
-		target = filepath.Join(change.BaseDir, target)
+		sourcePath := filepath.Join(change.BaseDir, change.Source)
+		targetPath := filepath.Join(change.BaseDir, change.Target)
 
-		// skip unchanged file names
-		if source == target {
+		// skip paths that are unchanged in every aspect
+		if sourcePath == targetPath {
 			continue
+		}
+
+		// Account for case insensitive filesystems where renaming a filename to its
+		// upper or lowercase equivalent doesn't work. Fixing this involves the
+		// following steps:
+		// 1. Change the <target> to __<time>__<target>
+		// 2. Rename <source> to __<time>__<target>
+		// 3. Rename __<time>__<target> to <target>
+		var caseInsensitiveFS bool
+		if strings.EqualFold(sourcePath, targetPath) {
+			caseInsensitiveFS = true
+			timeStr := fmt.Sprintf("%d", time.Now().UnixNano())
+			targetPath = filepath.Join(
+				change.BaseDir,
+				"__"+timeStr+"__"+change.Target, // Step 1
+			)
 		}
 
 		// If target contains a slash, create all missing
@@ -64,7 +80,17 @@ func rename(changes []*file.Change) []int {
 			}
 		}
 
-		if err := os.Rename(source, target); err != nil {
+		err := os.Rename(sourcePath, targetPath)
+		// if the intermediate rename is successful,
+		// proceed with the original renaming operation
+		if err == nil && caseInsensitiveFS {
+			orginalTarget := filepath.Join(change.BaseDir, change.Target)
+
+			err = os.Rename(targetPath, orginalTarget)
+			targetPath = orginalTarget
+		}
+
+		if err != nil {
 			errs = append(errs, i)
 			change.Error = err.Error()
 
@@ -72,13 +98,21 @@ func rename(changes []*file.Change) []int {
 				pterm.Fprintln(conf.Stderr(),
 					pterm.Error.Sprintf(
 						"Failed to rename %s to %s",
-						source,
-						target,
+						sourcePath,
+						targetPath,
 					),
 				)
 			}
-		} else if conf.IsVerbose() && !conf.JSON() {
-			pterm.Success.Printfln("Renamed '%s' to '%s'", pterm.Yellow(source), pterm.Yellow(target))
+
+			continue
+		}
+
+		if conf.IsVerbose() && !conf.JSON() {
+			pterm.Success.Printfln(
+				"Renamed '%s' to '%s'",
+				pterm.Yellow(sourcePath),
+				pterm.Yellow(targetPath),
+			)
 		}
 	}
 
