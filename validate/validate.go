@@ -341,15 +341,17 @@ func checkTrailingPeriodConflict(
 			return
 		}
 
-		conflicts[conflict.TrailingPeriod] = append(
-			conflicts[conflict.TrailingPeriod],
-			conflict.Conflict{
-				Sources: []string{sourcePath},
-				Target:  targetPath,
-			},
-		)
+		if conflictDetected {
+			conflicts[conflict.TrailingPeriod] = append(
+				conflicts[conflict.TrailingPeriod],
+				conflict.Conflict{
+					Sources: []string{sourcePath},
+					Target:  targetPath,
+				},
+			)
 
-		change.Status = status.TrailingPeriod
+			change.Status = status.TrailingPeriod
+		}
 	}
 
 	return
