@@ -606,6 +606,16 @@
     "path_args": ["dev"]
   },
   {
+    "name": "transform find string to uppercase",
+    "want": [
+      "No Pressure (2021) S1.E1.1080p.mkv|No PRESSURE (2021) S1.E1.1080p.mkv|movies",
+      "No Pressure (2021) S1.E2.1080p.mkv|No PRESSURE (2021) S1.E2.1080p.mkv|movies",
+      "No Pressure (2021) S1.E3.1080p.mkv|No PRESSURE (2021) S1.E3.1080p.mkv|movies"
+    ],
+    "args": "-f 'Pressure' -r '{.up}'",
+    "path_args": ["movies"]
+  },
+  {
     "name": "transform capture variables",
     "want": [
       "atomic-habits.pdf|ATOMIC-HABITS.Pdf|ebooks",

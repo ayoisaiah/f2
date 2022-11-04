@@ -114,27 +114,29 @@ func getRandString(n int, characterSet string) string {
 // replaceRandomVars replaces all random string variables
 // in the target filename with a generated random string that matches
 // the specifications.
-func replaceRandomVars(target string, rv randomVars) string {
-	for i := range rv.matches {
-		current := rv.matches[i]
-		characters := current.characters
+func replaceRandomVars(target string, matches []string, rv randomVars) string {
+	for range matches {
+		for i := range rv.matches {
+			current := rv.matches[i]
+			characters := current.characters
 
-		switch characters {
-		case "":
-			characters = letterBytes
-		case `_d`:
-			characters = numberBytes
-		case `_l`:
-			characters = letterBytes
-		case `_ld`:
-			characters = letterBytes + numberBytes
+			switch characters {
+			case "":
+				characters = letterBytes
+			case `_d`:
+				characters = numberBytes
+			case `_l`:
+				characters = letterBytes
+			case `_ld`:
+				characters = letterBytes + numberBytes
+			}
+
+			randString := getRandString(current.length, characters)
+
+			randString = transformString(randString, current.transformToken)
+
+			target = regexReplace(current.regex, target, randString, 1)
 		}
-
-		randString := getRandString(current.length, characters)
-
-		randString = transformString(randString, current.transformToken)
-
-		target = regexReplace(current.regex, target, randString, 1)
 	}
 
 	return target
@@ -226,7 +228,7 @@ func replaceFileHashVars(
 
 		hashValue = transformString(hashValue, current.transformToken)
 
-		target = regexReplace(current.regex, target, hashValue, 1)
+		target = regexReplace(current.regex, target, hashValue, 0)
 	}
 
 	return target, nil
@@ -278,7 +280,7 @@ func replaceDateVars(
 
 		timeStr = transformString(timeStr, current.transformToken)
 
-		target = regexReplace(regex, target, timeStr, 1)
+		target = regexReplace(regex, target, timeStr, 0)
 	}
 
 	return target, nil
@@ -383,7 +385,7 @@ func replaceID3Variables(
 
 		id3Tag = transformString(id3Tag, current.transformToken)
 
-		target = regexReplace(current.regex, target, id3Tag, 1)
+		target = regexReplace(current.regex, target, id3Tag, 0)
 	}
 
 	return target, nil
@@ -597,7 +599,7 @@ func replaceExifVars(
 
 		exifTag = transformString(exifTag, current.transformToken)
 
-		target = regexReplace(regex, target, exifTag, 1)
+		target = regexReplace(regex, target, exifTag, 0)
 	}
 
 	return target, nil
@@ -642,7 +644,7 @@ func replaceExifToolVars(
 
 		value = transformString(value, current.transformToken)
 
-		target = regexReplace(current.regex, target, value, 1)
+		target = regexReplace(current.regex, target, value, 0)
 	}
 
 	return target, nil
@@ -784,7 +786,7 @@ func transformString(source, token string) string {
 // lowercase, stripping characters, e.t.c.
 func replaceTransformVars(
 	target string,
-	source string,
+	matches []string,
 	tv transformVars,
 ) (string, error) {
 	// if capture variables are present, they would have been replaced by now
@@ -803,16 +805,26 @@ func replaceTransformVars(
 		regex := current.regex
 
 		match := current.inputStr
-		// if there's no input to be transformed, use the entire filename
+
+		// if capture variables aren't being used, transform the find matches
 		if match == "" {
-			match = source
+			for _, v := range matches {
+				target = regexReplace(
+					regex,
+					target,
+					transformString(v, current.token),
+					1,
+				)
+			}
+
+			continue
 		}
 
 		target = regexReplace(
 			regex,
 			target,
 			transformString(match, current.token),
-			1,
+			0,
 		)
 	}
 
@@ -835,7 +847,7 @@ func replaceCSVVars(target string, csvRow []string, cv csvVars) string {
 
 		value = transformString(value, current.transformToken)
 
-		target = regexReplace(current.regex, target, value, 1)
+		target = regexReplace(current.regex, target, value, 0)
 	}
 
 	return target
@@ -874,7 +886,7 @@ func replaceParentDirVars(
 
 		source := transformString(parentDir, current.transformToken)
 
-		target = regexReplace(current.regex, target, source, 1)
+		target = regexReplace(current.regex, target, source, 0)
 	}
 
 	return target
@@ -888,7 +900,7 @@ func replaceFilenameVars(target, sourcePath string, fv filenameVars) string {
 
 		source := transformString(sourceName, current.transformToken)
 
-		target = regexReplace(current.regex, target, source, 1)
+		target = regexReplace(current.regex, target, source, 0)
 	}
 
 	return target
@@ -900,7 +912,7 @@ func replaceExtVars(target, fileExt string, ev extVars) string {
 
 		source := transformString(fileExt, current.transformToken)
 
-		target = regexReplace(current.regex, target, source, 1)
+		target = regexReplace(current.regex, target, source, 0)
 	}
 
 	return target
@@ -941,7 +953,6 @@ func replaceVariables(
 		)
 	}
 
-	// handle date variables (e.g {{mtime.DD}})
 	if len(vars.date.matches) > 0 {
 		out, err := replaceDateVars(change.Target, sourcePath, vars.date)
 		if err != nil {
@@ -998,7 +1009,8 @@ func replaceVariables(
 	}
 
 	if len(vars.random.matches) > 0 {
-		change.Target = replaceRandomVars(change.Target, vars.random)
+		matches := conf.SearchRegex().FindAllString(change.Source, -1)
+		change.Target = replaceRandomVars(change.Target, matches, vars.random)
 	}
 
 	if transformVarRegex.MatchString(change.Target) {
@@ -1007,9 +1019,11 @@ func replaceVariables(
 			sourceName = internalpath.FilenameWithoutExtension(sourceName)
 		}
 
+		matches := conf.SearchRegex().FindAllString(sourceName, -1)
+
 		out, err := replaceTransformVars(
 			change.Target,
-			sourceName,
+			matches,
 			vars.transform,
 		)
 		if err != nil {
@@ -1019,7 +1033,6 @@ func replaceVariables(
 		change.Target = out
 	}
 
-	// Replace indexing scheme like %03d in the target
 	if indexVarRegex.MatchString(change.Target) {
 		if len(vars.index.capturVarIndex) > 0 {
 			indices := make([]int, len(vars.index.capturVarIndex))
