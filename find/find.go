@@ -46,19 +46,20 @@ func readCSVFile(filePath string) ([][]string, error) {
 
 // filterMatches filters out files that do not match the find string or one
 // that matches any exclusion patterns.
-func filterMatches(pathsToSearch internalpath.Collection) error {
-	conf := config.Get()
-
-	searchRegex := conf.SearchRegex()
-
-	excludeFilter := strings.Join(conf.ExcludeFilter(), "|")
+func filterMatches(
+	pathsToFilter internalpath.Collection,
+	pathsToSearch []string,
+	searchRegex *regexp.Regexp, excludeFilterInput []string,
+	includeDir, includeHidden, onlyDir, ignoreExt bool,
+) error {
+	excludeFilter := strings.Join(excludeFilterInput, "|")
 
 	excludeMatchRegex, err := regexp.Compile(excludeFilter)
 	if err != nil {
 		return err
 	}
 
-	for path, dirEntry := range pathsToSearch {
+	for path, dirEntry := range pathsToFilter {
 		filteredDirEntry := dirEntry[:0]
 
 		for _, entry := range dirEntry {
@@ -66,15 +67,15 @@ func filterMatches(pathsToSearch internalpath.Collection) error {
 
 			entryIsDir := entry.IsDir()
 
-			if entryIsDir && !conf.IncludeDir() {
+			if entryIsDir && !includeDir {
 				continue
 			}
 
-			if conf.OnlyDir() && !entryIsDir {
+			if onlyDir && !entryIsDir {
 				continue
 			}
 
-			if !conf.IncludeHidden() {
+			if !includeHidden {
 				entryIsHidden, err := isHidden(filename, path)
 				if err != nil {
 					return err
@@ -91,7 +92,7 @@ func filterMatches(pathsToSearch internalpath.Collection) error {
 
 					shouldSkip := true
 
-					for _, pathArg := range conf.PathsToFilesOrDirs() {
+					for _, pathArg := range pathsToSearch {
 						argAbsPath, err := filepath.Abs(pathArg)
 						if err != nil {
 							return err
@@ -108,7 +109,7 @@ func filterMatches(pathsToSearch internalpath.Collection) error {
 				}
 			}
 
-			if conf.IgnoreExt() && !entryIsDir {
+			if ignoreExt && !entryIsDir {
 				filename = internalpath.FilenameWithoutExtension(filename)
 			}
 
@@ -121,11 +122,11 @@ func filterMatches(pathsToSearch internalpath.Collection) error {
 				filteredDirEntry = append(filteredDirEntry, entry)
 			}
 
-			pathsToSearch[path] = filteredDirEntry
+			pathsToFilter[path] = filteredDirEntry
 		}
 
 		if len(filteredDirEntry) == 0 {
-			delete(pathsToSearch, path)
+			delete(pathsToFilter, path)
 		}
 	}
 
@@ -150,9 +151,11 @@ func removeHidden(
 	return ret, nil
 }
 
-func walk(paths internalpath.Collection) error {
-	conf := config.Get()
-
+func walk(
+	paths internalpath.Collection,
+	maxDepth int,
+	includeHidden bool,
+) error {
 	var recursedPaths []string
 
 	var currentDepth int
@@ -169,7 +172,7 @@ loop:
 			continue
 		}
 
-		if !conf.IncludeHidden() {
+		if !includeHidden {
 			var err error
 			dirContents, err = removeHidden(dirContents, dir)
 			if err != nil {
@@ -203,7 +206,7 @@ loop:
 		}
 
 		currentDepth++
-		if !(conf.MaxDepth() > 0 && currentDepth == conf.MaxDepth()) {
+		if !(maxDepth > 0 && currentDepth == maxDepth) {
 			goto loop
 		}
 	}
@@ -213,12 +216,13 @@ loop:
 
 // searchPaths groups the paths that will be searched and their
 // directory contents.
-func searchPaths() (internalpath.Collection, error) {
-	conf := config.Get()
-
+func searchPaths(
+	pathsToSearch []string,
+	maxDepth int,
+	recursive, includeHidden bool,
+) (internalpath.Collection, error) {
 	paths := make(internalpath.Collection)
 
-	pathsToSearch := conf.PathsToFilesOrDirs()
 	if len(pathsToSearch) == 0 {
 		pathsToSearch = append(pathsToSearch, ".")
 	}
@@ -274,8 +278,8 @@ func searchPaths() (internalpath.Collection, error) {
 		}
 	}
 
-	if conf.IsRecursive() {
-		err := walk(paths)
+	if recursive {
+		err := walk(paths, maxDepth, includeHidden)
 		if err != nil {
 			return nil, err
 		}
@@ -286,17 +290,18 @@ func searchPaths() (internalpath.Collection, error) {
 
 // handleCSV reads the provided CSV file, and finds all the
 // valid candidates for replacement.
-func handleCSV() (internalpath.Collection, error) {
-	conf := config.Get()
-
+func handleCSV(
+	csvFilename string,
+	findSliceOpt, replacementSliceOpt []string,
+) (internalpath.Collection, error) {
 	paths := make(internalpath.Collection)
 
-	records, err := readCSVFile(conf.CSVFilename())
+	records, err := readCSVFile(csvFilename)
 	if err != nil {
 		return nil, err
 	}
 
-	csvAbsPath, err := filepath.Abs(conf.CSVFilename())
+	csvAbsPath, err := filepath.Abs(csvFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -356,12 +361,12 @@ func handleCSV() (internalpath.Collection, error) {
 		csvRows[absSourcePath] = record
 	}
 
-	if len(conf.ReplacementSlice()) == 0 {
-		if len(conf.FindSlice()) == 0 {
-			conf.SetFindSlice(findSlice)
-			conf.SetReplacementSlice(replacementSlice)
+	if len(replacementSliceOpt) == 0 {
+		if len(findSliceOpt) == 0 {
+			config.SetFindSlice(findSlice)
+			config.SetReplacementSlice(replacementSlice)
 
-			err = conf.SetFindStringRegex(0)
+			err = config.SetFindStringRegex(0)
 			if err != nil {
 				return nil, err
 			}
@@ -371,19 +376,35 @@ func handleCSV() (internalpath.Collection, error) {
 	return paths, nil
 }
 
-func Find() (internalpath.Collection, error) {
-	conf := config.Get()
-
-	if conf.CSVFilename() != "" {
-		return handleCSV()
+func Find(conf *config.Config) (internalpath.Collection, error) {
+	if conf.CSVFilename != "" {
+		return handleCSV(
+			conf.CSVFilename,
+			conf.FindSlice,
+			conf.ReplacementSlice,
+		)
 	}
 
-	paths, err := searchPaths()
+	paths, err := searchPaths(
+		conf.PathsToFilesOrDirs,
+		conf.MaxDepth,
+		conf.Recursive,
+		conf.IncludeHidden,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	err = filterMatches(paths)
+	err = filterMatches(
+		paths,
+		conf.PathsToFilesOrDirs,
+		conf.SearchRegex,
+		conf.ExcludeFilter,
+		conf.IncludeDir,
+		conf.IncludeHidden,
+		conf.OnlyDir,
+		conf.IgnoreExt,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	internalos "github.com/ayoisaiah/f2/internal/os"
@@ -104,16 +103,15 @@ func newTarget(change *file.Change, renamedPaths map[string][]struct {
 // the filename unchanged.
 func checkEmptyFilenameConflict(
 	change *file.Change,
+	autoFix bool,
 ) (conflictDetected bool) {
-	conf := config.Get()
-
 	sourcePath := filepath.Join(change.BaseDir, change.Source)
 	targetPath := filepath.Join(change.BaseDir, change.Target)
 
 	if change.Target == "." || change.Target == "" {
 		conflictDetected = true
 
-		if conf.FixConflicts() {
+		if autoFix {
 			// The file is left unchanged
 			change.Target = change.Source
 			change.Status = status.Unchanged
@@ -136,9 +134,10 @@ func checkEmptyFilenameConflict(
 
 // checkPathExistsConflict reports if the newly renamed path
 // already exists on the filesystem.
-func checkPathExistsConflict(change *file.Change) (conflictDetected bool) {
-	conf := config.Get()
-
+func checkPathExistsConflict(
+	change *file.Change,
+	autoFix, allowOverwrites bool,
+) (conflictDetected bool) {
 	sourcePath := filepath.Join(change.BaseDir, change.Source)
 	targetPath := filepath.Join(change.BaseDir, change.Target)
 
@@ -158,7 +157,7 @@ func checkPathExistsConflict(change *file.Change) (conflictDetected bool) {
 		}
 
 		// Don't report a conflict if overwriting files are allowed
-		if conf.AllowOverwrites() {
+		if allowOverwrites {
 			change.WillOverwrite = true
 			change.Status = status.Overwriting
 
@@ -178,7 +177,7 @@ func checkPathExistsConflict(change *file.Change) (conflictDetected bool) {
 			}
 		}
 
-		if conf.FixConflicts() {
+		if autoFix {
 			change.Target = newTarget(change, nil)
 			change.Status = status.OK
 
@@ -203,9 +202,10 @@ func checkPathExistsConflict(change *file.Change) (conflictDetected bool) {
 // checkOverwritingPathConflict ensures that a newly renamed path
 // is not overwritten by another renamed file. Such conflicts are solved by
 // appending a number to the filename until no conflict is detected.
-func checkOverwritingPathConflict(renamedPaths renamedPathsType) {
-	conf := config.Get()
-
+func checkOverwritingPathConflict(
+	renamedPaths renamedPathsType,
+	autoFix bool,
+) {
 	// Report duplicate targets if any
 	for targetPath, source := range renamedPaths {
 		if len(source) > 1 {
@@ -215,7 +215,7 @@ func checkOverwritingPathConflict(renamedPaths renamedPathsType) {
 				changes[s.index].Status = status.OverwritingNewPath
 			}
 
-			if conf.FixConflicts() {
+			if autoFix {
 				for i := 0; i < len(source); i++ {
 					item := source[i]
 
@@ -311,9 +311,8 @@ func isTargetLengthExceeded(target string) bool {
 // This conflict is automatically resolved by removing the trailing periods.
 func checkTrailingPeriodConflict(
 	change *file.Change,
+	autoFix bool,
 ) (conflictDetected bool) {
-	conf := config.Get()
-
 	sourcePath := filepath.Join(change.BaseDir, change.Source)
 	targetPath := filepath.Join(change.BaseDir, change.Target)
 
@@ -328,7 +327,7 @@ func checkTrailingPeriodConflict(
 			}
 		}
 
-		if conf.FixConflicts() && conflictDetected {
+		if autoFix && conflictDetected {
 			for j, v := range pathComponents {
 				s := strings.TrimRight(v, ".")
 				pathComponents[j] = s
@@ -363,15 +362,14 @@ func checkTrailingPeriodConflict(
 // excess characters/bytes until the name is under the limit.
 func checkFileNameLengthConflict(
 	change *file.Change,
+	autoFix bool,
 ) (conflictDetected bool) {
-	conf := config.Get()
-
 	sourcePath := filepath.Join(change.BaseDir, change.Source)
 	targetPath := filepath.Join(change.BaseDir, change.Target)
 
 	exceeded := isTargetLengthExceeded(change.Target)
 	if exceeded {
-		if conf.FixConflicts() {
+		if autoFix {
 			if runtime.GOOS == internalos.Windows {
 				// trim filename so that it's less than 255 characters
 				filename := []rune(filepath.Base(change.Target))
@@ -433,15 +431,14 @@ func checkFileNameLengthConflict(
 // Conflicts are automatically fixed by removing the culprit characters.
 func checkForbiddenCharactersConflict(
 	change *file.Change,
+	autoFix bool,
 ) (conflictDetected bool) {
-	conf := config.Get()
-
 	sourcePath := filepath.Join(change.BaseDir, change.Source)
 	targetPath := filepath.Join(change.BaseDir, change.Target)
 
 	forbiddenChars := checkForbiddenCharacters(change.Target)
 	if forbiddenChars != "" {
-		if conf.FixConflicts() {
+		if autoFix {
 			if runtime.GOOS == internalos.Windows {
 				change.Target = internalos.PartialWindowsForbiddenCharRegex.ReplaceAllString(
 					change.Target,
@@ -480,9 +477,7 @@ func checkForbiddenCharactersConflict(
 
 // detectConflicts checks the renamed files for various conflicts and
 // automatically fixes them if allowed.
-func detectConflicts() {
-	conf := config.Get()
-
+func detectConflicts(autoFix, allowOverwrites bool) {
 	renamedPaths := make(renamedPathsType)
 
 	for i := 0; i < len(changes); i++ {
@@ -490,34 +485,34 @@ func detectConflicts() {
 		sourcePath := filepath.Join(change.BaseDir, change.Source)
 		targetPath := filepath.Join(change.BaseDir, change.Target)
 
-		detected := checkEmptyFilenameConflict(change)
+		detected := checkEmptyFilenameConflict(change, autoFix)
 		if detected {
 			// no need to check for other conflicts here since the filename
 			// is empty. If auto fixed, no renaming will occur for the entry
 			continue
 		}
 
-		detected = checkTrailingPeriodConflict(change)
-		if detected && conf.FixConflicts() {
+		detected = checkTrailingPeriodConflict(change, autoFix)
+		if detected && autoFix {
 			// going back an index allows rechecking the path for conflicts once more
 			i--
 			continue
 		}
 
-		detected = checkFileNameLengthConflict(change)
-		if detected && conf.FixConflicts() {
+		detected = checkFileNameLengthConflict(change, autoFix)
+		if detected && autoFix {
 			i--
 			continue
 		}
 
-		detected = checkForbiddenCharactersConflict(change)
-		if detected && conf.FixConflicts() {
+		detected = checkForbiddenCharactersConflict(change, autoFix)
+		if detected && autoFix {
 			i--
 			continue
 		}
 
-		detected = checkPathExistsConflict(change)
-		if detected && conf.FixConflicts() {
+		detected = checkPathExistsConflict(change, autoFix, allowOverwrites)
+		if detected && autoFix {
 			i--
 			continue
 		}
@@ -531,17 +526,20 @@ func detectConflicts() {
 		})
 	}
 
-	checkOverwritingPathConflict(renamedPaths)
+	checkOverwritingPathConflict(renamedPaths, autoFix)
 }
 
 // Validate detects and reports any conflicts that can occur while renaming a
 // file. Conflicts are automatically fixed if specified in the program options.
-func Validate(matches []*file.Change) conflict.Collection {
+func Validate(
+	matches []*file.Change,
+	autoFix, allowOverwrites bool,
+) conflict.Collection {
 	conflicts = make(conflict.Collection)
 
 	changes = matches
 
-	detectConflicts()
+	detectConflicts(autoFix, allowOverwrites)
 
 	return conflicts
 }

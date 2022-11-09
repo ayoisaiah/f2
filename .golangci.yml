@@ -6,7 +6,6 @@ linters:
     - decorder
     - containedctx
     - contextcheck
-    - deadcode
     - depguard
     - dogsled
     - dupl
@@ -37,12 +36,9 @@ linters:
     - nolintlint
     - prealloc
     - predeclared
-    - rowserrcheck
     - revive
     - staticcheck
-    - structcheck
     - stylecheck
-    - sqlclosecheck
     - thelper
     - tagliatelle
     - tparallel
@@ -52,7 +48,7 @@ linters:
     - unconvert
     - usestdlibvars
     - unparam
-    - varcheck
+    - unused
     - varnamelen
     - whitespace
     - wsl

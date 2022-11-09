@@ -5,18 +5,23 @@ package report
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pterm/pterm"
 	"golang.org/x/exp/slices"
 
-	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
 	internalsort "github.com/ayoisaiah/f2/internal/sort"
 	"github.com/ayoisaiah/f2/internal/status"
+)
+
+var (
+	Stdout io.Writer = os.Stdout
+	Stderr io.Writer = os.Stderr
 )
 
 func printTable(data [][]string, writer io.Writer) {
@@ -40,20 +45,23 @@ func printTable(data [][]string, writer io.Writer) {
 }
 
 // Changes displays the changes to be made in a table or json format.
-func Changes(changes []*file.Change, errs []int) {
-	conf := config.Get()
-
-	if conf.IsQuiet() {
+func Changes(
+	changes []*file.Change,
+	errs []int,
+	quiet bool,
+	jsonOpts *internaljson.OutputOpts,
+) {
+	if quiet {
 		return
 	}
 
-	if conf.JSON() {
-		o, err := internaljson.GetOutput(changes, errs)
+	if jsonOpts.Print {
+		o, err := internaljson.GetOutput(jsonOpts, changes, errs)
 		if err != nil {
-			pterm.Fprintln(conf.Stderr(), pterm.Error.Sprint(err))
+			pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
 		}
 
-		pterm.Fprintln(conf.Stdout(), string(o))
+		pterm.Fprintln(Stdout, string(o))
 
 		return
 	}
@@ -79,20 +87,21 @@ func Changes(changes []*file.Change, errs []int) {
 		data[i] = d
 	}
 
-	printTable(data, conf.Stdout())
+	printTable(data, Stdout)
 }
 
 // Conflicts prints any detected conflicts to the standard output in table format.
-func Conflicts(conflicts conflict.Collection) {
-	conf := config.Get()
-
-	if conf.JSON() {
-		o, err := internaljson.GetOutput(nil, nil)
+func Conflicts(
+	conflicts conflict.Collection,
+	jsonOpts *internaljson.OutputOpts,
+) {
+	if jsonOpts.Print {
+		o, err := internaljson.GetOutput(jsonOpts, nil, nil)
 		if err != nil {
-			pterm.Fprintln(conf.Stderr(), pterm.Error.Sprint(err))
+			pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
 		}
 
-		pterm.Fprintln(conf.Stdout(), string(o))
+		pterm.Fprintln(Stdout, string(o))
 
 		return
 	}
@@ -185,24 +194,33 @@ func Conflicts(conflicts conflict.Collection) {
 		}
 	}
 
-	printTable(data, conf.Stdout())
+	printTable(data, Stdout)
+}
+
+func BackupFailed(err error) {
+	pterm.Fprintln(Stderr,
+		pterm.Warning.Sprintf(
+			"Failed to backup renaming operation due to error: %s",
+			err.Error(),
+		),
+	)
 }
 
 // NoMatches prints out a message indicating that the find string failed
 // to match any files.
-func NoMatches() {
-	conf := config.Get()
-
+func NoMatches(
+	jsonOpts *internaljson.OutputOpts,
+) {
 	msg := "Failed to match any files"
 
-	if conf.JSON() {
-		b, err := internaljson.GetOutput(nil, nil)
+	if jsonOpts.Print {
+		b, err := internaljson.GetOutput(jsonOpts, nil, nil)
 		if err != nil {
-			pterm.Fprintln(conf.Stderr(), err)
+			pterm.Fprintln(Stderr, err)
 			return
 		}
 
-		pterm.Fprintln(conf.Stdout(), string(b))
+		pterm.Fprintln(Stdout, string(b))
 
 		return
 	}
@@ -211,23 +229,25 @@ func NoMatches() {
 }
 
 // Dry prints a report of the renaming changes to be made.
-func Dry(changes []*file.Change) {
-	conf := config.Get()
-
-	if conf.IncludeDir() {
-		internalsort.FilesBeforeDirs(changes)
+func Dry(
+	changes []*file.Change,
+	includeDir, quiet, revert bool,
+	jsonOpts *internaljson.OutputOpts,
+) {
+	if includeDir {
+		internalsort.FilesBeforeDirs(changes, revert)
 	}
 
-	Changes(changes, nil)
+	Changes(changes, nil, quiet, jsonOpts)
 
-	if !conf.JSON() {
+	if !jsonOpts.Print {
 		pterm.Info.Prefix = pterm.Prefix{
 			Text:  "DRY RUN",
 			Style: pterm.NewStyle(pterm.BgBlue, pterm.FgBlack),
 		}
 
 		pterm.Fprintln(
-			conf.Stdout(),
+			Stdout,
 			pterm.Info.Sprint(
 				"Commit the above changes with the -x/--exec flag",
 			),

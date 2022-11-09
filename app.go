@@ -12,6 +12,8 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 
+	internaljson "github.com/ayoisaiah/f2/internal/json"
+
 	"github.com/ayoisaiah/f2/find"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/rename"
@@ -395,41 +397,83 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				return err
 			}
 
-			if conf.ShouldRevert() {
-				return rename.Undo()
+			report.Stdout = conf.Stdout
+			report.Stderr = conf.Stderr
+
+			jsonOpts := &internaljson.OutputOpts{
+				WorkingDir: conf.WorkingDir,
+				Date:       conf.Date,
+				Exec:       conf.Exec,
+				Print:      conf.JSON,
 			}
 
-			paths, err := find.Find()
+			if conf.Revert {
+				return rename.Undo(
+					conf.Exec,
+					conf.IncludeDir,
+					conf.Quiet,
+					conf.Revert,
+					conf.Verbose,
+					jsonOpts,
+				)
+			}
+
+			paths, err := find.Find(conf)
 			if err != nil {
 				return err
 			}
 
 			if len(paths) == 0 {
-				report.NoMatches()
+				report.NoMatches(jsonOpts)
 				return nil
 			}
 
-			changes, err := replace.Replace(paths)
+			changes, err := replace.Replace(conf, paths)
 			if err != nil {
 				return err
 			}
 
-			conflicts := validate.Validate(changes)
+			conflicts := validate.Validate(
+				changes,
+				conf.AutoFixConflicts,
+				conf.AllowOverwrites,
+			)
 			if len(conflicts) > 0 {
-				report.Conflicts(conflicts)
+				report.Conflicts(
+					conflicts,
+					jsonOpts,
+				)
 				return errConflictDetected
 			}
 
-			if !conf.ShouldExec() {
-				report.Dry(changes)
+			if !conf.Exec {
+				report.Dry(
+					changes,
+					conf.IncludeDir,
+					conf.Quiet,
+					conf.Revert,
+					jsonOpts,
+				)
 				return nil
 			}
 
-			renameErrs := rename.Execute(changes)
+			renameErrs := rename.Execute(
+				changes,
+				conf.SimpleMode,
+				conf.Quiet,
+				conf.Revert,
+				conf.Verbose,
+				jsonOpts,
+			)
 
-			if !conf.SimpleMode() {
-				if conf.JSON() || len(renameErrs) > 0 {
-					report.Changes(changes, renameErrs)
+			if !conf.SimpleMode {
+				if conf.JSON || len(renameErrs) > 0 {
+					report.Changes(
+						changes,
+						renameErrs,
+						conf.Quiet,
+						jsonOpts,
+					)
 				}
 			}
 

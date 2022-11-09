@@ -24,39 +24,55 @@ var (
 var conf *Config
 
 type Config struct {
-	date               time.Time
-	stdin              io.Reader
-	stderr             io.Writer
-	stdout             io.Writer
-	searchRegex        *regexp.Regexp
-	csvFilename        string
-	sort               string
-	replacement        string
-	workingDir         string
-	findSlice          []string
-	excludeFilter      []string
-	replacementSlice   []string
-	pathsToFilesOrDirs []string
-	numberOffset       []int
-	maxDepth           int
-	startNumber        int
-	replaceLimit       int
-	recursive          bool
-	ignoreCase         bool
-	reverseSort        bool
-	onlyDir            bool
-	revert             bool
-	includeDir         bool
-	ignoreExt          bool
-	allowOverwrites    bool
-	verbose            bool
-	includeHidden      bool
-	quiet              bool
-	fixConflicts       bool
-	exec               bool
-	stringLiteralMode  bool
-	simpleMode         bool
-	json               bool
+	Date               time.Time
+	Stdin              io.Reader
+	Stderr             io.Writer
+	Stdout             io.Writer
+	SearchRegex        *regexp.Regexp
+	CSVFilename        string
+	Sort               string
+	Replacement        string
+	WorkingDir         string
+	FindSlice          []string
+	ExcludeFilter      []string
+	ReplacementSlice   []string
+	PathsToFilesOrDirs []string
+	NumberOffset       []int
+	MaxDepth           int
+	StartNumber        int
+	ReplaceLimit       int
+	Recursive          bool
+	IgnoreCase         bool
+	ReverseSort        bool
+	OnlyDir            bool
+	Revert             bool
+	IncludeDir         bool
+	IgnoreExt          bool
+	AllowOverwrites    bool
+	Verbose            bool
+	IncludeHidden      bool
+	Quiet              bool
+	AutoFixConflicts   bool
+	Exec               bool
+	StringLiteralMode  bool
+	SimpleMode         bool
+	JSON               bool
+}
+
+type Rename struct {
+	Exec       *bool
+	IncludeDir *bool
+	Quiet      *bool
+	Revert     *bool
+	SimpleMode *bool
+	Verbose    *bool
+	JSONOpts   *JSON
+}
+
+type JSON struct {
+	Date       *time.Time
+	WorkingDir *string
+	Exec       *bool
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -67,15 +83,15 @@ func (c *Config) SetFindStringRegex(replacementIndex int) error {
 	// except if a find string for the corresponding replacement index
 	// is found
 	findPattern := ".*"
-	if len(c.findSlice) > replacementIndex {
-		findPattern = c.findSlice[replacementIndex]
+	if len(c.FindSlice) > replacementIndex {
+		findPattern = c.FindSlice[replacementIndex]
 
 		// Escape all regular expression metacharacters in string literal mode
-		if c.stringLiteralMode {
+		if c.StringLiteralMode {
 			findPattern = regexp.QuoteMeta(findPattern)
 		}
 
-		if c.ignoreCase {
+		if c.IgnoreCase {
 			findPattern = "(?i)" + findPattern
 		}
 	}
@@ -85,7 +101,7 @@ func (c *Config) SetFindStringRegex(replacementIndex int) error {
 		return err
 	}
 
-	c.searchRegex = re
+	c.SearchRegex = re
 
 	return nil
 }
@@ -98,19 +114,19 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 		return errInvalidArgument
 	}
 
-	c.findSlice = ctx.StringSlice("find")
-	c.replacementSlice = ctx.StringSlice("replace")
-	c.csvFilename = ctx.String("csv")
-	c.revert = ctx.Bool("undo")
-	c.pathsToFilesOrDirs = ctx.Args().Slice()
-	c.exec = ctx.Bool("exec")
+	c.FindSlice = ctx.StringSlice("find")
+	c.ReplacementSlice = ctx.StringSlice("replace")
+	c.CSVFilename = ctx.String("csv")
+	c.Revert = ctx.Bool("undo")
+	c.PathsToFilesOrDirs = ctx.Args().Slice()
+	c.Exec = ctx.Bool("exec")
 
 	c.setDefaultOpts(ctx)
 
 	// Ensure that each findString has a corresponding replacement.
 	// The replacement defaults to an empty string if unset
-	for len(c.findSlice) > len(c.replacementSlice) {
-		c.replacementSlice = append(c.replacementSlice, "")
+	for len(c.FindSlice) > len(c.ReplacementSlice) {
+		c.ReplacementSlice = append(c.ReplacementSlice, "")
 	}
 
 	return c.SetFindStringRegex(0)
@@ -133,18 +149,18 @@ func (c *Config) setSimpleModeOptions(ctx *cli.Context) error {
 
 	minArgs := 2
 
-	c.simpleMode = true
-	c.exec = true
+	c.SimpleMode = true
+	c.Exec = true
 
-	c.findSlice = []string{args[0]}
-	c.replacementSlice = []string{args[1]}
+	c.FindSlice = []string{args[0]}
+	c.ReplacementSlice = []string{args[1]}
 
 	c.setDefaultOpts(ctx)
 
-	c.includeDir = true
+	c.IncludeDir = true
 
 	if len(args) > minArgs {
-		c.pathsToFilesOrDirs = args[minArgs:]
+		c.PathsToFilesOrDirs = args[minArgs:]
 	}
 
 	return c.SetFindStringRegex(0)
@@ -153,48 +169,48 @@ func (c *Config) setSimpleModeOptions(ctx *cli.Context) error {
 // setDefaultOpts applies the options that may be set through
 // F2_DEFAULT_OPTS.
 func (c *Config) setDefaultOpts(ctx *cli.Context) {
-	c.fixConflicts = ctx.Bool("fix-conflicts")
-	c.includeDir = ctx.Bool("include-dir")
-	c.includeHidden = ctx.Bool("hidden")
-	c.ignoreCase = ctx.Bool("ignore-case")
-	c.ignoreExt = ctx.Bool("ignore-ext")
-	c.recursive = ctx.Bool("recursive")
-	c.onlyDir = ctx.Bool("only-dir")
-	c.stringLiteralMode = ctx.Bool("string-mode")
-	c.excludeFilter = ctx.StringSlice("exclude")
-	c.maxDepth = int(ctx.Uint("max-depth"))
-	c.verbose = ctx.Bool("verbose")
-	c.allowOverwrites = ctx.Bool("allow-overwrites")
-	c.replaceLimit = ctx.Int("replace-limit")
-	c.quiet = ctx.Bool("quiet")
-	c.json = ctx.Bool("json")
+	c.AutoFixConflicts = ctx.Bool("fix-conflicts")
+	c.IncludeDir = ctx.Bool("include-dir")
+	c.IncludeHidden = ctx.Bool("hidden")
+	c.IgnoreCase = ctx.Bool("ignore-case")
+	c.IgnoreExt = ctx.Bool("ignore-ext")
+	c.Recursive = ctx.Bool("recursive")
+	c.OnlyDir = ctx.Bool("only-dir")
+	c.StringLiteralMode = ctx.Bool("string-mode")
+	c.ExcludeFilter = ctx.StringSlice("exclude")
+	c.MaxDepth = int(ctx.Uint("max-depth"))
+	c.Verbose = ctx.Bool("verbose")
+	c.AllowOverwrites = ctx.Bool("allow-overwrites")
+	c.ReplaceLimit = ctx.Int("replace-limit")
+	c.Quiet = ctx.Bool("quiet")
+	c.JSON = ctx.Bool("json")
 
 	// Sorting
 	if ctx.String("sort") != "" {
-		c.sort = ctx.String("sort")
+		c.Sort = ctx.String("sort")
 	} else if ctx.String("sortr") != "" {
-		c.sort = ctx.String("sortr")
-		c.reverseSort = true
+		c.Sort = ctx.String("sortr")
+		c.ReverseSort = true
 	}
 
-	if c.onlyDir {
-		c.includeDir = true
+	if c.OnlyDir {
+		c.IncludeDir = true
 	}
 }
 
 func Init(ctx *cli.Context) (*Config, error) {
 	conf = &Config{
-		stdout: os.Stdout,
-		stderr: os.Stderr,
-		stdin:  os.Stdin,
-		date:   time.Now(),
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+		Stdin:  os.Stdin,
+		Date:   time.Now(),
 	}
 
 	v, exists := ctx.App.Metadata["reader"]
 	if exists {
 		r, ok := v.(io.Reader)
 		if ok {
-			conf.stdin = r
+			conf.Stdin = r
 		}
 	}
 
@@ -202,7 +218,7 @@ func Init(ctx *cli.Context) (*Config, error) {
 	if exists {
 		w, ok := v.(io.Writer)
 		if ok {
-			conf.stdout = w
+			conf.Stdout = w
 		}
 	}
 
@@ -221,7 +237,7 @@ func Init(ctx *cli.Context) (*Config, error) {
 	}
 
 	// Get the current working directory
-	conf.workingDir, err = filepath.Abs(".")
+	conf.WorkingDir, err = filepath.Abs(".")
 	if err != nil {
 		return nil, err
 	}
@@ -229,150 +245,22 @@ func Init(ctx *cli.Context) (*Config, error) {
 	return conf, nil
 }
 
-func Get() *Config {
-	return conf
+func SetReplacement(replacement string) {
+	conf.Replacement = replacement
 }
 
-func (c *Config) Stdin() io.Reader {
-	return c.stdin
+func SetFindStringRegex(replacementIndex int) error {
+	return conf.SetFindStringRegex(replacementIndex)
 }
 
-func (c *Config) Stderr() io.Writer {
-	return c.stderr
+func SetReplacementSlice(s []string) {
+	conf.ReplacementSlice = s
 }
 
-func (c *Config) Stdout() io.Writer {
-	return c.stdout
+func SetFindSlice(s []string) {
+	conf.FindSlice = s
 }
 
-func (c *Config) ShouldRevert() bool {
-	return c.revert
-}
-
-func (c *Config) PathsToFilesOrDirs() []string {
-	return c.pathsToFilesOrDirs
-}
-
-func (c *Config) IsRecursive() bool {
-	return c.recursive
-}
-
-func (c *Config) CSVFilename() string {
-	return c.csvFilename
-}
-
-func (c *Config) IsVerbose() bool {
-	return c.verbose
-}
-
-func (c *Config) IncludeHidden() bool {
-	return c.includeHidden
-}
-
-func (c *Config) SortName() string {
-	return c.sort
-}
-
-func (c *Config) ReverseSort() bool {
-	return c.reverseSort
-}
-
-func (c *Config) ExcludeFilter() []string {
-	return c.excludeFilter
-}
-
-func (c *Config) Replacement() string {
-	return c.replacement
-}
-
-func (c *Config) SetReplacement(replacement string) {
-	c.replacement = replacement
-}
-
-func (c *Config) ReplacementSlice() []string {
-	return c.replacementSlice
-}
-
-func (c *Config) SetReplacementSlice(s []string) {
-	c.replacementSlice = s
-}
-
-func (c *Config) SetFindSlice(s []string) {
-	c.findSlice = s
-}
-
-func (c *Config) WorkingDir() string {
-	return c.workingDir
-}
-
-func (c *Config) ShouldExec() bool {
-	return c.exec
-}
-
-func (c *Config) IncludeDir() bool {
-	return c.includeDir
-}
-
-func (c *Config) OnlyDir() bool {
-	return c.onlyDir
-}
-
-func (c *Config) IgnoreExt() bool {
-	return c.ignoreExt
-}
-
-func (c *Config) IgnoreCase() bool {
-	return c.ignoreCase
-}
-
-func (c *Config) SearchRegex() *regexp.Regexp {
-	return c.searchRegex
-}
-
-func (c *Config) FixConflicts() bool {
-	return c.fixConflicts
-}
-
-func (c *Config) JSON() bool {
-	return c.json
-}
-
-func (c *Config) SimpleMode() bool {
-	return c.simpleMode
-}
-
-func (c *Config) IsQuiet() bool {
-	return c.quiet
-}
-
-func (c *Config) Date() time.Time {
-	return c.date
-}
-
-func (c *Config) ReplaceLimit() int {
-	return c.replaceLimit
-}
-
-func (c *Config) AllowOverwrites() bool {
-	return c.allowOverwrites
-}
-
-func (c *Config) StartNumber() int {
-	return c.startNumber
-}
-
-func (c *Config) NumberOffset() []int {
-	return c.numberOffset
-}
-
-func (c *Config) SetNumberOffset(offset []int) {
-	c.numberOffset = offset
-}
-
-func (c *Config) MaxDepth() int {
-	return c.maxDepth
-}
-
-func (c *Config) FindSlice() []string {
-	return c.findSlice
+func SetNumberOffset(offset []int) {
+	conf.NumberOffset = offset
 }

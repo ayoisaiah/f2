@@ -833,23 +833,22 @@ func regexReplace(
 
 // replaceString replaces all matches in the filename
 // with the replacement string.
-func replaceString(originalName string) string {
-	conf := config.Get()
-
+func replaceString(conf *config.Config, originalName string) string {
 	return regexReplace(
-		conf.SearchRegex(),
+		conf.SearchRegex,
 		originalName,
-		conf.Replacement(),
-		conf.ReplaceLimit(),
+		conf.Replacement,
+		conf.ReplaceLimit,
 	)
 }
 
 // replaceMatches handles the replacement of matches in each file with the
 // replacement string.
-func replaceMatches(matches []*file.Change) ([]*file.Change, error) {
-	conf := config.Get()
-
-	vars, err := extractVariables(conf.Replacement())
+func replaceMatches(
+	conf *config.Config,
+	matches []*file.Change,
+) ([]*file.Change, error) {
+	vars, err := extractVariables(conf.Replacement)
 	if err != nil {
 		return nil, err
 	}
@@ -860,20 +859,20 @@ func replaceMatches(matches []*file.Change) ([]*file.Change, error) {
 		originalName := change.Source
 		fileExt := filepath.Ext(originalName)
 
-		if conf.IgnoreExt() && !change.IsDir {
+		if conf.IgnoreExt && !change.IsDir {
 			originalName = internalpath.FilenameWithoutExtension(originalName)
 		}
 
-		change.Target = replaceString(originalName)
+		change.Target = replaceString(conf, originalName)
 
 		// Replace any variables present with their corresponding values
-		err = replaceVariables(change, &vars)
+		err = replaceVariables(conf, change, &vars)
 		if err != nil {
 			return nil, err
 		}
 
 		// Reattach the original extension to the new file name
-		if conf.IgnoreExt() && !change.IsDir {
+		if conf.IgnoreExt && !change.IsDir {
 			change.Target += fileExt
 		}
 
@@ -886,17 +885,17 @@ func replaceMatches(matches []*file.Change) ([]*file.Change, error) {
 }
 
 func handleReplacementChain(
+	conf *config.Config,
 	matches []*file.Change,
 ) ([]*file.Change, error) {
-	conf := config.Get()
-	replacementSlice := conf.ReplacementSlice()
+	replacementSlice := conf.ReplacementSlice
 
 	for i, v := range replacementSlice {
-		conf.SetReplacement(v)
+		config.SetReplacement(v)
 
 		var err error
 
-		matches, err = replaceMatches(matches)
+		matches, err = replaceMatches(conf, matches)
 		if err != nil {
 			return nil, err
 		}
@@ -929,9 +928,7 @@ func handleReplacementChain(
 }
 
 // c creates a file.Change struct for each match.
-func c(matches internalpath.Collection) []*file.Change {
-	conf := config.Get()
-
+func c(conf *config.Config, matches internalpath.Collection) []*file.Change {
 	var changes []*file.Change
 
 	rows := find.GetCSVRows()
@@ -946,7 +943,7 @@ func c(matches internalpath.Collection) []*file.Change {
 				OriginalSource: filename,
 			}
 
-			if conf.CSVFilename() != "" {
+			if conf.CSVFilename != "" {
 				absPath := filepath.Join(path, filename)
 				change.CSVRow = rows[absPath]
 			}
@@ -958,17 +955,22 @@ func c(matches internalpath.Collection) []*file.Change {
 	return changes
 }
 
-func Replace(matches internalpath.Collection) ([]*file.Change, error) {
+func Replace(
+	conf *config.Config,
+	matches internalpath.Collection,
+) ([]*file.Change, error) {
 	var err error
 
 	var changes []*file.Change
 
-	changes, err = sort.Changes(c(matches))
+	changes = c(conf, matches)
+
+	changes, err = sort.Changes(changes, conf.Sort, conf.ReverseSort)
 	if err != nil {
 		return nil, err
 	}
 
-	changes, err = handleReplacementChain(changes)
+	changes, err = handleReplacementChain(conf, changes)
 	if err != nil {
 		return nil, err
 	}

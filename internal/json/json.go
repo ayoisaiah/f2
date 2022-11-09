@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/validate"
@@ -21,13 +20,22 @@ type Output struct {
 	DryRun     bool                `json:"dry_run"`
 }
 
-func GetOutput(changes []*file.Change, errs []int) ([]byte, error) {
-	conf := config.Get()
+type OutputOpts struct {
+	Date       time.Time
+	WorkingDir string
+	Exec       bool
+	Print      bool // whether to print the JSON output
+}
 
+func GetOutput(
+	opts *OutputOpts,
+	changes []*file.Change,
+	errs []int,
+) ([]byte, error) {
 	out := Output{
-		WorkingDir: conf.WorkingDir(),
-		Date:       conf.Date().Format(time.RFC3339),
-		DryRun:     !conf.ShouldExec(),
+		WorkingDir: opts.WorkingDir,
+		Date:       opts.Date.Format(time.RFC3339),
+		DryRun:     !opts.Exec,
 		Changes:    changes,
 		Conflicts:  validate.GetConflicts(),
 		Errors:     errs,

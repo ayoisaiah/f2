@@ -657,15 +657,12 @@ func replaceIndex(
 	target string,
 	changeIndex int, // position of change in the entire renaming operation
 	indexing indexVars,
+	numberOffset []int,
 ) string {
-	conf := config.Get()
-
-	numberOffset := conf.NumberOffset()
-
 	if len(numberOffset) == 0 {
 		for range indexing.matches {
 			numberOffset = append(numberOffset, 0)
-			conf.SetNumberOffset(numberOffset)
+			config.SetNumberOffset(numberOffset)
 		}
 	}
 
@@ -692,7 +689,7 @@ func replaceIndex(
 					if num >= v.min && num <= v.max {
 						num += current.step.value
 						numberOffset[i] += current.step.value
-						conf.SetNumberOffset(numberOffset)
+						config.SetNumberOffset(numberOffset)
 						continue outer
 					}
 				}
@@ -921,10 +918,10 @@ func replaceExtVars(target, fileExt string, ev extVars) string {
 // replaceVariables checks if any variables are present in the target filename
 // and delegates the variable replacement to the appropriate function.
 func replaceVariables(
+	conf *config.Config,
 	change *file.Change,
 	vars *variables,
 ) error {
-	conf := config.Get()
 	fileExt := filepath.Ext(change.OriginalSource)
 	sourcePath := filepath.Join(change.BaseDir, change.OriginalSource)
 
@@ -1009,17 +1006,17 @@ func replaceVariables(
 	}
 
 	if len(vars.random.matches) > 0 {
-		matches := conf.SearchRegex().FindAllString(change.Source, -1)
+		matches := conf.SearchRegex.FindAllString(change.Source, -1)
 		change.Target = replaceRandomVars(change.Target, matches, vars.random)
 	}
 
 	if transformVarRegex.MatchString(change.Target) {
 		sourceName := change.Source
-		if conf.IgnoreExt() && !change.IsDir {
+		if conf.IgnoreExt && !change.IsDir {
 			sourceName = internalpath.FilenameWithoutExtension(sourceName)
 		}
 
-		matches := conf.SearchRegex().FindAllString(sourceName, -1)
+		matches := conf.SearchRegex.FindAllString(sourceName, -1)
 
 		out, err := replaceTransformVars(
 			change.Target,
@@ -1048,7 +1045,12 @@ func replaceVariables(
 			vars.index.capturVarIndex = indices
 		}
 
-		change.Target = replaceIndex(change.Target, change.Index, vars.index)
+		change.Target = replaceIndex(
+			change.Target,
+			change.Index,
+			vars.index,
+			conf.NumberOffset,
+		)
 	}
 
 	return nil

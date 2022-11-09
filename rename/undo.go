@@ -3,6 +3,7 @@ package rename
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,7 +12,6 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/internal/config"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
 	internalos "github.com/ayoisaiah/f2/internal/os"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
@@ -23,12 +23,17 @@ var errUndoFailed = errors.New(
 	"The undo operation failed due to the above errors",
 )
 
+var errBackupFileRemovalFailed = errors.New(
+	"Unable to remove redundant backup file '%s' after successful undo operation. Please remove it manually",
+)
+
 // Undo reverses a renaming operation according to the relevant backup file.
 // The undo file is deleted if the operation is successfully reverted.
-func Undo() error {
-	conf := config.Get()
-
-	dir := strings.ReplaceAll(conf.WorkingDir(), internalpath.Separator, "_")
+func Undo(
+	exec, includeDir, quiet, revert, verbose bool,
+	jsonOpts *internaljson.OutputOpts,
+) error {
+	dir := strings.ReplaceAll(jsonOpts.WorkingDir, internalpath.Separator, "_")
 	if runtime.GOOS == internalos.Windows {
 		dir = strings.ReplaceAll(dir, ":", "_")
 	}
@@ -68,27 +73,25 @@ func Undo() error {
 		changes[i] = ch
 	}
 
-	internalsort.FilesBeforeDirs(changes)
+	internalsort.FilesBeforeDirs(changes, revert)
 
-	if !conf.ShouldExec() {
-		report.Dry(changes)
+	if !exec {
+		report.Dry(changes, includeDir, quiet, revert, jsonOpts)
 
 		return nil
 	}
 
-	errs := commit(changes)
+	errs := commit(changes, revert, verbose, jsonOpts)
 	if len(errs) > 0 {
-		report.Changes(changes, errs)
+		report.Changes(changes, errs, quiet, jsonOpts)
 		return errUndoFailed
 	}
 
-	if conf.ShouldExec() {
+	if exec {
 		if err = os.Remove(backupFilePath); err != nil {
-			pterm.Fprintln(conf.Stderr(),
-				pterm.Warning.Sprintf(
-					"Unable to remove redundant backup file '%s' after successful undo operation.",
-					pterm.LightYellow(backupFilePath),
-				),
+			return fmt.Errorf(
+				errBackupFileRemovalFailed.Error(),
+				pterm.LightYellow(backupFilePath),
 			)
 		}
 	}
