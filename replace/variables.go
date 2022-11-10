@@ -889,9 +889,10 @@ func replaceParentDirVars(
 	return target
 }
 
-func replaceFilenameVars(target, sourcePath string, fv filenameVars) string {
-	sourceName := internalpath.FilenameWithoutExtension(sourcePath)
-
+func replaceFilenameVars(
+	target, sourceName string,
+	fv filenameVars,
+) string {
 	for i := range fv.matches {
 		current := fv.matches[i]
 
@@ -926,14 +927,23 @@ func replaceVariables(
 	sourcePath := filepath.Join(change.BaseDir, change.OriginalSource)
 
 	if len(vars.filename.matches) > 0 {
+		sourceName := filepath.Base(sourcePath)
+		if !change.IsDir {
+			sourceName = internalpath.FilenameWithoutExtension(sourceName)
+		}
+
 		change.Target = replaceFilenameVars(
 			change.Target,
-			filepath.Base(sourcePath),
+			sourceName,
 			vars.filename,
 		)
 	}
 
 	if len(vars.ext.matches) > 0 {
+		if change.IsDir {
+			fileExt = ""
+		}
+
 		change.Target = replaceExtVars(change.Target, fileExt, vars.ext)
 	}
 

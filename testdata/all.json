@@ -684,5 +684,10 @@
     ],
     "args": "-r {xt.ColorDataVersion}",
     "path_args": ["images/tractor-raw.cr2"]
+  },
+  {
+    "name": "directories do not have extensions",
+    "want": ["docu.ments|docu.ments_|.|true"],
+    "args": "-f 'docu.ments' -r '{f}_{ext}' -D"
   }
 ]
