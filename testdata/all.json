@@ -689,5 +689,12 @@
     "name": "directories do not have extensions",
     "want": ["docu.ments|docu.ments_|.|true"],
     "args": "-f 'docu.ments' -r '{f}_{ext}' -D"
+  },
+  {
+    "name": "ensure auto fixing overwriting renamed path conflicts displays correct status",
+    "setup": ["testdata"],
+    "args": "-f 'flac|ogg' -r m4a -F",
+    "path_args": ["audio"],
+    "golden_file": "auto_fix_overwriting_new_path"
   }
 ]

@@ -220,6 +220,7 @@ func checkOverwritingPathConflict(
 					item := source[i]
 
 					if i == 0 {
+						changes[item.index].Status = status.OK
 						continue
 					}
 
