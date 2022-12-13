@@ -365,9 +365,7 @@ func preTestSetup(
 		testDir = v
 	}
 
-	if tc.DefaultOpts != "" {
-		os.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
-	}
+	t.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
 
 	// modify the base directory
 	for i := range tc.Changes {
@@ -461,11 +459,6 @@ func runTestCases(t *testing.T, cases []TestCase) {
 				g.Assert(t, tc.GoldenFile, result)
 			} else {
 				assertJSON(t, &tc, result)
-			}
-
-			// Reset default opts before next test
-			if tc.DefaultOpts != "" {
-				os.Setenv(f2.EnvDefaultOpts, "")
 			}
 		})
 	}

@@ -15,7 +15,7 @@ type Output struct {
 	Conflicts  conflict.Collection `json:"conflicts,omitempty"`
 	WorkingDir string              `json:"working_dir"`
 	Date       string              `json:"date"`
-	Changes    []*file.Change      `json:"changes,omitempty"`
+	Changes    []*file.Change      `json:"changes"`
 	Errors     []int               `json:"errors,omitempty"`
 	DryRun     bool                `json:"dry_run"`
 }

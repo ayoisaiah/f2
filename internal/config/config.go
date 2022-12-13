@@ -1,3 +1,5 @@
+// Package config is responsible for setting the program config from
+// command-line arguments
 package config
 
 import (
@@ -23,6 +25,7 @@ var (
 
 var conf *Config
 
+// Config represents the program configuration.
 type Config struct {
 	Date               time.Time
 	Stdin              io.Reader
@@ -57,22 +60,6 @@ type Config struct {
 	StringLiteralMode  bool
 	SimpleMode         bool
 	JSON               bool
-}
-
-type Rename struct {
-	Exec       *bool
-	IncludeDir *bool
-	Quiet      *bool
-	Revert     *bool
-	SimpleMode *bool
-	Verbose    *bool
-	JSONOpts   *JSON
-}
-
-type JSON struct {
-	Date       *time.Time
-	WorkingDir *string
-	Exec       *bool
 }
 
 // SetFindStringRegex compiles a regular expression for the

@@ -372,7 +372,7 @@
     "path_args": ["images"]
   },
   {
-    "name": "use positional arguments for find and replace (simple mode)",
+    "name": "basic find and replace in simple mode",
     "want": [
       "dsc-001.arw|sony-001.arw|images",
       "dsc-002.arw|sony-002.arw|images"
@@ -465,13 +465,6 @@
   },
   {
     "name": "test dry run table output",
-    "setup": ["testdata"],
-    "args": "-f 'flac|mp3|ogg|_' -e",
-    "path_args": ["audio"],
-    "golden_file": "dry_run"
-  },
-  {
-    "name": "test error handling output",
     "setup": ["testdata"],
     "args": "-f 'flac|mp3|ogg|_' -e",
     "path_args": ["audio"],

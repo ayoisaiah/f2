@@ -27,7 +27,7 @@ var errConflictDetected = errors.New(
 )
 
 var errRenameFailed = errors.New(
-	"The renaming operation failed due to the above errors",
+	"Some files could not be renamed",
 )
 
 const (
@@ -384,7 +384,7 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				os.Exit(1)
 			}
 
-			if ctx.Bool("no-color") || ctx.Bool("json") {
+			if ctx.Bool("no-color") {
 				disableStyling()
 			}
 
@@ -418,17 +418,17 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				)
 			}
 
-			paths, err := find.Find(conf)
+			matches, err := find.Find(conf)
 			if err != nil {
 				return err
 			}
 
-			if len(paths) == 0 {
+			if len(matches) == 0 {
 				report.NoMatches(jsonOpts)
 				return nil
 			}
 
-			changes, err := replace.Replace(conf, paths)
+			changes, err := replace.Replace(conf, matches)
 			if err != nil {
 				return err
 			}
@@ -466,15 +466,13 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				jsonOpts,
 			)
 
-			if !conf.SimpleMode {
-				if conf.JSON || len(renameErrs) > 0 {
-					report.Changes(
-						changes,
-						renameErrs,
-						conf.Quiet,
-						jsonOpts,
-					)
-				}
+			if conf.JSON && !conf.SimpleMode || len(renameErrs) > 0 {
+				report.Changes(
+					changes,
+					renameErrs,
+					conf.Quiet,
+					jsonOpts,
+				)
 			}
 
 			if len(renameErrs) > 0 {
