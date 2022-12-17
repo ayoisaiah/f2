@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/pterm/pterm"
-	"golang.org/x/exp/slices"
 
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
@@ -74,13 +73,26 @@ func Changes(
 		source := filepath.Join(change.BaseDir, change.Source)
 		target := filepath.Join(change.BaseDir, change.Target)
 
-		changeStatus := pterm.Green(change.Status)
-		if change.Status != status.OK {
+		var changeStatus string
+
+		//nolint:exhaustive // default case covers other statuses
+		switch change.Status {
+		case status.OK:
+			changeStatus = pterm.Green(change.Status)
+		case status.Unchanged:
+		case status.Overwriting:
 			changeStatus = pterm.Yellow(change.Status)
+		default:
+			changeStatus = pterm.Red(change.Status)
 		}
 
-		if slices.Contains(errs, i) {
-			changeStatus = pterm.Red(change.Error)
+		if change.Error != nil {
+			msg := change.Error.Error()
+			if strings.IndexByte(msg, ':') != -1 {
+				msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
+			}
+
+			changeStatus = pterm.Red(strings.TrimPrefix(msg, ": "))
 		}
 
 		d := []string{source, target, changeStatus}

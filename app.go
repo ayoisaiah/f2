@@ -23,11 +23,11 @@ import (
 )
 
 var errConflictDetected = errors.New(
-	"Resolve conflicts before proceeding or use the -F flag to auto fix all conflicts",
+	"resolve conflicts before proceeding or use the -F flag to auto-fix all conflicts",
 )
 
 var errRenameFailed = errors.New(
-	"Some files could not be renamed",
+	"some files could not be renamed. Revert the changes through the --undo flag",
 )
 
 const (

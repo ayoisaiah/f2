@@ -20,11 +20,15 @@ import (
 )
 
 var errUndoFailed = errors.New(
-	"The undo operation failed due to the above errors",
+	"reverting the renaming operation failed due to the above errors",
+)
+
+var errNothingToUndo = errors.New(
+	"nothing to undo",
 )
 
 var errBackupFileRemovalFailed = errors.New(
-	"Unable to remove redundant backup file '%s' after successful undo operation. Please remove it manually",
+	"unable to remove redundant backup file '%s' after reverting the changes. Please remove it manually",
 )
 
 // Undo reverses a renaming operation according to the relevant backup file.
@@ -44,7 +48,7 @@ func Undo(
 		filepath.Join("f2", "backups", file),
 	)
 	if err != nil {
-		return err
+		return errNothingToUndo
 	}
 
 	fileBytes, err := os.ReadFile(backupFilePath)

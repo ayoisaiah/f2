@@ -73,7 +73,7 @@ func rename(
 			err := os.MkdirAll(filepath.Join(change.BaseDir, dir), 0o750)
 			if err != nil {
 				errs = append(errs, i)
-				change.Error = err.Error()
+				change.Error = err
 
 				continue
 			}
@@ -90,7 +90,7 @@ func rename(
 
 		if err != nil {
 			errs = append(errs, i)
-			change.Error = err.Error()
+			change.Error = err
 
 			continue
 		}
@@ -137,7 +137,20 @@ func backupChanges(
 		}
 	}()
 
-	b, err := internaljson.GetOutput(jsonOpts, changes, errs)
+	successfulChanges := make([]*file.Change, len(changes))
+
+	copy(successfulChanges, changes)
+
+	// remove files that errored out
+	for i := len(successfulChanges) - 1; i >= 0; i-- {
+		if successfulChanges[i].Error != nil {
+			successfulChanges = append(
+				successfulChanges[:i],
+				successfulChanges[i+1:]...)
+		}
+	}
+
+	b, err := internaljson.GetOutput(jsonOpts, successfulChanges, errs)
 	if err != nil {
 		return err
 	}
@@ -169,7 +182,7 @@ func commit(
 			sourcePath := filepath.Join(change.BaseDir, change.Source)
 			targetPath := filepath.Join(change.BaseDir, change.Target)
 
-			if change.Error != "" {
+			if change.Error != nil {
 				pterm.Fprintln(report.Stderr,
 					pterm.Error.Sprintf(
 						"Failed to rename %s to %s",
@@ -202,7 +215,7 @@ func commit(
 		sort.SliceStable(changes, func(i, _ int) bool {
 			compareElement1 := changes[i]
 
-			return compareElement1.Error == ""
+			return compareElement1.Error == nil
 		})
 	}
 
