@@ -686,9 +686,16 @@ func replaceIndex(
 		outer:
 			for {
 				for _, v := range current.skip {
+					//nolint:gocritic // nesting is manageable
 					if num >= v.min && num <= v.max {
-						num += current.step.value
-						numberOffset[i] += current.step.value
+						// Prevent infinite loops when skipping a captured variable
+						step := current.step.value
+						if step == 0 {
+							step = 1
+						}
+
+						num += step
+						numberOffset[i] += step
 						config.SetNumberOffset(numberOffset)
 						continue outer
 					}
