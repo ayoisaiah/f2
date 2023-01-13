@@ -169,7 +169,7 @@
   {
     "name": "change numbering scheme",
     "want": ["dsc-001.arw|dsc-I.arw|images", "dsc-002.arw|dsc-II.arw|images"],
-    "args": "-f '(\\d+)' -r '%dr'",
+    "args": "-f '(\\d+)' -r '{%dr}'",
     "path_args": ["images"]
   },
   {
@@ -178,7 +178,7 @@
       "dsc-001.arw|dsc-MMMCMXCIX_10.arw|images",
       "dsc-002.arw|dsc-4000_11.arw|images"
     ],
-    "args": "-f '(\\d+)' -r '3999%dr_10%d'",
+    "args": "-f '(\\d+)' -r '{3999%dr}_{10%d}'",
     "path_args": ["images"]
   },
   {
@@ -261,7 +261,7 @@
       "fear-of-life.EPUB|004.EPUB|ebooks",
       "green-mile_1996.mobi|005.mobi|ebooks"
     ],
-    "args": "-r %03d{{ext}}",
+    "args": "-r {%03d}{{ext}}",
     "path_args": ["ebooks"]
   },
   {
@@ -273,7 +273,7 @@
       "fear-of-life.EPUB|016.EPUB|ebooks",
       "green-mile_1996.mobi|021.mobi|ebooks"
     ],
-    "args": "-r %03d5{{ext}}",
+    "args": "-r {%03d5}{{ext}}",
     "path_args": ["ebooks"]
   },
   {
@@ -285,7 +285,7 @@
       "fear-of-life.EPUB|19.EPUB|ebooks",
       "green-mile_1996.mobi|21.mobi|ebooks"
     ],
-    "args": "-r %02d2<1-10;17>{{ext}}",
+    "args": "-r {%02d2<1-10;17>}{{ext}}",
     "path_args": ["ebooks"]
   },
   {
@@ -297,7 +297,7 @@
       "fear-of-life.EPUB|4.EPUB|ebooks",
       "green-mile_1996.mobi|2.mobi|ebooks"
     ],
-    "args": "-r 10%d-2{{ext}}",
+    "args": "-r {10%d-2}{{ext}}",
     "path_args": ["ebooks"]
   },
   {
@@ -309,7 +309,7 @@
       "fear-of-life.EPUB|11_4_4.EPUB|ebooks",
       "green-mile_1996.mobi|100_5_5.mobi|ebooks"
     ],
-    "args": "-r 0%db_%do_%dh{{ext}}",
+    "args": "-r {0%db}_{%do}_{%dh}{{ext}}",
     "path_args": ["ebooks"]
   },
   {
@@ -318,7 +318,7 @@
       "startrails1.jpg|startrails001.jpg|images/canon",
       "startrails2.jpg|startrails002.jpg|images/canon"
     ],
-    "args": "-f '(.*)(\\d)' -r $1$2%03d",
+    "args": "-f '(.*)(\\d)' -r $1{$2%03d}",
     "path_args": ["images/canon"]
   },
   {
@@ -436,7 +436,7 @@
       "dsc-001.arw|dsc-002.arw|images",
       "dsc-002.arw|dsc-003.arw|images"
     ],
-    "args": "-f '\\d+' -r 2%03d",
+    "args": "-f '\\d+' -r {2%03d}",
     "path_args": ["images"],
     "conflicts": {
       "fileExists": [
@@ -453,7 +453,7 @@
       "dsc-001.arw|dsc-000.arw|images",
       "dsc-002.arw|dsc-001.arw|images"
     ],
-    "args": "-f '\\d+' -r 0%03d",
+    "args": "-f '\\d+' -r {0%03d}",
     "path_args": ["images"]
   },
   {
@@ -478,7 +478,7 @@
       "proraw.dng|002.dng|images",
       "tractor-raw.cr2|003.cr2|images"
     ],
-    "args": "-f .* -r %03d -e -sort size -E exiftool",
+    "args": "-f .* -r {%03d} -e -sort size -E exiftool",
     "path_args": ["images"]
   },
   {
@@ -489,7 +489,7 @@
       "proraw.dng|002.dng|images",
       "bike.jpeg|003.jpeg|images"
     ],
-    "args": "-f .* -r %03d -e -sortr size -E exiftool",
+    "args": "-f .* -r {%03d} -e -sortr size -E exiftool",
     "path_args": ["images"]
   },
   {
@@ -504,7 +504,7 @@
       "dsc-001.arw|dsc-002 (2).arw|images",
       "dsc-002.arw|dsc-003.arw|images"
     ],
-    "args": "-f '\\d+' -r 2%03d -F",
+    "args": "-f '\\d+' -r {2%03d} -F",
     "path_args": ["images"]
   },
   {

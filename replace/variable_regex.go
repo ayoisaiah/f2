@@ -72,7 +72,7 @@ func init() {
 		fmt.Sprintf("{+(\\d+)?p(?:\\.%s)?}+", transformTokens),
 	)
 	indexVarRegex = regexp.MustCompile(
-		`(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?`,
+		`{+(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?}+`,
 	)
 	randomVarRegex = regexp.MustCompile(
 		fmt.Sprintf(

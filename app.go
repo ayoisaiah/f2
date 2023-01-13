@@ -23,7 +23,7 @@ import (
 )
 
 var errConflictDetected = errors.New(
-	"resolve conflicts before proceeding or use the -F flag to auto-fix all conflicts",
+	"resolve conflicts before proceeding or use -F/--fix-conflicts to auto-fix",
 )
 
 var errRenameFailed = errors.New(
