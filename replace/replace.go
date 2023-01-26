@@ -955,6 +955,8 @@ func c(conf *config.Config, matches internalpath.Collection) []*file.Change {
 	return changes
 }
 
+// Replace applies the file name replacements according to the --replace
+// argument.
 func Replace(
 	conf *config.Config,
 	matches internalpath.Collection,

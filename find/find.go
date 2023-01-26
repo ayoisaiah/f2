@@ -26,8 +26,10 @@ const (
 // and the value is the correspoding row in the CSV file.
 var csvRows = make(map[string][]string)
 
-func readCSVFile(filePath string) ([][]string, error) {
-	f, err := os.Open(filePath)
+// readCSVFile reads all the records contained in a CSV file specified by
+// `pathToCSV`.
+func readCSVFile(pathToCSV string) ([][]string, error) {
+	f, err := os.Open(pathToCSV)
 	if err != nil {
 		return nil, err
 	}
