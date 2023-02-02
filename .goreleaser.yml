@@ -63,15 +63,15 @@ nfpms:
     recommends:
       - exiftool
     contents:
-      - src: .scripts/completions/f2.bash
+      - src: scripts/completions/f2.bash
         dst: /usr/share/bash-completion/completions/f2
         file_info:
           mode: 0644
-      - src: .scripts/completions/f2.fish
+      - src: scripts/completions/f2.fish
         dst: /usr/share/fish/vendor_completions.d/f2.fish
         file_info:
           mode: 0644
-      - src: .scripts/completions/f2.zsh
+      - src: scripts/completions/f2.zsh
         dst: /usr/share/zsh/vendor-completions/_f2
         file_info:
           mode: 0644
