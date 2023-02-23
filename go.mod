@@ -12,13 +12,12 @@ require (
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/urfave/cli/v2 v2.4.10
 	golang.org/x/sys v0.1.0 // indirect
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.3.8
 	gopkg.in/djherbis/times.v1 v1.3.0
 )
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/davecgh/go-spew v1.1.1
 	github.com/sebdah/goldie/v2 v2.5.3
 	golang.org/x/exp v0.0.0-20221028150844-83b7d23a625f
 )
