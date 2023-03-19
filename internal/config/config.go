@@ -185,6 +185,26 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) {
 	}
 }
 
+func SetReplacement(replacement string) {
+	conf.Replacement = replacement
+}
+
+func SetFindStringRegex(replacementIndex int) error {
+	return conf.SetFindStringRegex(replacementIndex)
+}
+
+func SetReplacementSlice(s []string) {
+	conf.ReplacementSlice = s
+}
+
+func SetFindSlice(s []string) {
+	conf.FindSlice = s
+}
+
+func SetNumberOffset(offset []int) {
+	conf.NumberOffset = offset
+}
+
 func Init(ctx *cli.Context) (*Config, error) {
 	conf = &Config{
 		Stdout: os.Stdout,
@@ -230,24 +250,4 @@ func Init(ctx *cli.Context) (*Config, error) {
 	}
 
 	return conf, nil
-}
-
-func SetReplacement(replacement string) {
-	conf.Replacement = replacement
-}
-
-func SetFindStringRegex(replacementIndex int) error {
-	return conf.SetFindStringRegex(replacementIndex)
-}
-
-func SetReplacementSlice(s []string) {
-	conf.ReplacementSlice = s
-}
-
-func SetFindSlice(s []string) {
-	conf.FindSlice = s
-}
-
-func SetNumberOffset(offset []int) {
-	conf.NumberOffset = offset
 }

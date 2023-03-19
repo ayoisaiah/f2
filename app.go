@@ -37,109 +37,21 @@ const (
 	EnvDefaultOpts    = "F2_DEFAULT_OPTS"
 )
 
-// supportedDefaultFlags contains those flags that can be
+// supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
-var supportedDefaultFlags = []string{
+var supportedDefaultOptions = []string{
 	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
-}
-
-// getDefaultOptsCtx creates a new `cli.Context` that represents the
-// program's options if it were run solely with the flags and arguments
-// represented in the `F2_DEFAULT_OPTS` environmental variable.
-// If this variable does not exist in the env, the returned Context
-// is `nil`.
-func getDefaultOptsCtx() *cli.Context {
-	var defaultCtx *cli.Context
-
-	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
-		defaultOpts := make([]string, len(os.Args))
-
-		copy(defaultOpts, os.Args)
-
-		defaultOpts = append(defaultOpts[:1], strings.Split(optsEnv, " ")...)
-
-		app := NewApp()
-
-		app.Before = func(c *cli.Context) error {
-			if c.IsSet("find") || c.IsSet("replace") || c.IsSet("csv") ||
-				c.IsSet("undo") {
-				pterm.Fprintln(os.Stderr,
-					pterm.Warning.Sprintf(
-						"%s are not supported as default options",
-						"'find', 'replace', 'csv' and 'undo'",
-					),
-				)
-			}
-
-			defaultCtx = c
-
-			return nil
-		}
-
-		app.Action = func(c *cli.Context) error {
-			return nil
-		}
-
-		_ = app.Run(defaultOpts)
-	}
-
-	return defaultCtx
-}
-
-func GetApp(reader io.Reader, writer io.Writer) *cli.App {
-	app := NewApp()
-
-	defaultCtx := getDefaultOptsCtx()
-
-	app.Before = func(c *cli.Context) error {
-		app.Metadata["reader"] = reader
-		app.Metadata["writer"] = writer
-
-		if c.NumFlags() == 0 {
-			app.Metadata["simple-mode"] = true
-		}
-
-		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
-		// in the environment
-		if defaultCtx == nil {
-			return nil
-		}
-
-		for _, defaultFlag := range supportedDefaultFlags {
-			value := fmt.Sprintf("%v", defaultCtx.Value(defaultFlag))
-
-			if !c.IsSet(defaultFlag) && defaultCtx.IsSet(defaultFlag) {
-				if x, ok := defaultCtx.Value(defaultFlag).(cli.StringSlice); ok {
-					value = strings.Join(x.Value(), "|")
-				}
-
-				err := c.Set(defaultFlag, value)
-				if err != nil {
-					pterm.Fprintln(os.Stderr,
-						pterm.Warning.Sprintf(
-							"Unable to set default option for: %s",
-							defaultFlag,
-						),
-					)
-				}
-			}
-		}
-
-		return nil
-	}
-
-	return app
 }
 
 func init() {
 	// Disable colour output if NO_COLOR is set
 	if _, exists := os.LookupEnv(EnvNoColor); exists {
-		disableStyling()
+		pterm.DisableStyling()
 	}
 
 	// Disable colour output if F2_NO_COLOR is set
 	if _, exists := os.LookupEnv(EnvF2NoColor); exists {
-		disableStyling()
+		pterm.DisableStyling()
 	}
 
 	// Override the default help template
@@ -166,16 +78,104 @@ func init() {
 	}
 }
 
-// disableStyling disables all styling provided by pterm.
-func disableStyling() {
-	pterm.DisableColor()
-	pterm.DisableStyling()
-	pterm.Debug.Prefix.Text = ""
-	pterm.Info.Prefix.Text = ""
-	pterm.Success.Prefix.Text = ""
-	pterm.Warning.Prefix.Text = ""
-	pterm.Error.Prefix.Text = ""
-	pterm.Fatal.Prefix.Text = ""
+// getDefaultOptsCtx creates a new `cli.Context` that represents the
+// program's options if it were run solely with the flags and arguments
+// represented in the `F2_DEFAULT_OPTS` environmental variable.
+// If this variable does not exist in the env, the returned Context
+// is `nil`.
+func getDefaultOptsCtx() *cli.Context {
+	var defaultCtx *cli.Context
+
+	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
+		defaultOpts := make([]string, len(os.Args))
+
+		copy(defaultOpts, os.Args)
+
+		defaultOpts = append(defaultOpts[:1], strings.Split(optsEnv, " ")...)
+
+		app := NewApp()
+
+		// override the default action to do nothing since only the
+		// cli context contstructed from default opts is needed
+		app.Action = func(ctx *cli.Context) error {
+			defaultCtx = ctx
+			return nil
+		}
+
+		// Run needs to be called here so that `defaultCtx` is populated
+		// It errors out when
+		err := app.Run(defaultOpts)
+		if err != nil {
+			// TODO: Decide what to do here
+			pterm.Fprintln(
+				os.Stderr,
+				pterm.Error.Sprintf("error parsing default optons: %v", err),
+			)
+		}
+	}
+
+	return defaultCtx
+}
+
+// GetApp returns an F2 instance that reads from `reader` and writes to `writer`.
+func GetApp(reader io.Reader, writer io.Writer) *cli.App {
+	app := NewApp()
+
+	defaultCtx := getDefaultOptsCtx()
+
+	app.Before = func(ctx *cli.Context) error {
+		if ctx.Bool("no-color") {
+			pterm.DisableStyling()
+		}
+
+		if ctx.Bool("quiet") {
+			pterm.DisableOutput()
+		}
+
+		// print short help and exit if no arguments or flags are present
+		if ctx.NumFlags() == 0 && !ctx.Args().Present() {
+			pterm.Println(ShortHelp(ctx.App))
+			os.Exit(1)
+		}
+
+		app.Metadata["reader"] = reader
+		app.Metadata["writer"] = writer
+
+		if ctx.NumFlags() == 0 {
+			app.Metadata["simple-mode"] = true
+		}
+
+		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
+		// in the environment
+		if defaultCtx == nil {
+			return nil
+		}
+
+		// TODO: simplify
+		for _, opt := range supportedDefaultOptions {
+			value := fmt.Sprintf("%v", defaultCtx.Value(opt))
+
+			if !ctx.IsSet(opt) && defaultCtx.IsSet(opt) {
+				if x, ok := defaultCtx.Value(opt).(cli.StringSlice); ok {
+					value = strings.Join(x.Value(), "|")
+				}
+
+				err := ctx.Set(opt, value)
+				if err != nil {
+					pterm.Fprintln(os.Stderr,
+						pterm.Warning.Sprintf(
+							"Unable to set default option for: %s",
+							opt,
+						),
+					)
+				}
+			}
+		}
+
+		return nil
+	}
+
+	return app
 }
 
 // checkForUpdates alerts the user if an updated version of F2 is available.
@@ -224,6 +224,99 @@ func checkForUpdates(app *cli.App) {
 		}
 		pterm.Info.Printfln("A new release of F2 is available: %s at %s", version, resp.Request.URL.String())
 	}
+}
+
+func appAction(ctx *cli.Context) error {
+	conf, err := config.Init(ctx)
+	if err != nil {
+		return err
+	}
+
+	report.Stdout = conf.Stdout
+	report.Stderr = conf.Stderr
+
+	jsonOpts := &internaljson.OutputOpts{
+		WorkingDir: conf.WorkingDir,
+		Date:       conf.Date,
+		Exec:       conf.Exec,
+		Print:      conf.JSON,
+	}
+
+	if conf.Revert {
+		return rename.Undo(
+			conf.Exec,
+			conf.IncludeDir,
+			conf.Quiet,
+			conf.Revert,
+			conf.Verbose,
+			jsonOpts,
+		)
+	}
+
+	matches, err := find.Find(conf)
+	if err != nil {
+		return err
+	}
+
+	if len(matches) == 0 {
+		report.NoMatches(jsonOpts)
+		return nil
+	}
+
+	changes, err := replace.Replace(conf, matches)
+	if err != nil {
+		return err
+	}
+
+	conflicts := validate.Validate(
+		changes,
+		conf.AutoFixConflicts,
+		conf.AllowOverwrites,
+	)
+	if len(conflicts) > 0 {
+		report.Conflicts(
+			conflicts,
+			jsonOpts,
+		)
+
+		return errConflictDetected
+	}
+
+	if !conf.Exec {
+		report.Dry(
+			changes,
+			conf.IncludeDir,
+			conf.Quiet,
+			conf.Revert,
+			jsonOpts,
+		)
+
+		return nil
+	}
+
+	renameErrs := rename.Execute(
+		changes,
+		conf.SimpleMode,
+		conf.Quiet,
+		conf.Revert,
+		conf.Verbose,
+		jsonOpts,
+	)
+
+	if conf.JSON && !conf.SimpleMode || len(renameErrs) > 0 {
+		report.Changes(
+			changes,
+			renameErrs,
+			conf.Quiet,
+			jsonOpts,
+		)
+	}
+
+	if len(renameErrs) > 0 {
+		return errRenameFailed
+	}
+
+	return nil
 }
 
 // NewApp creates a new app instance.
@@ -377,110 +470,7 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			},
 		},
 		UseShortOptionHandling: true,
-		Action: func(ctx *cli.Context) error {
-			// print short help if no arguments or flags are present
-			if ctx.NumFlags() == 0 && !ctx.Args().Present() {
-				pterm.Println(ShortHelp(ctx.App))
-				os.Exit(1)
-			}
-
-			if ctx.Bool("no-color") {
-				disableStyling()
-			}
-
-			if ctx.Bool("quiet") {
-				pterm.DisableOutput()
-			}
-
-			conf, err := config.Init(ctx)
-			if err != nil {
-				return err
-			}
-
-			report.Stdout = conf.Stdout
-			report.Stderr = conf.Stderr
-
-			jsonOpts := &internaljson.OutputOpts{
-				WorkingDir: conf.WorkingDir,
-				Date:       conf.Date,
-				Exec:       conf.Exec,
-				Print:      conf.JSON,
-			}
-
-			if conf.Revert {
-				return rename.Undo(
-					conf.Exec,
-					conf.IncludeDir,
-					conf.Quiet,
-					conf.Revert,
-					conf.Verbose,
-					jsonOpts,
-				)
-			}
-
-			matches, err := find.Find(conf)
-			if err != nil {
-				return err
-			}
-
-			if len(matches) == 0 {
-				report.NoMatches(jsonOpts)
-				return nil
-			}
-
-			changes, err := replace.Replace(conf, matches)
-			if err != nil {
-				return err
-			}
-
-			conflicts := validate.Validate(
-				changes,
-				conf.AutoFixConflicts,
-				conf.AllowOverwrites,
-			)
-			if len(conflicts) > 0 {
-				report.Conflicts(
-					conflicts,
-					jsonOpts,
-				)
-				return errConflictDetected
-			}
-
-			if !conf.Exec {
-				report.Dry(
-					changes,
-					conf.IncludeDir,
-					conf.Quiet,
-					conf.Revert,
-					jsonOpts,
-				)
-				return nil
-			}
-
-			renameErrs := rename.Execute(
-				changes,
-				conf.SimpleMode,
-				conf.Quiet,
-				conf.Revert,
-				conf.Verbose,
-				jsonOpts,
-			)
-
-			if conf.JSON && !conf.SimpleMode || len(renameErrs) > 0 {
-				report.Changes(
-					changes,
-					renameErrs,
-					conf.Quiet,
-					jsonOpts,
-				)
-			}
-
-			if len(renameErrs) > 0 {
-				return errRenameFailed
-			}
-
-			return nil
-		},
+		Action:                 appAction,
 		OnUsageError: func(context *cli.Context, err error, isSubcommand bool) error {
 			return err
 		},
