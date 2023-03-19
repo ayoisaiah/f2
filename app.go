@@ -245,6 +245,7 @@ func appAction(ctx *cli.Context) error {
 	if conf.Revert {
 		return rename.Undo(
 			conf.Exec,
+      conf.Prompt,
 			conf.IncludeDir,
 			conf.Quiet,
 			conf.Revert,
@@ -296,7 +297,7 @@ func appAction(ctx *cli.Context) error {
 
 	renameErrs := rename.Execute(
 		changes,
-		conf.SimpleMode,
+		conf.Prompt,
 		conf.Quiet,
 		conf.Revert,
 		conf.Verbose,
@@ -419,6 +420,11 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Name:    "only-dir",
 				Aliases: []string{"D"},
 				Usage:   "Rename only directories, not files (implies -d/--include-dir).",
+			},
+			&cli.BoolFlag{
+				Name:    "prompt",
+				Aliases: []string{"p"},
+				Usage:   "Prompt to execute renaming operation after dry-run. Has no effect if -x/--exec is used.",
 			},
 			&cli.BoolFlag{
 				Name:    "quiet",

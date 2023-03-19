@@ -60,6 +60,7 @@ type Config struct {
 	StringLiteralMode  bool
 	SimpleMode         bool
 	JSON               bool
+	Prompt             bool
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -106,9 +107,6 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.CSVFilename = ctx.String("csv")
 	c.Revert = ctx.Bool("undo")
 	c.PathsToFilesOrDirs = ctx.Args().Slice()
-	c.Exec = ctx.Bool("exec")
-
-	c.setDefaultOpts(ctx)
 
 	// Ensure that each findString has a corresponding replacement.
 	// The replacement defaults to an empty string if unset
@@ -137,14 +135,13 @@ func (c *Config) setSimpleModeOptions(ctx *cli.Context) error {
 	minArgs := 2
 
 	c.SimpleMode = true
-	c.Exec = true
-
 	c.FindSlice = []string{args[0]}
 	c.ReplacementSlice = []string{args[1]}
 
-	c.setDefaultOpts(ctx)
-
+	// override default options
 	c.IncludeDir = true
+	c.Exec = true
+	c.Prompt = true
 
 	if len(args) > minArgs {
 		c.PathsToFilesOrDirs = args[minArgs:]
@@ -171,6 +168,13 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) {
 	c.ReplaceLimit = ctx.Int("replace-limit")
 	c.Quiet = ctx.Bool("quiet")
 	c.JSON = ctx.Bool("json")
+	c.Exec = ctx.Bool("exec")
+	c.Prompt = ctx.Bool("prompt")
+
+	// prompt implies exec, only with a promp
+	if c.Prompt {
+		c.Exec = true
+	}
 
 	// Sorting
 	if ctx.String("sort") != "" {
@@ -230,6 +234,8 @@ func Init(ctx *cli.Context) (*Config, error) {
 	}
 
 	var err error
+
+	conf.setDefaultOpts(ctx)
 
 	if _, ok := ctx.App.Metadata["simple-mode"]; ok {
 		err = conf.setSimpleModeOptions(ctx)

@@ -226,10 +226,10 @@ func commit(
 // or commits the operation to the filesystem if in execute mode.
 func Execute(
 	changes []*file.Change,
-	simpleMode, quiet, revert, verbose bool,
+	prompt, quiet, revert, verbose bool,
 	jsonOpts *internaljson.OutputOpts,
 ) []int {
-	if simpleMode {
+	if prompt {
 		report.Changes(changes, nil, quiet, jsonOpts)
 
 		reader := bufio.NewReader(os.Stdin)

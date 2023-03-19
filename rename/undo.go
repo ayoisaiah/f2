@@ -34,7 +34,7 @@ var errBackupFileRemovalFailed = errors.New(
 // Undo reverses a renaming operation according to the relevant backup file.
 // The undo file is deleted if the operation is successfully reverted.
 func Undo(
-	exec, includeDir, quiet, revert, verbose bool,
+	exec, prompt, includeDir, quiet, revert, verbose bool,
 	jsonOpts *internaljson.OutputOpts,
 ) error {
 	dir := strings.ReplaceAll(jsonOpts.WorkingDir, internalpath.Separator, "_")
@@ -85,7 +85,7 @@ func Undo(
 		return nil
 	}
 
-	errs := commit(changes, revert, verbose, jsonOpts)
+	errs = Execute(changes, prompt, quiet, revert, verbose, jsonOpts)
 	if len(errs) > 0 {
 		report.Changes(changes, errs, quiet, jsonOpts)
 		return errUndoFailed
