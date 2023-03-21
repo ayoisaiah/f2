@@ -1,7 +1,7 @@
 F2 — Command-line bulk renaming tool [version v1.9.0]
 
-Usage: FLAGS [OPTIONS] [PATHS TO FILES OR DIRECTORIES...]
-or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]
+Usage: FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
+or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]
 
 F2 helps you organise your filesystem through batch renaming.
 The simplest usage is to do a basic find and replace:

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/validate"
@@ -16,7 +17,6 @@ type Output struct {
 	WorkingDir string              `json:"working_dir"`
 	Date       string              `json:"date"`
 	Changes    []*file.Change      `json:"changes"`
-	Errors     []int               `json:"errors,omitempty"`
 	DryRun     bool                `json:"dry_run"`
 }
 
@@ -28,17 +28,16 @@ type OutputOpts struct {
 }
 
 func GetOutput(
-	opts *OutputOpts,
 	changes []*file.Change,
-	errs []int,
 ) ([]byte, error) {
+	conf := config.Get()
+
 	out := Output{
-		WorkingDir: opts.WorkingDir,
-		Date:       opts.Date.Format(time.RFC3339),
-		DryRun:     !opts.Exec,
+		WorkingDir: conf.WorkingDir,
+		Date:       conf.Date.Format(time.RFC3339),
+		DryRun:     !conf.Exec,
 		Changes:    changes,
 		Conflicts:  validate.GetConflicts(),
-		Errors:     errs,
 	}
 
 	// prevent empty matches from being encoded as `null`

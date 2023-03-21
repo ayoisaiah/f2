@@ -12,10 +12,11 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/pterm/pterm"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
 	internalos "github.com/ayoisaiah/f2/internal/os"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
-	internalsort "github.com/ayoisaiah/f2/internal/sort"
+	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/report"
 )
 
@@ -33,11 +34,8 @@ var errBackupFileRemovalFailed = errors.New(
 
 // Undo reverses a renaming operation according to the relevant backup file.
 // The undo file is deleted if the operation is successfully reverted.
-func Undo(
-	exec, prompt, includeDir, quiet, revert, verbose bool,
-	jsonOpts *internaljson.OutputOpts,
-) error {
-	dir := strings.ReplaceAll(jsonOpts.WorkingDir, internalpath.Separator, "_")
+func Undo(conf *config.Config) error {
+	dir := strings.ReplaceAll(conf.WorkingDir, internalpath.Separator, "_")
 	if runtime.GOOS == internalos.Windows {
 		dir = strings.ReplaceAll(dir, ":", "_")
 	}
@@ -77,21 +75,16 @@ func Undo(
 		changes[i] = ch
 	}
 
-	internalsort.FilesBeforeDirs(changes, revert)
+	// Always sort files before directories when undoing an operation
+	sortfiles.FilesBeforeDirs(changes, conf.Revert)
 
-	if !exec {
-		report.Dry(changes, includeDir, quiet, revert, jsonOpts)
-
-		return nil
-	}
-
-	errs = Execute(changes, prompt, quiet, revert, verbose, jsonOpts)
-	if len(errs) > 0 {
-		report.Changes(changes, errs, quiet, jsonOpts)
+	err = Rename(conf, changes)
+	if err != nil {
+		report.NonInteractive(changes)
 		return errUndoFailed
 	}
 
-	if exec {
+	if conf.Exec {
 		if err = os.Remove(backupFilePath); err != nil {
 			return fmt.Errorf(
 				errBackupFileRemovalFailed.Error(),

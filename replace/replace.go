@@ -15,7 +15,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
-	"github.com/ayoisaiah/f2/internal/sort"
+	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/internal/status"
 )
 
@@ -967,7 +967,7 @@ func Replace(
 
 	changes = c(conf, matches)
 
-	changes, err = sort.Changes(changes, conf.Sort, conf.ReverseSort)
+	changes, err = sortfiles.Changes(changes, conf.Sort, conf.ReverseSort)
 	if err != nil {
 		return nil, err
 	}

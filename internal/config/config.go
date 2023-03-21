@@ -60,7 +60,7 @@ type Config struct {
 	StringLiteralMode  bool
 	SimpleMode         bool
 	JSON               bool
-	Prompt             bool
+	Interactive        bool
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -141,7 +141,7 @@ func (c *Config) setSimpleModeOptions(ctx *cli.Context) error {
 	// override default options
 	c.IncludeDir = true
 	c.Exec = true
-	c.Prompt = true
+	c.Interactive = true
 
 	if len(args) > minArgs {
 		c.PathsToFilesOrDirs = args[minArgs:]
@@ -169,10 +169,9 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) {
 	c.Quiet = ctx.Bool("quiet")
 	c.JSON = ctx.Bool("json")
 	c.Exec = ctx.Bool("exec")
-	c.Prompt = ctx.Bool("prompt")
+	c.Interactive = ctx.Bool("interactive")
 
-	// prompt implies exec, only with a promp
-	if c.Prompt {
+	if c.Interactive {
 		c.Exec = true
 	}
 
@@ -207,6 +206,16 @@ func SetFindSlice(s []string) {
 
 func SetNumberOffset(offset []int) {
 	conf.NumberOffset = offset
+}
+
+// Get retrives an already set config or panics if the configuration
+// has not yet been initialized.
+func Get() *Config {
+	if conf == nil {
+		panic("config has not been initialized")
+	}
+
+	return conf
 }
 
 func Init(ctx *cli.Context) (*Config, error) {

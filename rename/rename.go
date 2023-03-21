@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -18,12 +17,17 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/pterm/pterm"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
 	internalos "github.com/ayoisaiah/f2/internal/os"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
-	internalsort "github.com/ayoisaiah/f2/internal/sort"
+	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/report"
+)
+
+var errRenameFailed = errors.New(
+	"some files could not be renamed. Revert the changes through the --undo flag",
 )
 
 var errs []int
@@ -101,13 +105,9 @@ func rename(
 
 // backupChanges records the details of a renaming operation to the filesystem
 // so that it may be reverted if necessary.
-func backupChanges(
-	changes []*file.Change,
-	errs []int,
-	jsonOpts *internaljson.OutputOpts,
-) error {
+func backupChanges(changes []*file.Change, cwd string) error {
 	workingDir := strings.ReplaceAll(
-		jsonOpts.WorkingDir,
+		cwd,
 		internalpath.Separator,
 		"_",
 	)
@@ -150,7 +150,7 @@ func backupChanges(
 		}
 	}
 
-	b, err := internaljson.GetOutput(jsonOpts, successfulChanges, errs)
+	b, err := internaljson.GetOutput(successfulChanges)
 	if err != nil {
 		return err
 	}
@@ -169,16 +169,13 @@ func backupChanges(
 // A backup file is auto created as long as at least one file
 // was renamed and it wasn't an undo operation.
 func commit(
-	changes []*file.Change,
-	revert, verbose bool,
-	jsonOpts *internaljson.OutputOpts,
+	fileChanges []*file.Change,
+	conf *config.Config,
 ) []int {
-	changes = internalsort.FilesBeforeDirs(changes, revert)
+	errs = rename(fileChanges)
 
-	errs = rename(changes)
-
-	if verbose {
-		for _, change := range changes {
+	if conf.Verbose {
+		for _, change := range fileChanges {
 			sourcePath := filepath.Join(change.BaseDir, change.Source)
 			targetPath := filepath.Join(change.BaseDir, change.Target)
 
@@ -204,16 +201,16 @@ func commit(
 		}
 	}
 
-	if !revert {
-		err := backupChanges(changes, errs, jsonOpts)
+	if !conf.Revert {
+		err := backupChanges(fileChanges, conf.WorkingDir)
 		if err != nil {
 			report.BackupFailed(err)
 		}
 	}
 
 	if len(errs) > 0 {
-		sort.SliceStable(changes, func(i, _ int) bool {
-			compareElement1 := changes[i]
+		sort.SliceStable(fileChanges, func(i, _ int) bool {
+			compareElement1 := fileChanges[i]
 
 			return compareElement1.Error == nil
 		})
@@ -222,32 +219,36 @@ func commit(
 	return errs
 }
 
-// Execute prints the changes to be made in dry-run mode
+// Rename prints the changes to be made in dry-run mode
 // or commits the operation to the filesystem if in execute mode.
-func Execute(
-	changes []*file.Change,
-	prompt, quiet, revert, verbose bool,
-	jsonOpts *internaljson.OutputOpts,
-) []int {
-	if prompt {
-		report.Changes(changes, nil, quiet, jsonOpts)
-
-		reader := bufio.NewReader(os.Stdin)
-
-		fmt.Fprint(report.Stderr, "\033[s")
-		fmt.Fprint(report.Stderr, "Press ENTER to commit the above changes")
-
-		// Block until user input before beginning next session
-		_, err := reader.ReadString('\n')
-		if err != nil && !errors.Is(err, io.EOF) {
-			pterm.Fprintln(report.Stderr, pterm.Error.Print(err))
-			return nil
-		}
+func Rename(
+	conf *config.Config,
+	fileChanges []*file.Change,
+) error {
+	if conf.IncludeDir {
+		fileChanges = sortfiles.FilesBeforeDirs(fileChanges, conf.Revert)
 	}
 
-	return commit(changes, revert, verbose, jsonOpts)
-}
+	if !conf.Interactive && !conf.Exec && !conf.JSON {
+		report.NonInteractive(fileChanges)
+		return nil
+	}
 
-func GetErrs() []int {
-	return errs
+	if conf.JSON {
+		report.JSON(fileChanges)
+	} else if conf.Interactive {
+		report.Interactive(fileChanges)
+	}
+
+	if !conf.Exec {
+		return nil
+	}
+
+	renameErrs := commit(fileChanges, conf)
+	if renameErrs != nil {
+		// TODO: Print the errors
+		return errRenameFailed
+	}
+
+	return nil
 }

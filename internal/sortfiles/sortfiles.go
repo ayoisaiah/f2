@@ -1,6 +1,6 @@
 // Package sort is used to sort file changes in a variety of ways
 // Alphabetical order is the default
-package sort
+package sortfiles
 
 import (
 	"io/fs"

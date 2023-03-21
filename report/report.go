@@ -3,6 +3,8 @@
 package report
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,7 +16,6 @@ import (
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
-	internalsort "github.com/ayoisaiah/f2/internal/sort"
 	"github.com/ayoisaiah/f2/internal/status"
 )
 
@@ -23,92 +24,10 @@ var (
 	Stderr io.Writer = os.Stderr
 )
 
-func printTable(data [][]string, writer io.Writer) {
-	d := [][]string{
-		{"ORIGINAL", "RENAMED", "STATUS"},
-	}
-
-	d = append(d, data...)
-
-	table := pterm.DefaultTable
-	table.HeaderRowSeparator = "*"
-	table.Boxed = true
-
-	str, err := table.WithHasHeader().WithData(d).Srender()
-	if err != nil {
-		pterm.Error.Printfln("Unable to print table: %s", err.Error())
-		return
-	}
-
-	fmt.Fprintln(writer, str)
-}
-
-// Changes displays the changes to be made in a table or json format.
-func Changes(
-	changes []*file.Change,
-	errs []int,
-	quiet bool,
-	jsonOpts *internaljson.OutputOpts,
-) {
-	if quiet {
-		return
-	}
-
-	if jsonOpts.Print {
-		o, err := internaljson.GetOutput(jsonOpts, changes, errs)
-		if err != nil {
-			pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
-		}
-
-		pterm.Fprintln(Stdout, string(o))
-
-		return
-	}
-
-	data := make([][]string, len(changes))
-
-	for i := range changes {
-		change := changes[i]
-
-		source := filepath.Join(change.BaseDir, change.Source)
-		target := filepath.Join(change.BaseDir, change.Target)
-
-		var changeStatus string
-
-		//nolint:exhaustive // default case covers other statuses
-		switch change.Status {
-		case status.OK:
-			changeStatus = pterm.Green(change.Status)
-		case status.Unchanged:
-		case status.Overwriting:
-			changeStatus = pterm.Yellow(change.Status)
-		default:
-			changeStatus = pterm.Red(change.Status)
-		}
-
-		if change.Error != nil {
-			msg := change.Error.Error()
-			if strings.IndexByte(msg, ':') != -1 {
-				msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
-			}
-
-			changeStatus = pterm.Red(strings.TrimPrefix(msg, ": "))
-		}
-
-		d := []string{source, target, changeStatus}
-		data[i] = d
-	}
-
-	printTable(data, Stdout)
-}
-
 // Conflicts prints any detected conflicts to the standard output in table format.
-func Conflicts(
-	conflicts conflict.Collection,
-	jsonOpts *internaljson.OutputOpts,
-) {
-	if jsonOpts.Print {
-		o, err := internaljson.GetOutput(jsonOpts, nil, nil)
+func Conflicts(conflicts conflict.Collection, jsonOut bool) {
+	if jsonOut {
+		o, err := internaljson.GetOutput(nil)
 		if err != nil {
 			pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
 		}
@@ -220,13 +139,11 @@ func BackupFailed(err error) {
 
 // NoMatches prints out a message indicating that the find string failed
 // to match any files.
-func NoMatches(
-	jsonOpts *internaljson.OutputOpts,
-) {
+func NoMatches(jsonOut bool) {
 	msg := "Failed to match any files"
 
-	if jsonOpts.Print {
-		b, err := internaljson.GetOutput(jsonOpts, nil, nil)
+	if jsonOut {
+		b, err := internaljson.GetOutput(nil)
 		if err != nil {
 			pterm.Fprintln(Stderr, err)
 			return
@@ -240,29 +157,124 @@ func NoMatches(
 	pterm.Info.Println(msg)
 }
 
-// Dry prints a report of the renaming changes to be made.
-func Dry(
-	changes []*file.Change,
-	includeDir, quiet, revert bool,
-	jsonOpts *internaljson.OutputOpts,
-) {
-	if includeDir {
-		internalsort.FilesBeforeDirs(changes, revert)
+func printTable(data [][]string, writer io.Writer) {
+	d := [][]string{
+		{"ORIGINAL", "RENAMED", "STATUS"},
 	}
 
-	Changes(changes, nil, quiet, jsonOpts)
+	d = append(d, data...)
 
-	if !jsonOpts.Print {
-		pterm.Info.Prefix = pterm.Prefix{
-			Text:  "DRY RUN",
-			Style: pterm.NewStyle(pterm.BgBlue, pterm.FgBlack),
+	table := pterm.DefaultTable
+	table.HeaderRowSeparator = "*"
+	table.Boxed = true
+
+	str, err := table.WithHasHeader().WithData(d).Srender()
+	if err != nil {
+		pterm.Error.Printfln("Unable to print table: %s", err.Error())
+		return
+	}
+
+	pterm.Fprintln(writer, str)
+}
+
+// changes displays the renaming changes to be made in a table format.
+func changes(
+	fileChanges []*file.Change,
+) {
+	data := make([][]string, len(fileChanges))
+
+	for i := range fileChanges {
+		change := fileChanges[i]
+
+		source := filepath.Join(change.BaseDir, change.Source)
+		target := filepath.Join(change.BaseDir, change.Target)
+
+		var changeStatus string
+
+		//nolint:exhaustive // default case covers other statuses
+		switch change.Status {
+		case status.OK:
+			changeStatus = pterm.Green(change.Status)
+		case status.Unchanged:
+		case status.Overwriting:
+			changeStatus = pterm.Yellow(change.Status)
+		default:
+			changeStatus = pterm.Red(change.Status)
 		}
 
-		pterm.Fprintln(
-			Stdout,
-			pterm.Info.Sprint(
-				"Commit the above changes with the -x/--exec flag",
-			),
-		)
+		if change.Error != nil {
+			msg := change.Error.Error()
+			if strings.IndexByte(msg, ':') != -1 {
+				msg = strings.TrimSpace(msg[strings.IndexByte(msg, ':'):])
+			}
+
+			changeStatus = pterm.Red(strings.TrimPrefix(msg, ": "))
+		}
+
+		d := []string{source, target, changeStatus}
+		data[i] = d
 	}
+
+	printTable(data, Stdout)
+}
+
+// JSON displays the renaming changes to be made in JSON format.
+func JSON(
+	fileChanges []*file.Change,
+) {
+	o, err := internaljson.GetOutput(fileChanges)
+	if err != nil {
+		pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
+		return
+	}
+
+	pterm.Fprintln(Stdout, string(o))
+}
+
+// Interactive prints the changes to be made and prompts the user
+// to commit the changes. Blocks unti user types ENTER.
+func Interactive(
+	fileChanges []*file.Change,
+) {
+	changes(fileChanges)
+
+	reader := bufio.NewReader(os.Stdin)
+
+	pterm.Fprint(Stderr, "\033[s")
+	pterm.Info.Prefix = pterm.Prefix{
+		Text:  "DRY RUN",
+		Style: pterm.NewStyle(pterm.BgBlue, pterm.FgBlack),
+	}
+
+	pterm.Fprint(
+		Stdout,
+		pterm.Info.Sprint(
+			"Press ENTER to commit the above changes",
+		),
+	)
+
+	_, err := reader.ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		pterm.Fprintln(Stderr, pterm.Error.Print(err))
+	}
+}
+
+// NonInteractive prints a report of the renaming changes to be made without
+// prompting the user.
+func NonInteractive(
+	fileChanges []*file.Change,
+) {
+	changes(fileChanges)
+
+	pterm.Info.Prefix = pterm.Prefix{
+		Text:  "DRY RUN",
+		Style: pterm.NewStyle(pterm.BgBlue, pterm.FgBlack),
+	}
+
+	pterm.Fprintln(
+		Stdout,
+		pterm.Info.Sprint(
+			"Commit the above changes with the -x/--exec flag",
+		),
+	)
 }

@@ -12,8 +12,6 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 
-	internaljson "github.com/ayoisaiah/f2/internal/json"
-
 	"github.com/ayoisaiah/f2/find"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/rename"
@@ -24,10 +22,6 @@ import (
 
 var errConflictDetected = errors.New(
 	"resolve conflicts before proceeding or use -F/--fix-conflicts to auto-fix",
-)
-
-var errRenameFailed = errors.New(
-	"some files could not be renamed. Revert the changes through the --undo flag",
 )
 
 const (
@@ -226,7 +220,8 @@ func checkForUpdates(app *cli.App) {
 	}
 }
 
-func appAction(ctx *cli.Context) error {
+// run starts a new renaming operation.
+func run(ctx *cli.Context) error {
 	conf, err := config.Init(ctx)
 	if err != nil {
 		return err
@@ -235,23 +230,8 @@ func appAction(ctx *cli.Context) error {
 	report.Stdout = conf.Stdout
 	report.Stderr = conf.Stderr
 
-	jsonOpts := &internaljson.OutputOpts{
-		WorkingDir: conf.WorkingDir,
-		Date:       conf.Date,
-		Exec:       conf.Exec,
-		Print:      conf.JSON,
-	}
-
 	if conf.Revert {
-		return rename.Undo(
-			conf.Exec,
-      conf.Prompt,
-			conf.IncludeDir,
-			conf.Quiet,
-			conf.Revert,
-			conf.Verbose,
-			jsonOpts,
-		)
+		return rename.Undo(conf)
 	}
 
 	matches, err := find.Find(conf)
@@ -260,7 +240,7 @@ func appAction(ctx *cli.Context) error {
 	}
 
 	if len(matches) == 0 {
-		report.NoMatches(jsonOpts)
+		report.NoMatches(conf.JSON)
 		return nil
 	}
 
@@ -274,66 +254,30 @@ func appAction(ctx *cli.Context) error {
 		conf.AutoFixConflicts,
 		conf.AllowOverwrites,
 	)
+
 	if len(conflicts) > 0 {
-		report.Conflicts(
-			conflicts,
-			jsonOpts,
-		)
+		report.Conflicts(conflicts, conf.JSON)
 
 		return errConflictDetected
 	}
 
-	if !conf.Exec {
-		report.Dry(
-			changes,
-			conf.IncludeDir,
-			conf.Quiet,
-			conf.Revert,
-			jsonOpts,
-		)
-
-		return nil
-	}
-
-	renameErrs := rename.Execute(
-		changes,
-		conf.Prompt,
-		conf.Quiet,
-		conf.Revert,
-		conf.Verbose,
-		jsonOpts,
-	)
-
-	if conf.JSON && !conf.SimpleMode || len(renameErrs) > 0 {
-		report.Changes(
-			changes,
-			renameErrs,
-			conf.Quiet,
-			jsonOpts,
-		)
-	}
-
-	if len(renameErrs) > 0 {
-		return errRenameFailed
-	}
-
-	return nil
+	return rename.Rename(conf, changes)
 }
 
 // NewApp creates a new app instance.
 func NewApp() *cli.App {
-	usageText := `FLAGS [OPTIONS] [PATHS TO FILES OR DIRECTORIES...]
-or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
+	usageText := `FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
+or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 
 	return &cli.App{
-		Name: "f2",
+		Name: "F2",
 		Authors: []*cli.Author{
 			{
 				Name:  "Ayooluwa Isaiah",
 				Email: "ayo@freshman.tech",
 			},
 		},
-		Usage:                "f2 is a command-line tool for batch renaming multiple files and directories quickly and safely.",
+		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely.",
 		UsageText:            usageText,
 		Version:              "v1.9.0",
 		EnableBashCompletion: true,
@@ -402,6 +346,11 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Usage:   "Ignore the file extension when searching for matches.",
 			},
 			&cli.BoolFlag{
+				Name:    "interactive",
+				Aliases: []string{"n"},
+				Usage:   "Prompt to execute renaming operation after a dry-run.",
+			},
+			&cli.BoolFlag{
 				Name:  "json",
 				Usage: "Always produce JSON output except for error messages which go to the standard error",
 			},
@@ -420,11 +369,6 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 				Name:    "only-dir",
 				Aliases: []string{"D"},
 				Usage:   "Rename only directories, not files (implies -d/--include-dir).",
-			},
-			&cli.BoolFlag{
-				Name:    "prompt",
-				Aliases: []string{"p"},
-				Usage:   "Prompt to execute renaming operation after dry-run. Has no effect if -x/--exec is used.",
 			},
 			&cli.BoolFlag{
 				Name:    "quiet",
@@ -476,7 +420,7 @@ or: f2 FIND [REPLACE] [PATHS TO FILES OR DIRECTORIES...]`
 			},
 		},
 		UseShortOptionHandling: true,
-		Action:                 appAction,
+		Action:                 run,
 		OnUsageError: func(context *cli.Context, err error, isSubcommand bool) error {
 			return err
 		},
