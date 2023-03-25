@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
 
 	"github.com/ayoisaiah/f2/internal/conflict"
@@ -158,23 +159,19 @@ func NoMatches(jsonOut bool) {
 }
 
 func printTable(data [][]string, writer io.Writer) {
-	d := [][]string{
-		{"ORIGINAL", "RENAMED", "STATUS"},
-	}
+	table := tablewriter.NewWriter(writer)
+	table.SetHeader([]string{"ORIGINAL", "RENAMED", "STATUS"})
+	table.SetCenterSeparator("*")
+	table.SetColumnSeparator("|")
+	table.SetRowSeparator("—")
+	table.SetHeaderColor(
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+	)
+	table.AppendBulk(data)
 
-	d = append(d, data...)
-
-	table := pterm.DefaultTable
-	table.HeaderRowSeparator = "*"
-	table.Boxed = true
-
-	str, err := table.WithHasHeader().WithData(d).Srender()
-	if err != nil {
-		pterm.Error.Printfln("Unable to print table: %s", err.Error())
-		return
-	}
-
-	pterm.Fprintln(writer, str)
+	table.Render()
 }
 
 // changes displays the renaming changes to be made in a table format.
