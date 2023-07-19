@@ -210,6 +210,7 @@ func checkOverwritingPathConflict(
 	for targetPath, source := range renamedPaths {
 		if len(source) > 1 {
 			var sources []string
+
 			for _, s := range source {
 				sources = append(sources, s.sourcePath)
 				changes[s.index].Status = status.OverwritingNewPath
@@ -246,7 +247,7 @@ func checkOverwritingPathConflict(
 					}
 				}
 
-				return
+				continue
 			}
 
 			conflicts[conflict.OverwritingNewPath] = append(

@@ -96,6 +96,10 @@ var fileSystem = []string{
 	"ebooks/green-mile_1996.mobi",
 	"ebooks/.banned/.mein-kampf.pdf",
 	"ebooks/.banned/lolita.epub",
+	"text/test.TXT",
+	"text/test_A.txt",
+	"text/test-1.txt",
+	"text/test_A-1.txt",
 	".golang.pdf",
 }
 

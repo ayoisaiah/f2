@@ -499,6 +499,17 @@
     "path_args": ["images"]
   },
   {
+    "name": "auto fix multiple overwriting new path conflict",
+    "want": [
+      "test-1.txt|test1-1.txt|text",
+      "test.TXT|test1.txt|text",
+      "test_A.txt|test1 (2).txt|text",
+      "test_A-1.txt|test1-1 (2).txt|text"
+    ],
+    "args": "-f '.*?(\\-1)?\\.(txt|TXT)' -r 'test1${1}.txt' -F",
+    "path_args": ["text"]
+  },
+  {
     "name": "auto fix overwriting new path conflict",
     "want": [
       "dsc-001.arw|dsc-002 (2).arw|images",
