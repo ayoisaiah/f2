@@ -6,7 +6,6 @@ linters:
     - decorder
     - containedctx
     - contextcheck
-    - depguard
     - dogsled
     - dupl
     - errcheck

@@ -6,7 +6,7 @@ package f2_test
 import "testing"
 
 // dummy function necessary for compilation in Unix.
-func setHidden(path string) error {
+func setHidden(_ string) error {
 	return nil
 }
 
