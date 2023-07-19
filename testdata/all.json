@@ -499,6 +499,20 @@
     "path_args": ["images"]
   },
   {
+    "name": "auto fix overwriting several files conflict",
+    "want": [
+      "1984.pdf|1.pdf|ebooks",
+      "animal-farm.epub|1 (2).pdf|ebooks",
+      "atomic-habits.pdf|1 (3).pdf|ebooks",
+      "fear-of-life.EPUB|1 (4).pdf|ebooks",
+      "green-mile_1996.mobi|1 (5).pdf|ebooks",
+      ".mein-kampf.pdf|1.pdf|ebooks/.banned",
+      "lolita.epub|1 (2).pdf|ebooks/.banned"
+    ],
+    "args": "-r '1.pdf' -F -R -H",
+    "path_args": ["ebooks"]
+  },
+  {
     "name": "auto fix multiple overwriting new path conflict",
     "want": [
       "test-1.txt|test1-1.txt|text",
