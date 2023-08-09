@@ -20,16 +20,7 @@ builds:
         goarch: arm64
     main: ./cmd/f2
 archives:
-  - replacements:
-      darwin: darwin
-      linux: linux
-      windows: windows
-      android: android
-      386: i386
-      amd64: amd64
-      arm64: arm64
-
-    files:
+  - files:
       - LICENCE
       - README.md
       - CHANGELOG.md
@@ -75,23 +66,24 @@ nfpms:
         dst: /usr/share/zsh/vendor-completions/_f2
         file_info:
           mode: 0644
-scoop:
-  url_template:
-    'https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{
-    .ArtifactName }}'
-  bucket:
-    owner: ayoisaiah
-    name: scoop-bucket
-    token: '{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}'
-  commit_author:
-    name: goreleaserbot
-    email: goreleaser@carlosbecker.com
-  commit_msg_template: 'Scoop update for {{ .ProjectName }} version {{ .Tag }}'
-  homepage: 'https://github.com/ayoisaiah/f2'
-  description:
-    'F2 is a cross-platform command-line tool for batch renaming files and
-    directories quickly and safely'
-  license: MIT
+scoops:
+  - url_template:
+      'https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{
+      .ArtifactName }}'
+    repository:
+      owner: ayoisaiah
+      name: scoop-bucket
+      token: '{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}'
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@carlosbecker.com
+    commit_msg_template:
+      'Scoop update for {{ .ProjectName }} version {{ .Tag }}'
+    homepage: 'https://github.com/ayoisaiah/f2'
+    description:
+      'F2 is a cross-platform command-line tool for batch renaming files and
+      directories quickly and safely'
+    license: MIT
 
 brews:
   - install: |-
