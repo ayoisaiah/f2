@@ -531,6 +531,8 @@ func TestShortHelp(t *testing.T) {
 	help := f2.ShortHelp(f2.NewApp())
 
 	if runtime.GOOS == internalos.Windows {
+		// TODO: due to line endings on Windows
+		// FIXME: Needs to be corrected instead of ignored
 		t.SkipNow()
 	}
 

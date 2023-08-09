@@ -1,3 +1,8 @@
+## 1.9.1 (2023-02-09)
+
+- Improve performance in dry-run mode (due to table rendering).
+- Fix issue where files could be overwritten when `--fix-conflicts` is used.
+
 ## 1.9.0 (2023-02-02)
 
 - Simple mode now prompts before executing.

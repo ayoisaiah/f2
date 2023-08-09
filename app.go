@@ -279,7 +279,7 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 		},
 		Usage:                "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely.",
 		UsageText:            usageText,
-		Version:              "v1.9.0",
+		Version:              "v1.9.1",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

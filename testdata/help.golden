@@ -1,4 +1,4 @@
-F2 — Command-line bulk renaming tool [version v1.9.0]
+F2 — Command-line bulk renaming tool [version v1.9.1]
 
 Usage: FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
 or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]
