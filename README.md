@@ -73,7 +73,7 @@ Other installation methods are
   files. F2 also supports utilising tags from the popular
   [exiftool](https://github.com/ayoisaiah/f2/wiki/Built-in-variables#3-exif-variables)
   which should cover most use cases.
-- F2 is very fast and won't waste your time. See [benchmarks](#benchmarks).
+- F2 is very fast and won't waste your time. See [benchmarks](#-benchmarks).
 - F2 allows you to
   [revert any renaming operation](https://github.com/ayoisaiah/f2/wiki/Undoing-renaming-mistakes)
   performed with the program. This means you don't have to worry about making a
@@ -93,7 +93,7 @@ Other installation methods are
   exact changes that will be made to your filesystem before making them.
 - Cross-platform with full support for Linux, macOS, and Windows. It also runs
   on less commonly-used platforms, like Termux (Android).
-- [Extremely fast](#benchmarks), even when working with a large amount of files.
+- [Extremely fast](#-benchmarks), even when working with a large amount of files.
 - Supports the chaining of several consecutive renaming operations before a
   final output is produced.
 - Automatically
