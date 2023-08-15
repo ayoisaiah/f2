@@ -229,7 +229,7 @@ func JSON(
 }
 
 // Interactive prints the changes to be made and prompts the user
-// to commit the changes. Blocks unti user types ENTER.
+// to commit the changes. Blocks until user types ENTER.
 func Interactive(
 	fileChanges []*file.Change,
 ) {

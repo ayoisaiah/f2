@@ -34,7 +34,7 @@ jobs:
           prerelease: false
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@master
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
           args: release --rm-dist

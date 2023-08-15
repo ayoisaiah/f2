@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"os/exec"
 	stdpath "path"
@@ -59,8 +58,6 @@ func init() {
 	if err != nil {
 		log.Fatalf("Unable to retrieve xdg data file directory: %v", err)
 	}
-
-	rand.Seed(time.Now().UnixNano())
 }
 
 var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)

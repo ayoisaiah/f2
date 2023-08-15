@@ -1,6 +1,6 @@
 module github.com/ayoisaiah/f2
 
-go 1.19
+go 1.21
 
 require (
 	github.com/adrg/xdg v0.4.0
@@ -18,7 +18,8 @@ require (
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/davecgh/go-spew v1.1.1
+	github.com/olekukonko/tablewriter v0.0.5
+	github.com/samber/lo v1.38.1
 	github.com/sebdah/goldie/v2 v2.5.3
 	golang.org/x/exp v0.0.0-20221028150844-83b7d23a625f
 )
@@ -31,7 +32,6 @@ require (
 	github.com/gookit/color v1.5.2 // indirect
 	github.com/lithammer/fuzzysearch v1.1.5 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

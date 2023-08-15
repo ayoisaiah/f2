@@ -34,7 +34,7 @@ const (
 // supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOptions = []string{
-	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
+	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
 }
 
 func init() {

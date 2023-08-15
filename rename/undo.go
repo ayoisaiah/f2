@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 
 	"github.com/adrg/xdg"
 	"github.com/pterm/pterm"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
-	internalos "github.com/ayoisaiah/f2/internal/os"
-	internalpath "github.com/ayoisaiah/f2/internal/path"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/report"
 )
@@ -35,15 +31,10 @@ var errBackupFileRemovalFailed = errors.New(
 // Undo reverses a renaming operation according to the relevant backup file.
 // The undo file is deleted if the operation is successfully reverted.
 func Undo(conf *config.Config) error {
-	dir := strings.ReplaceAll(conf.WorkingDir, internalpath.Separator, "_")
-	if runtime.GOOS == internalos.Windows {
-		dir = strings.ReplaceAll(dir, ":", "_")
-	}
-
-	file := dir + ".json"
+	filename := workingDirHash(conf.WorkingDir)
 
 	backupFilePath, err := xdg.SearchDataFile(
-		filepath.Join("f2", "backups", file),
+		filepath.Join("f2", "backups", filename),
 	)
 	if err != nil {
 		return errNothingToUndo

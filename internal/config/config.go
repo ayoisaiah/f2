@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -27,40 +28,40 @@ var conf *Config
 
 // Config represents the program configuration.
 type Config struct {
-	Date               time.Time
-	Stdin              io.Reader
-	Stderr             io.Writer
-	Stdout             io.Writer
-	SearchRegex        *regexp.Regexp
-	CSVFilename        string
-	Sort               string
-	Replacement        string
-	WorkingDir         string
-	FindSlice          []string
-	ExcludeFilter      []string
-	ReplacementSlice   []string
-	PathsToFilesOrDirs []string
-	NumberOffset       []int
-	MaxDepth           int
-	StartNumber        int
-	ReplaceLimit       int
-	Recursive          bool
-	IgnoreCase         bool
-	ReverseSort        bool
-	OnlyDir            bool
-	Revert             bool
-	IncludeDir         bool
-	IgnoreExt          bool
-	AllowOverwrites    bool
-	Verbose            bool
-	IncludeHidden      bool
-	Quiet              bool
-	AutoFixConflicts   bool
-	Exec               bool
-	StringLiteralMode  bool
-	SimpleMode         bool
-	JSON               bool
-	Interactive        bool
+	Date              time.Time
+	Stdin             io.Reader
+	Stderr            io.Writer
+	Stdout            io.Writer
+	SearchRegex       *regexp.Regexp
+	CSVFilename       string
+	Sort              string
+	Replacement       string
+	WorkingDir        string
+	FindSlice         []string
+	ExcludeRegex      *regexp.Regexp
+	ReplacementSlice  []string
+	FilesAndDirPaths  []string
+	NumberOffset      []int
+	MaxDepth          int
+	StartNumber       int
+	ReplaceLimit      int
+	Recursive         bool
+	IgnoreCase        bool
+	ReverseSort       bool
+	OnlyDir           bool
+	Revert            bool
+	IncludeDir        bool
+	IgnoreExt         bool
+	AllowOverwrites   bool
+	Verbose           bool
+	IncludeHidden     bool
+	Quiet             bool
+	AutoFixConflicts  bool
+	Exec              bool
+	StringLiteralMode bool
+	SimpleMode        bool
+	JSON              bool
+	Interactive       bool
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -106,7 +107,12 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.ReplacementSlice = ctx.StringSlice("replace")
 	c.CSVFilename = ctx.String("csv")
 	c.Revert = ctx.Bool("undo")
-	c.PathsToFilesOrDirs = ctx.Args().Slice()
+	c.FilesAndDirPaths = ctx.Args().Slice()
+
+	// Default to the current working directory if no path arguments are provided
+	if len(c.FilesAndDirPaths) == 0 {
+		c.FilesAndDirPaths = append(c.FilesAndDirPaths, ".")
+	}
 
 	// Ensure that each findString has a corresponding replacement.
 	// The replacement defaults to an empty string if unset
@@ -144,15 +150,15 @@ func (c *Config) setSimpleModeOptions(ctx *cli.Context) error {
 	c.Interactive = true
 
 	if len(args) > minArgs {
-		c.PathsToFilesOrDirs = args[minArgs:]
+		c.FilesAndDirPaths = args[minArgs:]
 	}
 
 	return c.SetFindStringRegex(0)
 }
 
-// setDefaultOpts applies the options that may be set through
+// setDefaultOpts applies any options that may be set through
 // F2_DEFAULT_OPTS.
-func (c *Config) setDefaultOpts(ctx *cli.Context) {
+func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.AutoFixConflicts = ctx.Bool("fix-conflicts")
 	c.IncludeDir = ctx.Bool("include-dir")
 	c.IncludeHidden = ctx.Bool("hidden")
@@ -161,7 +167,6 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) {
 	c.Recursive = ctx.Bool("recursive")
 	c.OnlyDir = ctx.Bool("only-dir")
 	c.StringLiteralMode = ctx.Bool("string-mode")
-	c.ExcludeFilter = ctx.StringSlice("exclude")
 	c.MaxDepth = int(ctx.Uint("max-depth"))
 	c.Verbose = ctx.Bool("verbose")
 	c.AllowOverwrites = ctx.Bool("allow-overwrites")
@@ -170,6 +175,18 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) {
 	c.JSON = ctx.Bool("json")
 	c.Exec = ctx.Bool("exec")
 	c.Interactive = ctx.Bool("interactive")
+
+	excludePattern := ctx.StringSlice("exclude")
+	if len(excludePattern) > 0 {
+		excludeMatchRegex, err := regexp.Compile(
+			strings.Join(excludePattern, "|"),
+		)
+		if err != nil {
+			return err
+		}
+
+		c.ExcludeRegex = excludeMatchRegex
+	}
 
 	if c.Interactive {
 		c.Exec = true
@@ -186,6 +203,8 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) {
 	if c.OnlyDir {
 		c.IncludeDir = true
 	}
+
+	return nil
 }
 
 func SetReplacement(replacement string) {
@@ -244,7 +263,10 @@ func Init(ctx *cli.Context) (*Config, error) {
 
 	var err error
 
-	conf.setDefaultOpts(ctx)
+	err = conf.setDefaultOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, ok := ctx.App.Metadata["simple-mode"]; ok {
 		err = conf.setSimpleModeOptions(ctx)

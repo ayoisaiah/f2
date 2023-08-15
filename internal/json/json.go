@@ -20,13 +20,6 @@ type Output struct {
 	DryRun     bool                `json:"dry_run"`
 }
 
-type OutputOpts struct {
-	Date       time.Time
-	WorkingDir string
-	Exec       bool
-	Print      bool // whether to print the JSON output
-}
-
 func GetOutput(
 	changes []*file.Change,
 ) ([]byte, error) {

@@ -936,7 +936,7 @@ func replaceVariables(
 	if len(vars.filename.matches) > 0 {
 		sourceName := filepath.Base(sourcePath)
 		if !change.IsDir {
-			sourceName = internalpath.FilenameWithoutExtension(sourceName)
+			sourceName = internalpath.StripExtension(sourceName)
 		}
 
 		change.Target = replaceFilenameVars(
@@ -1030,7 +1030,7 @@ func replaceVariables(
 	if transformVarRegex.MatchString(change.Target) {
 		sourceName := change.Source
 		if conf.IgnoreExt && !change.IsDir {
-			sourceName = internalpath.FilenameWithoutExtension(sourceName)
+			sourceName = internalpath.StripExtension(sourceName)
 		}
 
 		matches := conf.SearchRegex.FindAllString(sourceName, -1)

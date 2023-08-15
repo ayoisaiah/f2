@@ -860,7 +860,7 @@ func replaceMatches(
 		fileExt := filepath.Ext(originalName)
 
 		if conf.IgnoreExt && !change.IsDir {
-			originalName = internalpath.FilenameWithoutExtension(originalName)
+			originalName = internalpath.StripExtension(originalName)
 		}
 
 		change.Target = replaceString(conf, originalName)

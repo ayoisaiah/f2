@@ -61,7 +61,7 @@ func newTarget(change *file.Change, renamedPaths map[string][]struct {
 	index      int
 },
 ) string {
-	fileNoExt := internalpath.FilenameWithoutExtension(
+	fileNoExt := internalpath.StripExtension(
 		filepath.Base(change.Target),
 	)
 	regex := regexp.MustCompile(`\(\d+\)$`)
@@ -377,7 +377,7 @@ func checkFileNameLengthConflict(
 				filename := []rune(filepath.Base(change.Target))
 				ext := []rune(filepath.Ext(string(filename)))
 				f := []rune(
-					internalpath.FilenameWithoutExtension(string(filename)),
+					internalpath.StripExtension(string(filename)),
 				)
 				index := windowsMaxFileCharLength - len(ext)
 				f = f[:index]
@@ -386,7 +386,7 @@ func checkFileNameLengthConflict(
 				// trim filename so that it's no more than 255 bytes
 				filename := filepath.Base(change.Target)
 				ext := filepath.Ext(filename)
-				fileNoExt := internalpath.FilenameWithoutExtension(filename)
+				fileNoExt := internalpath.StripExtension(filename)
 				index := unixMaxBytes - len([]byte(ext))
 				for {
 					if len([]byte(fileNoExt)) > index {

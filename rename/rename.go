@@ -5,6 +5,7 @@ package rename
 
 import (
 	"bufio"
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"os"
@@ -21,7 +22,6 @@ import (
 	"github.com/ayoisaiah/f2/internal/file"
 	internaljson "github.com/ayoisaiah/f2/internal/json"
 	internalos "github.com/ayoisaiah/f2/internal/os"
-	internalpath "github.com/ayoisaiah/f2/internal/path"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/report"
 )
@@ -103,19 +103,17 @@ func rename(
 	return errs
 }
 
+func workingDirHash(workingDir string) string {
+	h := md5.New()
+	h.Write([]byte(workingDir))
+
+	return fmt.Sprintf("%x", h.Sum(nil)) + ".json"
+}
+
 // backupChanges records the details of a renaming operation to the filesystem
 // so that it may be reverted if necessary.
-func backupChanges(changes []*file.Change, cwd string) error {
-	workingDir := strings.ReplaceAll(
-		cwd,
-		internalpath.Separator,
-		"_",
-	)
-	if runtime.GOOS == internalos.Windows {
-		workingDir = strings.ReplaceAll(workingDir, ":", "_")
-	}
-
-	filename := workingDir + ".json"
+func backupChanges(changes []*file.Change, workingDir string) error {
+	filename := workingDirHash(workingDir)
 
 	backupFilePath, err := xdg.DataFile(
 		filepath.Join("f2", "backups", filename),

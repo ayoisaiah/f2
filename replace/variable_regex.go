@@ -2,10 +2,8 @@ package replace
 
 import (
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strings"
-	"time"
 
 	internaltime "github.com/ayoisaiah/f2/internal/time"
 )
@@ -118,7 +116,4 @@ func init() {
 			transformTokens,
 		),
 	)
-
-	// for the sake of replacing random string variables
-	rand.Seed(time.Now().UnixNano())
 }
