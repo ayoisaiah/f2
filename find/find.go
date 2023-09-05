@@ -11,17 +11,13 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ayoisaiah/f2/internal/config"
+	"github.com/ayoisaiah/f2/internal/file"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
 )
 
 const (
 	dotCharacter = 46
 )
-
-// csvRows keeps track of each row in a CSV file so that it can be associated
-// with a file renaming change. The key is the absolute path of the source file
-// and the value is the correspoding row in the CSV file.
-var csvRows = make(map[string][]string)
 
 // readCSVFile reads all the records contained in a CSV file specified by
 // `pathToCSV`.
@@ -45,8 +41,10 @@ func readCSVFile(pathToCSV string) ([][]string, error) {
 
 // handleCSV reads the provided CSV file, and finds all the valid candidates
 // for replacement.
-func handleCSV(conf *config.Config) (internalpath.Collection, error) {
-	paths := make(internalpath.Collection)
+func handleCSV(conf *config.Config) ([]*file.Change, error) {
+	processed := make(map[string]bool)
+
+	var changes []*file.Change
 
 	records, err := readCSVFile(conf.CSVFilename)
 	if err != nil {
@@ -87,21 +85,34 @@ func handleCSV(conf *config.Config) (internalpath.Collection, error) {
 			return nil, err2
 		}
 
-	entryLoop:
 		for _, entry := range dirEntry {
-			if entry.Name() == fileInfo.Name() {
-				// Ensure that the file is not already
-				// present in the directory entry
-				for _, e := range paths[sourceDir] {
-					if e.Name() == fileInfo.Name() {
-						break entryLoop
-					}
-				}
+			entryName := entry.Name()
 
-				paths[sourceDir] = append(paths[sourceDir], entry)
+			if entryName != fileInfo.Name() {
+				continue
+			}
 
+			relPath := filepath.Join(sourceDir, entryName)
+
+			// Ensure that the file is not already processed in the case of
+			// duplicate rows
+			if processed[relPath] {
 				break
 			}
+
+			processed[relPath] = true
+
+			fc := &file.Change{
+				BaseDir:        sourceDir,
+				IsDir:          entry.IsDir(),
+				Source:         entryName,
+				OriginalSource: entryName,
+				CSVRow:         record,
+			}
+
+			changes = append(changes, fc)
+
+			break
 		}
 
 		if len(record) > 1 {
@@ -109,8 +120,6 @@ func handleCSV(conf *config.Config) (internalpath.Collection, error) {
 
 			replacementSlice = append(replacementSlice, target)
 		}
-
-		csvRows[absSourcePath] = record
 	}
 
 	if len(conf.ReplacementSlice) == 0 {
@@ -125,7 +134,7 @@ func handleCSV(conf *config.Config) (internalpath.Collection, error) {
 		}
 	}
 
-	return paths, nil
+	return changes, nil
 }
 
 // filterMatches filters out files that do not match the search pattern or
@@ -133,12 +142,11 @@ func handleCSV(conf *config.Config) (internalpath.Collection, error) {
 func filterMatches(
 	conf *config.Config,
 	pathsToFilter internalpath.Collection,
-) (internalpath.Collection, error) {
-	matches := make(internalpath.Collection)
+) ([]*file.Change, error) {
+	var changes []*file.Change
 
 	for baseDir := range pathsToFilter {
 		dirEntry := pathsToFilter[baseDir]
-		filteredDirEntry := dirEntry[:0]
 
 		for i := range dirEntry {
 			entry := dirEntry[i]
@@ -206,13 +214,16 @@ func filterMatches(
 				}
 			}
 
-			filteredDirEntry = append(filteredDirEntry, entry)
-
-			matches[baseDir] = filteredDirEntry
+			changes = append(changes, &file.Change{
+				BaseDir:        baseDir,
+				IsDir:          entryIsDir,
+				Source:         fileName,
+				OriginalSource: fileName,
+			})
 		}
 	}
 
-	return matches, nil
+	return changes, nil
 }
 
 // traverseDirs walks through the specified directories and collects their
@@ -345,7 +356,7 @@ func searchPaths(conf *config.Config) (internalpath.Collection, error) {
 
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
-func Find(conf *config.Config) (internalpath.Collection, error) {
+func Find(conf *config.Config) ([]*file.Change, error) {
 	if conf.CSVFilename != "" {
 		return handleCSV(conf)
 	}
@@ -361,8 +372,4 @@ func Find(conf *config.Config) (internalpath.Collection, error) {
 	}
 
 	return matches, nil
-}
-
-func GetCSVRows() map[string][]string {
-	return csvRows
 }

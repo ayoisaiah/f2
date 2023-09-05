@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ayoisaiah/f2/find"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	internalpath "github.com/ayoisaiah/f2/internal/path"
@@ -927,45 +926,13 @@ func handleReplacementChain(
 	return matches, nil
 }
 
-// c creates a file.Change struct for each match.
-func c(conf *config.Config, matches internalpath.Collection) []*file.Change {
-	var changes []*file.Change
-
-	rows := find.GetCSVRows()
-
-	for path, dirEntry := range matches {
-		for _, entry := range dirEntry {
-			filename := filepath.Clean(entry.Name())
-			change := &file.Change{
-				BaseDir:        path,
-				IsDir:          entry.IsDir(),
-				Source:         filename,
-				OriginalSource: filename,
-			}
-
-			if conf.CSVFilename != "" {
-				absPath := filepath.Join(path, filename)
-				change.CSVRow = rows[absPath]
-			}
-
-			changes = append(changes, change)
-		}
-	}
-
-	return changes
-}
-
 // Replace applies the file name replacements according to the --replace
 // argument.
 func Replace(
 	conf *config.Config,
-	matches internalpath.Collection,
+	changes []*file.Change,
 ) ([]*file.Change, error) {
 	var err error
-
-	var changes []*file.Change
-
-	changes = c(conf, matches)
 
 	changes, err = sortfiles.Changes(changes, conf.Sort, conf.ReverseSort)
 	if err != nil {

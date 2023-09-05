@@ -18,6 +18,7 @@ require (
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
+	github.com/davecgh/go-spew v1.1.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.38.1
 	github.com/sebdah/goldie/v2 v2.5.3
