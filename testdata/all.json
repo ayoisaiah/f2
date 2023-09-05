@@ -122,7 +122,8 @@
     "name": "respect case insensitve option in string literal mode",
     "want": [
       "animal-farm.epub|animal-farm.epub.bak|ebooks",
-      "fear-of-life.EPUB|fear-of-life.epub.bak|ebooks"
+      "fear-of-life.EPUB|fear-of-life.epub.bak|ebooks",
+      "lolita.epub|lolita.epub.bak|ebooks/.banned"
     ],
     "args": "-f epub -r epub.bak -siR"
   },
