@@ -8,8 +8,6 @@ import (
 	"syscall"
 )
 
-const pathSeperator = `\`
-
 // checkIfHidden checks if a file is hidden on Windows.
 func checkIfHidden(filename, baseDir string) (bool, error) {
 	// dotfiles also count as hidden

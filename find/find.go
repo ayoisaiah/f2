@@ -1,14 +1,10 @@
 package find
 
 import (
-	"encoding/csv"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
-
-	"github.com/samber/lo"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
@@ -19,339 +15,180 @@ const (
 	dotCharacter = 46
 )
 
-// readCSVFile reads all the records contained in a CSV file specified by
-// `pathToCSV`.
-func readCSVFile(pathToCSV string) ([][]string, error) {
-	f, err := os.Open(pathToCSV)
-	if err != nil {
-		return nil, err
+// shouldFilter decides whether a match should be included in the final
+// pool of files for renaming.
+func shouldFilter(conf *config.Config, match *file.Change) (bool, error) {
+	if conf.ExcludeRegex != nil &&
+		conf.ExcludeRegex.MatchString(match.Source) {
+		return true, nil
 	}
 
-	defer f.Close()
-
-	csvReader := csv.NewReader(f)
-
-	records, err := csvReader.ReadAll()
-	if err != nil {
-		return nil, err
+	if !conf.IncludeDir && match.IsDir {
+		return true, nil
 	}
 
-	return records, nil
-}
-
-// handleCSV reads the provided CSV file, and finds all the valid candidates
-// for replacement.
-func handleCSV(conf *config.Config) ([]*file.Change, error) {
-	processed := make(map[string]bool)
-
-	var changes []*file.Change
-
-	records, err := readCSVFile(conf.CSVFilename)
-	if err != nil {
-		return nil, err
+	if conf.OnlyDir && !match.IsDir {
+		return true, nil
 	}
 
-	csvAbsPath, err := filepath.Abs(conf.CSVFilename)
-	if err != nil {
-		return nil, err
-	}
-
-	findSlice := make([]string, 0, len(records))
-
-	replacementSlice := make([]string, 0, len(records))
-
-	for _, record := range records {
-		if len(record) == 0 {
-			continue
+	if !conf.IncludeHidden {
+		isHidden, err := checkIfHidden(match.Source, match.BaseDir)
+		if err != nil {
+			return false, err
 		}
 
-		source := strings.TrimSpace(record[0])
-
-		absSourcePath := filepath.Join(filepath.Dir(csvAbsPath), source)
-
-		fileInfo, err2 := os.Stat(absSourcePath)
-		if err2 != nil {
-			return nil, err2
-		}
-
-		findSlice = append(findSlice, fileInfo.Name())
-
-		sourceDir := filepath.Dir(absSourcePath)
-
-		var dirEntry []fs.DirEntry
-
-		dirEntry, err2 = os.ReadDir(sourceDir)
-		if err2 != nil {
-			return nil, err2
-		}
-
-		for _, entry := range dirEntry {
-			entryName := entry.Name()
-
-			if entryName != fileInfo.Name() {
-				continue
-			}
-
-			relPath := filepath.Join(sourceDir, entryName)
-
-			// Ensure that the file is not already processed in the case of
-			// duplicate rows
-			if processed[relPath] {
-				break
-			}
-
-			processed[relPath] = true
-
-			fc := &file.Change{
-				BaseDir:        sourceDir,
-				IsDir:          entry.IsDir(),
-				Source:         entryName,
-				OriginalSource: entryName,
-				CSVRow:         record,
-			}
-
-			changes = append(changes, fc)
-
-			break
-		}
-
-		if len(record) > 1 {
-			target := strings.TrimSpace(record[1])
-
-			replacementSlice = append(replacementSlice, target)
-		}
-	}
-
-	if len(conf.ReplacementSlice) == 0 {
-		if len(conf.FindSlice) == 0 {
-			config.SetFindSlice(findSlice)
-			config.SetReplacementSlice(replacementSlice)
-
-			err = config.SetFindStringRegex(0)
+		if isHidden {
+			// Ensure that explicitly included file arguments are not affected
+			entryAbsPath, err := filepath.Abs(
+				filepath.Join(match.BaseDir, match.Source),
+			)
 			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return changes, nil
-}
-
-// filterMatches filters out files that do not match the search pattern or
-// excluded using other arguments.
-func filterMatches(
-	conf *config.Config,
-	pathsToFilter internalpath.Collection,
-) ([]*file.Change, error) {
-	var changes []*file.Change
-
-	for baseDir := range pathsToFilter {
-		dirEntry := pathsToFilter[baseDir]
-
-		for i := range dirEntry {
-			entry := dirEntry[i]
-
-			fileName := entry.Name()
-
-			entryIsDir := entry.IsDir()
-
-			if conf.IgnoreExt && !entryIsDir {
-				fileName = internalpath.StripExtension(fileName)
+				return false, err
 			}
 
-			matched := conf.SearchRegex.MatchString(fileName)
-			if !matched {
-				continue
-			}
+			shouldSkip := true
 
-			// Ensure full name is used for the other checks
-			fileName = entry.Name()
-
-			if conf.ExcludeRegex != nil &&
-				conf.ExcludeRegex.MatchString(fileName) {
-				continue
-			}
-
-			if entryIsDir && !conf.IncludeDir {
-				continue
-			}
-
-			if conf.OnlyDir && !entryIsDir {
-				continue
-			}
-
-			if !conf.IncludeHidden {
-				isHidden, err := checkIfHidden(fileName, baseDir)
+			for _, pathArg := range conf.FilesAndDirPaths {
+				argAbsPath, err := filepath.Abs(pathArg)
 				if err != nil {
-					return nil, err
+					return false, err
 				}
 
-				// Ensure that explicitly included file arguments are not affected
-				if isHidden {
-					entryAbsPath, err := filepath.Abs(
-						filepath.Join(baseDir, fileName),
-					)
-					if err != nil {
-						return nil, err
-					}
-
-					shouldSkip := true
-
-					for _, pathArg := range conf.FilesAndDirPaths {
-						argAbsPath, err := filepath.Abs(pathArg)
-						if err != nil {
-							return nil, err
-						}
-
-						if strings.EqualFold(entryAbsPath, argAbsPath) {
-							shouldSkip = false
-						}
-					}
-
-					if shouldSkip {
-						continue
-					}
+				if strings.EqualFold(entryAbsPath, argAbsPath) {
+					shouldSkip = false
 				}
 			}
 
-			changes = append(changes, &file.Change{
-				BaseDir:        baseDir,
-				IsDir:          entryIsDir,
-				Source:         fileName,
-				OriginalSource: fileName,
-			})
+			return shouldSkip, nil
 		}
 	}
 
-	return changes, nil
+	return false, nil
 }
 
-// traverseDirs walks through the specified directories and collects their
-// contents in a map until the specified max depth is reached or there are no
-// more directories to recurse into. Hidden directories are ignored if specified.
-func traverseDirs(
-	dirAndContents internalpath.Collection,
-	maxDepth int,
-	includeHidden bool,
-) (internalpath.Collection, error) {
-	all := []map[string][]os.DirEntry{
-		dirAndContents,
+// isMaxDepth reports whether the configured max depth has been reached.
+func isMaxDepth(rootPath, currentPath string, maxDept int) bool {
+	if rootPath == filepath.Dir(currentPath) {
+		return false
 	}
 
-	currentDepth := 0
-
-	for {
-		nextLevel := make(internalpath.Collection)
-
-		for baseDir, dirContents := range all[currentDepth] {
-			for i := range dirContents {
-				entry := dirContents[i]
-
-				if !entry.IsDir() {
-					continue
-				}
-
-				dirName := entry.Name()
-
-				if !includeHidden {
-					dirIsHidden, err := checkIfHidden(dirName, baseDir)
-					if err != nil {
-						return nil, err
-					}
-
-					if dirIsHidden {
-						continue
-					}
-				}
-
-				entryPath := filepath.Join(baseDir, dirName)
-
-				dirEntry, err := os.ReadDir(entryPath)
-				if err != nil {
-					return nil, err
-				}
-
-				nextLevel[entryPath] = dirEntry
-			}
-		}
-
-		if len(nextLevel) != 0 {
-			currentDepth++
-
-			all = append(all, nextLevel)
-
-			if maxDepth == 0 || maxDepth != currentDepth {
-				continue
-			}
-		}
-
-		break
+	if maxDept == -1 {
+		return true
 	}
 
-	return lo.Assign(all...), nil
+	p := strings.Replace(currentPath, rootPath+string(os.PathSeparator), "", 1)
+
+	if strings.Count(p, string(os.PathSeparator)) > maxDept && maxDept != 0 {
+		return true
+	}
+
+	return false
 }
 
-// searchPaths groups the directories that will be searched for matches and their
-// contents.
-func searchPaths(conf *config.Config) (internalpath.Collection, error) {
-	dirAndContents := make(internalpath.Collection)
+// searchPaths walks through the filesystem and finds matches for the provided
+// search pattern.
+func searchPaths(conf *config.Config) ([]*file.Change, error) {
+	processedPaths := make(map[string]bool)
 
-	for _, path := range conf.FilesAndDirPaths {
-		var fileInfo os.FileInfo
+	var matches []*file.Change
 
-		path = filepath.Clean(path)
+	for _, rootPath := range conf.FilesAndDirPaths {
+		rootPath = filepath.Clean(rootPath)
 
-		// Skip paths that have already been processed
-		if _, ok := dirAndContents[path]; ok {
-			continue
-		}
-
-		fileInfo, err := os.Stat(path)
+		fileInfo, err := os.Stat(rootPath)
 		if err != nil {
 			return nil, err
 		}
 
-		if fileInfo.IsDir() {
-			dirAndContents[path], err = os.ReadDir(path)
-			if err != nil {
-				return nil, err
+		if !fileInfo.IsDir() {
+			if processedPaths[rootPath] {
+				continue
+			}
+
+			match := &file.Change{
+				BaseDir:        filepath.Dir(rootPath),
+				IsDir:          fileInfo.IsDir(),
+				Source:         fileInfo.Name(),
+				OriginalSource: fileInfo.Name(),
+			}
+
+			excludeMatch, ferr := shouldFilter(conf, match)
+			if ferr != nil {
+				return nil, ferr
+			}
+
+			if !excludeMatch {
+				matches = append(matches, match)
+
+				processedPaths[rootPath] = true
 			}
 
 			continue
 		}
 
-		// Add the specified file path to its parent directory's contents only if
-		// it does not exist already to avoid duplicates
-		dir := filepath.Dir(path)
+		maxDepth := -1
+		if conf.Recursive {
+			maxDepth = conf.MaxDepth
+		}
 
-		dirEntry := fs.FileInfoToDirEntry(fileInfo)
+		err = filepath.WalkDir(
+			rootPath,
+			func(currentPath string, entry fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
 
-		dirContainsFile := slices.ContainsFunc(
-			dirAndContents[dir],
-			func(d fs.DirEntry) bool {
-				return d.Name() == dirEntry.Name()
+				// skip the root path and already processed paths
+				if rootPath == currentPath || processedPaths[currentPath] {
+					return nil
+				}
+
+				if isMaxDepth(rootPath, currentPath, maxDepth) {
+					return fs.SkipDir
+				}
+
+				fileName := entry.Name()
+
+				entryIsDir := entry.IsDir()
+
+				if conf.IgnoreExt && !entryIsDir {
+					fileName = internalpath.StripExtension(fileName)
+				}
+
+				matched := conf.SearchRegex.MatchString(fileName)
+				if !matched {
+					return nil
+				}
+
+				fileName = entry.Name()
+
+				match := &file.Change{
+					BaseDir:        filepath.Dir(currentPath),
+					IsDir:          entryIsDir,
+					Source:         fileName,
+					OriginalSource: fileName,
+				}
+
+				excludeMatch, ferr := shouldFilter(conf, match)
+				if ferr != nil {
+					return ferr
+				}
+
+				if !excludeMatch {
+					matches = append(matches, match)
+
+					processedPaths[currentPath] = true
+				}
+
+				return nil
 			},
 		)
-
-		if !dirContainsFile {
-			dirAndContents[dir] = append(dirAndContents[dir], dirEntry)
-		}
-	}
-
-	if conf.Recursive {
-		d, err := traverseDirs(
-			dirAndContents,
-			conf.MaxDepth,
-			conf.IncludeHidden,
-		)
 		if err != nil {
 			return nil, err
 		}
-
-		dirAndContents = d
 	}
 
-	return dirAndContents, nil
+	return matches, nil
 }
 
 // Find returns a collection of files and directories that match the search
@@ -361,15 +198,5 @@ func Find(conf *config.Config) ([]*file.Change, error) {
 		return handleCSV(conf)
 	}
 
-	paths, err := searchPaths(conf)
-	if err != nil {
-		return nil, err
-	}
-
-	matches, err := filterMatches(conf, paths)
-	if err != nil {
-		return nil, err
-	}
-
-	return matches, nil
+	return searchPaths(conf)
 }
