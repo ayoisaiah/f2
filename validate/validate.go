@@ -319,7 +319,7 @@ func checkTrailingPeriodConflict(
 	targetPath := filepath.Join(change.BaseDir, change.Target)
 
 	if runtime.GOOS == internalos.Windows {
-		pathComponents := strings.Split(change.Target, internalpath.Separator)
+		pathComponents := strings.Split(change.Target, string(os.PathSeparator))
 
 		for _, v := range pathComponents {
 			if v != strings.TrimRight(v, ".") {
@@ -335,7 +335,10 @@ func checkTrailingPeriodConflict(
 				pathComponents[j] = s
 			}
 
-			change.Target = strings.Join(pathComponents, internalpath.Separator)
+			change.Target = strings.Join(
+				pathComponents,
+				string(os.PathSeparator),
+			)
 			change.Status = status.OK
 			conflictDetected = false
 
