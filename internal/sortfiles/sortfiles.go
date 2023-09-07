@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 
 	"gopkg.in/djherbis/times.v1"
@@ -135,21 +134,6 @@ func BySize(changes []*file.Change, reverseSort bool) ([]*file.Change, error) {
 	return changes, err
 }
 
-// Alphabetically sorts the changes in alphabetical order.
-func Alphabetically(changes []*file.Change, reverseSort bool) []*file.Change {
-	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1 := strings.ToLower(changes[i].Source)
-		compareElement2 := strings.ToLower(changes[j].Source)
-		if reverseSort {
-			return compareElement1 > compareElement2
-		}
-
-		return compareElement1 < compareElement2
-	})
-
-	return changes
-}
-
 // Changes is used to sort changes according to the configured sort value.
 func Changes(
 	changes []*file.Change,
@@ -166,5 +150,5 @@ func Changes(
 		return ByTime(changes, sortName, reverseSort)
 	}
 
-	return Alphabetically(changes, reverseSort), nil
+	return changes, nil
 }
