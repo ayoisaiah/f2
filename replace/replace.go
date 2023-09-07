@@ -934,9 +934,11 @@ func Replace(
 ) ([]*file.Change, error) {
 	var err error
 
-	changes, err = sortfiles.Changes(changes, conf.Sort, conf.ReverseSort)
-	if err != nil {
-		return nil, err
+	if conf.Sort != "" {
+		changes, err = sortfiles.Changes(changes, conf.Sort, conf.ReverseSort)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	changes, err = handleReplacementChain(conf, changes)
