@@ -17,31 +17,33 @@ const (
 
 // shouldFilter decides whether a match should be included in the final
 // pool of files for renaming.
-func shouldFilter(conf *config.Config, match *file.Change) (bool, error) {
+func shouldFilter(conf *config.Config, match *file.Change) bool {
 	if conf.ExcludeRegex != nil &&
 		conf.ExcludeRegex.MatchString(match.Source) {
-		return true, nil
+		return true
 	}
 
 	if !conf.IncludeDir && match.IsDir {
-		return true, nil
+		return true
 	}
 
 	if conf.OnlyDir && !match.IsDir {
-		return true, nil
+		return true
 	}
 
+	return false
+}
+
+func checkHidden(conf *config.Config, path string) (bool, error) {
 	if !conf.IncludeHidden {
-		isHidden, err := checkIfHidden(match.Source, match.BaseDir)
+		isHidden, err := checkIfHidden(filepath.Base(path), "")
 		if err != nil {
 			return false, err
 		}
 
 		if isHidden {
 			// Ensure that explicitly included file arguments are not affected
-			entryAbsPath, err := filepath.Abs(
-				filepath.Join(match.BaseDir, match.Source),
-			)
+			entryAbsPath, err := filepath.Abs(path)
 			if err != nil {
 				return false, err
 			}
@@ -112,11 +114,7 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 				OriginalSource: fileInfo.Name(),
 			}
 
-			excludeMatch, ferr := shouldFilter(conf, match)
-			if ferr != nil {
-				return nil, ferr
-			}
-
+			excludeMatch := shouldFilter(conf, match)
 			if !excludeMatch {
 				matches = append(matches, match)
 
@@ -141,6 +139,23 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 				// skip the root path and already processed paths
 				if rootPath == currentPath || processedPaths[currentPath] {
 					return nil
+				}
+
+				skipHidden, herr := checkHidden(conf, currentPath)
+				if herr != nil {
+					return herr
+				}
+
+				if skipHidden {
+					if entry.IsDir() {
+						return fs.SkipDir
+					}
+
+					return nil
+				}
+
+				if currentPath == ".git" {
+					return fs.SkipDir
 				}
 
 				if isMaxDepth(rootPath, currentPath, maxDepth) {
@@ -169,11 +184,7 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 					OriginalSource: fileName,
 				}
 
-				excludeMatch, ferr := shouldFilter(conf, match)
-				if ferr != nil {
-					return ferr
-				}
-
+				excludeMatch := shouldFilter(conf, match)
 				if !excludeMatch {
 					matches = append(matches, match)
 
