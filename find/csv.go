@@ -99,6 +99,7 @@ func handleCSV(conf *config.Config) ([]*file.Change, error) {
 				IsDir:          entry.IsDir(),
 				Source:         entryName,
 				OriginalSource: entryName,
+				RelSourcePath:  relPath,
 				CSVRow:         record,
 			}
 

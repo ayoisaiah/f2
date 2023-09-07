@@ -107,11 +107,15 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 				continue
 			}
 
+			baseDir := filepath.Dir(rootPath)
+			fileName := fileInfo.Name()
+
 			match := &file.Change{
-				BaseDir:        filepath.Dir(rootPath),
+				BaseDir:        baseDir,
 				IsDir:          fileInfo.IsDir(),
-				Source:         fileInfo.Name(),
-				OriginalSource: fileInfo.Name(),
+				Source:         fileName,
+				OriginalSource: fileName,
+				RelSourcePath:  filepath.Join(baseDir, fileName),
 			}
 
 			excludeMatch := shouldFilter(conf, match)
@@ -176,12 +180,14 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 				}
 
 				fileName = entry.Name()
+				baseDir := filepath.Dir(currentPath)
 
 				match := &file.Change{
-					BaseDir:        filepath.Dir(currentPath),
+					BaseDir:        baseDir,
 					IsDir:          entryIsDir,
 					Source:         fileName,
 					OriginalSource: fileName,
+					RelSourcePath:  filepath.Join(baseDir, fileName),
 				}
 
 				excludeMatch := shouldFilter(conf, match)

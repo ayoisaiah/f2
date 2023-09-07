@@ -931,10 +931,9 @@ func replaceVariables(
 	vars *variables,
 ) error {
 	fileExt := filepath.Ext(change.OriginalSource)
-	sourcePath := filepath.Join(change.BaseDir, change.OriginalSource)
 
 	if len(vars.filename.matches) > 0 {
-		sourceName := filepath.Base(sourcePath)
+		sourceName := filepath.Base(change.OriginalSource)
 		if !change.IsDir {
 			sourceName = internalpath.StripExtension(sourceName)
 		}
@@ -955,7 +954,7 @@ func replaceVariables(
 	}
 
 	if len(vars.parentDir.matches) > 0 {
-		abspath, err := filepath.Abs(sourcePath)
+		abspath, err := filepath.Abs(change.RelSourcePath)
 		if err != nil {
 			return err
 		}
@@ -968,7 +967,11 @@ func replaceVariables(
 	}
 
 	if len(vars.date.matches) > 0 {
-		out, err := replaceDateVars(change.Target, sourcePath, vars.date)
+		out, err := replaceDateVars(
+			change.Target,
+			change.RelSourcePath,
+			vars.date,
+		)
 		if err != nil {
 			return err
 		}
@@ -979,7 +982,7 @@ func replaceVariables(
 	if len(vars.exiftool.matches) > 0 {
 		out, err := replaceExifToolVars(
 			change.Target,
-			sourcePath,
+			change.RelSourcePath,
 			vars.exiftool,
 		)
 		if err != nil {
@@ -990,7 +993,11 @@ func replaceVariables(
 	}
 
 	if len(vars.exif.matches) > 0 {
-		out, err := replaceExifVars(change.Target, sourcePath, vars.exif)
+		out, err := replaceExifVars(
+			change.Target,
+			change.RelSourcePath,
+			vars.exif,
+		)
 		if err != nil {
 			return err
 		}
@@ -999,7 +1006,11 @@ func replaceVariables(
 	}
 
 	if len(vars.id3.matches) > 0 {
-		out, err := replaceID3Variables(change.Target, sourcePath, vars.id3)
+		out, err := replaceID3Variables(
+			change.Target,
+			change.RelSourcePath,
+			vars.id3,
+		)
 		if err != nil {
 			return err
 		}
@@ -1014,7 +1025,11 @@ func replaceVariables(
 	}
 
 	if len(vars.hash.matches) > 0 {
-		out, err := replaceFileHashVars(change.Target, sourcePath, vars.hash)
+		out, err := replaceFileHashVars(
+			change.Target,
+			change.RelSourcePath,
+			vars.hash,
+		)
 		if err != nil {
 			return err
 		}

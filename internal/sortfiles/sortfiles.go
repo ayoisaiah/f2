@@ -5,7 +5,6 @@ package sortfiles
 import (
 	"io/fs"
 	"os"
-	"path/filepath"
 	"sort"
 	"time"
 
@@ -50,14 +49,8 @@ func ByTime(
 	var err error
 
 	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1Path := filepath.Join(
-			changes[i].BaseDir,
-			changes[i].Source,
-		)
-		compareElement2Path := filepath.Join(
-			changes[j].BaseDir,
-			changes[j].Source,
-		)
+		compareElement1Path := changes[i].RelSourcePath
+		compareElement2Path := changes[j].RelSourcePath
 
 		var compareElement1, compareElement2 times.Timespec
 		compareElement1, err = times.Stat(compareElement1Path)
@@ -108,14 +101,8 @@ func BySize(changes []*file.Change, reverseSort bool) ([]*file.Change, error) {
 	var err error
 
 	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1Path := filepath.Join(
-			changes[i].BaseDir,
-			changes[i].Source,
-		)
-		compareElement2Path := filepath.Join(
-			changes[j].BaseDir,
-			changes[j].Source,
-		)
+		compareElement1Path := changes[i].RelSourcePath
+		compareElement2Path := changes[j].RelSourcePath
 
 		var compareElement1, compareElement2 fs.FileInfo
 		compareElement1, err = os.Stat(compareElement1Path)

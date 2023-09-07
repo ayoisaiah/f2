@@ -91,9 +91,6 @@ func checkEmptyFilenameConflict(
 	change *file.Change,
 	autoFix bool,
 ) (conflictDetected bool) {
-	sourcePath := filepath.Join(change.BaseDir, change.Source)
-	targetPath := filepath.Join(change.BaseDir, change.Target)
-
 	if change.Target == "." || change.Target == "" {
 		conflictDetected = true
 
@@ -108,8 +105,8 @@ func checkEmptyFilenameConflict(
 		conflicts[conflict.EmptyFilename] = append(
 			conflicts[conflict.EmptyFilename],
 			conflict.Conflict{
-				Sources: []string{sourcePath},
-				Target:  targetPath,
+				Sources: []string{change.RelSourcePath},
+				Target:  change.RelTargetPath,
 			},
 		)
 		change.Status = status.EmptyFilename
@@ -124,21 +121,18 @@ func checkPathExistsConflict(
 	change *file.Change,
 	autoFix, allowOverwrites bool,
 ) (conflictDetected bool) {
-	sourcePath := filepath.Join(change.BaseDir, change.Source)
-	targetPath := filepath.Join(change.BaseDir, change.Target)
-
 	// Report if target path exists on the filesystem
-	if _, err := os.Stat(targetPath); err == nil ||
+	if _, err := os.Stat(change.RelTargetPath); err == nil ||
 		errors.Is(err, os.ErrExist) {
 		// Don't report a conflict for an unchanged filename
-		if sourcePath == targetPath {
+		if change.RelSourcePath == change.RelTargetPath {
 			change.Status = status.Unchanged
 			return
 		}
 
 		// Case-insensitive filesystems should not report conflicts
 		// if only the case of the filename is being changed.
-		if strings.EqualFold(sourcePath, targetPath) {
+		if strings.EqualFold(change.RelSourcePath, change.RelTargetPath) {
 			return
 		}
 
@@ -154,10 +148,9 @@ func checkPathExistsConflict(
 		// the source path is renamed
 		for j := 0; j < len(changes); j++ {
 			ch := changes[j]
-			sp := filepath.Join(ch.BaseDir, ch.Source)
-			tp := filepath.Join(ch.BaseDir, ch.Target)
 
-			if targetPath == sp && !strings.EqualFold(sp, tp) &&
+			if change.RelTargetPath == ch.RelSourcePath &&
+				!strings.EqualFold(ch.RelSourcePath, ch.RelTargetPath) &&
 				change.Index > j {
 				return
 			}
@@ -173,8 +166,8 @@ func checkPathExistsConflict(
 		conflicts[conflict.FileExists] = append(
 			conflicts[conflict.FileExists],
 			conflict.Conflict{
-				Sources: []string{sourcePath},
-				Target:  targetPath,
+				Sources: []string{change.RelSourcePath},
+				Target:  change.RelTargetPath,
 			},
 		)
 
@@ -223,10 +216,18 @@ func checkOverwritingPathConflict(
 							index      int
 						}{}
 						changes[item.index].Target = target
+						changes[item.index].RelTargetPath = filepath.Join(
+							changes[item.index].BaseDir,
+							target,
+						)
 						changes[item.index].Status = status.OK
 					} else {
 						// repeat the last iteration to generate a new path
 						changes[item.index].Target = target
+						changes[item.index].RelTargetPath = filepath.Join(
+							changes[item.index].BaseDir,
+							target,
+						)
 						changes[item.index].Status = status.OK
 						i--
 						continue
@@ -301,9 +302,6 @@ func checkTrailingPeriodConflict(
 	change *file.Change,
 	autoFix bool,
 ) (conflictDetected bool) {
-	sourcePath := filepath.Join(change.BaseDir, change.Source)
-	targetPath := filepath.Join(change.BaseDir, change.Target)
-
 	if runtime.GOOS == internalos.Windows {
 		pathComponents := strings.Split(change.Target, string(os.PathSeparator))
 
@@ -335,8 +333,8 @@ func checkTrailingPeriodConflict(
 			conflicts[conflict.TrailingPeriod] = append(
 				conflicts[conflict.TrailingPeriod],
 				conflict.Conflict{
-					Sources: []string{sourcePath},
-					Target:  targetPath,
+					Sources: []string{change.RelSourcePath},
+					Target:  change.RelTargetPath,
 				},
 			)
 
@@ -355,9 +353,6 @@ func checkFileNameLengthConflict(
 	change *file.Change,
 	autoFix bool,
 ) (conflictDetected bool) {
-	sourcePath := filepath.Join(change.BaseDir, change.Source)
-	targetPath := filepath.Join(change.BaseDir, change.Target)
-
 	exceeded := isTargetLengthExceeded(change.Target)
 	if exceeded {
 		if autoFix {
@@ -402,8 +397,8 @@ func checkFileNameLengthConflict(
 		conflicts[conflict.MaxFilenameLengthExceeded] = append(
 			conflicts[conflict.MaxFilenameLengthExceeded],
 			conflict.Conflict{
-				Sources: []string{sourcePath},
-				Target:  targetPath,
+				Sources: []string{change.RelSourcePath},
+				Target:  change.RelTargetPath,
 				Cause:   cause,
 			},
 		)
@@ -424,9 +419,6 @@ func checkForbiddenCharactersConflict(
 	change *file.Change,
 	autoFix bool,
 ) (conflictDetected bool) {
-	sourcePath := filepath.Join(change.BaseDir, change.Source)
-	targetPath := filepath.Join(change.BaseDir, change.Target)
-
 	forbiddenChars := checkForbiddenCharacters(change.Target)
 	if forbiddenChars != "" {
 		if autoFix {
@@ -453,8 +445,8 @@ func checkForbiddenCharactersConflict(
 		conflicts[conflict.InvalidCharacters] = append(
 			conflicts[conflict.InvalidCharacters],
 			conflict.Conflict{
-				Sources: []string{sourcePath},
-				Target:  targetPath,
+				Sources: []string{change.RelSourcePath},
+				Target:  change.RelTargetPath,
 				Cause:   forbiddenChars,
 			},
 		)
@@ -473,8 +465,6 @@ func detectConflicts(autoFix, allowOverwrites bool) {
 
 	for i := 0; i < len(changes); i++ {
 		change := changes[i]
-		sourcePath := filepath.Join(change.BaseDir, change.Source)
-		targetPath := filepath.Join(change.BaseDir, change.Target)
 
 		detected := checkEmptyFilenameConflict(change, autoFix)
 		if detected {
@@ -508,13 +498,20 @@ func detectConflicts(autoFix, allowOverwrites bool) {
 			continue
 		}
 
-		renamedPaths[targetPath] = append(renamedPaths[targetPath], struct {
-			sourcePath string
-			index      int
-		}{
-			sourcePath: sourcePath,
-			index:      i,
-		})
+		renamedPaths[change.RelTargetPath] = append(
+			renamedPaths[change.RelTargetPath],
+			struct {
+				sourcePath string
+				index      int
+			}{
+				sourcePath: change.RelSourcePath,
+				index:      i,
+			},
+		)
+
+		if autoFix {
+			change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
+		}
 	}
 
 	checkOverwritingPathConflict(renamedPaths, autoFix)

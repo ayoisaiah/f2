@@ -40,11 +40,10 @@ func rename(
 	for i := range changes {
 		change := changes[i]
 
-		sourcePath := filepath.Join(change.BaseDir, change.Source)
-		targetPath := filepath.Join(change.BaseDir, change.Target)
+		targetPath := change.RelTargetPath
 
 		// skip paths that are unchanged in every aspect
-		if sourcePath == targetPath {
+		if change.RelSourcePath == targetPath {
 			continue
 		}
 
@@ -55,7 +54,7 @@ func rename(
 		// 2. Rename <source> to <target>
 		// 3. Rename __<time>__<target> to <target> if case insensitive FS
 		var caseInsensitiveFS bool
-		if strings.EqualFold(sourcePath, targetPath) {
+		if strings.EqualFold(change.RelSourcePath, targetPath) {
 			caseInsensitiveFS = true
 			timeStr := fmt.Sprintf("%d", time.Now().UnixNano())
 			targetPath = filepath.Join(
@@ -83,13 +82,11 @@ func rename(
 			}
 		}
 
-		err := os.Rename(sourcePath, targetPath) // step 2
+		err := os.Rename(change.RelSourcePath, targetPath) // step 2
 		// if the intermediate rename is successful,
 		// proceed with the original renaming operation
 		if err == nil && caseInsensitiveFS {
-			orginalTarget := filepath.Join(change.BaseDir, change.Target)
-
-			err = os.Rename(targetPath, orginalTarget) // step 3
+			err = os.Rename(targetPath, change.RelTargetPath) // step 3
 		}
 
 		if err != nil {
@@ -174,15 +171,12 @@ func commit(
 
 	if conf.Verbose {
 		for _, change := range fileChanges {
-			sourcePath := filepath.Join(change.BaseDir, change.Source)
-			targetPath := filepath.Join(change.BaseDir, change.Target)
-
 			if change.Error != nil {
 				pterm.Fprintln(report.Stderr,
 					pterm.Error.Sprintf(
 						"Failed to rename %s to %s",
-						sourcePath,
-						targetPath,
+						change.RelSourcePath,
+						change.RelTargetPath,
 					),
 				)
 
@@ -192,8 +186,8 @@ func commit(
 			pterm.Fprintln(report.Stderr,
 				pterm.Success.Printfln(
 					"Renamed '%s' to '%s'",
-					pterm.Yellow(sourcePath),
-					pterm.Yellow(targetPath),
+					pterm.Yellow(change.RelSourcePath),
+					pterm.Yellow(change.RelTargetPath),
 				),
 			)
 		}

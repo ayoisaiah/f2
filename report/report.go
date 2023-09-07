@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
@@ -183,9 +182,6 @@ func changes(
 	for i := range fileChanges {
 		change := fileChanges[i]
 
-		source := filepath.Join(change.BaseDir, change.Source)
-		target := filepath.Join(change.BaseDir, change.Target)
-
 		var changeStatus string
 
 		//nolint:exhaustive // default case covers other statuses
@@ -208,7 +204,7 @@ func changes(
 			changeStatus = pterm.Red(strings.TrimPrefix(msg, ": "))
 		}
 
-		d := []string{source, target, changeStatus}
+		d := []string{change.RelSourcePath, change.RelTargetPath, changeStatus}
 		data[i] = d
 	}
 
