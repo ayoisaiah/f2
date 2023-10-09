@@ -35,7 +35,7 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: '{{ .Tag }}-next'
+  name_template: 'nightly'
 changelog:
   sort: asc
   filters:

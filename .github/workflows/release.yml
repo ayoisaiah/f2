@@ -58,7 +58,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: refs/tags/${{ env.nightly_tag }}
-          name: F2 development build (prerelease)
+          name: F2 development build
           body: |
             Please note that this is a development build and may contain experimental features and bugs.
           draft: false
