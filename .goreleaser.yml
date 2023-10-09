@@ -1,8 +1,11 @@
+project_name: f2
+
 before:
   hooks:
     - go mod download
 builds:
-  - env:
+  - id: binary_archives
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -19,12 +22,16 @@ builds:
       - goos: windows
         goarch: arm64
     main: ./cmd/f2
+
 archives:
   - files:
       - LICENCE
       - README.md
       - CHANGELOG.md
       - scripts/completions/*
+    format_overrides:
+      - goos: windows
+        format: zip
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -35,22 +42,17 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
 nfpms:
-  - id: f2
-    package_name: f2
-    file_name_template:
-      '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
-    vendor: Freshman
-    homepage: https://github.com/ayoisaiah/
-    maintainer: Ayooluwa Isaiah <ayo@freshman.tech>
-    description:
-      F2 is a cross-platform command-line tool for batch renaming files and
-      directories quickly and safely
+  - id: main_packages
+    vendor: '{{ .Env.REPO_OWNER }}'
+    homepage: '{{ .Env.REPO_WEBSITE }}'
+    maintainer: '{{ .Env.REPO_MAINTAINER }}'
+    description: '{{ .Env.REPO_DESCRIPTION }}'
     license: MIT
     formats:
       - deb
       - rpm
-      - termux.deb
     recommends:
       - exiftool
     contents:
@@ -66,36 +68,88 @@ nfpms:
         dst: /usr/share/zsh/vendor-completions/_f2
         file_info:
           mode: 0644
+
+  - id: other_packages
+    vendor: '{{ .Env.REPO_OWNER }}'
+    homepage: '{{ .Env.REPO_WEBSITE }}'
+    maintainer: '{{ .Env.REPO_MAINTAINER }}'
+    description: '{{ .Env.REPO_DESCRIPTION }}'
+    license: MIT
+    formats:
+      - apk
+      - termux.deb
+      - archlinux
+    recommends:
+      - exiftool
+    contents:
+      - src: scripts/completions/f2.bash
+        dst: /usr/share/bash-completion/completions/f2
+        file_info:
+          mode: 0644
+      - src: scripts/completions/f2.fish
+        dst: /usr/share/fish/vendor_completions.d/f2.fish
+        file_info:
+          mode: 0644
+      - src: scripts/completions/f2.zsh
+        dst: /usr/share/zsh/vendor-completions/_f2
+        file_info:
+          mode: 0644
+
+publishers:
+  - name: fury.io
+    ids:
+      - main_packages
+    dir: '{{ dir .ArtifactPath }}'
+    cmd:
+      curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_PUSH_TOKEN
+      }}@push.fury.io/{{ .Env.FURY_USERNAME }}/
+
+winget:
+  - publisher: '{{ .Env.REPO_OWNER }}'
+    license: MIT
+    copyright: '{{ .Env.REPO_AUTHOR_NAME }}'
+    homepage: '{{ .Env.REPO_WEBSITE }}'
+    short_description: '{{ .Env.REPO_DESCRIPTION }}'
+    repository:
+      owner: '{{ .Env.REPO_OWNER }}'
+      token: '{{ .Env.GORELEASER_GITHUB_TOKEN }}'
+      name: winget-pkgs
+      branch: '{{.ProjectName}}-{{.Version}}'
+      pull_request:
+        enabled: true
+        draft: false
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+
 scoops:
   - url_template:
       'https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{
       .ArtifactName }}'
     repository:
-      owner: ayoisaiah
+      owner: '{{ .Env.REPO_OWNER }}'
       name: scoop-bucket
-      token: '{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}'
+      token: '{{ .Env.GORELEASER_GITHUB_TOKEN }}'
     commit_author:
       name: goreleaserbot
       email: goreleaser@carlosbecker.com
-    commit_msg_template:
-      'Scoop update for {{ .ProjectName }} version {{ .Tag }}'
-    homepage: 'https://github.com/ayoisaiah/f2'
-    description:
-      'F2 is a cross-platform command-line tool for batch renaming files and
-      directories quickly and safely'
+    homepage: '{{ .Env.REPO_WEBSITE }}'
+    description: '{{ .Env.REPO_DESCRIPTION }}'
     license: MIT
 
 brews:
-  - install: |-
-      bin.install "f2"
-      bash_completion.install "scripts/completions/f2.bash" => "f2"
-      zsh_completion.install "scripts/completions/f2.zsh" => "_f2"
-      fish_completion.install "scripts/completions/f2.fish"
-
-    homepage: 'https://github.com/ayoisaiah/f2'
-
-    license: 'MIT'
-
+  - repository:
+      owner: '{{ .Env.REPO_OWNER }}'
+      name: homebrew-tap
+      token: '{{ .Env.GORELEASER_GITHUB_TOKEN }}'
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@carlosbecker.com
+    homepage: '{{ .Env.REPO_WEBSITE }}'
+    description: '{{ .Env.REPO_DESCRIPTION }}'
+    install: |-
+      bin.install "{{ with .Env.REPO_BINARY_NAME }}{{ . }}{{ else }}{{ .ProjectName }}{{ end }}"
     dependencies:
       - name: exiftool
         type: optional
