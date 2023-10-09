@@ -25,12 +25,12 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/ayoisaiah/f2/internal/file"
-	internaljson "github.com/ayoisaiah/f2/internal/json"
+	"github.com/ayoisaiah/f2/internal/jsonutil"
+	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/internal/status"
 
 	"github.com/ayoisaiah/f2"
 	"github.com/ayoisaiah/f2/internal/conflict"
-	internalos "github.com/ayoisaiah/f2/internal/os"
 )
 
 func init() {
@@ -47,7 +47,7 @@ func init() {
 	}
 
 	workingDir = strings.ReplaceAll(workingDir, "/", "_")
-	if runtime.GOOS == internalos.Windows {
+	if runtime.GOOS == osutil.Windows {
 		workingDir = strings.ReplaceAll(workingDir, `\`, "_")
 		workingDir = strings.ReplaceAll(workingDir, ":", "_")
 	}
@@ -182,7 +182,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 
 	copy(result, os.Args)
 
-	if runtime.GOOS == internalos.Windows {
+	if runtime.GOOS == osutil.Windows {
 		args = strings.ReplaceAll(args, `\`, `₦`)
 	}
 
@@ -196,7 +196,7 @@ func parseArgs(t *testing.T, name, args string) []string {
 		)
 	}
 
-	if runtime.GOOS == internalos.Windows {
+	if runtime.GOOS == osutil.Windows {
 		for i, v := range argsSlice {
 			argsSlice[i] = strings.ReplaceAll(v, `₦`, `\`)
 		}
@@ -417,7 +417,7 @@ func preTestSetup(
 
 	//nolint:gocritic // if-else more appropriate
 	if tc.GoldenFile != "" {
-		if runtime.GOOS == internalos.Windows {
+		if runtime.GOOS == osutil.Windows {
 			t.SkipNow()
 		}
 
@@ -478,7 +478,7 @@ func cleanString(str string) string {
 func assertJSON(t *testing.T, tc *TestCase, result []byte) {
 	t.Helper()
 
-	var output internaljson.Output
+	var output jsonutil.Output
 
 	err := json.Unmarshal(result, &output)
 	if err != nil {
@@ -527,7 +527,7 @@ func TestAllOSes(t *testing.T) {
 func TestShortHelp(t *testing.T) {
 	help := f2.ShortHelp(f2.NewApp())
 
-	if runtime.GOOS == internalos.Windows {
+	if runtime.GOOS == osutil.Windows {
 		// TODO: due to line endings on Windows
 		// FIXME: Needs to be corrected instead of ignored
 		t.SkipNow()
