@@ -34,38 +34,46 @@ func shouldFilter(conf *config.Config, match *file.Change) bool {
 	return false
 }
 
-func checkHidden(conf *config.Config, path string) (bool, error) {
-	if !conf.IncludeHidden {
-		isHidden, err := checkIfHidden(filepath.Base(path), "")
+// skipFileIfHidden checks if a file is hidden, and if so, returns a boolean
+// confirming whether it should be skipped or not.
+func skipFileIfHidden(
+	path string,
+	filesAndDirPaths []string,
+	includeHidden bool,
+) (bool, error) {
+	if includeHidden {
+		return false, nil
+	}
+
+	isHidden, err := checkIfHidden(filepath.Base(path), "")
+	if err != nil {
+		return false, err
+	}
+
+	if !isHidden {
+		return false, nil
+	}
+
+	entryAbsPath, err := filepath.Abs(path)
+	if err != nil {
+		return false, err
+	}
+
+	skipFile := true
+
+	// Ensure that explicitly included file arguments are not affected
+	for _, pathArg := range filesAndDirPaths {
+		argAbsPath, err := filepath.Abs(pathArg)
 		if err != nil {
 			return false, err
 		}
 
-		if isHidden {
-			// Ensure that explicitly included file arguments are not affected
-			entryAbsPath, err := filepath.Abs(path)
-			if err != nil {
-				return false, err
-			}
-
-			shouldSkip := true
-
-			for _, pathArg := range conf.FilesAndDirPaths {
-				argAbsPath, err := filepath.Abs(pathArg)
-				if err != nil {
-					return false, err
-				}
-
-				if strings.EqualFold(entryAbsPath, argAbsPath) {
-					shouldSkip = false
-				}
-			}
-
-			return shouldSkip, nil
+		if strings.EqualFold(entryAbsPath, argAbsPath) {
+			skipFile = false
 		}
 	}
 
-	return false, nil
+	return skipFile, nil
 }
 
 // isMaxDepth reports whether the configured max depth has been reached.
@@ -145,7 +153,11 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 					return nil
 				}
 
-				skipHidden, herr := checkHidden(conf, currentPath)
+				skipHidden, herr := skipFileIfHidden(
+					currentPath,
+					conf.FilesAndDirPaths,
+					conf.IncludeHidden,
+				)
 				if herr != nil {
 					return herr
 				}
@@ -156,10 +168,6 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 					}
 
 					return nil
-				}
-
-				if currentPath == ".git" {
-					return fs.SkipDir
 				}
 
 				if isMaxDepth(rootPath, currentPath, maxDepth) {
