@@ -39,6 +39,19 @@ func FilesBeforeDirs(changes []*file.Change, revert bool) []*file.Change {
 	return changes
 }
 
+// DirectoryHierarchy ensures all files in the same directory are sorted before
+// children directories.
+func DirectoryHierarchy(changes []*file.Change) []*file.Change {
+	sort.SliceStable(changes, func(i, j int) bool {
+		compareElement1 := changes[i]
+		compareElement2 := changes[j]
+
+		return len(compareElement1.BaseDir) < len(compareElement2.BaseDir)
+	})
+
+	return changes
+}
+
 // ByTime sorts the changes by the specified file timing attribute
 // (modified time, access time, change time, or birth time).
 func ByTime(

@@ -852,6 +852,10 @@ func replaceMatches(
 		return nil, err
 	}
 
+	if len(vars.index.matches) > 0 {
+		matches = sortfiles.DirectoryHierarchy(matches)
+	}
+
 	for i := range matches {
 		change := matches[i]
 		change.Index = i
