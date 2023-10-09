@@ -391,8 +391,9 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Name: "sort",
 				Usage: `Sort the matches in ascending order according to the provided '<sort>'.
 					Allowed sort values:
-						'default' : alphabetical order.
+						'default' : lexographical order.
 						'size'    : sort by file size.
+						'natural' : sort according to natural order.
 						'mtime'   : sort by file last modified time.
 						'btime'   : sort by file creation time.
 						'atime'   : sort by file last access time.

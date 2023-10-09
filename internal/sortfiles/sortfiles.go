@@ -10,6 +10,8 @@ import (
 
 	"gopkg.in/djherbis/times.v1"
 
+	"github.com/maruel/natural"
+
 	"github.com/ayoisaiah/f2/internal/file"
 	internaltime "github.com/ayoisaiah/f2/internal/time"
 )
@@ -134,6 +136,23 @@ func BySize(changes []*file.Change, reverseSort bool) ([]*file.Change, error) {
 	return changes, err
 }
 
+// Natural sorts the changes according to natural order (meaning numbers are
+// interpreted naturally).
+func Natural(changes []*file.Change, reverseSort bool) ([]*file.Change, error) {
+	sort.SliceStable(changes, func(i, j int) bool {
+		compareElement1 := changes[i].RelSourcePath
+		compareElement2 := changes[j].RelSourcePath
+
+		if reverseSort {
+			return !natural.Less(compareElement1, compareElement2)
+		}
+
+		return natural.Less(compareElement1, compareElement2)
+	})
+
+	return changes, nil
+}
+
 // Changes is used to sort changes according to the configured sort value.
 func Changes(
 	changes []*file.Change,
@@ -141,6 +160,8 @@ func Changes(
 	reverseSort bool,
 ) ([]*file.Change, error) {
 	switch sortName {
+	case "natural":
+		return Natural(changes, reverseSort)
 	case "size":
 		return BySize(changes, reverseSort)
 	case internaltime.Mod,
