@@ -1,43 +1,108 @@
 name: Release F2
 
+env:
+  nightly_tag: nightly
+  REPO_OWNER: ${{ vars.REPO_OWNER }}
+  REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
+  REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
+  REPO_MAINTAINER: ${{ vars.REPO_MAINTAINER }}
+  REPO_AUTHOR_NAME: ${{ vars.REPO_AUTHOR_NAME }}
+  REPO_AUTHOR_EMAIL: ${{ vars.REPO_AUTHOR_EMAIL }}
+  REPO_BINARY_NAME: ${{ vars.REPO_BINARY_NAME }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 on:
   push:
+    branches:
+      - master
     tags:
       - 'v*'
 
 jobs:
-  build:
-    name: Release new version
+  create_tag_master:
+    name: Create nightly tag for master branch
     runs-on: ubuntu-latest
-
+    if: github.ref_type == 'branch'
     steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Go 1.19
+      - name: Update nightly tag
+        run: |
+          git tag -d ${{ env.nightly_tag }} || true
+          git push origin :refs/tags/${{ env.nightly_tag }} || true
+          git tag ${{ env.nightly_tag }}
+          git push origin ${{ env.nightly_tag }}
+
+  publish_nightly:
+    needs: create_tag_master
+    name: Release nightly version
+    runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.21
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19
-        id: go
+          go-version: 1.21
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Delete existing nightly release
+        run: |
+          gh release delete nightly --yes || true
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: refs/tags/${{ env.nightly_tag }}
+          name: F2 development build (prerelease)
+          body: |
+            Please note that this is a development build and may contain experimental features and bugs.
+          draft: false
+          prerelease: true
+
+      - name: Build assets with Goreleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          args: release --clean --snapshot
+
+      - name: Upload assets to nightly release
+        run:
+          gh release upload ${{ env.nightly_tag }}
+          dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,checksums.txt}
+
+  publish_stable:
+    name: Release stable version
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.21
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+
+      - name: Create stable release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
+          name: ${{ github.ref }}
           body: ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
 
-      - name: Run GoReleaser
+      - name: Run Goreleaser
         uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+          GORELEASER_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+          FURY_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
+          FURY_USERNAME: ${{ secrets.FURY_USERNAME }}
