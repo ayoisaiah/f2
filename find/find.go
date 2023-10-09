@@ -8,7 +8,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
-	internalpath "github.com/ayoisaiah/f2/internal/path"
+	"github.com/ayoisaiah/f2/internal/pathutil"
 )
 
 const (
@@ -179,7 +179,7 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 				entryIsDir := entry.IsDir()
 
 				if conf.IgnoreExt && !entryIsDir {
-					fileName = internalpath.StripExtension(fileName)
+					fileName = pathutil.StripExtension(fileName)
 				}
 
 				matched := conf.SearchRegex.MatchString(fileName)

@@ -1,4 +1,4 @@
-package os
+package osutil
 
 import (
 	"regexp"

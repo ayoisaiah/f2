@@ -11,7 +11,7 @@ import (
 	"github.com/pterm/pterm"
 
 	"github.com/ayoisaiah/f2/internal/config"
-	internaljson "github.com/ayoisaiah/f2/internal/json"
+	"github.com/ayoisaiah/f2/internal/jsonutil"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/report"
 )
@@ -45,7 +45,7 @@ func Undo(conf *config.Config) error {
 		return err
 	}
 
-	var o internaljson.Output
+	var o jsonutil.Output
 
 	err = json.Unmarshal(fileBytes, &o)
 	if err != nil {

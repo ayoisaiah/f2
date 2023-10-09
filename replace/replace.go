@@ -13,7 +13,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
-	internalpath "github.com/ayoisaiah/f2/internal/path"
+	"github.com/ayoisaiah/f2/internal/pathutil"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/internal/status"
 )
@@ -863,7 +863,7 @@ func replaceMatches(
 		fileExt := filepath.Ext(originalName)
 
 		if conf.IgnoreExt && !change.IsDir {
-			originalName = internalpath.StripExtension(originalName)
+			originalName = pathutil.StripExtension(originalName)
 		}
 
 		change.Target = replaceString(conf, originalName)

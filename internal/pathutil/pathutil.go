@@ -1,4 +1,4 @@
-package path
+package pathutil
 
 import (
 	"path/filepath"

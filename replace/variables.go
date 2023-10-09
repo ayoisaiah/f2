@@ -29,12 +29,12 @@ import (
 	"golang.org/x/text/unicode/norm"
 	"gopkg.in/djherbis/times.v1"
 
-	internalpath "github.com/ayoisaiah/f2/internal/path"
+	"github.com/ayoisaiah/f2/internal/osutil"
+	"github.com/ayoisaiah/f2/internal/pathutil"
 	internaltime "github.com/ayoisaiah/f2/internal/time"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
-	internalos "github.com/ayoisaiah/f2/internal/os"
 
 	"github.com/araddon/dateparse"
 )
@@ -746,13 +746,13 @@ func transformString(source, token string) string {
 		return c.String(strings.ToLower(source))
 	case "win":
 		return regexReplace(
-			internalos.CompleteWindowsForbiddenCharRegex,
+			osutil.CompleteWindowsForbiddenCharRegex,
 			source,
 			"",
 			0,
 		)
 	case "mac":
-		return regexReplace(internalos.MacForbiddenCharRegex, source, "", 0)
+		return regexReplace(osutil.MacForbiddenCharRegex, source, "", 0)
 	case "di":
 		t := transform.Chain(
 			norm.NFD,
@@ -935,7 +935,7 @@ func replaceVariables(
 	if len(vars.filename.matches) > 0 {
 		sourceName := filepath.Base(change.OriginalSource)
 		if !change.IsDir {
-			sourceName = internalpath.StripExtension(sourceName)
+			sourceName = pathutil.StripExtension(sourceName)
 		}
 
 		change.Target = replaceFilenameVars(
@@ -1045,7 +1045,7 @@ func replaceVariables(
 	if transformVarRegex.MatchString(change.Target) {
 		sourceName := change.Source
 		if conf.IgnoreExt && !change.IsDir {
-			sourceName = internalpath.StripExtension(sourceName)
+			sourceName = pathutil.StripExtension(sourceName)
 		}
 
 		matches := conf.SearchRegex.FindAllString(sourceName, -1)

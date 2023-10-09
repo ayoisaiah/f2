@@ -15,7 +15,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
-	internaljson "github.com/ayoisaiah/f2/internal/json"
+	"github.com/ayoisaiah/f2/internal/jsonutil"
 	"github.com/ayoisaiah/f2/internal/status"
 )
 
@@ -27,7 +27,7 @@ var (
 // Conflicts prints any detected conflicts to the standard output in table format.
 func Conflicts(conflicts conflict.Collection, jsonOut bool) {
 	if jsonOut {
-		o, err := internaljson.GetOutput(nil)
+		o, err := jsonutil.GetOutput(nil)
 		if err != nil {
 			pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
 		}
@@ -143,7 +143,7 @@ func NoMatches(jsonOut bool) {
 	msg := "Failed to match any files"
 
 	if jsonOut {
-		b, err := internaljson.GetOutput(nil)
+		b, err := jsonutil.GetOutput(nil)
 		if err != nil {
 			pterm.Fprintln(Stderr, err)
 			return
@@ -215,7 +215,7 @@ func changes(
 func JSON(
 	fileChanges []*file.Change,
 ) {
-	o, err := internaljson.GetOutput(fileChanges)
+	o, err := jsonutil.GetOutput(fileChanges)
 	if err != nil {
 		pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
 		return
