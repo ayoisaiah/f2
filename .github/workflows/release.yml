@@ -1,7 +1,8 @@
 name: Release F2
 
 env:
-  nightly_tag: nightly
+  dev_tag: devel
+  go_version: 1.21
   REPO_OWNER: ${{ vars.REPO_OWNER }}
   REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
   REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
@@ -20,23 +21,23 @@ on:
 
 jobs:
   create_tag_master:
-    name: Create nightly tag for master branch
+    name: Create devel tag for master branch
     runs-on: ubuntu-latest
     if: github.ref_type == 'branch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update nightly tag
+      - name: Update devel tag
         run: |
-          git tag -d ${{ env.nightly_tag }} || true
-          git push origin :refs/tags/${{ env.nightly_tag }} || true
-          git tag ${{ env.nightly_tag }}
-          git push origin ${{ env.nightly_tag }}
+          git tag -d ${{ env.dev_tag }} || true
+          git push origin :refs/tags/${{ env.dev_tag }} || true
+          git tag ${{ env.dev_tag }}
+          git push origin ${{ env.dev_tag }}
 
-  publish_nightly:
+  publish_devel:
     needs: create_tag_master
-    name: Release nightly version
+    name: Release devel version
     runs-on: ubuntu-latest
     env:
       GH_REPO: ${{ github.repository }}
@@ -45,22 +46,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.21
+      - name: Set up Go ${{ env.go_version }}
         uses: actions/setup-go@v3
         with:
-          go-version: 1.21
+          go-version: ${{ env.go_version }}
 
-      - name: Delete existing nightly release
+      - name: Delete existing devel release
         run: |
-          gh release delete nightly --yes || true
+          gh release delete devel --yes || true
 
-      - name: Create nightly release
+      - name: Create devel release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: refs/tags/${{ env.nightly_tag }}
-          name: Nightly build
+          tag_name: refs/tags/${{ env.dev_tag }}
+          name: Development build (master)
           body: |
-            Please note that this is a development build and may contain experimental features and bugs.
+            Please note that this is a development build directly from the master branch, so it may contain experimental features and bugs.
           draft: false
           prerelease: true
 
@@ -70,9 +71,9 @@ jobs:
           version: latest
           args: release --clean --snapshot
 
-      - name: Upload assets to nightly release
+      - name: Upload assets to devel release
         run:
-          gh release upload ${{ env.nightly_tag }}
+          gh release upload ${{ env.dev_tag }}
           dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,checksums.txt} --clobber
 
   run_tests:
@@ -88,7 +89,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.21
+          go-version: ${{ env.go_version }}
 
       - name: Run tests
         run: go test ./... -race
@@ -102,10 +103,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.21
+      - name: Set up Go ${{ env.go_version }}
         uses: actions/setup-go@v3
         with:
-          go-version: 1.21
+          go-version: ${{ env.go_version }}
 
       - name: Create stable release
         uses: softprops/action-gh-release@v1
