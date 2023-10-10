@@ -1,7 +1,7 @@
 name: Release F2
 
 env:
-  dev_tag: devel
+  dev_tag: nightly
   go_version: 1.21
   REPO_OWNER: ${{ vars.REPO_OWNER }}
   REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
@@ -13,31 +13,32 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
 
 jobs:
   create_tag_master:
-    name: Create devel tag for master branch
+    name: Create nightly tag for master branch
     runs-on: ubuntu-latest
     if: github.ref_type == 'branch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update devel tag
+      - name: Update nightly tag
         run: |
           git tag -d ${{ env.dev_tag }} || true
           git push origin :refs/tags/${{ env.dev_tag }} || true
           git tag ${{ env.dev_tag }}
           git push origin ${{ env.dev_tag }}
 
-  publish_devel:
+  publish_nightly:
     needs: create_tag_master
-    name: Release devel version
+    name: Release nightly version
     runs-on: ubuntu-latest
     env:
       GH_REPO: ${{ github.repository }}
@@ -51,17 +52,17 @@ jobs:
         with:
           go-version: ${{ env.go_version }}
 
-      - name: Delete existing devel release
+      - name: Delete existing nightly release
         run: |
-          gh release delete devel --yes || true
+          gh release delete nightly --yes || true
 
-      - name: Create devel release
+      - name: Create nightly release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: refs/tags/${{ env.dev_tag }}
           name: Development build (master)
           body: |
-            Please note that this is a development build directly from the master branch, so it may contain experimental features and bugs.
+            This build is directly sourced from the `master` branch in active development. As such, it may include experimental features and potential bugs.
           draft: false
           prerelease: true
 
@@ -71,7 +72,7 @@ jobs:
           version: latest
           args: release --clean --snapshot
 
-      - name: Upload assets to devel release
+      - name: Upload assets to nightly release
         run:
           gh release upload ${{ env.dev_tag }}
           dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,checksums.txt} --clobber
