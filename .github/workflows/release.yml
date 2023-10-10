@@ -73,11 +73,30 @@ jobs:
       - name: Upload assets to nightly release
         run:
           gh release upload ${{ env.nightly_tag }}
-          dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,checksums.txt}
+          dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,checksums.txt} --clobber
+
+  run_tests:
+    runs-on: ${{ matrix.os }}
+    if: github.ref_type == 'tag'
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+
+      - name: Run tests
+        run: go test ./... -race
 
   publish_stable:
     name: Release stable version
     runs-on: ubuntu-latest
+    needs: run_tests
     if: github.ref_type == 'tag'
     steps:
       - name: Checkout
