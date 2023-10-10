@@ -73,9 +73,7 @@ jobs:
           args: release --clean --snapshot
 
       - name: Upload assets to nightly release
-        run:
-          gh release upload ${{ env.dev_tag }}
-          dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,checksums.txt} --clobber
+        run: gh release upload ${{ env.dev_tag }} dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,*.apk,checksums.txt} --clobber
 
   run_tests:
     runs-on: ${{ matrix.os }}
