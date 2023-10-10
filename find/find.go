@@ -45,7 +45,7 @@ func skipFileIfHidden(
 		return false, nil
 	}
 
-	isHidden, err := checkIfHidden(filepath.Base(path), "")
+	isHidden, err := checkIfHidden(filepath.Base(path), filepath.Dir(path))
 	if err != nil {
 		return false, err
 	}
