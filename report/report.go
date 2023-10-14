@@ -163,6 +163,7 @@ func printTable(data [][]string, writer io.Writer) {
 	table.SetCenterSeparator("*")
 	table.SetColumnSeparator("|")
 	table.SetRowSeparator("—")
+	table.SetAutoWrapText(false)
 	table.SetHeaderColor(
 		tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
 		tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
