@@ -10,7 +10,7 @@ import (
 
 	"gopkg.in/djherbis/times.v1"
 
-	"github.com/maruel/natural"
+	"github.com/MagicalTux/natsort"
 
 	"github.com/ayoisaiah/f2/internal/file"
 	internaltime "github.com/ayoisaiah/f2/internal/time"
@@ -144,10 +144,10 @@ func Natural(changes []*file.Change, reverseSort bool) ([]*file.Change, error) {
 		compareElement2 := changes[j].RelSourcePath
 
 		if reverseSort {
-			return !natural.Less(compareElement1, compareElement2)
+			return !natsort.Compare(compareElement1, compareElement2)
 		}
 
-		return natural.Less(compareElement1, compareElement2)
+		return natsort.Compare(compareElement1, compareElement2)
 	})
 
 	return changes, nil
