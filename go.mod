@@ -37,6 +37,8 @@ require (
 	github.com/rivo/uniseg v0.4.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
+	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
