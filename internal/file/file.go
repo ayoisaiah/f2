@@ -1,6 +1,10 @@
 package file
 
-import "github.com/ayoisaiah/f2/internal/status"
+import (
+	"path/filepath"
+
+	"github.com/ayoisaiah/f2/internal/status"
+)
 
 // Change represents a single renaming change.
 type Change struct {
@@ -16,4 +20,8 @@ type Change struct {
 	Index          int           `json:"-"`
 	IsDir          bool          `json:"is_dir"`
 	WillOverwrite  bool          `json:"will_overwrite"`
+}
+
+func (c *Change) SourcePath() string {
+	return filepath.Join(c.BaseDir, c.Source)
 }

@@ -1,7 +1,6 @@
-package f2
+package app
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,17 +10,6 @@ import (
 
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
-
-	"github.com/ayoisaiah/f2/find"
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/rename"
-	"github.com/ayoisaiah/f2/replace"
-	"github.com/ayoisaiah/f2/report"
-	"github.com/ayoisaiah/f2/validate"
-)
-
-var errConflictDetected = errors.New(
-	"resolve conflicts before proceeding or use -F/--fix-conflicts to auto-fix",
 )
 
 const (
@@ -87,7 +75,7 @@ func getDefaultOptsCtx() *cli.Context {
 
 		defaultOpts = append(defaultOpts[:1], strings.Split(optsEnv, " ")...)
 
-		app := NewApp()
+		app := New()
 
 		// override the default action to do nothing since only the
 		// cli context contstructed from default opts is needed
@@ -111,9 +99,57 @@ func getDefaultOptsCtx() *cli.Context {
 	return defaultCtx
 }
 
-// GetApp returns an F2 instance that reads from `reader` and writes to `writer`.
-func GetApp(reader io.Reader, writer io.Writer) *cli.App {
-	app := NewApp()
+// checkForUpdates alerts the user if an updated version of F2 is available.
+func checkForUpdates(app *cli.App) {
+	spinner, _ := pterm.DefaultSpinner.Start("Checking for updates...")
+	c := http.Client{Timeout: 10 * time.Second}
+
+	resp, err := c.Get("https://github.com/ayoisaiah/f2/releases/latest")
+	if err != nil {
+		pterm.Fprintln(
+			os.Stderr,
+			pterm.Error.Sprint("Failed to check for update"),
+		)
+
+		return
+	}
+
+	defer resp.Body.Close()
+
+	var version string
+
+	_, err = fmt.Sscanf(
+		resp.Request.URL.String(),
+		"https://github.com/ayoisaiah/f2/releases/tag/%s",
+		&version,
+	)
+	if err != nil {
+		pterm.Fprintln(
+			os.Stderr,
+			pterm.Error.Sprint("Failed to get latest version"),
+		)
+
+		return
+	}
+
+	if version == app.Version {
+		text := pterm.Sprintf(
+			"Congratulations, you are using the latest version of %s",
+			app.Name,
+		)
+		spinner.Success(text)
+	} else {
+		pterm.Info.Prefix = pterm.Prefix{
+			Text:  "UPDATE AVAILABLE",
+			Style: pterm.NewStyle(pterm.BgYellow, pterm.FgBlack),
+		}
+		pterm.Info.Printfln("A new release of F2 is available: %s at %s", version, resp.Request.URL.String())
+	}
+}
+
+// Get returns an F2 instance that reads from `reader` and writes to `writer`.
+func Get(reader io.Reader, writer io.Writer) *cli.App {
+	app := New()
 
 	defaultCtx := getDefaultOptsCtx()
 
@@ -172,100 +208,7 @@ func GetApp(reader io.Reader, writer io.Writer) *cli.App {
 	return app
 }
 
-// checkForUpdates alerts the user if an updated version of F2 is available.
-func checkForUpdates(app *cli.App) {
-	spinner, _ := pterm.DefaultSpinner.Start("Checking for updates...")
-	c := http.Client{Timeout: 10 * time.Second}
-
-	resp, err := c.Get("https://github.com/ayoisaiah/f2/releases/latest")
-	if err != nil {
-		pterm.Fprintln(
-			os.Stderr,
-			pterm.Error.Sprint("Failed to check for update"),
-		)
-
-		return
-	}
-
-	defer resp.Body.Close()
-
-	var version string
-
-	_, err = fmt.Sscanf(
-		resp.Request.URL.String(),
-		"https://github.com/ayoisaiah/f2/releases/tag/%s",
-		&version,
-	)
-	if err != nil {
-		pterm.Fprintln(
-			os.Stderr,
-			pterm.Error.Sprint("Failed to get latest version"),
-		)
-
-		return
-	}
-
-	if version == app.Version {
-		text := pterm.Sprintf(
-			"Congratulations, you are using the latest version of %s",
-			app.Name,
-		)
-		spinner.Success(text)
-	} else {
-		pterm.Info.Prefix = pterm.Prefix{
-			Text:  "UPDATE AVAILABLE",
-			Style: pterm.NewStyle(pterm.BgYellow, pterm.FgBlack),
-		}
-		pterm.Info.Printfln("A new release of F2 is available: %s at %s", version, resp.Request.URL.String())
-	}
-}
-
-// run starts a new renaming operation.
-func run(ctx *cli.Context) error {
-	conf, err := config.Init(ctx)
-	if err != nil {
-		return err
-	}
-
-	report.Stdout = conf.Stdout
-	report.Stderr = conf.Stderr
-
-	if conf.Revert {
-		return rename.Undo(conf)
-	}
-
-	matches, err := find.Find(conf)
-	if err != nil {
-		return err
-	}
-
-	if len(matches) == 0 {
-		report.NoMatches(conf.JSON)
-		return nil
-	}
-
-	changes, err := replace.Replace(conf, matches)
-	if err != nil {
-		return err
-	}
-
-	conflicts := validate.Validate(
-		changes,
-		conf.AutoFixConflicts,
-		conf.AllowOverwrites,
-	)
-
-	if len(conflicts) > 0 {
-		report.Conflicts(conflicts, conf.JSON)
-
-		return errConflictDetected
-	}
-
-	return rename.Rename(conf, changes)
-}
-
-// NewApp creates a new app instance.
-func NewApp() *cli.App {
+func New() *cli.App {
 	usageText := `FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
 or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 
@@ -421,7 +364,6 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 			},
 		},
 		UseShortOptionHandling: true,
-		Action:                 run,
 		OnUsageError: func(context *cli.Context, err error, isSubcommand bool) error {
 			return err
 		},

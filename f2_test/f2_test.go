@@ -24,6 +24,7 @@ import (
 	"github.com/sebdah/goldie/v2"
 	"golang.org/x/exp/slices"
 
+	"github.com/ayoisaiah/f2/app"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/jsonutil"
 	"github.com/ayoisaiah/f2/internal/osutil"
@@ -159,9 +160,9 @@ func setupFileSystem(tb testing.TB, testName string) string {
 func executeTest(args []string) ([]byte, error) {
 	var buf bytes.Buffer
 
-	app := f2.GetApp(os.Stdin, &buf)
+	f2App := f2.GetApp(os.Stdin, &buf)
 
-	err := app.Run(args)
+	err := f2App.Run(args)
 	if err != nil {
 		return buf.Bytes(), err
 	}
@@ -366,7 +367,7 @@ func preTestSetup(
 		testDir = v
 	}
 
-	t.Setenv(f2.EnvDefaultOpts, tc.DefaultOpts)
+	t.Setenv(app.EnvDefaultOpts, tc.DefaultOpts)
 
 	// modify the base directory
 	for i := range tc.Changes {
@@ -525,7 +526,7 @@ func TestAllOSes(t *testing.T) {
 }
 
 func TestShortHelp(t *testing.T) {
-	help := f2.ShortHelp(f2.NewApp())
+	help := app.ShortHelp(app.New())
 
 	if runtime.GOOS == osutil.Windows {
 		// TODO: due to line endings on Windows
