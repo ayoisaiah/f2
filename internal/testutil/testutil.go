@@ -109,16 +109,24 @@ func UpdateBaseDir(expected []string, testDir string) {
 }
 
 // GetConfig constructs the app configuration from command-line arguments.
-func GetConfig(t *testing.T, args []string, testDir string) *config.Config {
+func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 	t.Helper()
 
 	var buf bytes.Buffer
 
 	// add fake binary name as first argument
-	args = append([]string{"f2_test"}, args...)
+	args := append([]string{"f2_test"}, tc.Args...)
+
+	if len(tc.PathArgs) > 0 {
+		for i, v := range tc.PathArgs {
+			tc.PathArgs[i] = filepath.Join(testDir, v)
+		}
+	} else {
+		tc.PathArgs = []string{testDir}
+	}
 
 	// add test directory as last argument
-	args = append(args, testDir)
+	args = append(args, tc.PathArgs...)
 
 	var conf *config.Config
 
