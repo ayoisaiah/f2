@@ -48,7 +48,6 @@ linters:
     - usestdlibvars
     - unparam
     - unused
-    - varnamelen
     - whitespace
     - wsl
 
@@ -87,16 +86,6 @@ linters-settings:
     case:
       rules:
         json: snake
-  varnamelen:
-    max-distance: 10
-    ignore-decls:
-      - t testing.T
-      - i int
-      - j int
-      - ch Change
-      - ch *Change
-      - c *cli.Context
-      - op *Operation
 
 issues:
   fix: true
