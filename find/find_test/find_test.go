@@ -1,6 +1,8 @@
 package find_test
 
 import (
+	"errors"
+	"os"
 	"testing"
 
 	"github.com/ayoisaiah/f2/find"
@@ -201,6 +203,20 @@ var testCases = []testutil.TestCase{
 		},
 		Args: []string{"-f", "jpg"},
 	},
+
+	{
+		Name:  "expect error when non-existent file path is provided",
+		Error: os.ErrNotExist,
+		Want: []string{
+			"photos/vacation/mountains/photo1.jpg",
+			"photos/vacation/beach.jpg",
+		},
+		PathArgs: []string{
+			"photos/vacation/mountains/photo1.jpg",
+			"nonexistent.jpg",
+		},
+		Args: []string{"-f", "jpg"},
+	},
 }
 
 func findTest(t *testing.T, cases []testutil.TestCase) {
@@ -217,11 +233,14 @@ func findTest(t *testing.T, cases []testutil.TestCase) {
 			config := testutil.GetConfig(t, &tc, testDir)
 
 			changes, err := find.Find(config)
-			if err != nil {
-				t.Fatal(err)
+			if err == nil {
+				testutil.CompareSourcePath(t, tc.Want, changes)
+				return
 			}
 
-			testutil.CompareSourcePath(t, tc.Want, changes)
+			if !errors.Is(err, tc.Error) {
+				t.Fatal(err)
+			}
 		})
 	}
 }

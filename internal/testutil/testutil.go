@@ -18,6 +18,7 @@ import (
 // TestCase represents a unique test case.
 type TestCase struct {
 	Conflicts   conflict.Collection `json:"conflicts"`
+	Error       error               `json:"error"`
 	DefaultOpts string              `json:"default_opts"`
 	GoldenFile  string              `json:"golden_file"`
 	Name        string              `json:"name"`
