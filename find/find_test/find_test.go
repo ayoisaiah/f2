@@ -252,3 +252,8 @@ func findTest(t *testing.T, cases []testutil.TestCase) {
 func TestFind(t *testing.T) {
 	findTest(t, testCases)
 }
+
+// TestFindCSV tests file matching with CSV files.
+func TestFindCSV(_ *testing.T) {
+	// TODO: Implement tests once CSV implementation has been revised
+}
