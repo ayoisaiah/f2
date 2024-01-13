@@ -20,6 +20,7 @@ import (
 
 	exiftool "github.com/barasher/go-exiftool"
 	"github.com/dhowden/tag"
+	"github.com/djherbis/times"
 	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/cases"
@@ -27,7 +28,6 @@ import (
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
-	"gopkg.in/djherbis/times.v1"
 
 	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/internal/pathutil"
@@ -257,7 +257,7 @@ func replaceDateVars(
 			modTime := timeSpec.ModTime()
 			timeStr = modTime.Format(dateTokens[token])
 		case internaltime.Birth:
-			birthTime := timeSpec.ModTime()
+			var birthTime time.Time
 			if timeSpec.HasBirthTime() {
 				birthTime = timeSpec.BirthTime()
 			}
