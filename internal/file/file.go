@@ -14,14 +14,20 @@ type Change struct {
 	BaseDir        string        `json:"base_dir"`
 	Source         string        `json:"source"`
 	Target         string        `json:"target"`
-	RelSourcePath  string        `json:"-"`
-	RelTargetPath  string        `json:"-"`
-	CSVRow         []string      `json:"-"`
-	Index          int           `json:"-"`
-	IsDir          bool          `json:"is_dir"`
-	WillOverwrite  bool          `json:"will_overwrite"`
+	// RelSourcePath is BaseDir + Source
+	RelSourcePath string `json:"-"`
+	// RelTargetPath is BaseDir + Target
+	RelTargetPath string   `json:"-"`
+	CSVRow        []string `json:"-"`
+	Index         int      `json:"-"`
+	IsDir         bool     `json:"is_dir"`
+	WillOverwrite bool     `json:"will_overwrite"`
 }
 
 func (c *Change) SourcePath() string {
 	return filepath.Join(c.BaseDir, c.Source)
+}
+
+func (c *Change) TargetPath() string {
+	return filepath.Join(c.BaseDir, c.Target)
 }

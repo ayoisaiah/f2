@@ -102,6 +102,18 @@ func CompareSourcePath(t *testing.T, want []string, changes []*file.Change) {
 	assert.Equal(t, want, got)
 }
 
+func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
+	t.Helper()
+
+	got := make([]string, len(changes))
+
+	for i := range changes {
+		got[i] = changes[i].TargetPath()
+	}
+
+	assert.Equal(t, want, got)
+}
+
 // UpdateBaseDir adds the testDir to each expected path for easy comparison.
 func UpdateBaseDir(expected []string, testDir string) {
 	for i := range expected {
