@@ -1,11 +1,21 @@
 package replace_test
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/testutil"
 )
+
+func getCurrentDate() string {
+	now := time.Now()
+
+	year, month, day := now.Date()
+
+	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
+}
 
 func TestVariables(t *testing.T) {
 	testCases := []testutil.TestCase{
@@ -114,10 +124,15 @@ func TestVariables(t *testing.T) {
 					BaseDir: "testdata",
 					Source:  "audio.mp3",
 				},
+				{
+					BaseDir: "testdata",
+					Source:  "image.dng",
+				},
 			},
 			Want: []string{
 				"testdata/TEST TITLE_Test Artist_VORBIS_FLAC_Test Album_Test AlbumArtist_3_6_2__2000_Jazz_Test Composer.flac",
 				"testdata/EXIFTOOL TEST_Phil Harvey_ID3v2.2_MP3_Phil's Greatest Hits__1_5_1_2_2005_Testing_A Composer.mp3",
+				"testdata/____________.dng",
 			},
 			Args: []string{
 				"-f", ".*", "-r", "{id3.title.up}_{id3.artist}_{id3.format}_{id3.type}_{id3.album}_{id3.album_artist}_{id3.track}_{id3.total_tracks}_{id3.disc}_{id3.total_discs}_{id3.year}_{id3.genre}_{id3.composer}{ext}",
@@ -161,6 +176,42 @@ func TestVariables(t *testing.T) {
 			},
 			Args: []string{
 				"-f", ".*", "-r", "{xt.Make}_{{xt.Model.up}}{ext}",
+			},
+		},
+		{
+			Name: "use file access and modification times",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "date.txt",
+				},
+			},
+			Want: []string{
+				"testdata/Nov-05-2019.txt",
+			}, // date is set in TestMain
+			Args: []string{
+				"-f",
+				".*",
+				"-r",
+				"{atime.MMM}-{mtime.DD}-{mtime.YYYY}{ext}",
+			},
+		},
+		{
+			Name: "use file birth and change times",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "date.txt",
+				},
+			},
+			Want: []string{
+				fmt.Sprintf("testdata/%s.txt", getCurrentDate()),
+			},
+			Args: []string{
+				"-f",
+				".*",
+				"-r",
+				"{btime.YYYY}-{ctime.MM}-{now.DD}{ext}",
 			},
 		},
 	}

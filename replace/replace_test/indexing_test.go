@@ -105,6 +105,22 @@ func TestIndexing(t *testing.T) {
 			Want: []string{"006.txt", "009.txt", "104.txt"},
 			Args: []string{"-f", "doc(\\d+)", "-r", "{$1%03d5}"},
 		},
+		// {
+		// 	Name: "skip some numbers while indexing",
+		// 	Changes: []*file.Change{
+		// 		{
+		// 			Source: "doc1.txt",
+		// 		},
+		// 		{
+		// 			Source: "doc4.txt",
+		// 		},
+		// 		{
+		// 			Source: "doc99.txt",
+		// 		},
+		// 	},
+		// 	Want: []string{"002.txt", "005.txt", "099.txt"},
+		// 	Args: []string{"-f", "doc(\\d+)", "-r", "{$1%03d<1;4>}"},
+		// },
 	}
 
 	replaceTest(t, testCases)
