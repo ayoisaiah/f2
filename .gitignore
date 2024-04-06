@@ -7,6 +7,7 @@
 *.dylib
 bin/
 dist/
+debug.test*
 
 # Test binary, built with `go test -c`
 *.test
