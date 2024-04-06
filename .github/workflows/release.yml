@@ -2,7 +2,7 @@ name: Release F2
 
 env:
   dev_tag: nightly
-  go_version: 1.21
+  go_version: 1.22
   REPO_OWNER: ${{ vars.REPO_OWNER }}
   REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
   REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Go ${{ env.go_version }}
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.go_version }}
 
@@ -86,7 +86,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.go_version }}
 
@@ -103,7 +103,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Go ${{ env.go_version }}
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.go_version }}
 
