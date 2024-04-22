@@ -295,10 +295,10 @@ func isTargetLengthExceeded(target string) bool {
 	return false
 }
 
-// checkTrailingPeriods reports if the file renaming has resulted in
-// files or sub directories that end in trailing dots (Windows only).
+// checkTrailingPeriodConflictInWindows reports if the file renaming has
+// resulted in files or sub directories that end in trailing dots.
 // This conflict is automatically resolved by removing the trailing periods.
-func checkTrailingPeriodConflict(
+func checkTrailingPeriodConflictInWindows(
 	change *file.Change,
 	autoFix bool,
 ) (conflictDetected bool) {
@@ -473,7 +473,7 @@ func detectConflicts(autoFix, allowOverwrites bool) {
 			continue
 		}
 
-		detected = checkTrailingPeriodConflict(change, autoFix)
+		detected = checkTrailingPeriodConflictInWindows(change, autoFix)
 		if detected && autoFix {
 			// going back an index allows rechecking the path for conflicts once more
 			i--
