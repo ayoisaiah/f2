@@ -2,6 +2,8 @@ package replace_test
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -15,6 +17,43 @@ func getCurrentDate() string {
 	year, month, day := now.Date()
 
 	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
+}
+
+func createDateFile(t *testing.T) func() {
+	t.Helper()
+
+	dateFilePath := filepath.Join("testdata", "date.txt")
+
+	_, err := os.Create(dateFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Update file access and modification times for testdata/date.txt
+	// so its always consistent
+	atime := time.Date(
+		2009,
+		time.November,
+		10,
+		23,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+	mtime := time.Date(2019, time.January, 5, 12, 0, 0, 0, time.UTC)
+
+	err = os.Chtimes(dateFilePath, atime, mtime)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return func() {
+		err = os.Remove(dateFilePath)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func TestVariables(t *testing.T) {
@@ -195,6 +234,7 @@ func TestVariables(t *testing.T) {
 				"-r",
 				"{atime.MMM}-{mtime.DD}-{mtime.YYYY}{ext}",
 			},
+			SetupFunc: createDateFile,
 		},
 		{
 			Name: "use file birth and change times",
@@ -207,6 +247,7 @@ func TestVariables(t *testing.T) {
 			Want: []string{
 				fmt.Sprintf("testdata/%s.txt", getCurrentDate()),
 			},
+			SetupFunc: createDateFile,
 			Args: []string{
 				"-f",
 				".*",

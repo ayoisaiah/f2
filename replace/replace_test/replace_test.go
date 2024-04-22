@@ -2,44 +2,13 @@ package replace_test
 
 import (
 	"errors"
-	"log"
-	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/testutil"
 	"github.com/ayoisaiah/f2/replace"
 )
-
-func TestMain(m *testing.M) {
-	dateFilePath := filepath.Join("testdata", "date.txt")
-
-	_, err := os.Create(dateFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Update file access and modification times for testdata/date.txt
-	// so its always consistent
-	atime := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-	mtime := time.Date(2019, time.January, 5, 12, 0, 0, 0, time.UTC)
-
-	err = os.Chtimes(dateFilePath, atime, mtime)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	code := m.Run()
-
-	err = os.Remove(dateFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	os.Exit(code)
-}
 
 func replaceTest(t *testing.T, cases []testutil.TestCase) {
 	t.Helper()
@@ -62,6 +31,10 @@ func replaceTest(t *testing.T, cases []testutil.TestCase) {
 		tc := cases[i]
 
 		t.Run(tc.Name, func(t *testing.T) {
+			if tc.SetupFunc != nil {
+				t.Cleanup(tc.SetupFunc(t))
+			}
+
 			config := testutil.GetConfig(t, &tc, ".")
 
 			changes, err := replace.Replace(config, tc.Changes)

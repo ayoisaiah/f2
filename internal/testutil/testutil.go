@@ -17,15 +17,16 @@ import (
 
 // TestCase represents a unique test case.
 type TestCase struct {
-	Conflicts   conflict.Collection `json:"conflicts"`
-	Error       error               `json:"error"`
-	DefaultOpts string              `json:"default_opts"`
-	GoldenFile  string              `json:"golden_file"`
-	Name        string              `json:"name"`
-	Args        []string            `json:"args"`
-	PathArgs    []string            `json:"path_args"`
-	Changes     []*file.Change      `json:"changes"`
-	Want        []string            `json:"want"`
+	Conflicts   conflict.Collection                  `json:"conflicts"`
+	Error       error                                `json:"error"`
+	DefaultOpts string                               `json:"default_opts"`
+	GoldenFile  string                               `json:"golden_file"`
+	Name        string                               `json:"name"`
+	Args        []string                             `json:"args"`
+	PathArgs    []string                             `json:"path_args"`
+	Changes     []*file.Change                       `json:"changes"`
+	Want        []string                             `json:"want"`
+	SetupFunc   func(t *testing.T) (teardown func()) `json:"-"`
 }
 
 // SetupFileSystem creates all required files and folders for
@@ -110,6 +111,13 @@ func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
 	for i := range changes {
 		got[i] = changes[i].TargetPath()
 	}
+
+	assert.Equal(t, want, got)
+}
+
+// CompareConflicts
+func CompareConflicts(t *testing.T, want, got conflict.Collection) {
+	t.Helper()
 
 	assert.Equal(t, want, got)
 }
