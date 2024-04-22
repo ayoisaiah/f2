@@ -106,6 +106,7 @@ func TestIndexing(t *testing.T) {
 			Args: []string{"-f", "doc(\\d+)", "-r", "{$1%03d5}"},
 		},
 		// {
+		// FIXME: Fix this test
 		// 	Name: "skip some numbers while indexing",
 		// 	Changes: []*file.Change{
 		// 		{
