@@ -1,0 +1,43 @@
+- name: bug
+  color: d93f0b
+  description: Something isn't working as expected
+
+- name: new feature
+  color: "159818"
+  description: Requests to add new functionality
+
+- name: enhancement
+  color: c5def5
+  description: Changes to an existing feature
+
+- name: documentation
+  color: e0d216
+  description: Related to the docs
+
+- name: internal
+  color: f4ca81
+  description: Changes that aren't user-facing
+
+- name: "tag: duplicate"
+  color: "2e3234"
+  description: Similar issue already exists
+
+- name: "tag: in-progress"
+  color: "2e3234"
+  description: Task is in progress
+
+- name: "tag: completed"
+  color: "2e3234"
+  description: Issue was completed successfully
+
+- name: "tag: wontfix"
+  color: "2e3234"
+  description: Proposal will not be implemented
+
+- name: "tag: help wanted"
+  color: "2e3234"
+  description: Maintainer is looking for help with the issue
+
+- name: "tag: good first issue"
+  color: "2e3234"
+  description: Issues suitable for new contributors

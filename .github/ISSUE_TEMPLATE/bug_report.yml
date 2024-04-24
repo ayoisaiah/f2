@@ -1,0 +1,78 @@
+name: File a bug report
+description: Report an issue with F2
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for submitting a bug report for F2. To assist us in replicating and resolving your issue, kindly fill the following fields as per their descriptions.
+
+        Before proceeding, we recommend checking the [list of open bug reports](https://github.com/ayoisaiah/f2/issues?q=is%3Aissue+is%3Aopen+label%3Abug+sort%3Aupdated-desc) to confirm that your particular problem has not already been reported.
+
+        If you do not find your issue listed, please proceed with your bug report. Your contribution is highly appreciated!
+
+  - type: checkboxes
+    id: issue-not-common
+    attributes:
+      label: Tick this box to confirm you have reviewed the above.
+      options:
+        - label: I've discovered a new issue with F2.
+          required: true
+
+  - type: textarea
+    id: f2-version
+    attributes:
+      label: What version of F2 are you using?
+      description: Enter the output of `f2 --version`. Please ensure you're using the [latest stable release](https://github.com/ayoisaiah/f2/releases/latest) before filing a bug report.
+      placeholder: ex. F2 version v1.9.1
+    validations:
+      required: true
+
+  - type: textarea
+    id: install-method
+    attributes:
+      label: How did you install F2?
+      placeholder: ex. Go, Arch AUR, GitHub binary, NPM
+    validations:
+      required: false
+
+  - type: textarea
+    id: operating-system
+    attributes:
+      label: What operating system are you using F2 on?
+      description: Enter your operating system name and version.
+      placeholder: ex. Fedora 39, Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe your bug.
+      description: Give a high level description of the bug.
+      placeholder: ex. F2 overwrites a file without using the `--allow-overwrites` flag
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: What are the steps to reproduce the behavior?
+      description: |
+        Please describe the steps to trigger the bug including a reproducible example.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: What behaviour did you observe?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: What is the expected behaviour?
+      description: What do you think F2 should have done instead?
+    validations:
+      required: true
