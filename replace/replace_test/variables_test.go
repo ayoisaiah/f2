@@ -255,6 +255,111 @@ func TestVariables(t *testing.T) {
 				"{btime.YYYY}-{ctime.MM}-{now.DD}{ext}",
 			},
 		},
+		{
+			Name: "replace GPSPosition Exiftool tag using default settings",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				`testdata/43 deg 28' 2.81" N, 11 deg 53' 6.46" E.jpg`,
+			},
+			Args: []string{
+				"-r", "{xt.GPSPosition}{ext}",
+			},
+		},
+		{
+			Name: "use --coordFormat Exiftool option to customize GPS format",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/+43.467448, +11.885127.jpg",
+			},
+			Args: []string{
+				"-r", "{xt.GPSPosition}{ext}", "--exiftool-opts", `--coordFormat %+f`,
+			},
+		},
+		{
+			Name: "use Exiftool GPSDateTime tag default format",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/2008:10:23 14:27:07.24Z.jpg",
+			},
+			Args: []string{
+				"-r", "{xt.GPSDateTime}{ext}",
+			},
+		},
+		{
+			Name: "use --dateFormat Exiftool option to customize date format",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/2008-10-23.jpg",
+			},
+			Args: []string{
+				"-r", "{xt.GPSDateTime}{ext}", "--exiftool-opts", `--dateFormat %Y-%m-%d`,
+			},
+		},
+		{
+			Name: "use --api Exiftool option to customize date format",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/2008-10-23.jpg",
+			},
+			Args: []string{
+				"-r", "{xt.GPSDateTime}{ext}", "--exiftool-opts", `--api DateFormat=%Y-%m-%d`,
+			},
+		},
+		{
+			Name: "fail to find OtherSerialNumber tag without --extractEmbedded Exiftool option",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "embedded.mp4",
+				},
+			},
+			Want: []string{
+				"testdata/.mp4",
+			},
+			Args: []string{
+				"-r", "{xt.OtherSerialNumber}{ext}",
+			},
+		},
+		{
+			Name: "find OtherSerialNumber tag with --extractEmbedded Exiftool option",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "embedded.mp4",
+				},
+			},
+			Want: []string{
+				"testdata/HERO4 Silver.mp4",
+			},
+			Args: []string{
+				"-r", "{xt.OtherSerialNumber}{ext}", "--exiftool-opts", `--extractEmbedded`,
+			},
+		},
 	}
 
 	replaceTest(t, testCases)

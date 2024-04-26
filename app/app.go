@@ -22,7 +22,7 @@ const (
 // supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOptions = []string{
-	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose",
+	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts",
 }
 
 func init() {
@@ -85,7 +85,7 @@ func getDefaultOptsCtx() *cli.Context {
 		}
 
 		// Run needs to be called here so that `defaultCtx` is populated
-		// It errors out when
+		// It errors out when // TODO: complete this
 		err := app.Run(defaultOpts)
 		if err != nil {
 			// TODO: Decide what to do here
@@ -230,6 +230,10 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Usage:       "Load a CSV file, and rename according to its contents.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file.",
 				DefaultText: "<path/to/csv/file>",
 				TakesFile:   true,
+			},
+			&cli.StringFlag{
+				Name:  "exiftool-opts",
+				Usage: "Provide custom options when using ExifTool variables",
 			},
 			&cli.StringSliceFlag{
 				Name:        "find",

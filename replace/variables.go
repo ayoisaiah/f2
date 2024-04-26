@@ -611,7 +611,34 @@ func replaceExifToolVars(
 	target, sourcePath string,
 	xtVars exiftoolVars,
 ) (string, error) {
-	et, err := exiftool.NewExiftool()
+	conf := config.Get()
+
+	var opts []func(*exiftool.Exiftool) error
+
+	if conf.ExiftoolOpts.API != "" {
+		opts = append(opts, exiftool.Api(conf.ExiftoolOpts.API))
+	}
+
+	if conf.ExiftoolOpts.Charset != "" {
+		opts = append(opts, exiftool.Charset(conf.ExiftoolOpts.Charset))
+	}
+
+	if conf.ExiftoolOpts.CoordFormat != "" {
+		opts = append(
+			opts,
+			exiftool.CoordFormant(conf.ExiftoolOpts.CoordFormat),
+		)
+	}
+
+	if conf.ExiftoolOpts.DateFormat != "" {
+		opts = append(opts, exiftool.DateFormant(conf.ExiftoolOpts.DateFormat))
+	}
+
+	if conf.ExiftoolOpts.ExtractEmbedded {
+		opts = append(opts, exiftool.ExtractEmbedded())
+	}
+
+	et, err := exiftool.NewExiftool(opts...)
 	if err != nil {
 		return "", fmt.Errorf("Failed to initialise exiftool: %w", err)
 	}
@@ -634,6 +661,7 @@ func replaceExifToolVars(
 				if current.attr == k {
 					value = fmt.Sprintf("%v", v)
 					// replace forward and backward slashes with underscore
+					// TODO: Make this configurable?
 					value = strings.ReplaceAll(value, `/`, "_")
 					value = strings.ReplaceAll(value, `\`, "_")
 

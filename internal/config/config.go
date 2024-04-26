@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jessevdk/go-flags"
+	"github.com/kballard/go-shellquote"
 	"github.com/urfave/cli/v2"
 )
 
@@ -25,6 +27,15 @@ var (
 )
 
 var conf *Config
+
+// ExiftoolOpts defines supported options for customizing Exitool's output
+type ExiftoolOpts struct {
+	API             string `long:"api"`             // corresponds to the `-api` flag
+	Charset         string `long:"charset"`         // corresponds to the `-charset` flag
+	CoordFormat     string `long:"coordFormat"`     // corresponds to the `-coordFormat` flag
+	DateFormat      string `long:"dateFormat"`      // corresponds to the `-dateFormat` flag
+	ExtractEmbedded bool   `long:"extractEmbedded"` // corresponds to the `-extractEmbedded` flag
+}
 
 // Config represents the program configuration.
 type Config struct {
@@ -62,6 +73,7 @@ type Config struct {
 	SimpleMode        bool
 	JSON              bool
 	Interactive       bool
+	ExiftoolOpts      ExiftoolOpts
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -108,6 +120,18 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.CSVFilename = ctx.String("csv")
 	c.Revert = ctx.Bool("undo")
 	c.FilesAndDirPaths = ctx.Args().Slice()
+
+	if len(ctx.String("exiftool-opts")) != 0 {
+		args, err := shellquote.Split(ctx.String("exiftool-opts"))
+		if err != nil {
+			return err
+		}
+
+		_, err = flags.ParseArgs(&c.ExiftoolOpts, args)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Default to the current working directory if no path arguments are provided
 	if len(c.FilesAndDirPaths) == 0 {
