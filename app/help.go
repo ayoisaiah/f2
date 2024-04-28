@@ -54,7 +54,7 @@ func helpText() string {
 		pterm.Yellow("WEBSITE"),
 	)
 
-	return description + usage + author + version + flags + options + env + docs + website
+	return description + usage + author + version + flags + options + env + docs + website + "\n"
 }
 
 func envHelp() string {
