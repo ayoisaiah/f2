@@ -4,12 +4,17 @@
 package replace
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"math"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	slogctx "github.com/veqryn/slog-context"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
@@ -25,6 +30,10 @@ type numbersToSkip struct {
 	max int
 }
 
+func (s numbersToSkip) LogValue() slog.Value {
+	return slog.StringValue(fmt.Sprintf("min: %d, max:%d", s.min, s.max))
+}
+
 type indexVarMatch struct {
 	regex  *regexp.Regexp
 	index  string
@@ -36,6 +45,20 @@ type indexVarMatch struct {
 		value int
 	}
 	startNumber int
+}
+
+func (v indexVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"index_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("index", v.index),
+		slog.String("format", v.format),
+		slog.String("skip", fmt.Sprintf("%v", v.skip)),
+		slog.Bool("step_set", v.step.isSet),
+		slog.Int("step_value", v.step.value),
+		slog.Int("start_number", v.startNumber),
+		slog.Any("val", v.val),
+	)
 }
 
 type indexVars struct {
@@ -52,6 +75,17 @@ type transformVarMatch struct {
 	val        []string
 }
 
+func (v transformVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"transform_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("token", v.token),
+		slog.String("capture_var", v.captureVar),
+		slog.String("input_str", v.inputStr),
+		slog.Any("val", v.val),
+	)
+}
+
 type transformVars struct {
 	matches []transformVarMatch
 }
@@ -61,6 +95,16 @@ type exiftoolVarMatch struct {
 	attr           string
 	transformToken string
 	val            []string
+}
+
+func (v exiftoolVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"exiftool_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.String("attr", v.attr),
+		slog.Any("val", v.val),
+	)
 }
 
 type exiftoolVars struct {
@@ -75,6 +119,16 @@ type exifVarMatch struct {
 	val            []string
 }
 
+func (v exifVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"exif_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.String("attr", v.attr),
+		slog.Any("val", v.val),
+	)
+}
+
 type exifVars struct {
 	matches []exifVarMatch
 }
@@ -84,6 +138,16 @@ type id3VarMatch struct {
 	tag            string
 	transformToken string
 	val            []string
+}
+
+func (v id3VarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"date_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.String("tag", v.tag),
+		slog.Any("val", v.val),
+	)
 }
 
 type id3Vars struct {
@@ -98,6 +162,17 @@ type dateVarMatch struct {
 	val            []string
 }
 
+func (v dateVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"date_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.String("attr", v.attr),
+		slog.Any("val", v.val),
+		slog.String("token", v.token),
+	)
+}
+
 type dateVars struct {
 	matches []dateVarMatch
 }
@@ -109,6 +184,16 @@ type hashVarMatch struct {
 	val            []string
 }
 
+func (v hashVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"hash_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.Any("val", v.val),
+		slog.Any("length", v.hashFn),
+	)
+}
+
 type hashVars struct {
 	matches []hashVarMatch
 }
@@ -117,8 +202,18 @@ type randomVarMatch struct {
 	regex          *regexp.Regexp
 	characters     string
 	transformToken string
-	val            []string
+	val            []string // TODO: rename this property
 	length         int
+}
+
+func (v randomVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"random_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.Any("val", v.val),
+		slog.Int("length", v.length),
+	)
 }
 
 type randomVars struct {
@@ -131,6 +226,15 @@ type csvVarMatch struct {
 	column         int
 }
 
+func (v csvVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"csv_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.Int("column", v.column),
+	)
+}
+
 type csvVars struct {
 	submatches [][]string
 	values     []csvVarMatch
@@ -139,6 +243,14 @@ type csvVars struct {
 type filenameVarMatch struct {
 	regex          *regexp.Regexp
 	transformToken string
+}
+
+func (v filenameVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"filename_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+	)
 }
 
 type filenameVars struct {
@@ -150,6 +262,14 @@ type extVarMatch struct {
 	transformToken string
 }
 
+func (e extVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"ext_var_match",
+		slog.String("regex", e.regex.String()),
+		slog.String("transform_token", e.transformToken),
+	)
+}
+
 type extVars struct {
 	matches []extVarMatch
 }
@@ -158,6 +278,15 @@ type parentDirVarMatch struct {
 	regex          *regexp.Regexp
 	transformToken string
 	parent         int
+}
+
+func (v parentDirVarMatch) LogAttr() slog.Attr {
+	return slog.Group(
+		"parent_dir_var_match",
+		slog.String("regex", v.regex.String()),
+		slog.String("transform_token", v.transformToken),
+		slog.Int("parent", v.parent),
+	)
 }
 
 type parentDirVars struct {
@@ -177,6 +306,69 @@ type variables struct {
 	filename  filenameVars
 	ext       extVars
 	parentDir parentDirVars
+}
+
+func (v variables) LogValue() slog.Value {
+	var slogAttr []slog.Attr
+
+	for _, v := range v.filename.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.ext.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.parentDir.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	if len(v.csv.submatches) > 0 {
+		slogAttr = append(
+			slogAttr,
+			slog.Any("csv_submatches", v.csv.submatches),
+		)
+	}
+
+	for _, v := range v.csv.values {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.transform.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.random.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.date.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.hash.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.id3.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.index.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.exiftool.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	for _, v := range v.exif.matches {
+		slogAttr = append(slogAttr, v.LogAttr())
+	}
+
+	return slog.GroupValue(
+		slogAttr...,
+	)
 }
 
 // getCSVVars retrieves all the csv variables in the replacement
@@ -852,8 +1044,14 @@ func replaceMatches(
 		return nil, err
 	}
 
+	slog.Debug("extracted variables", slog.Any("vars", vars))
+
 	if len(vars.index.matches) > 0 {
-		matches = sortfiles.DirectoryHierarchy(matches)
+		matches = sortfiles.EnforceHierarchicalOrder(matches)
+		slog.Debug(
+			"sorted matches based on directory level",
+			slog.Any("matches", matches),
+		)
 	}
 
 	for i := range matches {
@@ -868,11 +1066,15 @@ func replaceMatches(
 
 		change.Target = replaceString(conf, originalName)
 
+		slog.Debug("regex replacement result", slog.Any("change", change))
+
 		// Replace any variables present with their corresponding values
 		err = replaceVariables(conf, change, &vars)
 		if err != nil {
 			return nil, err
 		}
+
+		slog.Debug("variable replacement result", slog.Any("change", change))
 
 		// Reattach the original extension to the new file name
 		if conf.IgnoreExt && !change.IsDir {
@@ -895,6 +1097,14 @@ func handleReplacementChain(
 	replacementSlice := conf.ReplacementSlice
 
 	for i, v := range replacementSlice {
+		ctx := slogctx.Append(context.Background(),
+			slog.String("find_arg", conf.SearchRegex.String()),
+			slog.String("replace_arg", v),
+			slog.Int("replacement_index", i),
+		)
+
+		slog.DebugContext(ctx, "executing find and replace")
+
 		config.SetReplacement(v)
 
 		var err error
@@ -902,6 +1112,17 @@ func handleReplacementChain(
 		matches, err = replaceMatches(conf, matches)
 		if err != nil {
 			return nil, err
+		}
+
+		slog.DebugContext(
+			ctx,
+			"find/replace result",
+			slog.Any("matches", matches),
+		)
+
+		if len(replacementSlice) == 1 ||
+			(i > 0 && i == len(replacementSlice)-1) {
+			return matches, nil
 		}
 
 		for j := range matches {
@@ -912,19 +1133,17 @@ func handleReplacementChain(
 			if i != len(replacementSlice)-1 {
 				matches[j].Source = change.Target
 			}
-
-			// After the last replacement, update the Source
-			// back to the original
-			if i > 0 && i == len(replacementSlice)-1 {
-				matches[j].Source = change.OriginalSource
-			}
 		}
 
-		if i != len(replacementSlice)-1 {
-			err := conf.SetFindStringRegex(i + 1)
-			if err != nil {
-				return nil, err
-			}
+		slog.DebugContext(
+			ctx,
+			"updated sources for next find/replace",
+			slog.Any("matches", matches),
+		)
+
+		err = conf.SetFindStringRegex(i + 1)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -940,10 +1159,21 @@ func Replace(
 	var err error
 
 	if conf.Sort != "" {
+		slog.Debug(
+			"sorting matches before replacement",
+			slog.String("sort", conf.Sort),
+			slog.Bool("reverse_sort", conf.ReverseSort),
+		)
+
 		changes, err = sortfiles.Changes(changes, conf.Sort, conf.ReverseSort)
 		if err != nil {
 			return nil, err
 		}
+
+		slog.Debug(
+			"updated match order according to sort value",
+			slog.Any("sorted_matches", changes),
+		)
 	}
 
 	changes, err = handleReplacementChain(conf, changes)

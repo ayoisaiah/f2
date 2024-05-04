@@ -30,50 +30,51 @@ var conf *Config
 
 // ExiftoolOpts defines supported options for customizing Exitool's output
 type ExiftoolOpts struct {
-	API             string `long:"api"`             // corresponds to the `-api` flag
-	Charset         string `long:"charset"`         // corresponds to the `-charset` flag
-	CoordFormat     string `long:"coordFormat"`     // corresponds to the `-coordFormat` flag
-	DateFormat      string `long:"dateFormat"`      // corresponds to the `-dateFormat` flag
-	ExtractEmbedded bool   `long:"extractEmbedded"` // corresponds to the `-extractEmbedded` flag
+	API             string `long:"api"             json:"api"`              // corresponds to the `-api` flag
+	Charset         string `long:"charset"         json:"charset"`          // corresponds to the `-charset` flag
+	CoordFormat     string `long:"coordFormat"     json:"coord_format"`     // corresponds to the `-coordFormat` flag
+	DateFormat      string `long:"dateFormat"      json:"date_format"`      // corresponds to the `-dateFormat` flag
+	ExtractEmbedded bool   `long:"extractEmbedded" json:"extract_embedded"` // corresponds to the `-extractEmbedded` flag
 }
 
 // Config represents the program configuration.
 type Config struct {
-	Date              time.Time
-	Stdin             io.Reader
-	Stderr            io.Writer
-	Stdout            io.Writer
-	SearchRegex       *regexp.Regexp
-	CSVFilename       string
-	Sort              string
-	Replacement       string
-	WorkingDir        string
-	FindSlice         []string
-	ExcludeRegex      *regexp.Regexp
-	ReplacementSlice  []string
-	FilesAndDirPaths  []string
-	NumberOffset      []int
-	MaxDepth          int
-	StartNumber       int
-	ReplaceLimit      int
-	Recursive         bool
-	IgnoreCase        bool
-	ReverseSort       bool
-	OnlyDir           bool
-	Revert            bool
-	IncludeDir        bool
-	IgnoreExt         bool
-	AllowOverwrites   bool
-	Verbose           bool
-	IncludeHidden     bool
-	Quiet             bool
-	AutoFixConflicts  bool
-	Exec              bool
-	StringLiteralMode bool
-	SimpleMode        bool
-	JSON              bool
-	Interactive       bool
-	ExiftoolOpts      ExiftoolOpts
+	Date              time.Time      `json:"date"`
+	Stdin             io.Reader      `json:"-"`
+	Stderr            io.Writer      `json:"-"`
+	Stdout            io.Writer      `json:"-"`
+	SearchRegex       *regexp.Regexp `json:"search_regex"`
+	CSVFilename       string         `json:"csv_filename"`
+	Sort              string         `json:"sort"`
+	Replacement       string         `json:"replacement"`
+	WorkingDir        string         `json:"working_dir"`
+	FindSlice         []string       `json:"find_slice"`
+	ExcludeRegex      *regexp.Regexp `json:"exclude_regex"`
+	ReplacementSlice  []string       `json:"replacement_slice"`
+	FilesAndDirPaths  []string       `json:"files_and_dir_paths"`
+	NumberOffset      []int          `json:"number_offset"`
+	MaxDepth          int            `json:"max_depth"`
+	StartNumber       int            `json:"start_number"`
+	ReplaceLimit      int            `json:"replace_limit"`
+	Recursive         bool           `json:"recursive"`
+	IgnoreCase        bool           `json:"ignore_case"`
+	ReverseSort       bool           `json:"reverse_sort"`
+	OnlyDir           bool           `json:"only_dir"`
+	Revert            bool           `json:"revert"`
+	IncludeDir        bool           `json:"include_dir"`
+	IgnoreExt         bool           `json:"ignore_ext"`
+	AllowOverwrites   bool           `json:"allow_overwrites"`
+	Verbose           bool           `json:"verbose"`
+	IncludeHidden     bool           `json:"include_hidden"`
+	Quiet             bool           `json:"quiet"`
+	AutoFixConflicts  bool           `json:"auto_fix_conflicts"`
+	Exec              bool           `json:"exec"`
+	StringLiteralMode bool           `json:"string_literal_mode"`
+	SimpleMode        bool           `json:"simple_mode"`
+	JSON              bool           `json:"json"`
+	Interactive       bool           `json:"interactive"`
+	Debug             bool           `json:"debug"`
+	ExiftoolOpts      ExiftoolOpts   `json:"exiftool_opts"`
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -119,6 +120,7 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.ReplacementSlice = ctx.StringSlice("replace")
 	c.CSVFilename = ctx.String("csv")
 	c.Revert = ctx.Bool("undo")
+	c.Debug = ctx.Bool("debug")
 	c.FilesAndDirPaths = ctx.Args().Slice()
 
 	if len(ctx.String("exiftool-opts")) != 0 {

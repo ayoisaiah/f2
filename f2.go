@@ -2,7 +2,9 @@ package f2
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/urfave/cli/v2"
 
@@ -21,10 +23,14 @@ var errConflictDetected = errors.New(
 
 // run starts a new renaming operation.
 func run(ctx *cli.Context) error {
+	// TODO: Log the final context
+
 	conf, err := config.Init(ctx)
 	if err != nil {
 		return err
 	}
+
+	slog.Debug("configuration", slog.Any("config", conf))
 
 	report.Stdout = conf.Stdout
 	report.Stderr = conf.Stderr
@@ -39,14 +45,24 @@ func run(ctx *cli.Context) error {
 	}
 
 	if len(matches) == 0 {
+		slog.Debug("no matches were found", slog.Any("find_matches", matches))
 		report.NoMatches(conf.JSON)
+
 		return nil
 	}
+
+	slog.Debug(
+		fmt.Sprintf("found %d matches", len(matches)),
+		slog.Any("find_matches", matches),
+		slog.Int("num_matches", len(matches)),
+	)
 
 	changes, err := replace.Replace(conf, matches)
 	if err != nil {
 		return err
 	}
+
+	slog.Debug("replacements done", slog.Any("changes", changes))
 
 	conflicts := validate.Validate(
 		changes,
@@ -63,16 +79,8 @@ func run(ctx *cli.Context) error {
 	return rename.Rename(conf, changes)
 }
 
-func GetApp(reader io.Reader, writer io.Writer) *cli.App {
+func New(reader io.Reader, writer io.Writer) *cli.App {
 	f2App := app.Get(reader, writer)
-	f2App.Action = run
-
-	return f2App
-}
-
-// NewApp creates a new app instance.
-func NewApp() *cli.App {
-	f2App := app.New()
 	f2App.Action = run
 
 	return f2App

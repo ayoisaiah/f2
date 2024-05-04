@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -69,6 +70,11 @@ func getDefaultOptsCtx() *cli.Context {
 	var defaultCtx *cli.Context
 
 	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
+		slog.Debug(
+			"found default options in environment",
+			slog.String("default_opts", optsEnv),
+		)
+
 		defaultOpts := make([]string, len(os.Args))
 
 		copy(defaultOpts, os.Args)
@@ -85,14 +91,24 @@ func getDefaultOptsCtx() *cli.Context {
 		}
 
 		// Run needs to be called here so that `defaultCtx` is populated
-		// It errors out when // TODO: complete this
+		// The only expected error is if the provided flags or arguments
+		// are incorrect
 		err := app.Run(defaultOpts)
 		if err != nil {
-			// TODO: Decide what to do here
+			slog.Debug("default options parse error",
+				slog.String("error", fmt.Sprintf("%v", err)),
+			)
+
 			pterm.Fprintln(
 				os.Stderr,
-				pterm.Error.Sprintf("error parsing default optons: %v", err),
+				pterm.Error.Sprintf(
+					"error parsing %s: %v",
+					EnvDefaultOpts,
+					err,
+				),
 			)
+
+			os.Exit(1)
 		}
 	}
 
@@ -155,15 +171,18 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 
 	app.Before = func(ctx *cli.Context) error {
 		if ctx.Bool("no-color") {
+			slog.Debug("disabling styling")
 			pterm.DisableStyling()
 		}
 
 		if ctx.Bool("quiet") {
+			slog.Debug("disabling output")
 			pterm.DisableOutput()
 		}
 
 		// print short help and exit if no arguments or flags are present
 		if ctx.NumFlags() == 0 && !ctx.Args().Present() {
+			slog.Debug("print short help and exit")
 			pterm.Println(ShortHelp(ctx.App))
 			os.Exit(1)
 		}
@@ -172,6 +191,10 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 		app.Metadata["writer"] = writer
 
 		if ctx.NumFlags() == 0 {
+			slog.Debug(
+				"simple mode detected",
+				slog.Int("num_flags", ctx.NumFlags()),
+			)
 			app.Metadata["simple-mode"] = true
 		}
 
@@ -181,21 +204,45 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 			return nil
 		}
 
-		// TODO: simplify
-		for _, opt := range supportedDefaultOptions {
-			value := fmt.Sprintf("%v", defaultCtx.Value(opt))
+		for _, defaultOpt := range supportedDefaultOptions {
+			defaultValue := fmt.Sprintf("%v", defaultCtx.Value(defaultOpt))
 
-			if !ctx.IsSet(opt) && defaultCtx.IsSet(opt) {
-				if x, ok := defaultCtx.Value(opt).(cli.StringSlice); ok {
-					value = strings.Join(x.Value(), "|")
+			if ctx.IsSet(defaultOpt) && defaultCtx.IsSet(defaultOpt) {
+				cliValue := fmt.Sprintf("%v", ctx.Value(defaultOpt))
+				slog.Debug(
+					fmt.Sprintf(
+						"command line flag overrides default option for: %s",
+						defaultOpt,
+					),
+					slog.String("flag", defaultOpt),
+					slog.String("command_line_value", cliValue),
+					slog.String("default_value", defaultValue),
+				)
+
+				continue
+			}
+
+			if !ctx.IsSet(defaultOpt) && defaultCtx.IsSet(defaultOpt) {
+				if x, ok := defaultCtx.Value(defaultOpt).(cli.StringSlice); ok {
+					defaultValue = strings.Join(x.Value(), "|")
 				}
 
-				err := ctx.Set(opt, value)
+				slog.Debug(
+					fmt.Sprintf("set default option for flag: %s", defaultOpt),
+					slog.String("flag", defaultOpt),
+					slog.String("default_value", defaultValue),
+				)
+
+				err := ctx.Set(defaultOpt, defaultValue)
 				if err != nil {
+					slog.Debug("failed to set default option for: %s",
+						slog.String("flag", defaultOpt),
+						slog.String("default_value", defaultValue),
+					)
 					pterm.Fprintln(os.Stderr,
 						pterm.Warning.Sprintf(
 							"Unable to set default option for: %s",
-							opt,
+							defaultOpt,
 						),
 					)
 				}
@@ -230,6 +277,10 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Usage:       "Load a CSV file, and rename according to its contents.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file.",
 				DefaultText: "<path/to/csv/file>",
 				TakesFile:   true,
+			},
+			&cli.BoolFlag{
+				Name:  "debug",
+				Usage: "Enable debug mode",
 			},
 			&cli.StringFlag{
 				Name:  "exiftool-opts",

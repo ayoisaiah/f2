@@ -41,9 +41,9 @@ func FilesBeforeDirs(changes []*file.Change, revert bool) []*file.Change {
 	return changes
 }
 
-// DirectoryHierarchy ensures all files in the same directory are sorted before
+// EnforceHierarchicalOrder ensures all files in the same directory are sorted before
 // children directories.
-func DirectoryHierarchy(changes []*file.Change) []*file.Change {
+func EnforceHierarchicalOrder(changes []*file.Change) []*file.Change {
 	sort.SliceStable(changes, func(i, j int) bool {
 		compareElement1 := changes[i]
 		compareElement2 := changes[j]

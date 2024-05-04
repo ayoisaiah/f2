@@ -2,6 +2,7 @@ package find
 
 import (
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +43,7 @@ func skipFileIfHidden(
 	includeHidden bool,
 ) (bool, error) {
 	if includeHidden {
-		return false, nil
+		return false, nil // No need to check if we're including hidden files
 	}
 
 	isHidden, err := checkIfHidden(filepath.Base(path), filepath.Dir(path))
@@ -51,7 +52,7 @@ func skipFileIfHidden(
 	}
 
 	if !isHidden {
-		return false, nil
+		return false, nil // No need to check further if the file isn't hidden
 	}
 
 	entryAbsPath, err := filepath.Abs(path)
@@ -59,9 +60,7 @@ func skipFileIfHidden(
 		return false, err
 	}
 
-	skipFile := true
-
-	// Ensure that explicitly included file arguments are not affected
+	// Ensure that file path arguments are included regardless of hidden status
 	for _, pathArg := range filesAndDirPaths {
 		argAbsPath, err := filepath.Abs(pathArg)
 		if err != nil {
@@ -69,35 +68,60 @@ func skipFileIfHidden(
 		}
 
 		if strings.EqualFold(entryAbsPath, argAbsPath) {
-			skipFile = false
+			slog.Debug(
+				"hidden file is explicitly included, not skipping",
+				slog.String("path", path),
+			)
+
+			return false, nil
 		}
 	}
 
-	return skipFile, nil
+	return true, nil // Skip the hidden file
 }
 
 // isMaxDepth reports whether the configured max depth has been reached.
-func isMaxDepth(rootPath, currentPath string, maxDept int) bool {
+func isMaxDepth(rootPath, currentPath string, maxDepth int) bool {
 	if rootPath == filepath.Dir(currentPath) {
 		return false
 	}
 
-	if maxDept == -1 {
+	if maxDepth == -1 {
 		return true
 	}
 
 	p := strings.Replace(currentPath, rootPath+string(os.PathSeparator), "", 1)
 
-	if strings.Count(p, string(os.PathSeparator)) > maxDept && maxDept != 0 {
+	if strings.Count(p, string(os.PathSeparator)) > maxDepth && maxDepth != 0 {
 		return true
 	}
 
 	return false
 }
 
+func createFileChange(dirPath string, fileInfo fs.FileInfo) *file.Change {
+	baseDir := filepath.Dir(dirPath)
+	fileName := fileInfo.Name()
+
+	match := &file.Change{
+		BaseDir:        baseDir,
+		IsDir:          fileInfo.IsDir(),
+		Source:         fileName,
+		OriginalSource: fileName,
+		RelSourcePath:  filepath.Join(baseDir, fileName),
+	}
+
+	return match
+}
+
 // searchPaths walks through the filesystem and finds matches for the provided
 // search pattern.
 func searchPaths(conf *config.Config) ([]*file.Change, error) {
+	slog.Debug(
+		"searching path arguments for matches",
+		slog.Any("paths", conf.FilesAndDirPaths),
+	)
+
 	processedPaths := make(map[string]bool)
 
 	var matches []*file.Change
@@ -111,35 +135,56 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 		}
 
 		if !fileInfo.IsDir() {
+			slog.Debug(
+				"processing root file argument",
+				slog.Any("path", rootPath),
+			)
+
 			if processedPaths[rootPath] {
+				slog.Debug(
+					"skipping processed file",
+					slog.String("path", rootPath),
+				)
+
 				continue
 			}
 
-			baseDir := filepath.Dir(rootPath)
-			fileName := fileInfo.Name()
+			if conf.SearchRegex.MatchString(fileInfo.Name()) {
+				match := createFileChange(rootPath, fileInfo)
 
-			match := &file.Change{
-				BaseDir:        baseDir,
-				IsDir:          fileInfo.IsDir(),
-				Source:         fileName,
-				OriginalSource: fileName,
-				RelSourcePath:  filepath.Join(baseDir, fileName),
+				if !shouldFilter(conf, match) {
+					slog.Debug(
+						"match found and passed filters",
+						slog.String("path", rootPath),
+					)
+
+					matches = append(matches, match)
+				} else {
+					slog.Debug("match found but excluded", slog.String("path", rootPath))
+				}
+			} else {
+				slog.Debug("file not matched for renaming", slog.String("path", rootPath))
 			}
 
-			excludeMatch := shouldFilter(conf, match)
-			if !excludeMatch {
-				matches = append(matches, match)
-
-				processedPaths[rootPath] = true
-			}
+			processedPaths[rootPath] = true
 
 			continue
 		}
 
-		maxDepth := -1
+		maxDepth := -1 // default value for non-recursive iterations
 		if conf.Recursive {
 			maxDepth = conf.MaxDepth
+
+			slog.Debug(
+				"recursively traversing directories to search for matches",
+				slog.Int("max_depth", maxDepth),
+			)
 		}
+
+		slog.Debug(
+			"processing root directory argument",
+			slog.Any("path", rootPath),
+		)
 
 		err = filepath.WalkDir(
 			rootPath,
@@ -150,19 +195,24 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 
 				// skip the root path and already processed paths
 				if rootPath == currentPath || processedPaths[currentPath] {
+					slog.Debug(
+						"skipping processed path",
+						slog.String("path", currentPath),
+						slog.Bool("is_root", rootPath == currentPath),
+					)
+
 					return nil
 				}
 
-				skipHidden, herr := skipFileIfHidden(
+				if skipHidden, hiddenErr := skipFileIfHidden(
 					currentPath,
 					conf.FilesAndDirPaths,
 					conf.IncludeHidden,
-				)
-				if herr != nil {
-					return herr
-				}
+				); hiddenErr != nil {
+					return hiddenErr
+				} else if skipHidden {
+					slog.Debug("skipping hidden path", slog.String("path", currentPath))
 
-				if skipHidden {
 					if entry.IsDir() {
 						return fs.SkipDir
 					}
@@ -171,6 +221,12 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 				}
 
 				if isMaxDepth(rootPath, currentPath, maxDepth) {
+					slog.Debug(
+						"skipping entire directory: max depth reached",
+						slog.String("path", currentPath),
+						slog.String("parent_dir", filepath.Dir(currentPath)),
+					)
+
 					return fs.SkipDir
 				}
 
@@ -180,30 +236,38 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 
 				if conf.IgnoreExt && !entryIsDir {
 					fileName = pathutil.StripExtension(fileName)
+
+					slog.Debug(
+						"extension stripped",
+						slog.String("old_filename", entry.Name()),
+						slog.String("new_filename", fileName),
+						slog.Bool("is_dir", entryIsDir),
+					)
 				}
 
-				matched := conf.SearchRegex.MatchString(fileName)
-				if !matched {
-					return nil
+				if conf.SearchRegex.MatchString(fileName) {
+					fileInfo, infoErr := entry.Info()
+					if infoErr != nil {
+						return infoErr
+					}
+
+					match := createFileChange(currentPath, fileInfo)
+
+					if !shouldFilter(conf, match) {
+						slog.Debug(
+							"match found and passed filters",
+							slog.Any("path", currentPath),
+						)
+
+						matches = append(matches, match)
+					} else {
+						slog.Debug("match found but excluded", slog.String("path", currentPath))
+					}
+				} else {
+					slog.Debug("file not matched for renaming", slog.String("path", currentPath))
 				}
 
-				fileName = entry.Name()
-				baseDir := filepath.Dir(currentPath)
-
-				match := &file.Change{
-					BaseDir:        baseDir,
-					IsDir:          entryIsDir,
-					Source:         fileName,
-					OriginalSource: fileName,
-					RelSourcePath:  filepath.Join(baseDir, fileName),
-				}
-
-				excludeMatch := shouldFilter(conf, match)
-				if !excludeMatch {
-					matches = append(matches, match)
-
-					processedPaths[currentPath] = true
-				}
+				processedPaths[currentPath] = true
 
 				return nil
 			},
