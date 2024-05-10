@@ -11,14 +11,11 @@ builds:
       - linux
       - windows
       - darwin
-      - android
     goarch:
       - 386
       - amd64
       - arm64
     ignore:
-      - goos: android
-        goarch: 386
       - goos: windows
         goarch: arm64
     main: ./cmd/f2
@@ -100,9 +97,7 @@ publishers:
     ids:
       - main_packages
     dir: '{{ dir .ArtifactPath }}'
-    cmd:
-      curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_PUSH_TOKEN
-      }}@push.fury.io/{{ .Env.FURY_USERNAME }}/
+    cmd: curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_PUSH_TOKEN }}@push.fury.io/{{ .Env.FURY_USERNAME }}/
 
 winget:
   - publisher: '{{ .Env.REPO_OWNER }}'
@@ -124,9 +119,7 @@ winget:
           branch: master
 
 scoops:
-  - url_template:
-      'https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{
-      .ArtifactName }}'
+  - url_template: 'https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
     repository:
       owner: '{{ .Env.REPO_OWNER }}'
       name: scoop-bucket
