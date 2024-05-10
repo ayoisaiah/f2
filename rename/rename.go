@@ -35,7 +35,7 @@ var errs []int
 // rename iterates over all the matches and renames them on the filesystem.
 // Directories are auto-created if necessary, and errors are aggregated.
 func rename(
-	conf *config.Config,
+	_ *config.Config,
 	changes []*file.Change,
 ) []int {
 	for i := range changes {
@@ -95,10 +95,6 @@ func rename(
 			change.Error = err
 
 			continue
-		}
-
-		if conf.NonInteractive {
-			fmt.Println(change.RelTargetPath)
 		}
 	}
 
@@ -241,6 +237,12 @@ func Rename(
 	if renameErrs != nil {
 		// FIXME: Print the errors
 		return errRenameFailed
+	}
+
+	if conf.NonInteractive {
+		for i := range fileChanges {
+			fmt.Println(fileChanges[i].RelTargetPath)
+		}
 	}
 
 	return nil
