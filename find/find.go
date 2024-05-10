@@ -220,6 +220,18 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 					return nil
 				}
 
+				if entry.IsDir() && conf.Recursive &&
+					conf.ExcludeDirRegex != nil {
+					if conf.ExcludeDirRegex.MatchString(entry.Name()) {
+						slog.Debug(
+							"skip excluded directory from recursion",
+							slog.String("path", currentPath),
+						)
+
+						return fs.SkipDir
+					}
+				}
+
 				if isMaxDepth(rootPath, currentPath, maxDepth) {
 					slog.Debug(
 						"skipping entire directory: max depth reached",

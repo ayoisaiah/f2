@@ -23,7 +23,7 @@ const (
 // supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOptions = []string{
-	"hidden", "allow-overwrites", "exclude", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts",
+	"hidden", "allow-overwrites", "exclude", "exclude-dir", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts",
 }
 
 func init() {
@@ -308,9 +308,16 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Usage: "Allow the renaming operation to overwite existing files.\n\t\t\t\tNote that using this option can lead to unrecoverable data loss in the renamed files.",
 			},
 			&cli.StringSliceFlag{
-				Name:        "exclude",
-				Aliases:     []string{"E"},
+				Name:    "exclude",
+				Aliases: []string{"E"},
+				// TODO: Add note mentioning that this doesn't affect recursing into
+				// directories that are matched
 				Usage:       "Exclude files and directories that match the provided regular expression pattern. \n\t\t\t\tMultiple exclude patterns can be specified by repeating this option in a command.\n\n\t\t\t\tE.g: `-E 'json' -E 'yml'` filters out JSON and YAML files from the matched files.\n\t\t\t\tIt is equivalent to `-E 'json|yaml'`.",
+				DefaultText: "<pattern>",
+			},
+			&cli.StringSliceFlag{
+				Name:        "exclude-dir",
+				Usage:       "Prevent F2 from recursing into directories that match the provided regular expression pattern.",
 				DefaultText: "<pattern>",
 			},
 			&cli.BoolFlag{

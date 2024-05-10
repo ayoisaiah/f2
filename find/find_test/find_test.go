@@ -82,6 +82,23 @@ var testCases = []testutil.TestCase{
 		Want: []string{
 			"photos/family/photo2.PNG",
 			"photos/family/photo3.gif",
+		},
+		Args: []string{
+			"-f",
+			"photo",
+			"-R",
+			"--exclude-dir",
+			"backup",
+			"-exclude-dir",
+			"mountains",
+		},
+	},
+
+	{
+		Name: "match recursively but exclude certain directories",
+		Want: []string{
+			"photos/family/photo2.PNG",
+			"photos/family/photo3.gif",
 			"photos/vacation/mountains/photo1.jpg",
 		},
 		Args: []string{"-f", "photo", "-R", "-E", "^old", "-E", "webp$"},

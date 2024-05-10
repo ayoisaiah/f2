@@ -51,6 +51,7 @@ type Config struct {
 	WorkingDir        string         `json:"working_dir"`
 	FindSlice         []string       `json:"find_slice"`
 	ExcludeRegex      *regexp.Regexp `json:"exclude_regex"`
+	ExcludeDirRegex   *regexp.Regexp `json:"exclude_dir_regex"`
 	ReplacementSlice  []string       `json:"replacement_slice"`
 	FilesAndDirPaths  []string       `json:"files_and_dir_paths"`
 	NumberOffset      []int          `json:"number_offset"`
@@ -215,6 +216,18 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		}
 
 		c.ExcludeRegex = excludeMatchRegex
+	}
+
+	excludeDirPattern := ctx.StringSlice("exclude-dir")
+	if len(excludeDirPattern) > 0 {
+		excludeDirMatchRegex, err := regexp.Compile(
+			strings.Join(excludeDirPattern, "|"),
+		)
+		if err != nil {
+			return err
+		}
+
+		c.ExcludeDirRegex = excludeDirMatchRegex
 	}
 
 	if c.Interactive {
