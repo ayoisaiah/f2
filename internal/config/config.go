@@ -13,6 +13,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/kballard/go-shellquote"
+	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 )
 
@@ -28,7 +29,7 @@ var (
 
 var conf *Config
 
-// ExiftoolOpts defines supported options for customizing Exitool's output
+// ExiftoolOpts defines supported options for customizing Exitool's output.
 type ExiftoolOpts struct {
 	API             string `long:"api"             json:"api"`              // corresponds to the `-api` flag
 	Charset         string `long:"charset"         json:"charset"`          // corresponds to the `-charset` flag
@@ -73,6 +74,7 @@ type Config struct {
 	SimpleMode        bool           `json:"simple_mode"`
 	JSON              bool           `json:"json"`
 	Interactive       bool           `json:"interactive"`
+	NonInteractive    bool           `json:"non_interactive"`
 	Debug             bool           `json:"debug"`
 	ExiftoolOpts      ExiftoolOpts   `json:"exiftool_opts"`
 }
@@ -122,8 +124,9 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.Revert = ctx.Bool("undo")
 	c.Debug = ctx.Bool("debug")
 	c.FilesAndDirPaths = ctx.Args().Slice()
+	c.NonInteractive = ctx.Bool("non-interactive")
 
-	if len(ctx.String("exiftool-opts")) != 0 {
+	if ctx.String("exiftool-opts") != "" {
 		args, err := shellquote.Split(ctx.String("exiftool-opts"))
 		if err != nil {
 			return err
@@ -251,6 +254,11 @@ func SetFindSlice(s []string) {
 
 func SetNumberOffset(offset []int) {
 	conf.NumberOffset = offset
+}
+
+// IsATTY determines whether the given file is a terminal.
+func IsATTY(fd uintptr) bool {
+	return isatty.IsTerminal(fd) || isatty.IsCygwinTerminal(fd)
 }
 
 // Get retrives an already set config or panics if the configuration

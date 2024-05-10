@@ -364,6 +364,10 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Usage: "Disable coloured output.",
 			},
 			&cli.BoolFlag{
+				Name:  "non-interactive",
+				Usage: "Print file paths after successful renaming",
+			},
+			&cli.BoolFlag{
 				Name:    "only-dir",
 				Aliases: []string{"D"},
 				Usage:   "Rename only directories, not files (implies -d/--include-dir).",

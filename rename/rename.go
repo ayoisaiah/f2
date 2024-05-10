@@ -35,6 +35,7 @@ var errs []int
 // rename iterates over all the matches and renames them on the filesystem.
 // Directories are auto-created if necessary, and errors are aggregated.
 func rename(
+	conf *config.Config,
 	changes []*file.Change,
 ) []int {
 	for i := range changes {
@@ -94,6 +95,10 @@ func rename(
 			change.Error = err
 
 			continue
+		}
+
+		if conf.NonInteractive {
+			fmt.Println(change.RelTargetPath)
 		}
 	}
 
@@ -164,31 +169,27 @@ func backupChanges(changes []*file.Change, workingDir string) error {
 // A backup file is auto created as long as at least one file
 // was renamed and it wasn't an undo operation.
 func commit(
-	fileChanges []*file.Change,
 	conf *config.Config,
+	fileChanges []*file.Change,
 ) []int {
-	errs = rename(fileChanges)
+	errs = rename(conf, fileChanges)
 
 	if conf.Verbose {
 		for _, change := range fileChanges {
 			if change.Error != nil {
-				pterm.Fprintln(report.Stderr,
-					pterm.Error.Sprintf(
-						"Failed to rename %s to %s",
-						change.RelSourcePath,
-						change.RelTargetPath,
-					),
+				pterm.Error.Sprintf(
+					"Failed to rename %s to %s",
+					change.RelSourcePath,
+					change.RelTargetPath,
 				)
 
 				continue
 			}
 
-			pterm.Fprintln(report.Stderr,
-				pterm.Success.Printfln(
-					"Renamed '%s' to '%s'",
-					pterm.Yellow(change.RelSourcePath),
-					pterm.Yellow(change.RelTargetPath),
-				),
+			pterm.Success.Printfln(
+				"%s\t->\t%s",
+				pterm.Yellow(change.RelSourcePath),
+				pterm.Yellow(change.RelTargetPath),
 			)
 		}
 	}
@@ -236,9 +237,9 @@ func Rename(
 		return nil
 	}
 
-	renameErrs := commit(fileChanges, conf)
+	renameErrs := commit(conf, fileChanges)
 	if renameErrs != nil {
-		// TODO: Print the errors
+		// FIXME: Print the errors
 		return errRenameFailed
 	}
 

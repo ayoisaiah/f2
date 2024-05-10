@@ -21,6 +21,7 @@ require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/djherbis/times v1.6.0
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/mattn/go-isatty v0.0.20
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/stretchr/testify v1.8.4
