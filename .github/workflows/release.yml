@@ -17,8 +17,11 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch:
   push:
+    branches:
+      - master
     tags:
       - 'v*'
+  pull_request:
 
 jobs:
   create_tag_master:
