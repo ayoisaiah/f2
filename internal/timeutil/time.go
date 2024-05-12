@@ -1,4 +1,4 @@
-package time
+package timeutil
 
 const (
 	Mod     = "mtime"

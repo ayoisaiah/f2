@@ -13,7 +13,7 @@ import (
 	"github.com/MagicalTux/natsort"
 
 	"github.com/ayoisaiah/f2/internal/file"
-	internaltime "github.com/ayoisaiah/f2/internal/time"
+	"github.com/ayoisaiah/f2/internal/timeutil"
 )
 
 // FilesBeforeDirs is used to sort files before directories to avoid renaming
@@ -73,10 +73,10 @@ func ByTime(
 
 		var itime, jtime time.Time
 		switch sortName {
-		case internaltime.Mod:
+		case timeutil.Mod:
 			itime = compareElement1.ModTime()
 			jtime = compareElement2.ModTime()
-		case internaltime.Birth:
+		case timeutil.Birth:
 			itime = compareElement1.ModTime()
 			jtime = compareElement2.ModTime()
 			if compareElement1.HasBirthTime() {
@@ -85,10 +85,10 @@ func ByTime(
 			if compareElement2.HasBirthTime() {
 				jtime = compareElement2.BirthTime()
 			}
-		case internaltime.Access:
+		case timeutil.Access:
 			itime = compareElement1.AccessTime()
 			jtime = compareElement2.AccessTime()
-		case internaltime.Change:
+		case timeutil.Change:
 			itime = compareElement1.ModTime()
 			jtime = compareElement2.ModTime()
 			if compareElement1.HasChangeTime() {
@@ -164,10 +164,10 @@ func Changes(
 		return Natural(changes, reverseSort)
 	case "size":
 		return BySize(changes, reverseSort)
-	case internaltime.Mod,
-		internaltime.Access,
-		internaltime.Birth,
-		internaltime.Change:
+	case timeutil.Mod,
+		timeutil.Access,
+		timeutil.Birth,
+		timeutil.Change:
 		return ByTime(changes, sortName, reverseSort)
 	}
 

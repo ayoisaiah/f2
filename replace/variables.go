@@ -31,7 +31,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/internal/pathutil"
-	internaltime "github.com/ayoisaiah/f2/internal/time"
+	"github.com/ayoisaiah/f2/internal/timeutil"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
@@ -253,27 +253,27 @@ func replaceDateVars(
 		var timeStr string
 
 		switch current.attr {
-		case internaltime.Mod:
+		case timeutil.Mod:
 			modTime := timeSpec.ModTime()
 			timeStr = modTime.Format(dateTokens[token])
-		case internaltime.Birth:
+		case timeutil.Birth:
 			var birthTime time.Time
 			if timeSpec.HasBirthTime() {
 				birthTime = timeSpec.BirthTime()
 			}
 
 			timeStr = birthTime.Format(dateTokens[token])
-		case internaltime.Access:
+		case timeutil.Access:
 			accessTime := timeSpec.AccessTime()
 			timeStr = accessTime.Format(dateTokens[token])
-		case internaltime.Change:
+		case timeutil.Change:
 			changeTime := timeSpec.ModTime()
 			if timeSpec.HasChangeTime() {
 				changeTime = timeSpec.ChangeTime()
 			}
 
 			timeStr = changeTime.Format(dateTokens[token])
-		case internaltime.Current:
+		case timeutil.Current:
 			currentTime := time.Now()
 			timeStr = currentTime.Format(dateTokens[token])
 		}

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	internaltime "github.com/ayoisaiah/f2/internal/time"
+	"github.com/ayoisaiah/f2/internal/timeutil"
 )
 
 var transformTokens string
@@ -105,7 +105,7 @@ func init() {
 
 	dateVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+("+internaltime.Mod+"|"+internaltime.Change+"|"+internaltime.Birth+"|"+internaltime.Access+"|"+internaltime.Current+")\\.("+tokenString+")(?:\\.%s)?}+",
+			"{+("+timeutil.Mod+"|"+timeutil.Change+"|"+timeutil.Birth+"|"+timeutil.Access+"|"+timeutil.Current+")\\.("+tokenString+")(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
