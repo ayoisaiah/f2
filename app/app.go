@@ -23,7 +23,7 @@ const (
 // supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOptions = []string{
-	"hidden", "allow-overwrites", "exclude", "exclude-dir", "exec", "fix-conflicts", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts",
+	"hidden", "allow-overwrites", "exclude", "exclude-dir", "exec", "fix-conflicts", "fix-conflicts-pattern", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts",
 }
 
 func init() {
@@ -329,6 +329,10 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Name:    "fix-conflicts",
 				Aliases: []string{"F"},
 				Usage:   "Automatically fix renaming conflicts based on predefined rules.\n\t\t\t\tLearn more: https://github.com/ayoisaiah/f2/wiki/Validation-and-conflict-detection.",
+			},
+			&cli.StringFlag{
+				Name:  "fix-conflicts-pattern",
+				Usage: "Custom pattern for renaming files when conflicts occur. This pattern should be a valid Go format string containing a single '%d' placeholder for the conflict index (e.g., '_%02d' to generate _01, _02, etc.). If not specified, the default pattern '(%d)' is used.",
 			},
 			&cli.BoolFlag{
 				Name:    "hidden",

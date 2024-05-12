@@ -156,7 +156,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			Want: []string{
-				"testdata/images/dsc-002 (2).arw",
+				"testdata/images/dsc-002(1).arw",
 			},
 			Conflicts: make(conflict.Collection),
 			Args:      autoFixArgs,
@@ -192,13 +192,52 @@ func TestValidate(t *testing.T) {
 			},
 			Want: []string{
 				"ebooks/1.pdf",
-				"ebooks/1 (2).pdf",
-				"ebooks/1 (3).pdf",
+				"ebooks/1(1).pdf",
+				"ebooks/1(2).pdf",
 				"ebooks/banned/1.pdf",
-				"ebooks/banned/1 (2).pdf",
+				"ebooks/banned/1(1).pdf",
 			},
 			Conflicts: make(conflict.Collection),
 			Args:      autoFixArgs,
+		},
+		{
+			Name: "auto fix overwriting files conflict with custom pattern",
+			Changes: []*file.Change{
+				{
+					Source:  "myFile.pdf",
+					Target:  "myFile.pdf",
+					BaseDir: "ebooks",
+				},
+				{
+					Source:  "myOwnFile.pdf",
+					Target:  "myFile.pdf",
+					BaseDir: "ebooks",
+				},
+				{
+					Source:  "aFile",
+					Target:  "hisFile.pdf",
+					BaseDir: "ebooks",
+				},
+				{
+					Source:  "theirFile.pdf",
+					Target:  "hisFile.pdf",
+					BaseDir: "ebooks",
+				},
+				{
+					Source:  "myFile_01.pdf",
+					Target:  "myFile_01.pdf",
+					BaseDir: "ebooks",
+				},
+			},
+			Want: []string{
+				"ebooks/myFile.pdf",
+				"ebooks/myFile_02.pdf",
+				"ebooks/hisFile.pdf",
+				"ebooks/hisFile_01.pdf",
+				"ebooks/myFile_01.pdf",
+			},
+			Conflicts: make(conflict.Collection),
+			Args:      append(autoFixArgs, "--fix-conflicts-pattern", "_%02d"),
 		},
 	}
 

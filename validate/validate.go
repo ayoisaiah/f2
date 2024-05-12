@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/osutil"
@@ -39,48 +38,60 @@ type renamedPathsType map[string][]struct {
 	index      int // helps keep track of source position in the changes slice
 }
 
-// newTarget appends a number to the target file name so that it
-// does not conflict with an existing path on the filesystem or
-// another renamed file. For example: image.png becomes image (2).png.
-func newTarget(change *file.Change, renamedPaths map[string][]struct {
+// Helper function to check if the path exists in the renamedPaths map.
+func pathExistsInRenamedPaths(path string, renamedPaths map[string][]struct {
 	sourcePath string
 	index      int
 },
-) string {
-	fileNoExt := pathutil.StripExtension(
-		filepath.Base(change.Target),
-	)
-	regex := regexp.MustCompile(`\(\d+\)$`)
-	// Extract the numbered index at the end of the filename (if any)
-	match := regex.FindStringSubmatch(fileNoExt)
-	num := 2
-
-	if len(match) > 0 {
-		_, _ = fmt.Sscanf(match[0], "(%d)", &num)
-		num++
-	} else {
-		fileNoExt += " (" + strconv.Itoa(num) + ")"
+) bool {
+	for k := range renamedPaths {
+		if k == path {
+			return true
+		}
 	}
 
+	return false
+}
+
+// newTarget appends a number to the target file name so that it
+// does not conflict with an existing path on the filesystem or
+// another renamed file. For example: image.png becomes image(2).png.
+// TODO: Could be very efficient with a large number of files.
+func newTarget(change *file.Change, renamedPaths renamedPathsType,
+) string {
+	conf := config.Get()
+
+	counter := 1
+
 	for {
-		target := regex.ReplaceAllString(fileNoExt, "("+strconv.Itoa(num)+")")
-		target += filepath.Ext(change.Target)
+		baseName := pathutil.StripExtension(
+			filepath.Base(change.Target),
+		)
+
+		// Loop until a unique target path is found
+		// Extract the numbered index at the end of the filename (if any)
+		match := config.FixConflictsPatternRegex.FindStringSubmatch(baseName)
+
+		if len(match) > 0 {
+			_, _ = fmt.Sscanf(match[0], conf.FixConflictsPattern, &counter)
+			counter++
+		} else {
+			baseName += fmt.Sprintf(conf.FixConflictsPattern, counter)
+		}
+
+		target := baseName + filepath.Ext(change.Target)
 		target = filepath.Join(filepath.Dir(change.Target), target)
 		targetPath := filepath.Join(change.BaseDir, target)
 
-		// Ensure the new path does not exist on the filesystem
-		if _, err := os.Stat(targetPath); err != nil &&
-			errors.Is(err, os.ErrNotExist) {
-			for k := range renamedPaths {
-				if k == targetPath {
-					goto out
+		if _, err := os.Stat(targetPath); err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				if !pathExistsInRenamedPaths(targetPath, renamedPaths) {
+					return target // Target path is unique
 				}
 			}
-
-			return target
 		}
-	out:
-		num++
+
+		counter++
 	}
 }
 
