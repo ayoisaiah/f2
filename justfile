@@ -3,6 +3,10 @@ APP := "f2"
 test:
 	@go test ./... --json -coverprofile=coverage.out -coverpkg .
 
+[no-cd]
+test-pkg:
+    @go test --json -coverprofile=coverage.out -coverpkg=../ | gotestfmt
+
 build:
 	@go build -o bin/{{APP}} ./cmd...
 
