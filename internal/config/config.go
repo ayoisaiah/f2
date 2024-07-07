@@ -143,6 +143,10 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 		}
 	}
 
+	if len(ctx.Args().Slice()) > 0 {
+		c.FilesAndDirPaths = ctx.Args().Slice()
+	}
+
 	// Default to the current working directory if no path arguments are provided
 	if len(c.FilesAndDirPaths) == 0 {
 		c.FilesAndDirPaths = append(c.FilesAndDirPaths, ".")
@@ -299,10 +303,11 @@ func Get() *Config {
 
 func Init(ctx *cli.Context) (*Config, error) {
 	conf = &Config{
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-		Stdin:  os.Stdin,
-		Date:   time.Now(),
+		Stdout:           os.Stdout,
+		Stderr:           os.Stderr,
+		Stdin:            os.Stdin,
+		Date:             time.Now(),
+		FilesAndDirPaths: []string{"."},
 	}
 
 	v, exists := ctx.App.Metadata["reader"]
