@@ -11,6 +11,7 @@ import (
 
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
+	slogctx "github.com/veqryn/slog-context"
 )
 
 const (
@@ -18,12 +19,31 @@ const (
 	EnvNoColor        = "NO_COLOR"
 	EnvF2NoColor      = "F2_NO_COLOR"
 	EnvDefaultOpts    = "F2_DEFAULT_OPTS"
+	EnvDebug          = "F2_DEBUG"
 )
 
 // supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOptions = []string{
 	"hidden", "allow-overwrites", "exclude", "exclude-dir", "exec", "fix-conflicts", "fix-conflicts-pattern", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts",
+}
+
+func InitLogger() {
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelError,
+	}
+
+	if debugVal, ok := os.LookupEnv(EnvDebug); ok {
+		opts.Level = slog.LevelInfo
+	} else if debugVal == "0" {
+		opts.Level = slog.LevelDebug
+	}
+
+	h := slogctx.NewHandler(slog.NewJSONHandler(os.Stderr, opts), nil)
+
+	l := slog.New(h)
+
+	slog.SetDefault(l)
 }
 
 func init() {

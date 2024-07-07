@@ -1,30 +1,16 @@
 package main
 
 import (
-	"log/slog"
 	"os"
 
 	"github.com/pterm/pterm"
 
 	"github.com/ayoisaiah/f2"
-
-	slogctx "github.com/veqryn/slog-context"
+	"github.com/ayoisaiah/f2/app"
 )
 
-func initLogger() {
-	opts := &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}
-
-	h := slogctx.NewHandler(slog.NewJSONHandler(os.Stderr, opts), nil)
-
-	l := slog.New(h)
-
-	slog.SetDefault(l)
-}
-
 func main() {
-	initLogger()
+	app.InitLogger()
 
 	app := f2.New(os.Stdin, os.Stdout)
 
