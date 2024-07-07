@@ -30,7 +30,7 @@ func run(ctx *cli.Context) error {
 		return err
 	}
 
-	slog.Debug("configuration", slog.Any("config", conf))
+	slog.Info("configuration loaded", slog.Any("config", conf))
 
 	report.Stdout = conf.Stdout
 	report.Stderr = conf.Stderr
@@ -45,14 +45,14 @@ func run(ctx *cli.Context) error {
 	}
 
 	if len(matches) == 0 {
-		slog.Debug("no matches were found", slog.Any("find_matches", matches))
+		slog.Info("find matches completed: no matches found")
 		report.NoMatches(conf.JSON)
 
 		return nil
 	}
 
-	slog.Debug(
-		fmt.Sprintf("found %d matches", len(matches)),
+	slog.Info(
+		fmt.Sprintf("find matches completed: found %d matches", len(matches)),
 		slog.Any("find_matches", matches),
 		slog.Int("num_matches", len(matches)),
 	)
@@ -62,7 +62,7 @@ func run(ctx *cli.Context) error {
 		return err
 	}
 
-	slog.Debug("replacements done", slog.Any("changes", changes))
+	slog.Info("bulk renaming completed", slog.Any("changes", changes))
 
 	conflicts := validate.Validate(
 		changes,
