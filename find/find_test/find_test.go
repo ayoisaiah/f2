@@ -110,6 +110,14 @@ var testCases = []testutil.TestCase{
 		Args: []string{"-f", "photo", "-R", "-D"},
 	},
 
+	// TODO: Add more simple mode tests and test ineraction with
+	// default opts
+	{
+		Name: "match files in simple mode",
+		Want: []string{"main.go"},
+		Args: []string{"main.go", "index"},
+	},
+
 	{
 		Name: "ignore the file extension",
 		Want: []string{
@@ -247,6 +255,8 @@ func findTest(t *testing.T, cases []testutil.TestCase) {
 		t.Run(tc.Name, func(t *testing.T) {
 			testutil.UpdateBaseDir(tc.Want, testDir)
 
+			// TODO: Make it possible to test without explicitly providing
+			// directory argument
 			config := testutil.GetConfig(t, &tc, testDir)
 
 			changes, err := find.Find(config)

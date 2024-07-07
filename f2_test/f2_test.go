@@ -160,7 +160,7 @@ func setupFileSystem(tb testing.TB, testName string) string {
 func executeTest(args []string) ([]byte, error) {
 	var buf bytes.Buffer
 
-	f2App := f2.GetApp(os.Stdin, &buf)
+	f2App := f2.New(os.Stdin, &buf)
 
 	err := f2App.Run(args)
 	if err != nil {
