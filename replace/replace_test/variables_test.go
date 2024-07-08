@@ -153,6 +153,21 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "ensure slashes in ID3 variables are replaced with underscores",
+			Changes: []*file.Change{
+				{
+					BaseDir: "testdata",
+					Source:  "19. D_1993 F2.flac",
+				},
+			},
+			Want: []string{
+				"testdata/01. D_1993 F2_C:_Program Files_Love_The _root of All Evil.flac",
+			},
+			Args: []string{
+				"-f", ".*", "-r", "{%02d}. {id3.title}_{id3.artist}_{id3.album}{ext}",
+			},
+		},
+		{
 			Name: "replace with ID3 variables",
 			Changes: []*file.Change{
 				{
@@ -210,11 +225,11 @@ func TestVariables(t *testing.T) {
 				},
 			},
 			Want: []string{
-				"testdata/Canon_CANON EOS 350D DIGITAL.dng",
-				"testdata/Canon_CANON POWERSHOT A5.jpg",
+				"testdata/Canon_CANON EOS 350D DIGITAL image_x-adobe-dng.dng",
+				"testdata/Canon_CANON POWERSHOT A5 image_jpeg.jpg",
 			},
 			Args: []string{
-				"-f", ".*", "-r", "{xt.Make}_{{xt.Model.up}}{ext}",
+				"-f", ".*", "-r", "{xt.Make}_{{xt.Model.up}} {xt.MIMEType}{ext}",
 			},
 		},
 		{
