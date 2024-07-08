@@ -128,6 +128,83 @@ func TestReplace(t *testing.T) {
 			},
 			Args: []string{"-f", "budget", "-r", "forecast", "-l", "-2"},
 		},
+		{
+			Name: "rename with capture variables",
+			Changes: []*file.Change{
+				{
+					Source: "dsc-001.arw",
+				},
+				{
+					Source: "dsc-002.arw",
+				},
+			},
+			Want: []string{
+				"001-dsc.arw",
+				"002-dsc.arw",
+			},
+			Args: []string{"-f", "(dsc)(-)(\\d+)", "-r", "$3$2$1"},
+		},
+		{
+			Name: "use capture variables in replacement chain",
+			Changes: []*file.Change{
+				{
+					BaseDir: "music",
+					Source:  "Overgrown (2013)",
+					IsDir:   true,
+				},
+				{
+					Source:  "01 Overgrown.flac",
+					BaseDir: "music/Overgrown (2013)",
+				},
+				{
+					Source:  "02 I Am Sold.flac",
+					BaseDir: "music/Overgrown (2013)",
+				},
+				{
+					Source:  "Cover.jpg",
+					BaseDir: "music/Overgrown (2013)",
+				},
+			},
+			Want: []string{
+				"music/2013/overgrown",
+				"music/Overgrown (2013)/01-overgrown.flac",
+				"music/Overgrown (2013)/02-i-am-sold.flac",
+				"music/Overgrown (2013)/cover.jpg",
+			},
+			Args: []string{
+				"-f",
+				".*",
+				"-r",
+				"{.lw}",
+				"-f",
+				"\\s",
+				"-r",
+				"-",
+				"-f",
+				"([a-z]+)-\\((2\\d+)\\)",
+				"-r",
+				"$2/$1",
+				"-deR",
+			},
+		},
+		{
+			Name: "transform capture variables",
+			Changes: []*file.Change{
+				{
+					BaseDir: "ebooks",
+					Source:  "atomic-habits.pdf",
+				},
+				{
+					BaseDir: "ebooks",
+					Source:  "animal-farm.epub",
+				},
+			},
+			Want: []string{
+				"ebooks/ATOMIC-HABITS.Pdf",
+				"ebooks/ANIMAL-FARM.Epub",
+			},
+			Args: []string{"-f", "(.*)\\.(.*)", "-r", "{<$1>.up}.{<$2>.ti}"},
+		},
 	}
 
 	replaceTest(t, testCases)
