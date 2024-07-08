@@ -99,6 +99,15 @@ func greatestCommonDivisor(a, b int) int {
 	return greatestCommonDivisor(b, a%b)
 }
 
+// replaceSlashes replaces forward and backward slashes in the input with an
+// underscore character
+// TODO: Make replacement character configurable? Also possible to opt out per
+// variable?
+func replaceSlashes(input string) string {
+	r := strings.NewReplacer("/", "_", "\\", "_")
+	return r.Replace(input)
+}
+
 // getRandString returns a random string of the specified length
 // using the specified characterSet.
 func getRandString(n int, characterSet string) string {
@@ -383,7 +392,7 @@ func replaceID3Variables(
 			}
 		}
 
-		id3Tag = transformString(id3Tag, current.transformToken)
+		id3Tag = transformString(replaceSlashes(id3Tag), current.transformToken)
 
 		target = regexReplace(current.regex, target, id3Tag, 0)
 	}
@@ -564,9 +573,9 @@ func replaceExifVars(
 		case "soft":
 			exifTag = exifData.Software
 		case "model":
-			exifTag = strings.ReplaceAll(exifData.Model, "/", "_")
+			exifTag = exifData.Model
 		case "lens":
-			exifTag = strings.ReplaceAll(exifData.LensModel, "/", "_")
+			exifTag = exifData.LensModel
 		case "make":
 			exifTag = exifData.Make
 		case "iso":
@@ -597,7 +606,10 @@ func replaceExifVars(
 			exifTag = getExifDimensions(exifData, current.attr)
 		}
 
-		exifTag = transformString(exifTag, current.transformToken)
+		exifTag = transformString(
+			replaceSlashes(exifTag),
+			current.transformToken,
+		)
 
 		target = regexReplace(regex, target, exifTag, 0)
 	}
@@ -660,10 +672,8 @@ func replaceExifToolVars(
 			for k, v := range fileInfo.Fields {
 				if current.attr == k {
 					value = fmt.Sprintf("%v", v)
-					// replace forward and backward slashes with underscore
-					// TODO: Make this configurable?
-					value = strings.ReplaceAll(value, `/`, "_")
-					value = strings.ReplaceAll(value, `\`, "_")
+
+					value = replaceSlashes(value)
 
 					break
 				}
