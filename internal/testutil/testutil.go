@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 
@@ -115,11 +117,22 @@ func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
 	assert.Equal(t, want, got)
 }
 
-// CompareConflicts
+// CompareConflicts.
 func CompareConflicts(t *testing.T, want, got conflict.Collection) {
 	t.Helper()
 
 	assert.Equal(t, want, got)
+}
+
+func CompareGoldenFile(t *testing.T, tc TestCase, result []byte) {
+	goldenFile := strings.ReplaceAll(tc.Name, " ", "_")
+
+	g := goldie.New(
+		t,
+		goldie.WithFixtureDir("testdata"),
+	)
+
+	g.Assert(t, goldenFile, result)
 }
 
 // UpdateBaseDir adds the testDir to each expected path for easy comparison.

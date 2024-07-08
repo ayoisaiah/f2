@@ -190,6 +190,7 @@ func changes(
 		case status.OK:
 			changeStatus = pterm.Green(change.Status)
 		case status.Unchanged:
+			changeStatus = pterm.Yellow(change.Status)
 		case status.Overwriting:
 			changeStatus = pterm.Yellow(change.Status)
 		default:
