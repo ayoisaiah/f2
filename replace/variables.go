@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -106,49 +105,6 @@ func greatestCommonDivisor(a, b int) int {
 func replaceSlashes(input string) string {
 	r := strings.NewReplacer("/", "_", "\\", "_")
 	return r.Replace(input)
-}
-
-// getRandString returns a random string of the specified length
-// using the specified characterSet.
-func getRandString(n int, characterSet string) string {
-	b := make([]byte, n)
-
-	for i := range b {
-		b[i] = characterSet[rand.Intn(len(characterSet))] //nolint:gosec // appropriate use of math.rand
-	}
-
-	return string(b)
-}
-
-// replaceRandomVars replaces all random string variables
-// in the target filename with a generated random string that matches
-// the specifications.
-func replaceRandomVars(target string, matches []string, rv randomVars) string {
-	for range matches {
-		for i := range rv.matches {
-			current := rv.matches[i]
-			characters := current.characters
-
-			switch characters {
-			case "":
-				characters = letterBytes
-			case `_d`:
-				characters = numberBytes
-			case `_l`:
-				characters = letterBytes
-			case `_ld`:
-				characters = letterBytes + numberBytes
-			}
-
-			randString := getRandString(current.length, characters)
-
-			randString = transformString(randString, current.transformToken)
-
-			target = regexReplace(current.regex, target, randString, 1)
-		}
-	}
-
-	return target
 }
 
 // integerToRoman converts an integer to a roman numeral
@@ -309,7 +265,7 @@ func getID3Tags(sourcePath string) (*ID3, error) {
 	metadata, err := tag.ReadFrom(f)
 	if err != nil {
 		// empty ID3 instance which means the variables are replaced with empty strings
-		//nolint:nilerr // intentionally returning nil here
+
 		return &ID3{}, nil
 	}
 
@@ -1073,11 +1029,6 @@ func replaceVariables(
 		}
 
 		change.Target = out
-	}
-
-	if len(vars.random.matches) > 0 {
-		matches := conf.SearchRegex.FindAllString(change.Source, -1)
-		change.Target = replaceRandomVars(change.Target, matches, vars.random)
 	}
 
 	if transformVarRegex.MatchString(change.Target) {

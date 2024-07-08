@@ -198,28 +198,6 @@ type hashVars struct {
 	matches []hashVarMatch
 }
 
-type randomVarMatch struct {
-	regex          *regexp.Regexp
-	characters     string
-	transformToken string
-	val            []string // TODO: rename this property
-	length         int
-}
-
-func (v randomVarMatch) LogAttr() slog.Attr {
-	return slog.Group(
-		"random_var_match",
-		slog.String("regex", v.regex.String()),
-		slog.String("transform_token", v.transformToken),
-		slog.Any("val", v.val),
-		slog.Int("length", v.length),
-	)
-}
-
-type randomVars struct {
-	matches []randomVarMatch
-}
-
 type csvVarMatch struct {
 	regex          *regexp.Regexp
 	transformToken string
@@ -300,7 +278,6 @@ type variables struct {
 	id3       id3Vars
 	hash      hashVars
 	date      dateVars
-	random    randomVars
 	transform transformVars
 	csv       csvVars
 	filename  filenameVars
@@ -335,10 +312,6 @@ func (v variables) LogValue() slog.Value {
 	}
 
 	for _, v := range v.transform.matches {
-		slogAttr = append(slogAttr, v.LogAttr())
-	}
-
-	for _, v := range v.random.matches {
 		slogAttr = append(slogAttr, v.LogAttr())
 	}
 
@@ -744,60 +717,6 @@ func getID3Vars(replacementInput string) (id3Vars, error) {
 	return id3Matches, nil
 }
 
-// getRandomVars retrieves all the random variables in the
-// replacement string if any.
-func getRandomVars(replacementInput string) (randomVars, error) {
-	var rvMatches randomVars
-
-	if !randomVarRegex.MatchString(replacementInput) {
-		return rvMatches, nil
-	}
-
-	submatches := randomVarRegex.FindAllStringSubmatch(
-		replacementInput,
-		-1,
-	)
-	expectedLength := 5
-
-	for _, submatch := range submatches {
-		if len(submatch) < expectedLength {
-			return rvMatches, errInvalidSubmatches
-		}
-
-		var match randomVarMatch
-
-		match.length = 10
-		match.val = submatch
-
-		regex, err := regexp.Compile(submatch[0])
-		if err != nil {
-			return rvMatches, err
-		}
-
-		match.regex = regex
-
-		strLen := submatch[1]
-		if strLen != "" {
-			match.length, err = strconv.Atoi(strLen)
-			if err != nil {
-				return rvMatches, err
-			}
-		}
-
-		match.characters = submatch[2]
-
-		if submatch[3] != "" {
-			match.characters = submatch[3]
-		}
-
-		match.transformToken = submatch[4]
-
-		rvMatches.matches = append(rvMatches.matches, match)
-	}
-
-	return rvMatches, nil
-}
-
 func getExtVars(replacementInput string) (extVars, error) {
 	var evMatches extVars
 
@@ -948,11 +867,6 @@ func extractVariables(replacement string) (variables, error) {
 	}
 
 	vars.date, err = getDateVars(replacement)
-	if err != nil {
-		return vars, err
-	}
-
-	vars.random, err = getRandomVars(replacement)
 	if err != nil {
 		return vars, err
 	}

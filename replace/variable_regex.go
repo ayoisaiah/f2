@@ -15,7 +15,6 @@ var (
 	extensionVarRegex *regexp.Regexp
 	parentDirVarRegex *regexp.Regexp
 	indexVarRegex     *regexp.Regexp
-	randomVarRegex    *regexp.Regexp
 	hashVarRegex      *regexp.Regexp
 	transformVarRegex *regexp.Regexp
 	csvVarRegex       *regexp.Regexp
@@ -71,12 +70,6 @@ func init() {
 	)
 	indexVarRegex = regexp.MustCompile(
 		`{+(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?}+`,
-	)
-	randomVarRegex = regexp.MustCompile(
-		fmt.Sprintf(
-			"{+(\\d+)?r(?:(_l|_d|_ld)|(?:<([^>])>))?(?:\\.%s)?}+",
-			transformTokens,
-		),
 	)
 	hashVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
