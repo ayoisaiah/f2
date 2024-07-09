@@ -47,11 +47,6 @@ const (
 	md5Hash    hashAlgorithm = "md5"
 )
 
-const (
-	letterBytes = "abcdefghijklmnopqrstuvwxyz"
-	numberBytes = "0123456789"
-)
-
 // Exif represents exif information from an image file.
 type Exif struct {
 	Latitude              string
@@ -265,7 +260,6 @@ func getID3Tags(sourcePath string) (*ID3, error) {
 	metadata, err := tag.ReadFrom(f)
 	if err != nil {
 		// empty ID3 instance which means the variables are replaced with empty strings
-
 		return &ID3{}, nil
 	}
 

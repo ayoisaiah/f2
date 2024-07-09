@@ -47,29 +47,29 @@ type Config struct {
 	Stdin               io.Reader      `json:"-"`
 	Stderr              io.Writer      `json:"-"`
 	Stdout              io.Writer      `json:"-"`
+	ExcludeDirRegex     *regexp.Regexp `json:"exclude_dir_regex"`
+	ExcludeRegex        *regexp.Regexp `json:"exclude_regex"`
 	SearchRegex         *regexp.Regexp `json:"search_regex"`
-	CSVFilename         string         `json:"csv_filename"`
 	Sort                string         `json:"sort"`
 	Replacement         string         `json:"replacement"`
 	WorkingDir          string         `json:"working_dir"`
 	FixConflictsPattern string         `json:"fix_conflicts_pattern"`
-	FindSlice           []string       `json:"find_slice"`
-	ExcludeRegex        *regexp.Regexp `json:"exclude_regex"`
-	ExcludeDirRegex     *regexp.Regexp `json:"exclude_dir_regex"`
+	CSVFilename         string         `json:"csv_filename"`
+	ExiftoolOpts        ExiftoolOpts   `json:"exiftool_opts"`
 	ReplacementSlice    []string       `json:"replacement_slice"`
 	FilesAndDirPaths    []string       `json:"files_and_dir_paths"`
 	NumberOffset        []int          `json:"number_offset"`
+	FindSlice           []string       `json:"find_slice"`
 	MaxDepth            int            `json:"max_depth"`
 	StartNumber         int            `json:"start_number"`
 	ReplaceLimit        int            `json:"replace_limit"`
-	Recursive           bool           `json:"recursive"`
-	IgnoreCase          bool           `json:"ignore_case"`
+	AllowOverwrites     bool           `json:"allow_overwrites"`
 	ReverseSort         bool           `json:"reverse_sort"`
 	OnlyDir             bool           `json:"only_dir"`
 	Revert              bool           `json:"revert"`
 	IncludeDir          bool           `json:"include_dir"`
 	IgnoreExt           bool           `json:"ignore_ext"`
-	AllowOverwrites     bool           `json:"allow_overwrites"`
+	IgnoreCase          bool           `json:"ignore_case"`
 	Verbose             bool           `json:"verbose"`
 	IncludeHidden       bool           `json:"include_hidden"`
 	Quiet               bool           `json:"quiet"`
@@ -81,7 +81,7 @@ type Config struct {
 	Interactive         bool           `json:"interactive"`
 	NonInteractive      bool           `json:"non_interactive"`
 	Debug               bool           `json:"debug"`
-	ExiftoolOpts        ExiftoolOpts   `json:"exiftool_opts"`
+	Recursive           bool           `json:"recursive"`
 }
 
 // SetFindStringRegex compiles a regular expression for the

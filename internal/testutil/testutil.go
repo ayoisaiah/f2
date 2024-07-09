@@ -19,16 +19,16 @@ import (
 
 // TestCase represents a unique test case.
 type TestCase struct {
-	Conflicts   conflict.Collection                  `json:"conflicts"`
 	Error       error                                `json:"error"`
+	Conflicts   conflict.Collection                  `json:"conflicts"`
+	SetupFunc   func(t *testing.T) (teardown func()) `json:"-"`
 	DefaultOpts string                               `json:"default_opts"`
-	GoldenFile  string                               `json:"golden_file"`
 	Name        string                               `json:"name"`
+	GoldenFile  string                               `json:"golden_file"`
 	Args        []string                             `json:"args"`
 	PathArgs    []string                             `json:"path_args"`
 	Changes     []*file.Change                       `json:"changes"`
 	Want        []string                             `json:"want"`
-	SetupFunc   func(t *testing.T) (teardown func()) `json:"-"`
 }
 
 // SetupFileSystem creates all required files and folders for
@@ -105,6 +105,7 @@ func CompareSourcePath(t *testing.T, want []string, changes []*file.Change) {
 	assert.Equal(t, want, got)
 }
 
+// CompareTargetPath verifies that the renaming target matches expectations.
 func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
 	t.Helper()
 
@@ -117,14 +118,19 @@ func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
 	assert.Equal(t, want, got)
 }
 
-// CompareConflicts.
+// CompareConflicts verifies that a renaming operation produces the expected set
+// of conflicts.
 func CompareConflicts(t *testing.T, want, got conflict.Collection) {
 	t.Helper()
 
 	assert.Equal(t, want, got)
 }
 
-func CompareGoldenFile(t *testing.T, tc TestCase, result []byte) {
+// CompareGoldenFile verifies that the output of a renaming operation matches
+// the expected output.
+func CompareGoldenFile(t *testing.T, tc *TestCase, result []byte) {
+	t.Helper()
+
 	goldenFile := strings.ReplaceAll(tc.Name, " ", "_")
 
 	g := goldie.New(

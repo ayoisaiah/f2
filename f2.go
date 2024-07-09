@@ -24,7 +24,6 @@ var errConflictDetected = errors.New(
 // run starts a new renaming operation.
 func run(ctx *cli.Context) error {
 	// TODO: Log the final context
-
 	conf, err := config.Init(ctx)
 	if err != nil {
 		return err

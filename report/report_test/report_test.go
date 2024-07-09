@@ -47,7 +47,7 @@ func reportTest(t *testing.T, cases []testutil.TestCase) {
 			report.Stdout = &buf
 			report.NonInteractive(tc.Changes)
 
-			testutil.CompareGoldenFile(t, tc, buf.Bytes())
+			testutil.CompareGoldenFile(t, &tc, buf.Bytes())
 		})
 	}
 }

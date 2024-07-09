@@ -72,6 +72,7 @@ func ByTime(
 		compareElement2, err = times.Stat(compareElement2Path)
 
 		var itime, jtime time.Time
+
 		switch sortName {
 		case timeutil.Mod:
 			itime = compareElement1.ModTime()
@@ -79,9 +80,11 @@ func ByTime(
 		case timeutil.Birth:
 			itime = compareElement1.ModTime()
 			jtime = compareElement2.ModTime()
+
 			if compareElement1.HasBirthTime() {
 				itime = compareElement1.BirthTime()
 			}
+
 			if compareElement2.HasBirthTime() {
 				jtime = compareElement2.BirthTime()
 			}
@@ -91,9 +94,11 @@ func ByTime(
 		case timeutil.Change:
 			itime = compareElement1.ModTime()
 			jtime = compareElement2.ModTime()
+
 			if compareElement1.HasChangeTime() {
 				itime = compareElement1.ChangeTime()
 			}
+
 			if compareElement2.HasChangeTime() {
 				jtime = compareElement2.ChangeTime()
 			}

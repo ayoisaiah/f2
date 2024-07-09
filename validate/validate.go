@@ -383,10 +383,12 @@ func checkFileNameLengthConflict(
 				ext := filepath.Ext(filename)
 				fileNoExt := pathutil.StripExtension(filename)
 				index := unixMaxBytes - len([]byte(ext))
+
 				for {
 					if len([]byte(fileNoExt)) > index {
 						frune := []rune(fileNoExt)
 						fileNoExt = string(frune[:len(frune)-1])
+
 						continue
 					}
 

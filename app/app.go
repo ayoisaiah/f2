@@ -215,6 +215,7 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 				"simple mode detected",
 				slog.Int("num_flags", ctx.NumFlags()),
 			)
+
 			app.Metadata["simple-mode"] = true
 		}
 
@@ -454,7 +455,7 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 			},
 		},
 		UseShortOptionHandling: true,
-		OnUsageError: func(context *cli.Context, err error, isSubcommand bool) error {
+		OnUsageError: func(_ *cli.Context, err error, _ bool) error {
 			return err
 		},
 	}
