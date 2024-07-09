@@ -11,7 +11,6 @@ linters:
     - errcheck
     - errchkjson
     - errname
-    - execinquery
     - errorlint
     - exportloopref
     - exhaustive
@@ -20,7 +19,7 @@ linters:
     - gocritic
     - gofmt
     - goimports
-    - gomnd
+    - mnd
     - gocyclo
     - goprintffuncname
     - gosec
@@ -68,13 +67,15 @@ linters-settings:
     # ensure placement of imports with this prefix after all other imports
     # corresponds to `goimports -local`
     local-prefixes: github.com/ayoisaiah/f2
-  gomnd:
-    settings:
-      mnd:
-        # don't include the "operation" and "assign" checks
-        checks: argument,case,condition,return
+  mnd:
+    checks:
+      # don't include the "operation" and "assign" checks
+      - argument
+      - case
+      - condition
+      - return
   govet:
-    check-shadowing: true
+    shadow: true
     enable:
       - fieldalignment
   nestif:
