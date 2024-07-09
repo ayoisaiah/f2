@@ -7,6 +7,10 @@ test:
 test-pkg:
     @go test --json -coverprofile=coverage.out -coverpkg=../ | gotestfmt
 
+[no-cd]
+update-golden:
+    @go test --update --json | gotestfmt
+
 build:
 	@go build -o bin/{{APP}} ./cmd...
 
