@@ -228,30 +228,34 @@ func getExifVars(replacementInput string) (exifVars, error) {
 func getIndexingVars(replacementInput string) (indexVars, error) {
 	var indexMatches indexVars
 
-	if !indexVarRegex.MatchString(replacementInput) {
-		return indexMatches, nil
-	}
-
 	submatches := indexVarRegex.FindAllStringSubmatch(
 		replacementInput,
 		-1,
 	)
+
+	if submatches == nil {
+		return indexMatches, nil
+	}
+
 	expectedLength := 8
 
 	for i, submatch := range submatches {
 		if len(submatch) < expectedLength {
-			return indexMatches, errInvalidSubmatches
+			panic(errInvalidSubmatches)
 		}
-
-		var match indexVarMatch
 
 		regex, err := regexp.Compile(submatch[0])
 		if err != nil {
 			return indexMatches, err
 		}
 
-		match.regex = regex
-		match.val = submatch
+		match := indexVarMatch{
+			regex:        regex,
+			submatch:     submatch,
+			startNumber:  1,
+			indexFormat:  submatch[3],
+			numberSystem: submatch[5],
+		}
 
 		if submatch[1] != "" {
 			indexMatches.capturVarIndex = append(indexMatches.capturVarIndex, i)
@@ -262,12 +266,7 @@ func getIndexingVars(replacementInput string) (indexVars, error) {
 			if err != nil {
 				return indexMatches, err
 			}
-		} else {
-			match.startNumber = 1
 		}
-
-		match.index = submatch[3]
-		match.format = submatch[5]
 
 		if submatch[6] != "" {
 			match.step.isSet = true
@@ -316,6 +315,11 @@ func getIndexingVars(replacementInput string) (indexVars, error) {
 		}
 
 		indexMatches.matches = append(indexMatches.matches, match)
+	}
+
+	indexOffset = []int{}
+	for range indexMatches.matches {
+		indexOffset = append(indexOffset, 0)
 	}
 
 	return indexMatches, nil
