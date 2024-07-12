@@ -58,7 +58,6 @@ type Config struct {
 	ExiftoolOpts        ExiftoolOpts   `json:"exiftool_opts"`
 	ReplacementSlice    []string       `json:"replacement_slice"`
 	FilesAndDirPaths    []string       `json:"files_and_dir_paths"`
-	NumberOffset        []int          `json:"number_offset"`
 	FindSlice           []string       `json:"find_slice"`
 	MaxDepth            int            `json:"max_depth"`
 	StartNumber         int            `json:"start_number"`
@@ -280,10 +279,6 @@ func SetReplacementSlice(s []string) {
 
 func SetFindSlice(s []string) {
 	conf.FindSlice = s
-}
-
-func SetNumberOffset(offset []int) {
-	conf.NumberOffset = offset
 }
 
 // IsATTY determines whether the given file is a terminal.

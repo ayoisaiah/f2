@@ -16,12 +16,12 @@ func (s numbersToSkip) LogValue() slog.Value {
 }
 
 type indexVarMatch struct {
-	regex  *regexp.Regexp
-	index  string
-	format string
-	skip   []numbersToSkip
-	val    []string
-	step   struct {
+	regex        *regexp.Regexp
+	indexFormat  string
+	numberSystem string // Binary, Octal, Roman, Decimal
+	skip         []numbersToSkip
+	submatch     []string
+	step         struct {
 		isSet bool
 		value int
 	}
@@ -32,17 +32,18 @@ func (v indexVarMatch) LogAttr() slog.Attr {
 	return slog.Group(
 		"index_var_match",
 		slog.String("regex", v.regex.String()),
-		slog.String("index", v.index),
-		slog.String("format", v.format),
+		slog.String("index", v.indexFormat),
+		slog.String("number_system", v.numberSystem),
 		slog.String("skip", fmt.Sprintf("%v", v.skip)),
 		slog.Bool("step_set", v.step.isSet),
 		slog.Int("step_value", v.step.value),
 		slog.Int("start_number", v.startNumber),
-		slog.Any("val", v.val),
+		slog.Any("submatch", v.submatch),
 	)
 }
 
 type indexVars struct {
+	// stores the indices of submatches that specify a capture variable
 	capturVarIndex []int
 	matches        []indexVarMatch
 }

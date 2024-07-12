@@ -47,6 +47,9 @@ const (
 	md5Hash    hashAlgorithm = "md5"
 )
 
+// indexOffset tracks the offset for indices when skipping is specified.
+var indexOffset []int
+
 // Exif represents exif information from an image file.
 type Exif struct {
 	Latitude              string
@@ -645,18 +648,11 @@ func replaceIndex(
 	target string,
 	changeIndex int, // position of change in the entire renaming operation
 	indexing indexVars,
-	numberOffset []int,
 ) string {
-	if len(numberOffset) == 0 {
-		for range indexing.matches {
-			numberOffset = append(numberOffset, 0)
-			config.SetNumberOffset(numberOffset)
-		}
-	}
-
 	for i := range indexing.matches {
 		current := indexing.matches[i]
 
+		// This means that the `startNumber` was derived from a captureVariable
 		isCaptureVar := slices.Contains(indexing.capturVarIndex, i)
 
 		if !current.step.isSet && !isCaptureVar {
@@ -664,10 +660,10 @@ func replaceIndex(
 		}
 
 		startNumber := current.startNumber
-		num := startNumber + (changeIndex * current.step.value) + numberOffset[i]
+		currentIndex := startNumber + (changeIndex * current.step.value) + indexOffset[i]
 
 		if isCaptureVar {
-			num = startNumber + (current.step.value) + numberOffset[i]
+			currentIndex = startNumber + (current.step.value) + indexOffset[i]
 		}
 
 		if len(current.skip) != 0 {
@@ -675,16 +671,15 @@ func replaceIndex(
 			for {
 				for _, v := range current.skip {
 					//nolint:gocritic // nesting is manageable
-					if num >= v.min && num <= v.max {
+					if currentIndex >= v.min && currentIndex <= v.max {
 						// Prevent infinite loops when skipping a captured variable
 						step := current.step.value
 						if step == 0 {
 							step = 1
 						}
 
-						num += step
-						numberOffset[i] += step
-						config.SetNumberOffset(numberOffset)
+						currentIndex += step
+						indexOffset[i] += step
 						continue outer
 					}
 				}
@@ -692,13 +687,13 @@ func replaceIndex(
 			}
 		}
 
-		numInt64 := int64(num)
+		numInt64 := int64(currentIndex)
 
 		var formattedNum string
 
-		switch current.format {
+		switch current.numberSystem {
 		case "r":
-			formattedNum = integerToRoman(num)
+			formattedNum = integerToRoman(currentIndex)
 		case "h":
 			base16 := 16
 			formattedNum = strconv.FormatInt(numInt64, base16)
@@ -709,11 +704,14 @@ func replaceIndex(
 			base2 := 2
 			formattedNum = strconv.FormatInt(numInt64, base2)
 		default:
-			if num < 0 {
-				num *= -1
-				formattedNum = "-" + fmt.Sprintf(current.index, num)
+			if currentIndex < 0 {
+				currentIndex *= -1
+				formattedNum = "-" + fmt.Sprintf(
+					current.indexFormat,
+					currentIndex,
+				)
 			} else {
-				formattedNum = fmt.Sprintf(current.index, num)
+				formattedNum = fmt.Sprintf(current.indexFormat, currentIndex)
 			}
 		}
 
@@ -1051,6 +1049,9 @@ func replaceVariables(
 
 			copy(indices, vars.index.capturVarIndex)
 
+			// The captureVariable has been replaced with the real value at this point
+			// so retriveing the indexing vars will now provide the correct `startNumber`
+			// value
 			numVar, err := getIndexingVars(change.Target)
 			if err != nil {
 				return err
@@ -1060,12 +1061,7 @@ func replaceVariables(
 			vars.index.capturVarIndex = indices
 		}
 
-		change.Target = replaceIndex(
-			change.Target,
-			change.Index,
-			vars.index,
-			conf.NumberOffset,
-		)
+		change.Target = replaceIndex(change.Target, change.Index, vars.index)
 	}
 
 	return nil
