@@ -3,8 +3,10 @@
 package sortfiles
 
 import (
+	"cmp"
 	"io/fs"
 	"os"
+	"slices"
 	"sort"
 	"time"
 
@@ -43,15 +45,10 @@ func FilesBeforeDirs(changes []*file.Change, revert bool) []*file.Change {
 
 // EnforceHierarchicalOrder ensures all files in the same directory are sorted before
 // children directories.
-func EnforceHierarchicalOrder(changes []*file.Change) []*file.Change {
-	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1 := changes[i]
-		compareElement2 := changes[j]
-
-		return len(compareElement1.BaseDir) < len(compareElement2.BaseDir)
+func EnforceHierarchicalOrder(changes []*file.Change) {
+	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		return cmp.Compare(a.BaseDir, b.BaseDir)
 	})
-
-	return changes
 }
 
 // ByTime sorts the changes by the specified file timing attribute

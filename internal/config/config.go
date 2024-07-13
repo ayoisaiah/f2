@@ -81,6 +81,7 @@ type Config struct {
 	NonInteractive      bool           `json:"non_interactive"`
 	Debug               bool           `json:"debug"`
 	Recursive           bool           `json:"recursive"`
+	ResetIndexPerDir    bool           `json:"reset_index_per_dir"`
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -213,6 +214,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.Exec = ctx.Bool("exec")
 	c.Interactive = ctx.Bool("interactive")
 	c.FixConflictsPattern = ctx.String("fix-conflicts-pattern")
+	c.ResetIndexPerDir = ctx.Bool("reset-index-per-dir")
 
 	if c.FixConflictsPattern == "" {
 		c.FixConflictsPattern = "(%d)"
