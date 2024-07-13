@@ -105,23 +105,66 @@ func TestIndexing(t *testing.T) {
 			Want: []string{"006.txt", "009.txt", "104.txt"},
 			Args: []string{"-f", "doc(\\d+)", "-r", "{$1%03d5}"},
 		},
-		// {
-		// FIXME: Fix this test
-		// 	Name: "skip some numbers while indexing",
-		// 	Changes: []*file.Change{
-		// 		{
-		// 			Source: "doc1.txt",
-		// 		},
-		// 		{
-		// 			Source: "doc4.txt",
-		// 		},
-		// 		{
-		// 			Source: "doc99.txt",
-		// 		},
-		// 	},
-		// 	Want: []string{"002.txt", "005.txt", "099.txt"},
-		// 	Args: []string{"-f", "doc(\\d+)", "-r", "{$1%03d<1;4>}"},
-		// },
+		{
+			Name: "skip some numbers while indexing with capture variables",
+			Changes: []*file.Change{
+				{
+					Source: "doc1.txt",
+				},
+				{
+					Source: "doc4.txt",
+				},
+				{
+					Source: "doc99.txt",
+				},
+			},
+			Want: []string{"002.txt", "005.txt", "099.txt"},
+			Args: []string{"-f", "doc(\\d+)", "-r", "{$1%03d<1;4>}"},
+		},
+		{
+			Name: "reset index per directory",
+			Changes: []*file.Change{
+				{
+					BaseDir: "folder1",
+					Source:  "f1.log",
+				},
+				{
+					BaseDir: "folder1",
+					Source:  "f2.log",
+				},
+				{
+					BaseDir: "folder2",
+					Source:  "f3.log",
+				},
+				{
+					BaseDir: "folder2",
+					Source:  "f4.log",
+				},
+				{
+					BaseDir: "folder3",
+					Source:  "f5.log",
+				},
+				{
+					BaseDir: "folder3",
+					Source:  "f6.log",
+				},
+			},
+			Want: []string{
+				"folder1/f1_001.log",
+				"folder1/f2_002.log",
+				"folder2/f3_001.log",
+				"folder2/f4_002.log",
+				"folder3/f5_001.log",
+				"folder3/f6_002.log",
+			},
+			Args: []string{
+				"-f",
+				".*",
+				"-r",
+				"{f}_{%03d}{ext}",
+				"--reset-index-per-dir",
+			},
+		},
 	}
 
 	replaceTest(t, testCases)

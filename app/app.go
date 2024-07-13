@@ -25,7 +25,7 @@ const (
 // supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOptions = []string{
-	"hidden", "allow-overwrites", "exclude", "exclude-dir", "exec", "fix-conflicts", "fix-conflicts-pattern", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts",
+	"hidden", "allow-overwrites", "exclude", "exclude-dir", "exec", "fix-conflicts", "fix-conflicts-pattern", "include-dir", "ignore-case", "ignore-ext", "interactive", "json", "max-depth", "no-color", "only-dir", "quiet", "recursive", "replace-limit", "sort", "sortr", "string-mode", "verbose", "exiftool-opts", "reset-index-per-dir",
 }
 
 func InitLogger() {
@@ -420,6 +420,10 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Usage:       "Limit the number of replacements to be made on each matched file.\n\t\t\t\tIt's set to 0 by default indicating that all matches should be replaced.\n\t\t\t\tCan be set to a negative integer to start replacing from the end of the file name.",
 				Value:       0,
 				DefaultText: "<integer>",
+			},
+			&cli.BoolFlag{
+				Name:  "reset-index-per-dir",
+				Usage: "Reset the auto-incrementing index when entering a new directiron during a recursive operation",
 			},
 			&cli.StringFlag{
 				Name: "sort",

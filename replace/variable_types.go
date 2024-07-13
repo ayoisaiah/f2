@@ -45,7 +45,11 @@ func (v indexVarMatch) LogAttr() slog.Attr {
 type indexVars struct {
 	// stores the indices of submatches that specify a capture variable
 	capturVarIndex []int
+	// offset tracks the offset for indices when skipping is specified.
+	offset         []int
 	matches        []indexVarMatch
+	currentBaseDir string
+	newDirIndex    int
 }
 
 type transformVarMatch struct {

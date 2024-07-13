@@ -47,8 +47,12 @@ const (
 	md5Hash    hashAlgorithm = "md5"
 )
 
-// indexOffset tracks the offset for indices when skipping is specified.
-var indexOffset []int
+// var (
+// 	currentBaseDir string
+// 	// newDirIndex keeps track of the index of the first file in a new
+// 	// directory.
+// 	newDirIndex int
+// )
 
 // Exif represents exif information from an image file.
 type Exif struct {
@@ -660,10 +664,10 @@ func replaceIndex(
 		}
 
 		startNumber := current.startNumber
-		currentIndex := startNumber + (changeIndex * current.step.value) + indexOffset[i]
+		currentIndex := startNumber + (changeIndex * current.step.value) + indexing.offset[i]
 
 		if isCaptureVar {
-			currentIndex = startNumber + (current.step.value) + indexOffset[i]
+			currentIndex = startNumber + current.step.value + indexing.offset[i]
 		}
 
 		if len(current.skip) != 0 {
@@ -679,7 +683,11 @@ func replaceIndex(
 						}
 
 						currentIndex += step
-						indexOffset[i] += step
+
+						if !isCaptureVar {
+							indexing.offset[i] += step
+						}
+
 						continue outer
 					}
 				}
@@ -1043,12 +1051,22 @@ func replaceVariables(
 		change.Target = out
 	}
 
+	if conf.ResetIndexPerDir {
+		// Detect when a new directory is entered
+		if change.BaseDir != vars.index.currentBaseDir {
+			// track the position at which the base directory changed
+			vars.index.newDirIndex = change.Index
+		}
+	}
+
+	vars.index.currentBaseDir = change.BaseDir
+
+	// This has the effect of resetting the index for a new directory when the
+	// `ResetIndexPerDir` option is set
+	changeIndex := change.Index - vars.index.newDirIndex
+
 	if indexVarRegex.MatchString(change.Target) {
 		if len(vars.index.capturVarIndex) > 0 {
-			indices := make([]int, len(vars.index.capturVarIndex))
-
-			copy(indices, vars.index.capturVarIndex)
-
 			// The captureVariable has been replaced with the real value at this point
 			// so retriveing the indexing vars will now provide the correct `startNumber`
 			// value
@@ -1057,11 +1075,10 @@ func replaceVariables(
 				return err
 			}
 
-			vars.index = numVar
-			vars.index.capturVarIndex = indices
+			vars.index.matches = numVar.matches
 		}
 
-		change.Target = replaceIndex(change.Target, change.Index, vars.index)
+		change.Target = replaceIndex(change.Target, changeIndex, vars.index)
 	}
 
 	return nil

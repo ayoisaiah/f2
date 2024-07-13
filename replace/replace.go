@@ -317,9 +317,8 @@ func getIndexingVars(replacementInput string) (indexVars, error) {
 		indexMatches.matches = append(indexMatches.matches, match)
 	}
 
-	indexOffset = []int{}
 	for range indexMatches.matches {
-		indexOffset = append(indexOffset, 0)
+		indexMatches.offset = append(indexMatches.offset, 0)
 	}
 
 	return indexMatches, nil
@@ -647,7 +646,7 @@ func replaceMatches(
 	slog.Debug("extracted variables", slog.Any("vars", vars))
 
 	if len(vars.index.matches) > 0 {
-		matches = sortfiles.EnforceHierarchicalOrder(matches)
+		sortfiles.EnforceHierarchicalOrder(matches)
 		slog.Debug(
 			"sorted matches based on directory level",
 			slog.Any("matches", matches),
