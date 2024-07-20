@@ -99,7 +99,7 @@ func CompareSourcePath(t *testing.T, want []string, changes []*file.Change) {
 	got := make([]string, len(changes))
 
 	for i := range changes {
-		got[i] = changes[i].SourcePath()
+		got[i] = changes[i].RelSourcePath
 	}
 
 	assert.Equal(t, want, got)
@@ -112,7 +112,7 @@ func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
 	got := make([]string, len(changes))
 
 	for i := range changes {
-		got[i] = changes[i].TargetPath()
+		got[i] = changes[i].RelTargetPath
 	}
 
 	assert.Equal(t, want, got)
