@@ -764,10 +764,7 @@ func Replace(
 			slog.Bool("reverse_sort", conf.ReverseSort),
 		)
 
-		changes, err = sortfiles.Changes(changes, conf.Sort, conf.ReverseSort)
-		if err != nil {
-			return nil, err
-		}
+		sortfiles.Changes(changes, conf.Sort, conf.ReverseSort, conf.SortPerDir)
 
 		slog.Debug(
 			"updated match order according to sort value",

@@ -448,6 +448,10 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				DefaultText: "<sort>",
 			},
 			&cli.BoolFlag{
+				Name:  "sort-per-dir",
+				Usage: "Ensure sorting is done per directory",
+			},
+			&cli.BoolFlag{
 				Name:    "string-mode",
 				Aliases: []string{"s"},
 				Usage:   "Treats the search pattern (specified by -f/--find) as a non-regex string.",

@@ -6,48 +6,54 @@ import (
 	"cmp"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"slices"
 	"sort"
-	"time"
 
 	"gopkg.in/djherbis/times.v1"
 
 	"github.com/MagicalTux/natsort"
+	"github.com/pterm/pterm"
 
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/timeutil"
 )
 
-// FilesBeforeDirs is used to sort files before directories to avoid renaming
+// ForRenamingAndUndo is used to sort files before directories to avoid renaming
 // conflicts. It also ensures that child directories are renamed before their
 // parents and vice versa in undo mode.
-func FilesBeforeDirs(changes []*file.Change, revert bool) []*file.Change {
-	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1 := changes[i]
-		compareElement2 := changes[j]
+func ForRenamingAndUndo(changes []*file.Change, revert bool) {
+	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		// sort files before directories
+		if !a.IsDir && b.IsDir {
+			return -1
+		}
 
 		// sort parent directories before child directories in revert mode
 		if revert {
-			return len(compareElement1.BaseDir) < len(compareElement2.BaseDir)
-		}
-
-		// sort files before directories
-		if !compareElement1.IsDir {
-			return true
+			return cmp.Compare(len(a.BaseDir), len(b.BaseDir))
 		}
 
 		// sort child directories before parent directories
-		return len(compareElement1.BaseDir) > len(compareElement2.BaseDir)
+		return cmp.Compare(len(b.BaseDir), len(a.BaseDir))
 	})
-
-	return changes
 }
 
-// EnforceHierarchicalOrder ensures all files in the same directory are sorted before
-// children directories.
+// EnforceHierarchicalOrder ensures all files in the same directory are sorted
+// before children directories.
 func EnforceHierarchicalOrder(changes []*file.Change) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
-		return cmp.Compare(a.BaseDir, b.BaseDir)
+		lenA, lenB := len(a.BaseDir), len(b.BaseDir)
+		if lenA == lenB {
+			// Directories should come after files
+			if a.IsDir && !b.IsDir {
+				return -1
+			}
+
+			return cmp.Compare(a.Source, b.Source)
+		}
+
+		return cmp.Compare(lenA, lenB)
 	})
 }
 
@@ -57,102 +63,103 @@ func ByTime(
 	changes []*file.Change,
 	sortName string,
 	reverseSort bool,
-) ([]*file.Change, error) {
-	var err error
+	sortPerDir bool,
+) {
+	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		sourceA, errA := times.Stat(a.RelSourcePath)
+		sourceB, errB := times.Stat(b.RelSourcePath)
 
-	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1Path := changes[i].RelSourcePath
-		compareElement2Path := changes[j].RelSourcePath
+		if errA != nil || errB != nil {
+			pterm.Error.Printfln(
+				"error getting file times info: %v, %v",
+				errA,
+				errB,
+			)
+			os.Exit(1)
+		}
 
-		var compareElement1, compareElement2 times.Timespec
-		compareElement1, err = times.Stat(compareElement1Path)
-		compareElement2, err = times.Stat(compareElement2Path)
-
-		var itime, jtime time.Time
+		aTime, bTime := sourceA.ModTime(), sourceB.ModTime()
 
 		switch sortName {
 		case timeutil.Mod:
-			itime = compareElement1.ModTime()
-			jtime = compareElement2.ModTime()
 		case timeutil.Birth:
-			itime = compareElement1.ModTime()
-			jtime = compareElement2.ModTime()
-
-			if compareElement1.HasBirthTime() {
-				itime = compareElement1.BirthTime()
+			if sourceA.HasBirthTime() {
+				aTime = sourceA.BirthTime()
 			}
 
-			if compareElement2.HasBirthTime() {
-				jtime = compareElement2.BirthTime()
+			if sourceB.HasBirthTime() {
+				bTime = sourceB.BirthTime()
 			}
 		case timeutil.Access:
-			itime = compareElement1.AccessTime()
-			jtime = compareElement2.AccessTime()
+			aTime = sourceA.AccessTime()
+			bTime = sourceB.AccessTime()
 		case timeutil.Change:
-			itime = compareElement1.ModTime()
-			jtime = compareElement2.ModTime()
-
-			if compareElement1.HasChangeTime() {
-				itime = compareElement1.ChangeTime()
+			if sourceA.HasChangeTime() {
+				aTime = sourceA.ChangeTime()
 			}
 
-			if compareElement2.HasChangeTime() {
-				jtime = compareElement2.ChangeTime()
+			if sourceB.HasChangeTime() {
+				bTime = sourceB.ChangeTime()
 			}
 		}
 
-		it, jt := itime.UnixNano(), jtime.UnixNano()
+		if sortPerDir &&
+			filepath.Dir(a.RelSourcePath) != filepath.Dir(b.RelSourcePath) {
+			return 0
+		}
 
 		if reverseSort {
-			return it < jt
+			return -cmp.Compare(aTime.UnixNano(), bTime.UnixNano())
 		}
 
-		return it > jt
+		return cmp.Compare(aTime.UnixNano(), bTime.UnixNano())
 	})
-
-	return changes, err
 }
 
-// BySize sorts the changes according to their file size.
-func BySize(changes []*file.Change, reverseSort bool) ([]*file.Change, error) {
-	var err error
+// BySize sorts the file changes in place based on their file size, either in
+// ascending or descending order depending on the `reverseSort` flag.
+func BySize(changes []*file.Change, reverseSort, sortPerDir bool) {
+	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		var fileInfoA, fileInfoB fs.FileInfo
+		fileInfoA, errA := os.Stat(a.RelSourcePath)
+		fileInfoB, errB := os.Stat(b.RelSourcePath)
 
-	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1Path := changes[i].RelSourcePath
-		compareElement2Path := changes[j].RelSourcePath
-
-		var compareElement1, compareElement2 fs.FileInfo
-		compareElement1, err = os.Stat(compareElement1Path)
-		compareElement2, err = os.Stat(compareElement2Path)
-
-		isize := compareElement1.Size()
-		jsize := compareElement2.Size()
-
-		if reverseSort {
-			return isize > jsize
+		if errA != nil || errB != nil {
+			pterm.Error.Printfln("error getting file info: %v, %v", errA, errB)
+			os.Exit(1)
 		}
 
-		return isize < jsize
-	})
+		fileASize := fileInfoA.Size()
+		fileBSize := fileInfoB.Size()
 
-	return changes, err
+		// Don't sort files in different directories relative to each other
+		if sortPerDir &&
+			filepath.Dir(a.RelSourcePath) != filepath.Dir(b.RelSourcePath) {
+			return 0
+		}
+
+		if reverseSort {
+			return int(fileBSize - fileASize)
+		}
+
+		return int(fileASize - fileBSize)
+	})
 }
 
 // Natural sorts the changes according to natural order (meaning numbers are
-// interpreted naturally).
-func Natural(changes []*file.Change, reverseSort bool) ([]*file.Change, error) {
+// interpreted naturally). However, non-numeric characters are remain sorted in
+// ASCII order.
+func Natural(changes []*file.Change, reverseSort bool) {
 	sort.SliceStable(changes, func(i, j int) bool {
-		compareElement1 := changes[i].RelSourcePath
-		compareElement2 := changes[j].RelSourcePath
+		sourceA := changes[i].RelSourcePath
+		sourceB := changes[j].RelSourcePath
 
 		if reverseSort {
-			return !natsort.Compare(compareElement1, compareElement2)
+			return !natsort.Compare(sourceA, sourceB)
 		}
 
-		return natsort.Compare(compareElement1, compareElement2)
+		return natsort.Compare(sourceA, sourceB)
 	})
-
-	return changes, nil
 }
 
 // Changes is used to sort changes according to the configured sort value.
@@ -160,18 +167,22 @@ func Changes(
 	changes []*file.Change,
 	sortName string,
 	reverseSort bool,
-) ([]*file.Change, error) {
+	sortPerDir bool,
+) {
+	// TODO: EnforceHierarchicalOrder should be the default sort
+	if sortPerDir {
+		EnforceHierarchicalOrder(changes)
+	}
+
 	switch sortName {
 	case "natural":
-		return Natural(changes, reverseSort)
+		Natural(changes, reverseSort)
 	case "size":
-		return BySize(changes, reverseSort)
+		BySize(changes, reverseSort, sortPerDir)
 	case timeutil.Mod,
 		timeutil.Access,
 		timeutil.Birth,
 		timeutil.Change:
-		return ByTime(changes, sortName, reverseSort)
+		ByTime(changes, sortName, reverseSort, sortPerDir)
 	}
-
-	return changes, nil
 }

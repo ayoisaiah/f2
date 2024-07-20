@@ -215,7 +215,7 @@ func Rename(
 	fileChanges []*file.Change,
 ) error {
 	if conf.IncludeDir {
-		fileChanges = sortfiles.FilesBeforeDirs(fileChanges, conf.Revert)
+		sortfiles.ForRenamingAndUndo(fileChanges, conf.Revert)
 	}
 
 	if !conf.Interactive && !conf.Exec && !conf.JSON {

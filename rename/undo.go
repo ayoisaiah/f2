@@ -67,7 +67,7 @@ func Undo(conf *config.Config) error {
 	}
 
 	// Always sort files before directories when undoing an operation
-	sortfiles.FilesBeforeDirs(changes, conf.Revert)
+	sortfiles.ForRenamingAndUndo(changes, conf.Revert)
 
 	err = Rename(conf, changes)
 	if err != nil {
