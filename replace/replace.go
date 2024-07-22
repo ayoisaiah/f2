@@ -777,5 +777,9 @@ func Replace(
 		return nil, err
 	}
 
+	if conf.IncludeDir {
+		sortfiles.ForRenamingAndUndo(changes, conf.Revert)
+	}
+
 	return changes, nil
 }

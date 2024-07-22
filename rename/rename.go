@@ -22,7 +22,6 @@ import (
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/jsonutil"
 	"github.com/ayoisaiah/f2/internal/osutil"
-	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/report"
 )
 
@@ -214,10 +213,6 @@ func Rename(
 	conf *config.Config,
 	fileChanges []*file.Change,
 ) error {
-	if conf.IncludeDir {
-		sortfiles.ForRenamingAndUndo(fileChanges, conf.Revert)
-	}
-
 	if !conf.Interactive && !conf.Exec && !conf.JSON {
 		report.NonInteractive(fileChanges)
 		return nil
