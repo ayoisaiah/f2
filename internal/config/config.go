@@ -28,7 +28,11 @@ var (
 	)
 )
 
-var FixConflictsPatternRegex = regexp.MustCompile(`(.?(%(\d?)+d).?)$`)
+var (
+	defaultFixConflictsPattern      = "(%d)"
+	defaultFixConflictsPatternRegex = regexp.MustCompile(`\((\d+)\)$`)
+	customFixConfictsPatternRegex   = regexp.MustCompile(`^(\D?(%(\d+)?d)\D?)$`)
+)
 
 var conf *Config
 
@@ -43,46 +47,47 @@ type ExiftoolOpts struct {
 
 // Config represents the program configuration.
 type Config struct {
-	Date                time.Time      `json:"date"`
-	Stdin               io.Reader      `json:"-"`
-	Stderr              io.Writer      `json:"-"`
-	Stdout              io.Writer      `json:"-"`
-	ExcludeDirRegex     *regexp.Regexp `json:"exclude_dir_regex"`
-	ExcludeRegex        *regexp.Regexp `json:"exclude_regex"`
-	SearchRegex         *regexp.Regexp `json:"search_regex"`
-	Sort                string         `json:"sort"`
-	Replacement         string         `json:"replacement"`
-	WorkingDir          string         `json:"working_dir"`
-	FixConflictsPattern string         `json:"fix_conflicts_pattern"`
-	CSVFilename         string         `json:"csv_filename"`
-	ExiftoolOpts        ExiftoolOpts   `json:"exiftool_opts"`
-	ReplacementSlice    []string       `json:"replacement_slice"`
-	FilesAndDirPaths    []string       `json:"files_and_dir_paths"`
-	FindSlice           []string       `json:"find_slice"`
-	MaxDepth            int            `json:"max_depth"`
-	StartNumber         int            `json:"start_number"`
-	ReplaceLimit        int            `json:"replace_limit"`
-	AllowOverwrites     bool           `json:"allow_overwrites"`
-	ReverseSort         bool           `json:"reverse_sort"`
-	OnlyDir             bool           `json:"only_dir"`
-	Revert              bool           `json:"revert"`
-	IncludeDir          bool           `json:"include_dir"`
-	IgnoreExt           bool           `json:"ignore_ext"`
-	IgnoreCase          bool           `json:"ignore_case"`
-	Verbose             bool           `json:"verbose"`
-	IncludeHidden       bool           `json:"include_hidden"`
-	Quiet               bool           `json:"quiet"`
-	AutoFixConflicts    bool           `json:"auto_fix_conflicts"`
-	Exec                bool           `json:"exec"`
-	StringLiteralMode   bool           `json:"string_literal_mode"`
-	SimpleMode          bool           `json:"simple_mode"`
-	JSON                bool           `json:"json"`
-	Interactive         bool           `json:"interactive"`
-	NonInteractive      bool           `json:"non_interactive"`
-	Debug               bool           `json:"debug"`
-	Recursive           bool           `json:"recursive"`
-	ResetIndexPerDir    bool           `json:"reset_index_per_dir"`
-	SortPerDir          bool           `json:"sort_per_dir"`
+	Date                     time.Time      `json:"date"`
+	Stdin                    io.Reader      `json:"-"`
+	Stderr                   io.Writer      `json:"-"`
+	Stdout                   io.Writer      `json:"-"`
+	ExcludeDirRegex          *regexp.Regexp `json:"exclude_dir_regex"`
+	ExcludeRegex             *regexp.Regexp `json:"exclude_regex"`
+	SearchRegex              *regexp.Regexp `json:"search_regex"`
+	FixConflictsPatternRegex *regexp.Regexp `json:"fix_conflicts_pattern_regex"`
+	Sort                     string         `json:"sort"`
+	Replacement              string         `json:"replacement"`
+	WorkingDir               string         `json:"working_dir"`
+	FixConflictsPattern      string         `json:"fix_conflicts_pattern"`
+	CSVFilename              string         `json:"csv_filename"`
+	ExiftoolOpts             ExiftoolOpts   `json:"exiftool_opts"`
+	ReplacementSlice         []string       `json:"replacement_slice"`
+	FilesAndDirPaths         []string       `json:"files_and_dir_paths"`
+	FindSlice                []string       `json:"find_slice"`
+	MaxDepth                 int            `json:"max_depth"`
+	StartNumber              int            `json:"start_number"`
+	ReplaceLimit             int            `json:"replace_limit"`
+	AllowOverwrites          bool           `json:"allow_overwrites"`
+	ReverseSort              bool           `json:"reverse_sort"`
+	OnlyDir                  bool           `json:"only_dir"`
+	Revert                   bool           `json:"revert"`
+	IncludeDir               bool           `json:"include_dir"`
+	IgnoreExt                bool           `json:"ignore_ext"`
+	IgnoreCase               bool           `json:"ignore_case"`
+	Verbose                  bool           `json:"verbose"`
+	IncludeHidden            bool           `json:"include_hidden"`
+	Quiet                    bool           `json:"quiet"`
+	AutoFixConflicts         bool           `json:"auto_fix_conflicts"`
+	Exec                     bool           `json:"exec"`
+	StringLiteralMode        bool           `json:"string_literal_mode"`
+	SimpleMode               bool           `json:"simple_mode"`
+	JSON                     bool           `json:"json"`
+	Interactive              bool           `json:"interactive"`
+	NonInteractive           bool           `json:"non_interactive"`
+	Debug                    bool           `json:"debug"`
+	Recursive                bool           `json:"recursive"`
+	ResetIndexPerDir         bool           `json:"reset_index_per_dir"`
+	SortPerDir               bool           `json:"sort_per_dir"`
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -219,10 +224,9 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.SortPerDir = ctx.Bool("sort-per-dir")
 
 	if c.FixConflictsPattern == "" {
-		c.FixConflictsPattern = "(%d)"
-	}
-
-	if !FixConflictsPatternRegex.MatchString(c.FixConflictsPattern) {
+		c.FixConflictsPattern = defaultFixConflictsPattern
+		c.FixConflictsPatternRegex = defaultFixConflictsPatternRegex
+	} else if !customFixConfictsPatternRegex.MatchString(c.FixConflictsPattern) {
 		return fmt.Errorf("fix conflicts pattern is invalid")
 	}
 

@@ -96,7 +96,7 @@ func TestValidate(t *testing.T) {
 			Conflicts: conflict.Collection{
 				conflict.OverwritingNewPath: []conflict.Conflict{
 					{
-						Sources: []string{"dev/index.js", "dev/index.ts"},
+						Sources: []string{"dev/index.ts"},
 						Target:  "dev/index.svelte",
 					},
 				},
@@ -123,29 +123,34 @@ func TestValidate(t *testing.T) {
 						Target:  "testdata/images/dsc-002.arw",
 					},
 				},
+				conflict.TargetFileChanging: []conflict.Conflict{
+					{
+						Sources: []string{"testdata/images/dsc-002.arw"},
+						Target:  "testdata/images/dsc-003.arw",
+					},
+				},
 			},
 		},
-		// {
-		// FIXME: Not sure why this isn't working
-		// 	Name: "don't report conflict if target file exists but changes BEFORE the overwriting file is renamed",
-		// 	Changes: []*file.Change{
-		// 		{
-		// 			Source:  "dsc-001.arw",
-		// 			Target:  "dsc-000.arw",
-		// 			BaseDir: "testdata/images",
-		// 		},
-		// 		{
-		// 			Source:  "dsc-002.arw",
-		// 			Target:  "dsc-001.arw",
-		// 			BaseDir: "testdata/images",
-		// 		},
-		// 	},
-		// 	Want: []string{
-		// 		"testdata/images/dsc-000.arw",
-		// 		"testdata/images/dsc-001.arw",
-		// 	},
-		// 	Conflicts: make(conflict.Collection),
-		// },
+		{
+			Name: "don't report conflict if target file exists but changes BEFORE the overwriting file is renamed",
+			Changes: []*file.Change{
+				{
+					Source:  "dsc-001.arw",
+					Target:  "dsc-000.arw",
+					BaseDir: "testdata/images",
+				},
+				{
+					Source:  "dsc-002.arw",
+					Target:  "dsc-001.arw",
+					BaseDir: "testdata/images",
+				},
+			},
+			Want: []string{
+				"testdata/images/dsc-000.arw",
+				"testdata/images/dsc-001.arw",
+			},
+			Conflicts: make(conflict.Collection),
+		},
 		{
 			Name: "auto fix path exists conflict",
 			Changes: []*file.Change{
@@ -238,6 +243,54 @@ func TestValidate(t *testing.T) {
 			},
 			Conflicts: make(conflict.Collection),
 			Args:      append(autoFixArgs, "--fix-conflicts-pattern", "_%02d"),
+		},
+		{
+			Name: "detect if target file is changing later",
+			Changes: []*file.Change{
+				{
+					Source: "03.txt",
+					Target: "02.txt",
+				},
+				{
+					Source: "02.txt",
+					Target: "01.txt",
+				},
+				{
+					Source: "01.txt",
+					Target: "00.txt",
+				},
+			},
+			Conflicts: conflict.Collection{
+				conflict.TargetFileChanging: []conflict.Conflict{
+					{
+						Sources: []string{"02.txt"},
+						Target:  "01.txt",
+					},
+					{
+						Sources: []string{"01.txt"},
+						Target:  "00.txt",
+					},
+				},
+			},
+		},
+		{
+			Name: "auto fix target file changing later",
+			Changes: []*file.Change{
+				{
+					Source: "03.txt",
+					Target: "02.txt",
+				},
+				{
+					Source: "02.txt",
+					Target: "01.txt",
+				},
+				{
+					Source: "01.txt",
+					Target: "00.txt",
+				},
+			},
+			Conflicts: make(conflict.Collection),
+			Args:      autoFixArgs,
 		},
 	}
 

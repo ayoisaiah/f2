@@ -22,4 +22,5 @@ const (
 	MaxFilenameLengthExceeded Name = "maxFilenameLengthExceeded"
 	InvalidCharacters         Name = "invalidCharacters"
 	TrailingPeriod            Name = "trailingPeriod"
+	TargetFileChanging        Name = "targetFileChanging"
 )

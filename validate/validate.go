@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/ayoisaiah/f2/internal/config"
@@ -27,72 +29,46 @@ const (
 	unixMaxBytes = 255
 )
 
-// renamedPathsType is used to detect overwriting file paths
-// after the renaming operation. The key of the map
-// is the target path.and its slice value must
-// have a length of 1, otherwise a conflict will be detected
-// for that target path (it means 2 or more source files are
-// being renamed to the same target).
-type renamedPathsType map[string][]struct {
-	sourcePath string
-	index      int // helps keep track of source position in the changes slice
-}
-
-// Helper function to check if the path exists in the renamedPaths map.
-func pathExistsInRenamedPaths(path string, renamedPaths map[string][]struct {
-	sourcePath string
-	index      int
-},
-) bool {
-	for k := range renamedPaths {
-		if k == path {
-			return true
-		}
-	}
-
-	return false
-}
-
 // newTarget appends a number to the target file name so that it
 // does not conflict with an existing path on the filesystem or
-// another renamed file. For example: image.png becomes image(2).png.
-// TODO: Could be very efficient with a large number of files.
-func newTarget(change *file.Change, renamedPaths renamedPathsType,
-) string {
+// another renamed file. For example: image.png becomes image(1).png.
+func newTarget(change *file.Change) string {
 	conf := config.Get()
 
 	counter := 1
 
-	for {
-		baseName := pathutil.StripExtension(
-			filepath.Base(change.Target),
-		)
-
-		// Loop until a unique target path is found
-		// Extract the numbered index at the end of the filename (if any)
-		match := config.FixConflictsPatternRegex.FindStringSubmatch(baseName)
-
-		if len(match) > 0 {
-			_, _ = fmt.Sscanf(match[0], conf.FixConflictsPattern, &counter)
-			counter++
-		} else {
-			baseName += fmt.Sprintf(conf.FixConflictsPattern, counter)
-		}
-
-		target := baseName + filepath.Ext(change.Target)
-		target = filepath.Join(filepath.Dir(change.Target), target)
-		targetPath := filepath.Join(change.BaseDir, target)
-
-		if _, err := os.Stat(targetPath); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				if !pathExistsInRenamedPaths(targetPath, renamedPaths) {
-					return target // Target path is unique
-				}
-			}
-		}
-
-		counter++
+	baseName := filepath.Base(change.Target)
+	if !change.IsDir {
+		baseName = pathutil.StripExtension(baseName)
 	}
+
+	regex := conf.FixConflictsPatternRegex
+
+	if regex == nil {
+		r := regexp.MustCompile(`%(\d+)?d`)
+		regex = regexp.MustCompile(
+			r.ReplaceAllString(conf.FixConflictsPattern, `(\d+)`),
+		)
+	}
+
+	// Extract the numbered index at the end of the filename (if any)
+	match := regex.FindStringSubmatch(baseName)
+
+	if len(match) > 0 {
+		num, _ := strconv.Atoi(match[1])
+		num += counter
+
+		baseName = regex.ReplaceAllString(
+			baseName,
+			fmt.Sprintf(conf.FixConflictsPattern, num),
+		)
+	} else {
+		baseName += fmt.Sprintf(conf.FixConflictsPattern, counter)
+	}
+
+	target := baseName + filepath.Ext(change.Target)
+
+	return filepath.Join(filepath.Dir(change.Target), target)
 }
 
 // checkEmptyFilenameConflict reports if the file renaming has resulted
@@ -130,6 +106,7 @@ func checkEmptyFilenameConflict(
 // already exists on the filesystem.
 func checkPathExistsConflict(
 	change *file.Change,
+	changeIndex int,
 	autoFix, allowOverwrites bool,
 ) (conflictDetected bool) {
 	// Report if target path exists on the filesystem
@@ -157,18 +134,21 @@ func checkPathExistsConflict(
 
 		// Don't report a conflict if target path is changing before
 		// the source path is renamed
-		for j := 0; j < len(changes); j++ {
-			ch := changes[j]
+		for i := 0; i < len(changes); i++ {
+			ch := changes[i]
 
 			if change.RelTargetPath == ch.RelSourcePath &&
 				!strings.EqualFold(ch.RelSourcePath, ch.RelTargetPath) &&
-				change.Index > j {
+				changeIndex > i {
 				return
 			}
 		}
 
+		conflictDetected = true
+
 		if autoFix {
-			change.Target = newTarget(change, nil)
+			change.Target = newTarget(change)
+			change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
 			change.Status = status.OK
 
 			return
@@ -182,81 +162,78 @@ func checkPathExistsConflict(
 			},
 		)
 
-		conflictDetected = true
 		change.Status = status.PathExists
 	}
 
 	return conflictDetected
 }
 
+func checkTargetFileChangingConflict(
+	change *file.Change,
+	changeIndex int,
+	seenPaths map[string]int,
+	autoFix bool,
+) (conflictDetected bool) {
+	var ok bool
+
+	seenIndex, ok := seenPaths[change.RelSourcePath]
+	if ok {
+		conflictDetected = true
+	} else {
+		return
+	}
+
+	if autoFix {
+		changes[seenIndex], changes[changeIndex] = changes[changeIndex], changes[seenIndex]
+		return
+	}
+
+	conflicts[conflict.TargetFileChanging] = append(
+		conflicts[conflict.TargetFileChanging],
+		conflict.Conflict{
+			Sources: []string{change.RelSourcePath},
+			Target:  change.RelTargetPath,
+		},
+	)
+
+	return
+}
+
 // checkOverwritingPathConflict ensures that a newly renamed path
 // is not overwritten by another renamed file. Such conflicts are solved by
 // appending a number to the filename until no conflict is detected.
 func checkOverwritingPathConflict(
-	renamedPaths renamedPathsType,
+	change *file.Change,
+	seenPaths map[string]int,
 	autoFix bool,
-) {
-	// Report duplicate targets if any
-	for targetPath, source := range renamedPaths {
-		if len(source) > 1 {
-			var sources []string
-
-			for _, s := range source {
-				sources = append(sources, s.sourcePath)
-				changes[s.index].Status = status.OverwritingNewPath
-			}
-
-			if autoFix {
-				for i := 0; i < len(source); i++ {
-					item := source[i]
-
-					if i == 0 {
-						changes[item.index].Status = status.OK
-						continue
-					}
-
-					target := newTarget(
-						changes[item.index],
-						renamedPaths,
-					)
-					pt := filepath.Join(changes[item.index].BaseDir, target)
-
-					if _, ok := renamedPaths[pt]; !ok {
-						renamedPaths[pt] = []struct {
-							sourcePath string
-							index      int
-						}{}
-						changes[item.index].Target = target
-						changes[item.index].RelTargetPath = filepath.Join(
-							changes[item.index].BaseDir,
-							target,
-						)
-						changes[item.index].Status = status.OK
-					} else {
-						// repeat the last iteration to generate a new path
-						changes[item.index].Target = target
-						changes[item.index].RelTargetPath = filepath.Join(
-							changes[item.index].BaseDir,
-							target,
-						)
-						changes[item.index].Status = status.OK
-						i--
-						continue
-					}
-				}
-
-				continue
-			}
-
-			conflicts[conflict.OverwritingNewPath] = append(
-				conflicts[conflict.OverwritingNewPath],
-				conflict.Conflict{
-					Sources: sources,
-					Target:  targetPath,
-				},
-			)
-		}
+) (conflictDetected bool) {
+	if _, ok := seenPaths[change.RelTargetPath]; ok {
+		conflictDetected = true
 	}
+
+	if !conflictDetected {
+		return
+	}
+
+	if autoFix {
+		change.Target = newTarget(change)
+		change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
+		change.Status = status.OK
+
+		return
+	}
+
+	conflicts[conflict.OverwritingNewPath] = append(
+		conflicts[conflict.OverwritingNewPath],
+		conflict.Conflict{
+			Sources: []string{change.RelSourcePath},
+			Target:  change.RelTargetPath,
+		},
+	)
+
+	change.Status = status.OverwritingNewPath
+
+	return
 }
 
 // checkForbiddenCharacters is responsible for ensuring that target file names
@@ -335,7 +312,6 @@ func checkTrailingPeriodConflictInWindows(
 				string(os.PathSeparator),
 			)
 			change.Status = status.OK
-			conflictDetected = false
 
 			return
 		}
@@ -366,6 +342,8 @@ func checkFileNameLengthConflict(
 ) (conflictDetected bool) {
 	exceeded := isTargetLengthExceeded(change.Target)
 	if exceeded {
+		conflictDetected = true
+
 		if autoFix {
 			if runtime.GOOS == osutil.Windows {
 				// trim filename so that it's less than 255 characters
@@ -415,7 +393,6 @@ func checkFileNameLengthConflict(
 				Cause:   cause,
 			},
 		)
-		conflictDetected = true
 		change.Status = status.FilenameLengthExceeded
 	}
 
@@ -434,6 +411,8 @@ func checkForbiddenCharactersConflict(
 ) (conflictDetected bool) {
 	forbiddenChars := checkForbiddenCharacters(change.Target)
 	if forbiddenChars != "" {
+		conflictDetected = true
+
 		if autoFix {
 			if runtime.GOOS == osutil.Windows {
 				change.Target = osutil.PartialWindowsForbiddenCharRegex.ReplaceAllString(
@@ -464,7 +443,6 @@ func checkForbiddenCharactersConflict(
 			},
 		)
 
-		conflictDetected = true
 		change.Status = status.InvalidCharacters
 	}
 
@@ -474,7 +452,7 @@ func checkForbiddenCharactersConflict(
 // detectConflicts checks the renamed files for various conflicts and
 // automatically fixes them if allowed.
 func detectConflicts(autoFix, allowOverwrites bool) {
-	renamedPaths := make(renamedPathsType)
+	seenPaths := make(map[string]int)
 
 	for i := 0; i < len(changes); i++ {
 		change := changes[i]
@@ -505,29 +483,41 @@ func detectConflicts(autoFix, allowOverwrites bool) {
 			continue
 		}
 
-		detected = checkPathExistsConflict(change, autoFix, allowOverwrites)
+		detected = checkPathExistsConflict(change, i, autoFix, allowOverwrites)
 		if detected && autoFix {
 			i--
 			continue
 		}
 
-		renamedPaths[change.RelTargetPath] = append(
-			renamedPaths[change.RelTargetPath],
-			struct {
-				sourcePath string
-				index      int
-			}{
-				sourcePath: change.RelSourcePath,
-				index:      i,
-			},
+		detected = checkOverwritingPathConflict(change, seenPaths, autoFix)
+		if detected && autoFix {
+			i--
+			continue
+		}
+
+		detected = checkTargetFileChangingConflict(
+			change,
+			i,
+			seenPaths,
+			autoFix,
 		)
+		if detected && autoFix {
+			// start over
+			i = -1
+
+			clear(seenPaths)
+
+			continue
+		}
 
 		if autoFix {
 			change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
 		}
-	}
 
-	checkOverwritingPathConflict(renamedPaths, autoFix)
+		if _, ok := seenPaths[change.RelTargetPath]; !ok {
+			seenPaths[change.RelTargetPath] = i
+		}
+	}
 }
 
 // Validate detects and reports any conflicts that can occur while renaming a
