@@ -90,11 +90,6 @@ func getDefaultOptsCtx() *cli.Context {
 	var defaultCtx *cli.Context
 
 	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
-		slog.Debug(
-			"found default options in environment",
-			slog.String("default_opts", optsEnv),
-		)
-
 		defaultOpts := make([]string, len(os.Args))
 
 		copy(defaultOpts, os.Args)
@@ -115,10 +110,6 @@ func getDefaultOptsCtx() *cli.Context {
 		// are incorrect
 		err := app.Run(defaultOpts)
 		if err != nil {
-			slog.Debug("default options parse error",
-				slog.String("error", fmt.Sprintf("%v", err)),
-			)
-
 			pterm.Fprintln(
 				os.Stderr,
 				pterm.Error.Sprintf(
@@ -191,18 +182,15 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 
 	app.Before = func(ctx *cli.Context) error {
 		if ctx.Bool("no-color") {
-			slog.Debug("disabling styling")
 			pterm.DisableStyling()
 		}
 
 		if ctx.Bool("quiet") {
-			slog.Debug("disabling output")
 			pterm.DisableOutput()
 		}
 
 		// print short help and exit if no arguments or flags are present
 		if ctx.NumFlags() == 0 && !ctx.Args().Present() {
-			slog.Debug("print short help and exit")
 			pterm.Println(ShortHelp(ctx.App))
 			os.Exit(1)
 		}
@@ -211,11 +199,6 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 		app.Metadata["writer"] = writer
 
 		if ctx.NumFlags() == 0 {
-			slog.Debug(
-				"simple mode detected",
-				slog.Int("num_flags", ctx.NumFlags()),
-			)
-
 			app.Metadata["simple-mode"] = true
 		}
 
@@ -229,17 +212,6 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 			defaultValue := fmt.Sprintf("%v", defaultCtx.Value(defaultOpt))
 
 			if ctx.IsSet(defaultOpt) && defaultCtx.IsSet(defaultOpt) {
-				cliValue := fmt.Sprintf("%v", ctx.Value(defaultOpt))
-				slog.Debug(
-					fmt.Sprintf(
-						"command line flag overrides default option for: %s",
-						defaultOpt,
-					),
-					slog.String("flag", defaultOpt),
-					slog.String("command_line_value", cliValue),
-					slog.String("default_value", defaultValue),
-				)
-
 				continue
 			}
 
@@ -248,18 +220,8 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 					defaultValue = strings.Join(x.Value(), "|")
 				}
 
-				slog.Debug(
-					fmt.Sprintf("set default option for flag: %s", defaultOpt),
-					slog.String("flag", defaultOpt),
-					slog.String("default_value", defaultValue),
-				)
-
 				err := ctx.Set(defaultOpt, defaultValue)
 				if err != nil {
-					slog.Debug("failed to set default option for: %s",
-						slog.String("flag", defaultOpt),
-						slog.String("default_value", defaultValue),
-					)
 					pterm.Fprintln(os.Stderr,
 						pterm.Warning.Sprintf(
 							"Unable to set default option for: %s",

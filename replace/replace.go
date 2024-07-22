@@ -4,16 +4,12 @@
 package replace
 
 import (
-	"context"
 	"errors"
-	"log/slog"
 	"math"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-
-	slogctx "github.com/veqryn/slog-context"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
@@ -643,14 +639,8 @@ func replaceMatches(
 		return nil, err
 	}
 
-	slog.Debug("extracted variables", slog.Any("vars", vars))
-
 	if len(vars.index.matches) > 0 {
 		sortfiles.EnforceHierarchicalOrder(matches)
-		slog.Debug(
-			"sorted matches based on directory level",
-			slog.Any("matches", matches),
-		)
 	}
 
 	for i := range matches {
@@ -665,15 +655,11 @@ func replaceMatches(
 
 		change.Target = replaceString(conf, originalName)
 
-		slog.Debug("regex replacement result", slog.Any("change", change))
-
 		// Replace any variables present with their corresponding values
 		err = replaceVariables(conf, change, &vars)
 		if err != nil {
 			return nil, err
 		}
-
-		slog.Debug("variable replacement result", slog.Any("change", change))
 
 		// Reattach the original extension to the new file name
 		if conf.IgnoreExt && !change.IsDir {
@@ -696,14 +682,6 @@ func handleReplacementChain(
 	replacementSlice := conf.ReplacementSlice
 
 	for i, v := range replacementSlice {
-		ctx := slogctx.Append(context.Background(),
-			slog.String("find_arg", conf.SearchRegex.String()),
-			slog.String("replace_arg", v),
-			slog.Int("replacement_index", i),
-		)
-
-		slog.DebugContext(ctx, "executing find and replace")
-
 		config.SetReplacement(v)
 
 		var err error
@@ -712,12 +690,6 @@ func handleReplacementChain(
 		if err != nil {
 			return nil, err
 		}
-
-		slog.DebugContext(
-			ctx,
-			"find/replace result",
-			slog.Any("matches", matches),
-		)
 
 		if len(replacementSlice) == 1 ||
 			(i > 0 && i == len(replacementSlice)-1) {
@@ -733,12 +705,6 @@ func handleReplacementChain(
 				matches[j].Source = change.Target
 			}
 		}
-
-		slog.DebugContext(
-			ctx,
-			"updated sources for next find/replace",
-			slog.Any("matches", matches),
-		)
 
 		err = conf.SetFindStringRegex(i + 1)
 		if err != nil {
@@ -758,18 +724,7 @@ func Replace(
 	var err error
 
 	if conf.Sort != "" {
-		slog.Debug(
-			"sorting matches before replacement",
-			slog.String("sort", conf.Sort),
-			slog.Bool("reverse_sort", conf.ReverseSort),
-		)
-
 		sortfiles.Changes(changes, conf.Sort, conf.ReverseSort, conf.SortPerDir)
-
-		slog.Debug(
-			"updated match order according to sort value",
-			slog.Any("sorted_matches", changes),
-		)
 	}
 
 	changes, err = handleReplacementChain(conf, changes)
