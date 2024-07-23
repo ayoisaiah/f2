@@ -38,6 +38,10 @@ func reportTest(t *testing.T, cases []testutil.TestCase) {
 	for i := range cases {
 		tc := cases[i]
 
+		for i := range tc.Changes {
+			tc.Changes[i].Position = i
+		}
+
 		t.Run(tc.Name, func(t *testing.T) {
 			if tc.SetupFunc != nil {
 				t.Cleanup(tc.SetupFunc(t))

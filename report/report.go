@@ -205,7 +205,7 @@ func changes(
 		}
 
 		d := []string{change.RelSourcePath, change.RelTargetPath, changeStatus}
-		data[i] = d
+		data[change.Position] = d
 	}
 
 	printTable(data, Stdout)

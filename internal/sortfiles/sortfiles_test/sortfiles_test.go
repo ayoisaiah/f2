@@ -71,10 +71,10 @@ func TestSortFiles_EnforceHierarchicalOrder(t *testing.T) {
 				"testdata/dir1/10k.txt",
 			},
 			Sorted: []string{
-				"testdata/20k.txt",
 				"testdata/dir1",
-				"testdata/dir1/10k.txt",
+				"testdata/20k.txt",
 				"testdata/dir1/folder",
+				"testdata/dir1/10k.txt",
 				"testdata/dir1/folder/15k.txt",
 			},
 		},
@@ -87,10 +87,10 @@ func TestSortFiles_EnforceHierarchicalOrder(t *testing.T) {
 				"e.txt",
 			},
 			Sorted: []string{
-				"e.txt",
 				"f.txt",
-				"dir1/a.txt",
+				"e.txt",
 				"dir1/c.txt",
+				"dir1/a.txt",
 			},
 		},
 	}
@@ -374,6 +374,20 @@ func TestSortFiles_Natural(t *testing.T) {
 				"file10.txt",
 				"file2.txt",
 				"file1.txt",
+			},
+			ReverseSort: true,
+		},
+		{
+			Name: "sort files numerically in reverse",
+			Unsorted: []string{
+				"01.txt",
+				"02.txt",
+				"03.txt",
+			},
+			Sorted: []string{
+				"03.txt",
+				"02.txt",
+				"01.txt",
 			},
 			ReverseSort: true,
 		},

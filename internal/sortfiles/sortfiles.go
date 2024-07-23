@@ -45,12 +45,7 @@ func EnforceHierarchicalOrder(changes []*file.Change) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		lenA, lenB := len(a.BaseDir), len(b.BaseDir)
 		if lenA == lenB {
-			// Directories should come after files
-			if a.IsDir && !b.IsDir {
-				return -1
-			}
-
-			return cmp.Compare(a.Source, b.Source)
+			return 0
 		}
 
 		return cmp.Compare(lenA, lenB)

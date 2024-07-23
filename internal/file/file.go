@@ -19,7 +19,7 @@ type Change struct {
 	// RelTargetPath is BaseDir + Target
 	RelTargetPath string   `json:"-"`
 	CSVRow        []string `json:"-"`
-	Index         int      `json:"-"` // TODO: Rename to position?
+	Position      int      `json:"-"`
 	IsDir         bool     `json:"is_dir"`
 	WillOverwrite bool     `json:"will_overwrite"`
 }
@@ -35,7 +35,7 @@ func (c Change) LogValue() slog.Value {
 		slog.String("rel_source_path", c.RelSourcePath),
 		slog.String("rel_target_path", c.RelTargetPath),
 		slog.Any("csv_row", c.CSVRow),
-		slog.Int("index", c.Index),
+		slog.Int("index", c.Position),
 		slog.Bool("is_dir", c.IsDir),
 		slog.Bool("will_overwrite", c.WillOverwrite),
 	)

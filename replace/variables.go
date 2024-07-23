@@ -1055,7 +1055,7 @@ func replaceVariables(
 		// Detect when a new directory is entered
 		if change.BaseDir != vars.index.currentBaseDir {
 			// track the position at which the base directory changed
-			vars.index.newDirIndex = change.Index
+			vars.index.newDirIndex = change.Position
 		}
 	}
 
@@ -1063,7 +1063,7 @@ func replaceVariables(
 
 	// This has the effect of resetting the index for a new directory when the
 	// `ResetIndexPerDir` option is set
-	changeIndex := change.Index - vars.index.newDirIndex
+	changeIndex := change.Position - vars.index.newDirIndex
 
 	if indexVarRegex.MatchString(change.Target) {
 		if len(vars.index.capturVarIndex) > 0 {

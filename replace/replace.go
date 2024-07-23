@@ -645,7 +645,7 @@ func replaceMatches(
 
 	for i := range matches {
 		change := matches[i]
-		change.Index = i
+		change.Position = i
 		originalName := change.Source
 		fileExt := filepath.Ext(originalName)
 
@@ -722,10 +722,6 @@ func Replace(
 	changes []*file.Change,
 ) ([]*file.Change, error) {
 	var err error
-
-	if conf.Sort != "" {
-		sortfiles.Changes(changes, conf.Sort, conf.ReverseSort, conf.SortPerDir)
-	}
 
 	changes, err = handleReplacementChain(conf, changes)
 	if err != nil {

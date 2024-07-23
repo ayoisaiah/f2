@@ -9,6 +9,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/pathutil"
+	"github.com/ayoisaiah/f2/internal/sortfiles"
 )
 
 const (
@@ -219,7 +220,18 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
-func Find(conf *config.Config) ([]*file.Change, error) {
+func Find(conf *config.Config) (changes []*file.Change, err error) {
+	defer func() {
+		if conf.Sort != "" && err == nil {
+			sortfiles.Changes(
+				changes,
+				conf.Sort,
+				conf.ReverseSort,
+				conf.SortPerDir,
+			)
+		}
+	}()
+
 	if conf.CSVFilename != "" {
 		return handleCSV(conf)
 	}
