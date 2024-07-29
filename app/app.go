@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log/slog"
@@ -21,6 +22,11 @@ const (
 	EnvDefaultOpts    = "F2_DEFAULT_OPTS"
 	EnvDebug          = "F2_DEBUG"
 )
+
+func isInputFromPipe() bool {
+	fileInfo, _ := os.Stdin.Stat()
+	return fileInfo.Mode()&os.ModeCharDevice == 0
+}
 
 // supportedDefaultOptions contains those flags that can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
@@ -179,6 +185,14 @@ func Get(reader io.Reader, writer io.Writer) *cli.App {
 	app := New()
 
 	defaultCtx := getDefaultOptsCtx()
+
+	if isInputFromPipe() {
+		scanner := bufio.NewScanner(bufio.NewReader(reader))
+
+		for scanner.Scan() {
+			os.Args = append(os.Args, scanner.Text())
+		}
+	}
 
 	app.Before = func(ctx *cli.Context) error {
 		if ctx.Bool("no-color") {
