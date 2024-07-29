@@ -213,31 +213,14 @@ func Rename(
 	conf *config.Config,
 	fileChanges []*file.Change,
 ) error {
-	if !conf.Interactive && !conf.Exec && !conf.JSON {
-		report.NonInteractive(fileChanges)
-		return nil
-	}
-
-	if conf.JSON {
-		report.JSON(fileChanges)
-	} else if conf.Interactive {
+	if conf.Interactive {
 		report.Interactive(fileChanges)
-	}
-
-	if !conf.Exec {
-		return nil
 	}
 
 	renameErrs := commit(conf, fileChanges)
 	if renameErrs != nil {
 		// FIXME: Print the errors
 		return errRenameFailed
-	}
-
-	if conf.NonInteractive {
-		for i := range fileChanges {
-			fmt.Println(fileChanges[i].RelTargetPath)
-		}
 	}
 
 	return nil

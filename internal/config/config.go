@@ -83,7 +83,7 @@ type Config struct {
 	SimpleMode               bool           `json:"simple_mode"`
 	JSON                     bool           `json:"json"`
 	Interactive              bool           `json:"interactive"`
-	NonInteractive           bool           `json:"non_interactive"`
+	Print                    bool           `json:"non_interactive"`
 	Debug                    bool           `json:"debug"`
 	Recursive                bool           `json:"recursive"`
 	ResetIndexPerDir         bool           `json:"reset_index_per_dir"`
@@ -135,7 +135,7 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.Revert = ctx.Bool("undo")
 	c.Debug = ctx.Bool("debug")
 	c.FilesAndDirPaths = ctx.Args().Slice()
-	c.NonInteractive = ctx.Bool("non-interactive")
+	c.Print = ctx.Bool("print")
 
 	if ctx.String("exiftool-opts") != "" {
 		args, err := shellquote.Split(ctx.String("exiftool-opts"))
@@ -252,6 +252,10 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		}
 
 		c.ExcludeDirRegex = excludeDirMatchRegex
+	}
+
+	if c.JSON {
+		c.Interactive = false
 	}
 
 	if c.Interactive {

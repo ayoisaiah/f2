@@ -358,8 +358,8 @@ or: FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]`
 				Usage: "Disable coloured output.",
 			},
 			&cli.BoolFlag{
-				Name:  "non-interactive",
-				Usage: "Print file paths after successful renaming",
+				Name:  "print",
+				Usage: "Print all renamed paths after successful renaming",
 			},
 			&cli.BoolFlag{
 				Name:    "only-dir",

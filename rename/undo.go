@@ -71,7 +71,7 @@ func Undo(conf *config.Config) error {
 
 	err = Rename(conf, changes)
 	if err != nil {
-		report.NonInteractive(changes)
+		report.NonInteractive(changes, true)
 		return errUndoFailed
 	}
 

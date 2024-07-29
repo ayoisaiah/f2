@@ -5,7 +5,6 @@ package report
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -13,7 +12,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/internal/conflict"
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/jsonutil"
 	"github.com/ayoisaiah/f2/internal/status"
@@ -23,110 +22,6 @@ var (
 	Stdout io.Writer = os.Stdout
 	Stderr io.Writer = os.Stderr
 )
-
-// Conflicts prints any detected conflicts to the standard output in table format.
-func Conflicts(conflicts conflict.Collection, jsonOut bool) {
-	if jsonOut {
-		o, err := jsonutil.GetOutput(nil)
-		if err != nil {
-			pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
-		}
-
-		pterm.Fprintln(Stdout, string(o))
-
-		return
-	}
-
-	var data [][]string
-
-	if slice, exists := conflicts[conflict.EmptyFilename]; exists {
-		for _, v := range slice {
-			slice := []string{
-				strings.Join(v.Sources, ""),
-				"",
-				pterm.Red(status.EmptyFilename),
-			}
-			data = append(data, slice)
-		}
-	}
-
-	if slice, exists := conflicts[conflict.TrailingPeriod]; exists {
-		for _, v := range slice {
-			for _, s := range v.Sources {
-				slice := []string{
-					s,
-					v.Target,
-					pterm.Red(
-						status.TrailingPeriod,
-					),
-				}
-				data = append(data, slice)
-			}
-		}
-	}
-
-	if slice, exists := conflicts[conflict.FileExists]; exists {
-		for _, v := range slice {
-			slice := []string{
-				strings.Join(v.Sources, ""),
-				v.Target,
-				pterm.Red(status.PathExists),
-			}
-			data = append(data, slice)
-		}
-	}
-
-	if slice, exists := conflicts[conflict.OverwritingNewPath]; exists {
-		for _, v := range slice {
-			for _, s := range v.Sources {
-				slice := []string{
-					s,
-					v.Target,
-					pterm.Red(status.OverwritingNewPath),
-				}
-				data = append(data, slice)
-			}
-		}
-	}
-
-	if slice, exists := conflicts[conflict.InvalidCharacters]; exists {
-		for _, v := range slice {
-			for _, s := range v.Sources {
-				slice := []string{
-					s,
-					v.Target,
-					pterm.Red(
-						fmt.Sprintf(
-							string(status.InvalidCharacters),
-							v.Cause,
-						),
-					),
-				}
-				data = append(data, slice)
-			}
-		}
-	}
-
-	if slice, exists := conflicts[conflict.MaxFilenameLengthExceeded]; exists {
-		for _, v := range slice {
-			for _, s := range v.Sources {
-				slice := []string{
-					s,
-					v.Target,
-					pterm.Red(
-						fmt.Sprintf(
-							string(status.FilenameLengthExceeded),
-							v.Cause,
-						),
-					),
-				}
-				data = append(data, slice)
-			}
-		}
-	}
-
-	printTable(data, Stdout)
-}
 
 func BackupFailed(err error) {
 	pterm.Fprintln(Stderr,
@@ -256,8 +151,13 @@ func Interactive(
 // prompting the user.
 func NonInteractive(
 	fileChanges []*file.Change,
+	conflictDetected bool,
 ) {
 	changes(fileChanges)
+
+	if conflictDetected {
+		return
+	}
 
 	pterm.Info.Prefix = pterm.Prefix{
 		Text:  "DRY RUN",
@@ -270,4 +170,13 @@ func NonInteractive(
 			"Commit the above changes with the -x/--exec flag",
 		),
 	)
+}
+
+func Report(conf *config.Config, fileChanges []*file.Change) {
+	if conf.JSON {
+		JSON(fileChanges)
+		return
+	}
+
+	NonInteractive(fileChanges, false)
 }
