@@ -63,17 +63,17 @@ func run(ctx *cli.Context) error {
 
 	slog.Info("bulk renaming completed", slog.Any("changes", changes))
 
-	conflicts := validate.Validate(
+	_ = validate.Validate(
 		changes,
 		conf.AutoFixConflicts,
 		conf.AllowOverwrites,
 	)
 
-	if len(conflicts) > 0 {
-		report.Conflicts(conflicts, conf.JSON)
-
-		return errConflictDetected
-	}
+	// if conflictDetected {
+	// 	report.NonInteractive(conflicts, conf.JSON)
+	//
+	// 	return errConflictDetected
+	// }
 
 	return rename.Rename(conf, changes)
 }

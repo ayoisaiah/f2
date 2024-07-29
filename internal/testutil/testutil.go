@@ -13,22 +13,21 @@ import (
 
 	"github.com/ayoisaiah/f2/app"
 	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 )
 
 // TestCase represents a unique test case.
 type TestCase struct {
-	Error       error                                `json:"error"`
-	Conflicts   conflict.Collection                  `json:"conflicts"`
-	SetupFunc   func(t *testing.T) (teardown func()) `json:"-"`
-	DefaultOpts string                               `json:"default_opts"`
-	Name        string                               `json:"name"`
-	GoldenFile  string                               `json:"golden_file"`
-	Args        []string                             `json:"args"`
-	PathArgs    []string                             `json:"path_args"`
-	Changes     []*file.Change                       `json:"changes"`
-	Want        []string                             `json:"want"`
+	Error            error                                `json:"error"`
+	ConflictDetected bool                                 `json:"conflict_detected"`
+	SetupFunc        func(t *testing.T) (teardown func()) `json:"-"`
+	DefaultOpts      string                               `json:"default_opts"`
+	Name             string                               `json:"name"`
+	GoldenFile       string                               `json:"golden_file"`
+	Args             []string                             `json:"args"`
+	PathArgs         []string                             `json:"path_args"`
+	Changes          []*file.Change                       `json:"changes"`
+	Want             []string                             `json:"want"`
 }
 
 // SetupFileSystem creates all required files and folders for
@@ -91,6 +90,11 @@ func SetupFileSystem(
 	return testDir
 }
 
+// CompareChanges compares the expected file changes to the ones received.
+func CompareChanges(t *testing.T, want []*file.Change, got []*file.Change) {
+	assert.Equal(t, want, got)
+}
+
 // CompareSourcePath compares the expected source paths to the actual source
 // paths.
 func CompareSourcePath(t *testing.T, want []string, changes []*file.Change) {
@@ -114,14 +118,6 @@ func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
 	for i := range changes {
 		got[i] = changes[i].RelTargetPath
 	}
-
-	assert.Equal(t, want, got)
-}
-
-// CompareConflicts verifies that a renaming operation produces the expected set
-// of conflicts.
-func CompareConflicts(t *testing.T, want, got conflict.Collection) {
-	t.Helper()
 
 	assert.Equal(t, want, got)
 }

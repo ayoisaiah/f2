@@ -6,8 +6,8 @@ package validate_test
 import (
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/ayoisaiah/f2/internal/testutil"
 )
 
@@ -22,16 +22,10 @@ func TestValidateWindows(t *testing.T) {
 					Source:  "index.js",
 					Target:  "main.js..",
 					BaseDir: "dev",
+					Status:  status.TrailingPeriod,
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.TrailingPeriod: []conflict.Conflict{
-					{
-						Sources: []string{"dev/index.js"},
-						Target:  "dev/main.js..",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "detect trailing period conflict in directories",
@@ -40,40 +34,22 @@ func TestValidateWindows(t *testing.T) {
 					Source:  "No Pressure (2021) S1.E1.1080p.mkv",
 					Target:  "2021.../No Pressure (2021) S1.E1.1080p.mkv",
 					BaseDir: "movies",
+					Status:  status.TrailingPeriod,
 				},
 				{
 					Source:  "No Pressure (2021) S1.E2.1080p.mkv",
 					Target:  "2021.../No Pressure (2021) S1.E2.1080p.mkv",
 					BaseDir: "movies",
+					Status:  status.TrailingPeriod,
 				},
 				{
 					Source:  "No Pressure (2021) S1.E3.1080p.mkv",
 					Target:  "2021.../No Pressure (2021) S1.E3.1080p.mkv",
 					BaseDir: "movies",
+					Status:  status.TrailingPeriod,
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.TrailingPeriod: []conflict.Conflict{
-					{
-						Sources: []string{
-							"movies/No Pressure (2021) S1.E1.1080p.mkv",
-						},
-						Target: "movies/2021.../No Pressure (2021) S1.E1.1080p.mkv",
-					},
-					{
-						Sources: []string{
-							"movies/No Pressure (2021) S1.E2.1080p.mkv",
-						},
-						Target: "movies/2021.../No Pressure (2021) S1.E2.1080p.mkv",
-					},
-					{
-						Sources: []string{
-							"movies/No Pressure (2021) S1.E3.1080p.mkv",
-						},
-						Target: "movies/2021.../No Pressure (2021) S1.E3.1080p.mkv",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "detect forbidden characters in filename",
@@ -82,17 +58,7 @@ func TestValidateWindows(t *testing.T) {
 					Source:  "atomic-habits.pdf",
 					Target:  "<>:?etc.pdf",
 					BaseDir: "ebooks",
-				},
-			},
-			Conflicts: conflict.Collection{
-				conflict.InvalidCharacters: []conflict.Conflict{
-					{
-						Sources: []string{
-							"ebooks/atomic-habits.pdf",
-						},
-						Target: "ebooks/<>:?etc.pdf",
-						Cause:  "<,>,:,?",
-					},
+					Status:  status.InvalidCharacters,
 				},
 			},
 		},
@@ -103,19 +69,10 @@ func TestValidateWindows(t *testing.T) {
 					Source:  "1984.pdf",
 					Target:  "It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him.pdf",
 					BaseDir: "ebooks",
+					Status:  status.FilenameLengthExceeded,
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.MaxFilenameLengthExceeded: []conflict.Conflict{
-					{
-						Sources: []string{
-							"ebooks/atomic-habits.pdf",
-						},
-						Target: "ebooks/It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him.pdf",
-						Cause:  "255 characters",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "up to 255 emoji characters should not cause a conflict",
@@ -126,7 +83,6 @@ func TestValidateWindows(t *testing.T) {
 					BaseDir: "ebooks",
 				},
 			},
-			Conflicts: make(conflict.Collection),
 			Want: []string{
 				"ebooks/😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
 			},

@@ -3,8 +3,8 @@ package validate_test
 import (
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/ayoisaiah/f2/internal/testutil"
 )
 
@@ -19,17 +19,10 @@ func TestValidateUnix(t *testing.T) {
 					Source:  "1984.pdf",
 					Target:  "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.pdf",
 					BaseDir: "ebooks",
+					Status:  status.FilenameLengthExceeded,
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.MaxFilenameLengthExceeded: []conflict.Conflict{
-					{
-						Sources: []string{"ebooks/1984.pdf"},
-						Target:  "ebooks/😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.pdf",
-						Cause:   "255 bytes",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "auto fix name length conflict on Unix OSes",
@@ -43,8 +36,7 @@ func TestValidateUnix(t *testing.T) {
 			Want: []string{
 				"ebooks/😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀.pdf",
 			},
-			Conflicts: make(conflict.Collection),
-			Args:      []string{"-r", "", "-F"},
+			Args: []string{"-r", "", "-F"},
 		},
 	}
 

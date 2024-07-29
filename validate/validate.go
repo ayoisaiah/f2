@@ -11,14 +11,25 @@ import (
 	"strings"
 
 	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/internal/pathutil"
 	"github.com/ayoisaiah/f2/internal/status"
 )
 
-var conflicts conflict.Collection
+type validationCtx struct {
+	autoFix         bool
+	allowOverwrites bool
+	changeIndex     int
+	change          *file.Change
+	seenPaths       map[string]int
+}
+
+func (ctx validationCtx) updateSeenPaths() {
+	if _, ok := ctx.seenPaths[ctx.change.RelTargetPath]; !ok {
+		ctx.seenPaths[ctx.change.RelTargetPath] = ctx.changeIndex
+	}
+}
 
 var changes []*file.Change
 
@@ -75,28 +86,17 @@ func newTarget(change *file.Change) string {
 // in an empty string. This conflict is automatically fixed by leaving
 // the filename unchanged.
 func checkEmptyFilenameConflict(
-	change *file.Change,
-	autoFix bool,
+	ctx validationCtx,
 ) (conflictDetected bool) {
-	if change.Target == "." || change.Target == "" {
+	if ctx.change.Target == "." || ctx.change.Target == "" {
 		conflictDetected = true
+		ctx.change.Status = status.EmptyFilename
 
-		if autoFix {
+		if ctx.autoFix {
 			// The file is left unchanged
-			change.Target = change.Source
-			change.Status = status.Unchanged
-
-			return
+			ctx.change.Target = ctx.change.Source
+			ctx.change.Status = status.Unchanged
 		}
-
-		conflicts[conflict.EmptyFilename] = append(
-			conflicts[conflict.EmptyFilename],
-			conflict.Conflict{
-				Sources: []string{change.RelSourcePath},
-				Target:  change.RelTargetPath,
-			},
-		)
-		change.Status = status.EmptyFilename
 	}
 
 	return
@@ -105,29 +105,30 @@ func checkEmptyFilenameConflict(
 // checkPathExistsConflict reports if the newly renamed path
 // already exists on the filesystem.
 func checkPathExistsConflict(
-	change *file.Change,
-	changeIndex int,
-	autoFix, allowOverwrites bool,
+	ctx validationCtx,
 ) (conflictDetected bool) {
 	// Report if target path exists on the filesystem
-	if _, err := os.Stat(change.RelTargetPath); err == nil ||
+	if _, err := os.Stat(ctx.change.RelTargetPath); err == nil ||
 		errors.Is(err, os.ErrExist) {
 		// Don't report a conflict for an unchanged filename
-		if change.RelSourcePath == change.RelTargetPath {
-			change.Status = status.Unchanged
+		if ctx.change.RelSourcePath == ctx.change.RelTargetPath {
+			ctx.change.Status = status.Unchanged
 			return
 		}
 
 		// Case-insensitive filesystems should not report conflicts
 		// if only the case of the filename is being changed.
-		if strings.EqualFold(change.RelSourcePath, change.RelTargetPath) {
+		if strings.EqualFold(
+			ctx.change.RelSourcePath,
+			ctx.change.RelTargetPath,
+		) {
 			return
 		}
 
 		// Don't report a conflict if overwriting files are allowed
-		if allowOverwrites {
-			change.WillOverwrite = true
-			change.Status = status.Overwriting
+		if ctx.allowOverwrites {
+			ctx.change.WillOverwrite = true
+			ctx.change.Status = status.Overwriting
 
 			return
 		}
@@ -137,64 +138,39 @@ func checkPathExistsConflict(
 		for i := 0; i < len(changes); i++ {
 			ch := changes[i]
 
-			if change.RelTargetPath == ch.RelSourcePath &&
+			if ctx.change.RelTargetPath == ch.RelSourcePath &&
 				!strings.EqualFold(ch.RelSourcePath, ch.RelTargetPath) &&
-				changeIndex > i {
+				ctx.changeIndex > i {
 				return
 			}
 		}
 
 		conflictDetected = true
+		ctx.change.Status = status.PathExists
 
-		if autoFix {
-			change.Target = newTarget(change)
-			change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
-			change.Status = status.OK
-
-			return
+		if ctx.autoFix {
+			ctx.change.AutoFixTarget(newTarget(ctx.change))
 		}
-
-		conflicts[conflict.FileExists] = append(
-			conflicts[conflict.FileExists],
-			conflict.Conflict{
-				Sources: []string{change.RelSourcePath},
-				Target:  change.RelTargetPath,
-			},
-		)
-
-		change.Status = status.PathExists
 	}
 
 	return conflictDetected
 }
 
 func checkTargetFileChangingConflict(
-	change *file.Change,
-	changeIndex int,
-	seenPaths map[string]int,
-	autoFix bool,
+	ctx validationCtx,
 ) (conflictDetected bool) {
-	var ok bool
-
-	seenIndex, ok := seenPaths[change.RelSourcePath]
-	if ok {
-		conflictDetected = true
-	} else {
+	seenIndex, ok := ctx.seenPaths[ctx.change.RelSourcePath]
+	if !ok {
 		return
 	}
 
-	if autoFix {
-		changes[seenIndex], changes[changeIndex] = changes[changeIndex], changes[seenIndex]
-		return
-	}
+	conflictDetected = true
+	ctx.change.Status = status.TargetFileChanging
 
-	conflicts[conflict.TargetFileChanging] = append(
-		conflicts[conflict.TargetFileChanging],
-		conflict.Conflict{
-			Sources: []string{change.RelSourcePath},
-			Target:  change.RelTargetPath,
-		},
-	)
+	if ctx.autoFix {
+		changes[seenIndex], changes[ctx.changeIndex] = changes[ctx.changeIndex], changes[seenIndex]
+		ctx.change.Status = status.OK
+	}
 
 	return
 }
@@ -203,35 +179,20 @@ func checkTargetFileChangingConflict(
 // is not overwritten by another renamed file. Such conflicts are solved by
 // appending a number to the filename until no conflict is detected.
 func checkOverwritingPathConflict(
-	change *file.Change,
-	seenPaths map[string]int,
-	autoFix bool,
+	ctx validationCtx,
 ) (conflictDetected bool) {
-	if _, ok := seenPaths[change.RelTargetPath]; ok {
+	if _, ok := ctx.seenPaths[ctx.change.RelTargetPath]; ok {
 		conflictDetected = true
+		ctx.change.Status = status.OverwritingNewPath
 	}
 
 	if !conflictDetected {
 		return
 	}
 
-	if autoFix {
-		change.Target = newTarget(change)
-		change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
-		change.Status = status.OK
-
-		return
+	if ctx.autoFix {
+		ctx.change.AutoFixTarget(newTarget(ctx.change))
 	}
-
-	conflicts[conflict.OverwritingNewPath] = append(
-		conflicts[conflict.OverwritingNewPath],
-		conflict.Conflict{
-			Sources: []string{change.RelSourcePath},
-			Target:  change.RelTargetPath,
-		},
-	)
-
-	change.Status = status.OverwritingNewPath
 
 	return
 }
@@ -287,11 +248,13 @@ func isTargetLengthExceeded(target string) bool {
 // resulted in files or sub directories that end in trailing dots.
 // This conflict is automatically resolved by removing the trailing periods.
 func checkTrailingPeriodConflictInWindows(
-	change *file.Change,
-	autoFix bool,
+	ctx validationCtx,
 ) (conflictDetected bool) {
 	if runtime.GOOS == osutil.Windows {
-		pathComponents := strings.Split(change.Target, string(os.PathSeparator))
+		pathComponents := strings.Split(
+			ctx.change.Target,
+			string(os.PathSeparator),
+		)
 
 		for _, v := range pathComponents {
 			if v != strings.TrimRight(v, ".") {
@@ -301,31 +264,22 @@ func checkTrailingPeriodConflictInWindows(
 			}
 		}
 
-		if autoFix && conflictDetected {
+		if conflictDetected {
+			ctx.change.Status = status.TrailingPeriod
+		}
+
+		if ctx.autoFix && conflictDetected {
 			for j, v := range pathComponents {
 				s := strings.TrimRight(v, ".")
 				pathComponents[j] = s
 			}
 
-			change.Target = strings.Join(
+			ctx.change.AutoFixTarget(strings.Join(
 				pathComponents,
 				string(os.PathSeparator),
-			)
-			change.Status = status.OK
+			))
 
 			return
-		}
-
-		if conflictDetected {
-			conflicts[conflict.TrailingPeriod] = append(
-				conflicts[conflict.TrailingPeriod],
-				conflict.Conflict{
-					Sources: []string{change.RelSourcePath},
-					Target:  change.RelTargetPath,
-				},
-			)
-
-			change.Status = status.TrailingPeriod
 		}
 	}
 
@@ -337,63 +291,49 @@ func checkTrailingPeriodConflictInWindows(
 // 255 bytes on Unix). This conflict is automatically fixed by removing the
 // excess characters/bytes until the name is under the limit.
 func checkFileNameLengthConflict(
-	change *file.Change,
-	autoFix bool,
+	ctx validationCtx,
 ) (conflictDetected bool) {
-	exceeded := isTargetLengthExceeded(change.Target)
+	exceeded := isTargetLengthExceeded(ctx.change.Target)
 	if exceeded {
 		conflictDetected = true
+		ctx.change.Status = status.FilenameLengthExceeded
 
-		if autoFix {
-			if runtime.GOOS == osutil.Windows {
-				// trim filename so that it's less than 255 characters
-				filename := []rune(filepath.Base(change.Target))
-				ext := []rune(filepath.Ext(string(filename)))
-				f := []rune(
-					pathutil.StripExtension(string(filename)),
-				)
-				index := windowsMaxFileCharLength - len(ext)
-				f = f[:index]
-				change.Target = string(f) + string(ext)
-			} else {
-				// trim filename so that it's no more than 255 bytes
-				filename := filepath.Base(change.Target)
-				ext := filepath.Ext(filename)
-				fileNoExt := pathutil.StripExtension(filename)
-				index := unixMaxBytes - len([]byte(ext))
+		if !ctx.autoFix {
+			return
+		}
 
-				for {
-					if len([]byte(fileNoExt)) > index {
-						frune := []rune(fileNoExt)
-						fileNoExt = string(frune[:len(frune)-1])
-
-						continue
-					}
-
-					break
-				}
-
-				change.Target = fileNoExt + ext
-				change.Status = status.OK
-			}
+		if runtime.GOOS == osutil.Windows {
+			// trim filename so that it's less than 255 characters
+			filename := []rune(filepath.Base(ctx.change.Target))
+			ext := []rune(filepath.Ext(string(filename)))
+			f := []rune(
+				pathutil.StripExtension(string(filename)),
+			)
+			index := windowsMaxFileCharLength - len(ext)
+			f = f[:index]
+			ctx.change.AutoFixTarget(string(f) + string(ext))
 
 			return
 		}
 
-		cause := "255 bytes"
-		if runtime.GOOS == osutil.Windows {
-			cause = "255 characters"
+		// trim filename so that it's no more than 255 bytes
+		filename := filepath.Base(ctx.change.Target)
+		ext := filepath.Ext(filename)
+		fileNoExt := pathutil.StripExtension(filename)
+		index := unixMaxBytes - len([]byte(ext))
+
+		for {
+			if len([]byte(fileNoExt)) > index {
+				frune := []rune(fileNoExt)
+				fileNoExt = string(frune[:len(frune)-1])
+
+				continue
+			}
+
+			break
 		}
 
-		conflicts[conflict.MaxFilenameLengthExceeded] = append(
-			conflicts[conflict.MaxFilenameLengthExceeded],
-			conflict.Conflict{
-				Sources: []string{change.RelSourcePath},
-				Target:  change.RelTargetPath,
-				Cause:   cause,
-			},
-		)
-		change.Status = status.FilenameLengthExceeded
+		ctx.change.AutoFixTarget(fileNoExt + ext)
 	}
 
 	return
@@ -406,118 +346,105 @@ func checkFileNameLengthConflict(
 // ration (automatic directory creation).
 // Conflicts are automatically fixed by removing the culprit characters.
 func checkForbiddenCharactersConflict(
-	change *file.Change,
-	autoFix bool,
+	ctx validationCtx,
 ) (conflictDetected bool) {
-	forbiddenChars := checkForbiddenCharacters(change.Target)
+	forbiddenChars := checkForbiddenCharacters(ctx.change.Target)
 	if forbiddenChars != "" {
 		conflictDetected = true
+		ctx.change.Status = status.InvalidCharacters
 
-		if autoFix {
-			if runtime.GOOS == osutil.Windows {
-				change.Target = osutil.PartialWindowsForbiddenCharRegex.ReplaceAllString(
-					change.Target,
-					"",
-				)
-			}
-
-			if runtime.GOOS == osutil.Darwin {
-				change.Target = strings.ReplaceAll(
-					change.Target,
-					":",
-					"",
-				)
-			}
-
-			change.Status = status.OK
-
+		if !ctx.autoFix {
 			return
 		}
 
-		conflicts[conflict.InvalidCharacters] = append(
-			conflicts[conflict.InvalidCharacters],
-			conflict.Conflict{
-				Sources: []string{change.RelSourcePath},
-				Target:  change.RelTargetPath,
-				Cause:   forbiddenChars,
-			},
-		)
+		newTarget := ctx.change.Target
 
-		change.Status = status.InvalidCharacters
+		if runtime.GOOS == osutil.Windows {
+			newTarget = osutil.PartialWindowsForbiddenCharRegex.ReplaceAllString(
+				ctx.change.Target,
+				"",
+			)
+		}
+
+		if runtime.GOOS == osutil.Darwin {
+			newTarget = strings.ReplaceAll(
+				ctx.change.Target,
+				":",
+				"",
+			)
+		}
+
+		ctx.change.AutoFixTarget(newTarget)
 	}
 
 	return
 }
 
+func checkAndHandleConflict(ctx validationCtx, loopIndex *int) bool {
+	// Slice of conflict-checking functions with consistent signatures
+	checks := []func(ctx validationCtx) bool{
+		checkEmptyFilenameConflict,
+		checkTrailingPeriodConflictInWindows,
+		checkFileNameLengthConflict,
+		checkForbiddenCharactersConflict,
+		checkPathExistsConflict,
+		checkOverwritingPathConflict,
+		checkTargetFileChangingConflict,
+	}
+
+	for i, check := range checks {
+		detected := check(ctx)
+		if detected {
+			if ctx.autoFix {
+				if i == len(checks)-1 {
+					// Special handling for checkTargetFileChangingConflict
+					// Restart the iteration
+					*loopIndex = -1
+
+					clear(ctx.seenPaths)
+				} else {
+					*loopIndex-- // Go back an index for re-checking after fix
+				}
+			} else {
+				ctx.updateSeenPaths()
+			}
+
+			return true
+		}
+	}
+
+	return false
+}
+
 // detectConflicts checks the renamed files for various conflicts and
-// automatically fixes them if allowed.
-func detectConflicts(autoFix, allowOverwrites bool) {
-	seenPaths := make(map[string]int)
+// automatically fixes them if configured.
+func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
+	ctx := validationCtx{
+		autoFix:         autoFix,
+		allowOverwrites: allowOverwrites,
+		seenPaths:       make(map[string]int),
+	}
 
 	for i := 0; i < len(changes); i++ {
 		change := changes[i]
 
-		detected := checkEmptyFilenameConflict(change, autoFix)
-		if detected {
-			// no need to check for other conflicts here since the filename
-			// is empty. If auto fixed, no renaming will occur for the entry
+		ctx.change = change
+		ctx.changeIndex = i
+
+		if checkAndHandleConflict(ctx, &i) {
+			detected = true
 			continue
 		}
 
-		detected = checkTrailingPeriodConflictInWindows(change, autoFix)
-		if detected && autoFix {
-			// going back an index allows rechecking the path for conflicts once more
-			i--
-			continue
-		}
-
-		detected = checkFileNameLengthConflict(change, autoFix)
-		if detected && autoFix {
-			i--
-			continue
-		}
-
-		detected = checkForbiddenCharactersConflict(change, autoFix)
-		if detected && autoFix {
-			i--
-			continue
-		}
-
-		detected = checkPathExistsConflict(change, i, autoFix, allowOverwrites)
-		if detected && autoFix {
-			i--
-			continue
-		}
-
-		detected = checkOverwritingPathConflict(change, seenPaths, autoFix)
-		if detected && autoFix {
-			i--
-			continue
-		}
-
-		detected = checkTargetFileChangingConflict(
-			change,
-			i,
-			seenPaths,
-			autoFix,
-		)
-		if detected && autoFix {
-			// start over
-			i = -1
-
-			clear(seenPaths)
-
-			continue
-		}
-
-		if autoFix {
-			change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
-		}
-
-		if _, ok := seenPaths[change.RelTargetPath]; !ok {
-			seenPaths[change.RelTargetPath] = i
-		}
+		ctx.updateSeenPaths()
 	}
+
+	if detected && autoFix {
+		// Since all the conflicts would have been fixed
+		detected = false
+	}
+
+	return
 }
 
 // Validate detects and reports any conflicts that can occur while renaming a
@@ -525,16 +452,8 @@ func detectConflicts(autoFix, allowOverwrites bool) {
 func Validate(
 	matches []*file.Change,
 	autoFix, allowOverwrites bool,
-) conflict.Collection {
-	conflicts = make(conflict.Collection)
-
+) bool {
 	changes = matches
 
-	detectConflicts(autoFix, allowOverwrites)
-
-	return conflicts
-}
-
-func GetConflicts() conflict.Collection {
-	return conflicts
+	return detectConflicts(autoFix, allowOverwrites)
 }

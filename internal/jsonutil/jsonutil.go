@@ -5,19 +5,16 @@ import (
 	"time"
 
 	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/conflict"
 	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/validate"
 )
 
 // Output represents the structure of the output produced by the
 // `--json` flag. It is also used for backup files.
 type Output struct {
-	Conflicts  conflict.Collection `json:"conflicts,omitempty"`
-	WorkingDir string              `json:"working_dir"`
-	Date       string              `json:"date"`
-	Changes    []*file.Change      `json:"changes"`
-	DryRun     bool                `json:"dry_run"`
+	WorkingDir string         `json:"working_dir"`
+	Date       string         `json:"date"`
+	Changes    []*file.Change `json:"changes"`
+	DryRun     bool           `json:"dry_run"`
 }
 
 func GetOutput(
@@ -30,7 +27,6 @@ func GetOutput(
 		Date:       conf.Date.Format(time.RFC3339),
 		DryRun:     !conf.Exec,
 		Changes:    changes,
-		Conflicts:  validate.GetConflicts(),
 	}
 
 	// prevent empty matches from being encoded as `null`

@@ -12,4 +12,5 @@ const (
 	OverwritingNewPath     Status = "overwriting newly renamed path"
 	InvalidCharacters      Status = "invalid characters present: (%s)"
 	FilenameLengthExceeded Status = "max file name length exceeded: (%s)"
+	TargetFileChanging     Status = "the target file is changing"
 )

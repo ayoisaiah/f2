@@ -2,6 +2,7 @@ package file
 
 import (
 	"log/slog"
+	"path/filepath"
 
 	"github.com/ayoisaiah/f2/internal/status"
 )
@@ -39,4 +40,10 @@ func (c Change) LogValue() slog.Value {
 		slog.Bool("is_dir", c.IsDir),
 		slog.Bool("will_overwrite", c.WillOverwrite),
 	)
+}
+
+func (c *Change) AutoFixTarget(newTarget string) {
+	c.Target = newTarget
+	c.RelTargetPath = filepath.Join(c.BaseDir, c.Target)
+	c.Status = status.OK
 }

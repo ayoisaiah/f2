@@ -4,8 +4,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/conflict"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/jinzhu/copier"
+
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/ayoisaiah/f2/internal/testutil"
 	"github.com/ayoisaiah/f2/validate"
 )
@@ -20,6 +23,10 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 
 		for j := range tc.Changes {
 			ch := tc.Changes[j]
+
+			if ch.Status == "" {
+				cases[i].Changes[j].Status = status.OK
+			}
 
 			cases[i].Changes[j].OriginalSource = ch.Source
 			cases[i].Changes[j].RelSourcePath = filepath.Join(
@@ -43,16 +50,31 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 
 			config := testutil.GetConfig(t, &tc, ".")
 
-			conflicts := validate.Validate(
+			var expectedChanges []*file.Change
+
+			err := copier.Copy(&expectedChanges, &tc.Changes)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for j := range tc.Changes {
+				tc.Changes[j].Status = status.OK
+			}
+
+			conflictDetected := validate.Validate(
 				tc.Changes,
 				config.AutoFixConflicts,
 				config.AllowOverwrites,
 			)
 
-			testutil.CompareConflicts(t, tc.Conflicts, conflicts)
+			if tc.ConflictDetected && !conflictDetected {
+				spew.Dump(tc.Changes, conflictDetected)
+				t.Fatal("expected a conflict, but got none")
+			}
 
-			if len(tc.Want) != 0 {
-				// tc.Changes is modified in place when auto fixing conflicts
+			if tc.ConflictDetected {
+				testutil.CompareChanges(t, expectedChanges, tc.Changes)
+			} else {
 				testutil.CompareTargetPath(t, tc.Want, tc.Changes)
 			}
 		})
@@ -68,16 +90,10 @@ func TestValidate(t *testing.T) {
 					Source:  "1984.pdf",
 					Target:  "",
 					BaseDir: "ebooks",
+					Status:  status.EmptyFilename,
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.EmptyFilename: []conflict.Conflict{
-					{
-						Sources: []string{"ebooks/1984.pdf"},
-						Target:  "ebooks",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "detect overwriting newly renamed path conflict",
@@ -90,17 +106,11 @@ func TestValidate(t *testing.T) {
 				{
 					Source:  "index.ts",
 					Target:  "index.svelte",
+					Status:  status.OverwritingNewPath,
 					BaseDir: "dev",
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.OverwritingNewPath: []conflict.Conflict{
-					{
-						Sources: []string{"dev/index.ts"},
-						Target:  "dev/index.svelte",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "report conflict when target path exists but changes AFTER the overwriting file is renamed",
@@ -108,28 +118,17 @@ func TestValidate(t *testing.T) {
 				{
 					Source:  "dsc-001.arw",
 					Target:  "dsc-002.arw",
+					Status:  status.PathExists,
 					BaseDir: "testdata/images",
 				},
 				{
 					Source:  "dsc-002.arw",
 					Target:  "dsc-003.arw",
+					Status:  status.TargetFileChanging,
 					BaseDir: "testdata/images",
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.FileExists: []conflict.Conflict{
-					{
-						Sources: []string{"testdata/images/dsc-001.arw"},
-						Target:  "testdata/images/dsc-002.arw",
-					},
-				},
-				conflict.TargetFileChanging: []conflict.Conflict{
-					{
-						Sources: []string{"testdata/images/dsc-002.arw"},
-						Target:  "testdata/images/dsc-003.arw",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "don't report conflict if target file exists but changes BEFORE the overwriting file is renamed",
@@ -149,7 +148,6 @@ func TestValidate(t *testing.T) {
 				"testdata/images/dsc-000.arw",
 				"testdata/images/dsc-001.arw",
 			},
-			Conflicts: make(conflict.Collection),
 		},
 		{
 			Name: "auto fix path exists conflict",
@@ -163,8 +161,7 @@ func TestValidate(t *testing.T) {
 			Want: []string{
 				"testdata/images/dsc-002(1).arw",
 			},
-			Conflicts: make(conflict.Collection),
-			Args:      autoFixArgs,
+			Args: autoFixArgs,
 		},
 		{
 			Name: "auto fix overwriting several files conflict",
@@ -202,8 +199,7 @@ func TestValidate(t *testing.T) {
 				"ebooks/banned/1.pdf",
 				"ebooks/banned/1(1).pdf",
 			},
-			Conflicts: make(conflict.Collection),
-			Args:      autoFixArgs,
+			Args: autoFixArgs,
 		},
 		{
 			Name: "auto fix overwriting files conflict with custom pattern",
@@ -241,8 +237,7 @@ func TestValidate(t *testing.T) {
 				"ebooks/hisFile_01.pdf",
 				"ebooks/myFile_01.pdf",
 			},
-			Conflicts: make(conflict.Collection),
-			Args:      append(autoFixArgs, "--fix-conflicts-pattern", "_%02d"),
+			Args: append(autoFixArgs, "--fix-conflicts-pattern", "_%02d"),
 		},
 		{
 			Name: "detect if target file is changing later",
@@ -254,24 +249,15 @@ func TestValidate(t *testing.T) {
 				{
 					Source: "02.txt",
 					Target: "01.txt",
+					Status: status.TargetFileChanging,
 				},
 				{
 					Source: "01.txt",
 					Target: "00.txt",
+					Status: status.TargetFileChanging,
 				},
 			},
-			Conflicts: conflict.Collection{
-				conflict.TargetFileChanging: []conflict.Conflict{
-					{
-						Sources: []string{"02.txt"},
-						Target:  "01.txt",
-					},
-					{
-						Sources: []string{"01.txt"},
-						Target:  "00.txt",
-					},
-				},
-			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "auto fix target file changing later",
@@ -289,8 +275,8 @@ func TestValidate(t *testing.T) {
 					Target: "00.txt",
 				},
 			},
-			Conflicts: make(conflict.Collection),
-			Args:      autoFixArgs,
+			Want: []string{"00.txt", "01.txt", "02.txt"},
+			Args: autoFixArgs,
 		},
 	}
 
