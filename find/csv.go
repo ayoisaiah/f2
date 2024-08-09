@@ -1,8 +1,9 @@
 package find
 
 import (
+	"bufio"
 	"encoding/csv"
-	"io/fs"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +22,8 @@ func readCSVFile(pathToCSV string) ([][]string, error) {
 
 	defer f.Close()
 
-	csvReader := csv.NewReader(f)
+	// Use bufio for potential performance gains with large CSV files
+	csvReader := csv.NewReader(bufio.NewReader(f))
 
 	records, err := csvReader.ReadAll()
 	if err != nil {
@@ -32,7 +34,7 @@ func readCSVFile(pathToCSV string) ([][]string, error) {
 }
 
 // handleCSV reads the provided CSV file, and finds all the valid candidates
-// for replacement.
+// for renaming.
 func handleCSV(conf *config.Config) ([]*file.Change, error) {
 	processed := make(map[string]bool)
 
@@ -43,13 +45,7 @@ func handleCSV(conf *config.Config) ([]*file.Change, error) {
 		return nil, err
 	}
 
-	csvAbsPath, err := filepath.Abs(conf.CSVFilename)
-	if err != nil {
-		return nil, err
-	}
-
 	findSlice := make([]string, 0, len(records))
-
 	replacementSlice := make([]string, 0, len(records))
 
 	for _, record := range records {
@@ -59,71 +55,60 @@ func handleCSV(conf *config.Config) ([]*file.Change, error) {
 
 		source := strings.TrimSpace(record[0])
 
-		absSourcePath := filepath.Join(filepath.Dir(csvAbsPath), source)
-
-		fileInfo, err2 := os.Stat(absSourcePath)
-		if err2 != nil {
-			return nil, err2
+		absSourcePath, absErr := filepath.Abs(source)
+		if absErr != nil {
+			return nil, absErr
 		}
 
-		findSlice = append(findSlice, fileInfo.Name())
+		fileInfo, statErr := os.Stat(absSourcePath)
+		if statErr != nil {
+			// Skip missing source files
+			if errors.Is(statErr, os.ErrNotExist) {
+				continue
+			}
+			return nil, statErr
+		}
+
+		fileName := fileInfo.Name()
 
 		sourceDir := filepath.Dir(absSourcePath)
 
-		var dirEntry []fs.DirEntry
-
-		dirEntry, err2 = os.ReadDir(sourceDir)
-		if err2 != nil {
-			return nil, err2
+		// Ensure that the file is not already processed in the case of
+		// duplicate rows
+		if processed[absSourcePath] {
+			continue
 		}
 
-		for _, entry := range dirEntry {
-			entryName := entry.Name()
+		processed[absSourcePath] = true
 
-			if entryName != fileInfo.Name() {
-				continue
-			}
-
-			relPath := filepath.Join(sourceDir, entryName)
-
-			// Ensure that the file is not already processed in the case of
-			// duplicate rows
-			if processed[relPath] {
-				break
-			}
-
-			processed[relPath] = true
-
-			fc := &file.Change{
-				BaseDir:        sourceDir,
-				IsDir:          entry.IsDir(),
-				Source:         entryName,
-				OriginalSource: entryName,
-				RelSourcePath:  relPath,
-				CSVRow:         record,
-			}
-
-			changes = append(changes, fc)
-
-			break
+		match := &file.Change{
+			BaseDir:        sourceDir,
+			IsDir:          fileInfo.IsDir(),
+			Source:         fileName,
+			OriginalSource: fileName,
+			RelSourcePath:  absSourcePath,
+			CSVRow:         record,
 		}
 
+		changes = append(changes, match)
+
+		var target string
 		if len(record) > 1 {
-			target := strings.TrimSpace(record[1])
-
-			replacementSlice = append(replacementSlice, target)
+			target = strings.TrimSpace(record[1])
 		}
+
+		findSlice = append(findSlice, fileName)
+
+		replacementSlice = append(replacementSlice, target)
 	}
 
-	if len(conf.ReplacementSlice) == 0 {
-		if len(conf.FindSlice) == 0 {
-			config.SetFindSlice(findSlice)
-			config.SetReplacementSlice(replacementSlice)
+	if len(conf.ReplacementSlice) == 0 && len(conf.FindSlice) == 0 {
+		config.SetFindSlice(findSlice)
+		config.SetReplacementSlice(replacementSlice)
 
-			err = config.SetFindStringRegex(0)
-			if err != nil {
-				return nil, err
-			}
+		err = config.SetFindStringRegex(0)
+		if err != nil {
+			return nil, err
 		}
 	}
 

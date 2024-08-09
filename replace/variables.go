@@ -1037,7 +1037,7 @@ func replaceVariables(
 			sourceName = pathutil.StripExtension(sourceName)
 		}
 
-		matches := conf.SearchRegex.FindAllString(sourceName, -1)
+		matches := conf.Search.Regex.FindAllString(sourceName, -1)
 
 		out, err := replaceTransformVars(
 			change.Target,

@@ -45,6 +45,12 @@ type ExiftoolOpts struct {
 	ExtractEmbedded bool   `long:"extractEmbedded" json:"extract_embedded"` // corresponds to the `-extractEmbedded` flag
 }
 
+type Search struct {
+	Regex *regexp.Regexp `json:"regex"`
+	// Replacement index
+	Index int `json:"index"`
+}
+
 // Config represents the program configuration.
 type Config struct {
 	Date                     time.Time      `json:"date"`
@@ -53,7 +59,7 @@ type Config struct {
 	Stdout                   io.Writer      `json:"-"`
 	ExcludeDirRegex          *regexp.Regexp `json:"exclude_dir_regex"`
 	ExcludeRegex             *regexp.Regexp `json:"exclude_regex"`
-	SearchRegex              *regexp.Regexp `json:"search_regex"`
+	Search                   *Search        `json:"search_regex"`
 	FixConflictsPatternRegex *regexp.Regexp `json:"fix_conflicts_pattern_regex"`
 	Sort                     string         `json:"sort"`
 	Replacement              string         `json:"replacement"`
@@ -116,7 +122,10 @@ func (c *Config) SetFindStringRegex(replacementIndex int) error {
 		return err
 	}
 
-	c.SearchRegex = re
+	c.Search = &Search{
+		Regex: re,
+		Index: replacementIndex,
+	}
 
 	return nil
 }

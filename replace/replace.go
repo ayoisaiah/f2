@@ -621,7 +621,7 @@ func regexReplace(
 // with the replacement string.
 func replaceString(conf *config.Config, originalName string) string {
 	return regexReplace(
-		conf.SearchRegex,
+		conf.Search.Regex,
 		originalName,
 		conf.Replacement,
 		conf.ReplaceLimit,
@@ -645,6 +645,16 @@ func replaceMatches(
 
 	for i := range matches {
 		change := matches[i]
+
+		// FIXME: Produces wrong result when a sort is provided
+		if len(change.CSVRow) > 0 && i != conf.Search.Index {
+			if change.Target == "" {
+				matches[i].Target = change.Source
+			}
+
+			continue
+		}
+
 		change.Position = i
 		originalName := change.Source
 		fileExt := filepath.Ext(originalName)

@@ -129,7 +129,7 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 				continue
 			}
 
-			if conf.SearchRegex.MatchString(fileInfo.Name()) {
+			if conf.Search.Regex.MatchString(fileInfo.Name()) {
 				match := createFileChange(rootPath, fileInfo)
 
 				if !shouldFilter(conf, match) {
@@ -192,7 +192,7 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 					fileName = pathutil.StripExtension(fileName)
 				}
 
-				if conf.SearchRegex.MatchString(fileName) {
+				if conf.Search.Regex.MatchString(fileName) {
 					fileInfo, infoErr := entry.Info()
 					if infoErr != nil {
 						return infoErr
