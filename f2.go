@@ -21,84 +21,84 @@ var errConflictDetected = errors.New(
 	"resolve conflicts before proceeding or use -F/--fix-conflicts to auto-fix",
 )
 
-// run starts a new renaming operation.
-func run(ctx *cli.Context) error {
-	// TODO: Log the final context
-	conf, err := config.Init(ctx)
+// execute initiates a new renaming operation based on the provided CLI context
+func execute(ctx *cli.Context) error {
+	appConfig := config.Get()
+
+	report.Stdout = appConfig.Stdout
+	report.Stderr = appConfig.Stderr
+
+	if appConfig.Revert {
+		return rename.Undo(appConfig)
+	}
+
+	findMatches, err := find.Find(appConfig)
 	if err != nil {
 		return err
 	}
 
-	slog.Info("configuration loaded", slog.Any("config", conf))
-
-	report.Stdout = conf.Stdout
-	report.Stderr = conf.Stderr
-
-	if conf.Revert {
-		return rename.Undo(conf)
-	}
-
-	matches, err := find.Find(conf)
-	if err != nil {
-		return err
-	}
-
-	if len(matches) == 0 {
+	if len(findMatches) == 0 {
 		slog.Info("find matches completed: no matches found")
-		report.NoMatches(conf.JSON)
+		report.NoMatches(appConfig.JSON)
 
 		return nil
 	}
 
 	slog.Info(
-		fmt.Sprintf("find matches completed: found %d matches", len(matches)),
-		slog.Any("find_matches", matches),
-		slog.Int("num_matches", len(matches)),
+		fmt.Sprintf(
+			"find matches completed: found %d matches",
+			len(findMatches),
+		),
+		slog.Any("find_matches", findMatches),
+		slog.Int("num_matches", len(findMatches)),
 	)
 
-	changes, err := replace.Replace(conf, matches)
+	changes, err := replace.Replace(appConfig, findMatches)
 	if err != nil {
 		return err
 	}
 
 	slog.Info("bulk renaming completed", slog.Any("changes", changes))
 
-	conflictDetected := validate.Validate(
+	hasConflicts := validate.Validate(
 		changes,
-		conf.AutoFixConflicts,
-		conf.AllowOverwrites,
+		appConfig.AutoFixConflicts,
+		appConfig.AllowOverwrites,
 	)
 
-	if conflictDetected {
-		report.NonInteractive(changes, conflictDetected)
+	if hasConflicts {
+		report.NonInteractive(changes, hasConflicts)
 
 		return errConflictDetected
 	}
 
-	if !conf.Exec {
-		report.Report(conf, changes)
+	if !appConfig.Exec {
+		report.Report(appConfig, changes)
 		return nil
 	}
 
-	err = rename.Rename(conf, changes)
+	err = rename.Rename(appConfig, changes)
 	if err != nil {
 		return err
 	}
 
-	if conf.Print {
+	if appConfig.Print {
 		for i := range changes {
 			fmt.Println(changes[i].RelTargetPath)
 		}
 	}
 
 	return nil
-
-	return rename.Rename(conf, changes)
 }
 
-func New(reader io.Reader, writer io.Writer) *cli.App {
-	f2App := app.Get(reader, writer)
-	f2App.Action = run
+// New creates a new CLI application for f2
+func New(reader io.Reader, writer io.Writer) (*cli.App, error) {
+	renamer, err := app.Get(reader, writer)
+	if err != nil {
+		return nil, err
+	}
 
-	return f2App
+	renamer.Action = execute
+
+	return renamer, nil
 }

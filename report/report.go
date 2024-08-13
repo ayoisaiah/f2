@@ -15,6 +15,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/jsonutil"
+	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/internal/status"
 )
 
@@ -22,6 +23,12 @@ var (
 	Stdout io.Writer = os.Stdout
 	Stderr io.Writer = os.Stderr
 )
+
+func ExitWithErr(err error) {
+	pterm.EnableOutput()
+	pterm.Fprintln(Stderr, pterm.Error.Sprint(err))
+	os.Exit(int(osutil.ExitError))
+}
 
 func BackupFailed(err error) {
 	pterm.Fprintln(Stderr,
@@ -149,6 +156,7 @@ func Interactive(
 
 // NonInteractive prints a report of the renaming changes to be made without
 // prompting the user.
+// TODO: Change behavior if output is being piped
 func NonInteractive(
 	fileChanges []*file.Change,
 	conflictDetected bool,

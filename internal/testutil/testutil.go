@@ -166,7 +166,11 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 
 	var conf *config.Config
 
-	f2App := app.Get(os.Stdin, &buf)
+	f2App, err := app.Get(os.Stdin, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	f2App.Action = func(ctx *cli.Context) error {
 		var err error
 
@@ -176,7 +180,7 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 	}
 
 	// Initialize the config
-	err := f2App.Run(args)
+	err = f2App.Run(args)
 	if err != nil {
 		t.Fatal(err)
 	}

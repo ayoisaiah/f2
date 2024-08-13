@@ -3,21 +3,18 @@ package main
 import (
 	"os"
 
-	"github.com/pterm/pterm"
-
 	"github.com/ayoisaiah/f2"
-	"github.com/ayoisaiah/f2/app"
+	"github.com/ayoisaiah/f2/report"
 )
 
 func main() {
-	app.InitLogger()
-
-	f2App := f2.New(os.Stdin, os.Stdout)
-
-	err := f2App.Run(os.Args)
+	renamer, err := f2.New(os.Stdin, os.Stdout)
 	if err != nil {
-		pterm.EnableOutput()
-		pterm.Fprintln(os.Stderr, pterm.Error.Sprint(err))
-		os.Exit(1)
+		report.ExitWithErr(err)
+	}
+
+	err = renamer.Run(os.Args)
+	if err != nil {
+		report.ExitWithErr(err)
 	}
 }

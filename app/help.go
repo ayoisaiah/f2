@@ -7,96 +7,394 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func helpText() string {
-	description := fmt.Sprintf(
-		"%s\n\t\t{{.Usage}}\n\n",
-		pterm.Yellow("DESCRIPTION"),
-	)
-	usage := fmt.Sprintf(
-		"%s\n\t\t{{.HelpName}} {{if .UsageText}}{{ .UsageText }}{{end}}\n\n",
-		pterm.Yellow("USAGE"),
-	)
-	author := fmt.Sprintf(
-		"{{if len .Authors}}%s\n\t\t{{range .Authors}}{{ . }}{{end}}{{end}}\n\n",
-		pterm.Yellow("AUTHOR"),
+const usageText = `f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
+  f2 FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]
+  command | f2 FLAGS [OPTIONS]
+  command | f2 FIND [REPLACE]`
+
+func helpText(app *cli.App) string {
+	flagCSVHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagCSV.Name),
+		flagCSV.GetUsage(),
 	)
 
-	version := fmt.Sprintf(
-		"{{if .Version}}%s\n\t\t{{.Version}}{{end}}\n\n",
-		pterm.Yellow("VERSION"),
-	)
-	flags := fmt.Sprintf(
-		"{{if .VisibleFlags}}%s\n{{range .VisibleFlags}}{{ if (eq .Name `find` `undo` `replace` `csv`) }}\t\t{{if .Aliases}}-{{range $element := .Aliases}}%s,{{end}}{{end}} %s\n\t\t\t\t{{.Usage}}\n\n{{end}}{{end}}",
-		pterm.Yellow("FLAGS"),
-		pterm.Green("{{$element}}"),
-		pterm.Green("--{{.Name}} {{.DefaultText}}"),
-	)
-	options := fmt.Sprintf(
-		"%s\n{{range .VisibleFlags}}{{ if not (eq .Name `find` `undo` `replace` `csv`) }}\t\t{{if .Aliases}}-{{range $element := .Aliases}}%s,{{end}}{{end}} %s\n\t\t\t\t{{.Usage}}\n\n{{end}}{{end}}{{end}}",
-		pterm.Yellow("OPTIONS"),
-		pterm.Green("{{$element}}"),
-		pterm.Green("--{{.Name}} {{.DefaultText}}"),
+	flagFindHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagFind.Aliases[0]),
+		pterm.Green("--", flagFind.Name),
+		flagFind.GetUsage(),
 	)
 
-	env := fmt.Sprintf(
-		"%s\n\t\t%s\n\n",
-		pterm.Yellow("ENVIRONMENTAL VARIABLES"),
+	flagReplaceHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagReplace.Aliases[0]),
+		pterm.Green("--", flagReplace.Name),
+		flagReplace.GetUsage(),
+	)
+
+	flagUndoHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagUndo.Aliases[0]),
+		pterm.Green("--", flagUndo.Name),
+		flagUndo.GetUsage(),
+	)
+
+	flagAllowOverwritesHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagAllowOverwrites.Name),
+		flagAllowOverwrites.GetUsage(),
+	)
+
+	flagDebugHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagDebug.Name),
+		flagDebug.GetUsage(),
+	)
+
+	flagExcludeHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagExclude.Aliases[0]),
+		pterm.Green("--", flagExclude.Name),
+		flagExclude.GetUsage(),
+	)
+
+	flagExcludeDirHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagExcludeDir.Name),
+		flagExcludeDir.GetUsage(),
+	)
+
+	flagExiftoolOptsHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagExiftoolOpts.Name),
+		flagExiftoolOpts.GetUsage(),
+	)
+
+	flagExecHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagExec.Aliases[0]),
+		pterm.Green("--", flagExec.Name),
+		flagExec.GetUsage(),
+	)
+
+	flagFixConflictsHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagFixConflicts.Aliases[0]),
+		pterm.Green("--", flagFixConflicts.Name),
+		flagFixConflicts.GetUsage(),
+	)
+
+	flagFixConflictsPatternHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagFixConflictsPattern.Name),
+		flagFixConflictsPattern.GetUsage(),
+	)
+
+	flagHiddenHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagHidden.Aliases[0]),
+		pterm.Green("--", flagHidden.Name),
+		flagHidden.GetUsage(),
+	)
+
+	flagIncludeDirHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagIncludeDir.Aliases[0]),
+		pterm.Green("--", flagIncludeDir.Name),
+		flagIncludeDir.GetUsage(),
+	)
+
+	flagIgnoreCaseHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagIgnoreCase.Aliases[0]),
+		pterm.Green("--", flagIgnoreCase.Name),
+		flagIgnoreCase.GetUsage(),
+	)
+
+	flagIgnoreExtHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagIgnoreExt.Aliases[0]),
+		pterm.Green("--", flagIgnoreExt.Name),
+		flagIgnoreExt.GetUsage(),
+	)
+
+	flagInteractiveHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagInteractive.Name),
+		flagInteractive.GetUsage(),
+	)
+
+	flagJSONHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagJSON.Name),
+		flagJSON.GetUsage(),
+	)
+
+	flagMaxDepthHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagMaxDepth.Aliases[0]),
+		pterm.Green("--", flagMaxDepth.Name),
+		flagMaxDepth.GetUsage(),
+	)
+
+	flagNoColorHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagNoColor.Name),
+		flagNoColor.GetUsage(),
+	)
+
+	flagPrintHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagPrint.Name),
+		flagPrint.GetUsage(),
+	)
+
+	flagOnlyDirHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagOnlyDir.Aliases[0]),
+		pterm.Green("--", flagOnlyDir.Name),
+		flagOnlyDir.GetUsage(),
+	)
+
+	flagQuietHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagQuiet.Name),
+		flagQuiet.GetUsage(),
+	)
+
+	flagRecursiveHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagRecursive.Aliases[0]),
+		pterm.Green("--", flagRecursive.Name),
+		flagRecursive.GetUsage(),
+	)
+
+	flagReplaceLimitHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagReplaceLimit.Aliases[0]),
+		pterm.Green("--", flagReplaceLimit.Name),
+		flagReplaceLimit.GetUsage(),
+	)
+
+	flagResetIndexPerDirHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagResetIndexPerDir.Name),
+		flagResetIndexPerDir.GetUsage(),
+	)
+
+	flagSortHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagSort.Name),
+		flagSort.GetUsage(),
+	)
+
+	flagSortrHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagSortr.Name),
+		flagSortr.GetUsage(),
+	)
+
+	flagSortPerDirHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagSortPerDir.Name),
+		flagSortPerDir.GetUsage(),
+	)
+
+	flagStringModeHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagStringMode.Aliases[0]),
+		pterm.Green("--", flagStringMode.Name),
+		flagStringMode.GetUsage(),
+	)
+
+	flagVerboseHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagVerbose.Aliases[0]),
+		pterm.Green("--", flagVerbose.Name),
+		flagVerbose.GetUsage(),
+	)
+
+	return fmt.Sprintf(`%s %s
+%s
+
+%s
+
+Project repository: https://github.com/ayoisaiah/f2
+
+%s
+  %s
+
+%s
+  %s
+    A regular expression pattern used for matching files and directories.
+    It accepts the syntax defined by the RE2 standard.
+
+  %s
+    The replacement string which replaces each match in the file name.
+    It supports capture variables, built-in variables, and exiftool variables.
+    If omitted, it defaults to an empty string.
+
+  %s
+    Optionally provide one or more files and directories to search for matches. 
+		If omitted, it searches the current directory alone. Also, note that 
+		directories are not searched recursively.
+
+%s
+  %s
+
+  %s
+
+	%s
+
+	%s
+
+%s
+	%s
+	
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+	%s
+
+%s
+	%s
+
+%s
+  Read the manual at https://github.com/ayoisaiah/f2/wiki`,
+		app.Name,
+		app.Version,
+		app.Authors[0].String(),
+		app.Usage,
+		pterm.Bold.Sprintf("USAGE"),
+		usageText,
+		pterm.Bold.Sprintf("POSITIONAL ARGUMENTS"),
+		pterm.Green("<FIND>"),
+		pterm.Green("[REPLACE]"),
+		pterm.Green("[PATHS]"),
+		pterm.Bold.Sprintf("FLAGS"),
+		flagCSVHelp,
+		flagFindHelp,
+		flagReplaceHelp,
+		flagUndoHelp,
+		pterm.Bold.Sprintf("OPTIONS"),
+		flagAllowOverwritesHelp,
+		flagDebugHelp,
+		flagExcludeHelp,
+		flagExcludeDirHelp,
+		flagExiftoolOptsHelp,
+		flagExecHelp,
+		flagFixConflictsHelp,
+		flagFixConflictsPatternHelp,
+		flagHiddenHelp,
+		flagIncludeDirHelp,
+		flagIgnoreCaseHelp,
+		flagIgnoreExtHelp,
+		flagInteractiveHelp,
+		flagJSONHelp,
+		flagMaxDepthHelp,
+		flagNoColorHelp,
+		flagPrintHelp,
+		flagOnlyDirHelp,
+		flagQuietHelp,
+		flagRecursiveHelp,
+		flagReplaceLimitHelp,
+		flagResetIndexPerDirHelp,
+		flagSortHelp,
+		flagSortrHelp,
+		flagSortPerDirHelp,
+		flagStringModeHelp,
+		flagVerboseHelp,
+		pterm.Bold.Sprintf("ENVIRONMENTAL VARIABLES"),
 		envHelp(),
+		pterm.Bold.Sprintf("LEARN MORE"),
 	)
-
-	docs := fmt.Sprintf(
-		"%s\n\t\t%s\n\n",
-		pterm.Yellow("DOCUMENTATION"),
-		"https://github.com/ayoisaiah/f2/wiki",
-	)
-	website := fmt.Sprintf(
-		"%s\n\t\thttps://github.com/ayoisaiah/f2",
-		pterm.Yellow("WEBSITE"),
-	)
-
-	return description + usage + author + version + flags + options + env + docs + website
 }
 
 func envHelp() string {
-	return `
-  F2_DEFAULT_OPTS: override the default options according to your preferences. 
-      For example, you can enable execute mode and ignore file extensions by default:
-      'export F2_DEFAULT_OPTS=--exec --ignore-ext'.
+	return fmt.Sprintf(`%s
+		Override the default options according to your preferences. For example, 
+		you can enable execute mode and ignore file extensions by default:
 
-  F2_NO_COLOR, NO_COLOR: set to any value to disable coloured output.
+		export F2_DEFAULT_OPTS=--exec --ignore-ext
 
-  F2_UPDATE_NOTIFIER: set to any value to periodically check for updates.`
+	%s, %s
+		Set to any value to disable coloured output.
+
+	%s
+		Enable debug mode.`,
+		pterm.Green("F2_DEFAULT_OPTS"),
+		pterm.Green("F2_NO_COLOR"),
+		pterm.Green("NO_COLOR"),
+		pterm.Green("F2_DEBUG"),
+	)
 }
 
 func ShortHelp(app *cli.App) string {
-	heading := fmt.Sprintf(
-		"F2 — Command-line bulk renaming tool [version %s]\n\n",
-		app.Version,
+	return fmt.Sprintf(
+		`The batch renaming tool you'll actually enjoy using.
+
+%s
+  %s
+
+%s
+  $ f2 -f 'jpeg' -r 'jpg'
+  $ f2 js ts
+  $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
+
+%s
+  Use f2 --help to view the command-line options.
+  Read the manual at https://github.com/ayoisaiah/f2/wiki`,
+		pterm.Bold.Sprintf("USAGE"),
+		usageText,
+		pterm.Bold.Sprintf("EXAMPLES"),
+		pterm.Bold.Sprintf("LEARN MORE"),
 	)
-
-	usage := fmt.Sprintf("Usage: %s\n", app.UsageText)
-
-	description := `
-F2 helps you organise your filesystem through batch renaming.
-The simplest usage is to do a basic find and replace:
-
-$ f2 -f Screenshot -r Image
-+--------------------+---------------+--------+
-|       INPUT        |    OUTPUT     | STATUS |
-+--------------------+---------------+--------+
-| Screenshot (1).png | Image (1).png | ok     |
-| Screenshot (2).png | Image (2).png | ok     |
-| Screenshot (3).png | Image (3).png | ok     |
-+--------------------+---------------+--------+
-
-The argument to -f is the find string, while the one to -r is the
-replacement string. The current directory is used by default, but
-you can pass relative or absolute paths to other files and
-directories.
-
-F2 supports many command-line options. Use the --help flag to examine
-the full list. For extensive usage examples, visit the project wiki:
-https://github.com/ayoisaiah/f2/wiki`
-
-	return heading + usage + description
 }

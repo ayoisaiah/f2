@@ -15,6 +15,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
+	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 )
 
@@ -83,6 +84,7 @@ type Config struct {
 	Verbose                  bool           `json:"verbose"`
 	IncludeHidden            bool           `json:"include_hidden"`
 	Quiet                    bool           `json:"quiet"`
+	NoColor                  bool           `json:"no_color"`
 	AutoFixConflicts         bool           `json:"auto_fix_conflicts"`
 	Exec                     bool           `json:"exec"`
 	StringLiteralMode        bool           `json:"string_literal_mode"`
@@ -231,6 +233,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.FixConflictsPattern = ctx.String("fix-conflicts-pattern")
 	c.ResetIndexPerDir = ctx.Bool("reset-index-per-dir")
 	c.SortPerDir = ctx.Bool("sort-per-dir")
+	c.NoColor = ctx.Bool("no-color")
 
 	if c.FixConflictsPattern == "" {
 		c.FixConflictsPattern = defaultFixConflictsPattern
@@ -326,21 +329,8 @@ func Init(ctx *cli.Context) (*Config, error) {
 		FilesAndDirPaths: []string{"."},
 	}
 
-	v, exists := ctx.App.Metadata["reader"]
-	if exists {
-		r, ok := v.(io.Reader)
-		if ok {
-			conf.Stdin = r
-		}
-	}
-
-	v, exists = ctx.App.Metadata["writer"]
-	if exists {
-		w, ok := v.(io.Writer)
-		if ok {
-			conf.Stdout = w
-		}
-	}
+	conf.Stdout = ctx.App.Writer
+	conf.Stdin = ctx.App.Reader
 
 	var err error
 
@@ -365,6 +355,14 @@ func Init(ctx *cli.Context) (*Config, error) {
 	conf.WorkingDir, err = filepath.Abs(".")
 	if err != nil {
 		return nil, err
+	}
+
+	if conf.NoColor {
+		pterm.DisableStyling()
+	}
+
+	if conf.Quiet {
+		pterm.DisableOutput()
 	}
 
 	return conf, nil
