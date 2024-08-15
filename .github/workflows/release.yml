@@ -2,7 +2,7 @@ name: Release F2
 
 env:
   dev_tag: nightly
-  go_version: 1.22
+  go_version: 1.23
   REPO_OWNER: ${{ vars.REPO_OWNER }}
   REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
   REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
@@ -14,13 +14,13 @@ env:
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: 0 0 * * *
   workflow_dispatch:
   push:
     branches:
       - master
     tags:
-      - 'v*'
+      - v*
   pull_request:
 
 jobs:
