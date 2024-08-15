@@ -6,7 +6,6 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/barasher/go-exiftool v1.10.0
 	github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086
-	github.com/google/go-cmp v0.5.9
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/pterm/pterm v0.12.46
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
@@ -19,8 +18,10 @@ require (
 require (
 	github.com/MagicalTux/natsort v0.0.0-20220626140124-f8bd634d5139
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
+	github.com/davecgh/go-spew v1.1.1
 	github.com/djherbis/times v1.6.0
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/jinzhu/copier v0.4.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sebdah/goldie/v2 v2.5.3
@@ -34,7 +35,6 @@ require (
 	atomicgo.dev/keyboard v0.2.8 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/gookit/color v1.5.2 // indirect
 	github.com/lithammer/fuzzysearch v1.1.5 // indirect

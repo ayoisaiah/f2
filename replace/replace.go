@@ -692,7 +692,7 @@ func handleReplacementChain(
 	replacementSlice := conf.ReplacementSlice
 
 	for i, v := range replacementSlice {
-		config.SetReplacement(v)
+		conf.Replacement = v
 
 		var err error
 

@@ -164,19 +164,13 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 	// add test directory as last argument
 	args = append(args, tc.PathArgs...)
 
-	var conf *config.Config
-
 	f2App, err := app.Get(os.Stdin, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	f2App.Action = func(ctx *cli.Context) error {
-		var err error
-
-		conf, err = config.Init(ctx)
-
-		return err
+		return nil
 	}
 
 	// Initialize the config
@@ -185,5 +179,5 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 		t.Fatal(err)
 	}
 
-	return conf
+	return config.Get()
 }

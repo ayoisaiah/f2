@@ -69,22 +69,6 @@ func TestReplace(t *testing.T) {
 			Args: []string{"-f", "macos", "-r", "darwin"},
 		},
 		{
-			Name: "basic replace with positional arguments",
-			Changes: []*file.Change{
-				{
-					Source: "macos_update_notes_2023.txt",
-				},
-				{
-					Source: "macos_user_guide_macos_sierra.pdf",
-				},
-			},
-			Want: []string{
-				"darwin_update_notes_2023.txt",
-				"darwin_user_guide_darwin_sierra.pdf",
-			},
-			Args: []string{"macos", "darwin"},
-		},
-		{
 			Name: "replace only the first match",
 			Changes: []*file.Change{
 				{

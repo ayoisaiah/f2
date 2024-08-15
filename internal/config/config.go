@@ -3,10 +3,6 @@
 package config
 
 import (
-	"errors"
-	"fmt"
-	"io"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -17,16 +13,6 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
-)
-
-var (
-	errInvalidArgument = errors.New(
-		"Invalid argument: one of `-f`, `-r`, `-csv` or `-u` must be present and set to a non empty string value. Use 'f2 --help' for more information",
-	)
-
-	errInvalidSimpleModeArgs = errors.New(
-		"At least one argument must be specified in simple mode",
-	)
 )
 
 var (
@@ -55,14 +41,11 @@ type Search struct {
 // Config represents the program configuration.
 type Config struct {
 	Date                     time.Time      `json:"date"`
-	Stdin                    io.Reader      `json:"-"`
-	Stderr                   io.Writer      `json:"-"`
-	Stdout                   io.Writer      `json:"-"`
 	ExcludeDirRegex          *regexp.Regexp `json:"exclude_dir_regex"`
 	ExcludeRegex             *regexp.Regexp `json:"exclude_regex"`
 	Search                   *Search        `json:"search_regex"`
 	FixConflictsPatternRegex *regexp.Regexp `json:"fix_conflicts_pattern_regex"`
-	Sort                     string         `json:"sort"`
+	Sort                     Sort           `json:"sort"`
 	Replacement              string         `json:"replacement"`
 	WorkingDir               string         `json:"working_dir"`
 	FixConflictsPattern      string         `json:"fix_conflicts_pattern"`
@@ -88,7 +71,6 @@ type Config struct {
 	AutoFixConflicts         bool           `json:"auto_fix_conflicts"`
 	Exec                     bool           `json:"exec"`
 	StringLiteralMode        bool           `json:"string_literal_mode"`
-	SimpleMode               bool           `json:"simple_mode"`
 	JSON                     bool           `json:"json"`
 	Interactive              bool           `json:"interactive"`
 	Print                    bool           `json:"non_interactive"`
@@ -148,18 +130,6 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.FilesAndDirPaths = ctx.Args().Slice()
 	c.Print = ctx.Bool("print")
 
-	if ctx.String("exiftool-opts") != "" {
-		args, err := shellquote.Split(ctx.String("exiftool-opts"))
-		if err != nil {
-			return err
-		}
-
-		_, err = flags.ParseArgs(&c.ExiftoolOpts, args)
-		if err != nil {
-			return err
-		}
-	}
-
 	if len(ctx.Args().Slice()) > 0 {
 		c.FilesAndDirPaths = ctx.Args().Slice()
 	}
@@ -173,39 +143,6 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	// The replacement defaults to an empty string if unset
 	for len(c.FindSlice) > len(c.ReplacementSlice) {
 		c.ReplacementSlice = append(c.ReplacementSlice, "")
-	}
-
-	return c.SetFindStringRegex(0)
-}
-
-// setSimpleModeOptions is used to set the options for the
-// renaming operation in simpleMode.
-func (c *Config) setSimpleModeOptions(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
-
-	if len(args) < 1 {
-		return errInvalidSimpleModeArgs
-	}
-
-	// If a replacement string is not specified, it shoud be
-	// an empty string
-	if len(args) == 1 {
-		args = append(args, "")
-	}
-
-	minArgs := 2
-
-	c.SimpleMode = true
-	c.FindSlice = []string{args[0]}
-	c.ReplacementSlice = []string{args[1]}
-
-	// override default options
-	c.IncludeDir = true
-	c.Exec = true
-	c.Interactive = true
-
-	if len(args) > minArgs {
-		c.FilesAndDirPaths = args[minArgs:]
 	}
 
 	return c.SetFindStringRegex(0)
@@ -239,7 +176,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		c.FixConflictsPattern = defaultFixConflictsPattern
 		c.FixConflictsPatternRegex = defaultFixConflictsPatternRegex
 	} else if !customFixConfictsPatternRegex.MatchString(c.FixConflictsPattern) {
-		return fmt.Errorf("fix conflicts pattern is invalid")
+		return errParsingFixConflictsPattern.Fmt(c.FixConflictsPattern)
 	}
 
 	excludePattern := ctx.StringSlice("exclude")
@@ -274,38 +211,42 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		c.Exec = true
 	}
 
+	if c.OnlyDir {
+		c.IncludeDir = true
+	}
+
 	// Sorting
+	var err error
 	if ctx.String("sort") != "" {
-		c.Sort = ctx.String("sort")
+		c.Sort, err = parseSortArg(ctx.String("sort"))
+		if err != nil {
+			return err
+		}
 	} else if ctx.String("sortr") != "" {
-		c.Sort = ctx.String("sortr")
+		c.Sort, err = parseSortArg(ctx.String("sortr"))
+		if err != nil {
+			return err
+		}
+
 		c.ReverseSort = true
 	}
 
-	if c.OnlyDir {
-		c.IncludeDir = true
+	if ctx.String("exiftool-opts") != "" {
+		args, err := shellquote.Split(ctx.String("exiftool-opts"))
+		if err != nil {
+			return err
+		}
+
+		_, err = flags.ParseArgs(&c.ExiftoolOpts, args)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func SetReplacement(replacement string) {
-	conf.Replacement = replacement
-}
-
-func SetFindStringRegex(replacementIndex int) error {
-	return conf.SetFindStringRegex(replacementIndex)
-}
-
-func SetReplacementSlice(s []string) {
-	conf.ReplacementSlice = s
-}
-
-func SetFindSlice(s []string) {
-	conf.FindSlice = s
-}
-
-// IsATTY determines whether the given file is a terminal.
+// IsATTY checks if the given file descriptor is associated with a terminal.
 func IsATTY(fd uintptr) bool {
 	return isatty.IsTerminal(fd) || isatty.IsCygwinTerminal(fd)
 }
@@ -320,17 +261,13 @@ func Get() *Config {
 	return conf
 }
 
+// Get retrieves the current configuration or panics if not initialized.
 func Init(ctx *cli.Context) (*Config, error) {
 	conf = &Config{
-		Stdout:           os.Stdout,
-		Stderr:           os.Stderr,
-		Stdin:            os.Stdin,
 		Date:             time.Now(),
 		FilesAndDirPaths: []string{"."},
+		Sort:             SortDefault,
 	}
-
-	conf.Stdout = ctx.App.Writer
-	conf.Stdin = ctx.App.Reader
 
 	var err error
 
@@ -339,16 +276,9 @@ func Init(ctx *cli.Context) (*Config, error) {
 		return nil, err
 	}
 
-	if _, ok := ctx.App.Metadata["simple-mode"]; ok {
-		err = conf.setSimpleModeOptions(ctx)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err = conf.setOptions(ctx)
-		if err != nil {
-			return nil, err
-		}
+	err = conf.setOptions(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Get the current working directory

@@ -8,7 +8,6 @@ import (
 )
 
 const usageText = `f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
-  f2 FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]
   command | f2 FLAGS [OPTIONS]
   command | f2 FIND [REPLACE]`
 

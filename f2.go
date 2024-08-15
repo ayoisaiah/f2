@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 
 	"github.com/urfave/cli/v2"
 
@@ -25,8 +26,8 @@ var errConflictDetected = errors.New(
 func execute(ctx *cli.Context) error {
 	appConfig := config.Get()
 
-	report.Stdout = appConfig.Stdout
-	report.Stderr = appConfig.Stderr
+	report.Stdout = ctx.App.Writer
+	report.Stderr = os.Stderr
 
 	if appConfig.Revert {
 		return rename.Undo(appConfig)

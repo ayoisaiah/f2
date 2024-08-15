@@ -110,14 +110,6 @@ var testCases = []testutil.TestCase{
 		Args: []string{"-f", "photo", "-R", "-D"},
 	},
 
-	// TODO: Add more simple mode tests and test ineraction with
-	// default opts
-	{
-		Name: "match files in simple mode",
-		Want: []string{"main.go"},
-		Args: []string{"main.go", "index"},
-	},
-
 	{
 		Name: "ignore the file extension",
 		Want: []string{

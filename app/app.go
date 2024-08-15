@@ -196,10 +196,6 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 
 		app.Metadata["ctx"] = ctx
 
-		if ctx.NumFlags() == 0 {
-			app.Metadata["simple-mode"] = true
-		}
-
 		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
 		// in the environment
 		if defaultCtx == nil {

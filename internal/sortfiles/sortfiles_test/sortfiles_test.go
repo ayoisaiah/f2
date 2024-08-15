@@ -6,15 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/internal/testutil"
-	"github.com/ayoisaiah/f2/internal/timeutil"
 )
 
 type sortTestCase struct {
 	Name        string
-	TimeSort    string
+	TimeSort    config.Sort
 	Unsorted    []string
 	Sorted      []string
 	Order       []string
@@ -338,7 +338,7 @@ func TestSortFiles_BySize(t *testing.T) {
 			// sorts the slice in place
 			sortfiles.Changes(
 				unsorted,
-				"size",
+				config.SortSize,
 				tc.ReverseSort,
 				tc.SortPerDir,
 			)
@@ -456,7 +456,7 @@ func TestSortFiles_Natural(t *testing.T) {
 			// sorts the slice in place
 			sortfiles.Changes(
 				unsorted,
-				"natural",
+				config.SortNatural,
 				tc.ReverseSort,
 				tc.SortPerDir,
 			)
@@ -490,7 +490,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/4k.txt",
 				"testdata/dir1/folder/15k.txt",
 			},
-			TimeSort: timeutil.Mod,
+			TimeSort: config.SortMtime,
 			Order: []string{
 				"2025-05-30T06:58:00+01:00",
 				"2023-03-30T12:30:00+01:00",
@@ -524,7 +524,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/dir1/folder/3k.txt",
 				"testdata/dir1/folder/15k.txt",
 			},
-			TimeSort: timeutil.Mod,
+			TimeSort: config.SortMtime,
 			Order: []string{
 				"2023-03-30T12:30:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -551,7 +551,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/20k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort: timeutil.Mod,
+			TimeSort: config.SortMtime,
 			Order: []string{
 				"2024-06-20T00:29:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -574,7 +574,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/11k.txt",
 				"testdata/4k.txt",
 			},
-			TimeSort: timeutil.Access,
+			TimeSort: config.SortAtime,
 			Order: []string{
 				"2024-06-20T00:29:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -596,7 +596,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/20k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort: timeutil.Access,
+			TimeSort: config.SortAtime,
 			Order: []string{
 				"2024-06-20T00:29:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -625,7 +625,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/3.txt",
 				"testdata/4.txt",
 			},
-			TimeSort: timeutil.Birth,
+			TimeSort: config.SortBtime,
 		},
 		{
 			Name: "sort files by birth time in reverse",
@@ -647,7 +647,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/2.txt",
 				"testdata/1.txt",
 			},
-			TimeSort:    timeutil.Birth,
+			TimeSort:    config.SortBtime,
 			ReverseSort: true,
 		},
 		{
@@ -670,7 +670,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/11k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort: timeutil.Change,
+			TimeSort: config.SortCtime,
 		},
 		{
 			Name: "sort files by change time in reverse",
@@ -692,7 +692,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/11k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort:    timeutil.Change,
+			TimeSort:    config.SortCtime,
 			ReverseSort: true,
 		},
 	}
@@ -700,7 +700,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 	for i := range testCases {
 		tc := testCases[i]
 
-		if tc.TimeSort == timeutil.Access || tc.TimeSort == timeutil.Mod {
+		if tc.TimeSort == config.SortAtime || tc.TimeSort == config.SortMtime {
 			for i, v := range tc.Unsorted {
 				mtime, err := time.Parse(time.RFC3339, tc.Order[i])
 				if err != nil {
@@ -714,7 +714,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 			}
 		}
 
-		if tc.TimeSort == timeutil.Birth {
+		if tc.TimeSort == config.SortBtime {
 			for _, v := range tc.Order {
 				_, err := os.Create(v)
 				if err != nil {
@@ -725,7 +725,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 			}
 		}
 
-		if tc.TimeSort == timeutil.Change {
+		if tc.TimeSort == config.SortCtime {
 			for _, v := range tc.Order {
 				err := os.Chmod(v, 0o755)
 				if err != nil {
@@ -749,7 +749,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 
 			testutil.CompareSourcePath(t, tc.Sorted, unsorted)
 
-			if tc.TimeSort == timeutil.Birth {
+			if tc.TimeSort == config.SortBtime {
 				t.Cleanup(func() {
 					for _, v := range tc.Order {
 						err := os.Remove(v)

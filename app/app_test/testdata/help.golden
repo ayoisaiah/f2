@@ -9,7 +9,6 @@ Project repository: https://github.com/ayoisaiah/f2
 
 USAGE
   f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
-  f2 FIND [REPLACE] [PATHS TO FILES AND DIRECTORIES...]
   command | f2 FLAGS [OPTIONS]
   command | f2 FIND [REPLACE]
 

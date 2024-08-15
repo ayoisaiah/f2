@@ -15,8 +15,8 @@ import (
 	"github.com/MagicalTux/natsort"
 	"github.com/pterm/pterm"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/timeutil"
 )
 
 // ForRenamingAndUndo is used to sort files before directories to avoid renaming
@@ -56,7 +56,7 @@ func EnforceHierarchicalOrder(changes []*file.Change) {
 // (modified time, access time, change time, or birth time).
 func ByTime(
 	changes []*file.Change,
-	sortName string,
+	sortName config.Sort,
 	reverseSort bool,
 	sortPerDir bool,
 ) {
@@ -76,8 +76,8 @@ func ByTime(
 		aTime, bTime := sourceA.ModTime(), sourceB.ModTime()
 
 		switch sortName {
-		case timeutil.Mod:
-		case timeutil.Birth:
+		case config.SortMtime:
+		case config.SortBtime:
 			if sourceA.HasBirthTime() {
 				aTime = sourceA.BirthTime()
 			}
@@ -85,10 +85,10 @@ func ByTime(
 			if sourceB.HasBirthTime() {
 				bTime = sourceB.BirthTime()
 			}
-		case timeutil.Access:
+		case config.SortAtime:
 			aTime = sourceA.AccessTime()
 			bTime = sourceB.AccessTime()
-		case timeutil.Change:
+		case config.SortCtime:
 			if sourceA.HasChangeTime() {
 				aTime = sourceA.ChangeTime()
 			}
@@ -160,7 +160,7 @@ func Natural(changes []*file.Change, reverseSort bool) {
 // Changes is used to sort changes according to the configured sort value.
 func Changes(
 	changes []*file.Change,
-	sortName string,
+	sortName config.Sort,
 	reverseSort bool,
 	sortPerDir bool,
 ) {
@@ -170,14 +170,14 @@ func Changes(
 	}
 
 	switch sortName {
-	case "natural":
+	case config.SortNatural:
 		Natural(changes, reverseSort)
-	case "size":
+	case config.SortSize:
 		BySize(changes, reverseSort, sortPerDir)
-	case timeutil.Mod,
-		timeutil.Access,
-		timeutil.Birth,
-		timeutil.Change:
+	case config.SortMtime,
+		config.SortAtime,
+		config.SortBtime,
+		config.SortCtime:
 		ByTime(changes, sortName, reverseSort, sortPerDir)
 	}
 }

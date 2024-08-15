@@ -48,6 +48,10 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 				t.Cleanup(tc.SetupFunc(t))
 			}
 
+			if len(tc.Args) == 0 {
+				tc.Args = []string{"-r", ""}
+			}
+
 			config := testutil.GetConfig(t, &tc, ".")
 
 			var expectedChanges []*file.Change

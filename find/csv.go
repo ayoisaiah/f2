@@ -103,10 +103,10 @@ func handleCSV(conf *config.Config) ([]*file.Change, error) {
 	}
 
 	if len(conf.ReplacementSlice) == 0 && len(conf.FindSlice) == 0 {
-		config.SetFindSlice(findSlice)
-		config.SetReplacementSlice(replacementSlice)
+		conf.FindSlice = findSlice
+		conf.ReplacementSlice = replacementSlice
 
-		err = config.SetFindStringRegex(0)
+		err = conf.SetFindStringRegex(0)
 		if err != nil {
 			return nil, err
 		}

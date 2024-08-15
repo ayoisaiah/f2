@@ -222,7 +222,7 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 // pattern or explicitly included as command-line arguments.
 func Find(conf *config.Config) (changes []*file.Change, err error) {
 	defer func() {
-		if conf.Sort != "" && err == nil {
+		if conf.Sort != config.SortDefault && err == nil {
 			sortfiles.Changes(
 				changes,
 				conf.Sort,
