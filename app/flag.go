@@ -47,12 +47,6 @@ var (
 		Caution: Using this option can lead to unrecoverable data loss.`,
 	}
 
-	flagDebug = &cli.BoolFlag{
-		Name: "debug",
-		Usage: `
-		Enables debug mode, providing more detailed logging and output.`,
-	}
-
 	flagExclude = &cli.StringSliceFlag{
 		Name:    "exclude",
 		Aliases: []string{"E"},

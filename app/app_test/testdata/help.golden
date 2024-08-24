@@ -51,9 +51,6 @@ OPTIONS
     Allows the renaming operation to overwrite existing files.
     Caution: Using this option can lead to unrecoverable data loss.
   
-  --debug 
-    Enables debug mode, providing more detailed logging and output.
-
   -E, --exclude 
     Excludes files and directories that match the provided regular expression.
     This flag can be repeated to specify multiple exclude patterns.

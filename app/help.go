@@ -45,12 +45,6 @@ func helpText(app *cli.App) string {
 		flagAllowOverwrites.GetUsage(),
 	)
 
-	flagDebugHelp := fmt.Sprintf(
-		`%s %s`,
-		pterm.Green("--", flagDebug.Name),
-		flagDebug.GetUsage(),
-	)
-
 	flagExcludeHelp := fmt.Sprintf(
 		`%s, %s %s`,
 		pterm.Green("-", flagExclude.Aliases[0]),
@@ -285,8 +279,6 @@ Project repository: https://github.com/ayoisaiah/f2
 
 	%s
 
-	%s
-
 %s
 	%s
 
@@ -309,7 +301,6 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagUndoHelp,
 		pterm.Bold.Sprintf("OPTIONS"),
 		flagAllowOverwritesHelp,
-		flagDebugHelp,
 		flagExcludeHelp,
 		flagExcludeDirHelp,
 		flagExiftoolOptsHelp,

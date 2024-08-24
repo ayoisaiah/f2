@@ -252,7 +252,6 @@ offers several options for fine-grained control over the renaming process.`,
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			flagCSV,
-			flagDebug,
 			flagExiftoolOpts,
 			flagFind,
 			flagReplace,
