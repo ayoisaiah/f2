@@ -31,3 +31,5 @@ const (
 	ExitOK    exitCode = 0
 	ExitError exitCode = 1
 )
+
+const DirPermission = 0o755

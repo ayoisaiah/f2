@@ -632,8 +632,8 @@ func replaceString(conf *config.Config, originalName string) string {
 // replacement string.
 func replaceMatches(
 	conf *config.Config,
-	matches []*file.Change,
-) ([]*file.Change, error) {
+	matches file.Changes,
+) (file.Changes, error) {
 	vars, err := extractVariables(conf.Replacement)
 	if err != nil {
 		return nil, err
@@ -687,8 +687,8 @@ func replaceMatches(
 
 func handleReplacementChain(
 	conf *config.Config,
-	matches []*file.Change,
-) ([]*file.Change, error) {
+	matches file.Changes,
+) (file.Changes, error) {
 	replacementSlice := conf.ReplacementSlice
 
 	for i, v := range replacementSlice {
@@ -729,8 +729,8 @@ func handleReplacementChain(
 // argument.
 func Replace(
 	conf *config.Config,
-	changes []*file.Change,
-) ([]*file.Change, error) {
+	changes file.Changes,
+) (file.Changes, error) {
 	var err error
 
 	changes, err = handleReplacementChain(conf, changes)

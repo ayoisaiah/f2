@@ -23,10 +23,10 @@ type sortTestCase struct {
 	Revert      bool
 }
 
-func sortTest(t *testing.T, unsorted []string) []*file.Change {
+func sortTest(t *testing.T, unsorted []string) file.Changes {
 	t.Helper()
 
-	changes := make([]*file.Change, len(unsorted))
+	changes := make(file.Changes, len(unsorted))
 
 	for i := range unsorted {
 		v := unsorted[i]

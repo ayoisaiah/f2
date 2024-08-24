@@ -14,7 +14,7 @@ func TestMacOSTransforms(t *testing.T) {
 	testCases := []testutil.TestCase{
 		{
 			Name: "remove macOS disallowed characters",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "report:::project*details|on<2024/01/11>.txt",
 				},

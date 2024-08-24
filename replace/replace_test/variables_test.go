@@ -60,7 +60,7 @@ func TestVariables(t *testing.T) {
 	testCases := []testutil.TestCase{
 		{
 			Name: "replace filename and path variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "dir3/dir2/dir1",
 					Source:  "file.txt",
@@ -73,7 +73,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "transform string cases",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "Ulysses by James Joyce.epub",
 				},
@@ -88,7 +88,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "remove diacritics",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "Café-Übersicht_Été2024.docx",
 				},
@@ -98,7 +98,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "remove only some diacritics",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "Café-Übersicht_Été2024.docx",
 				},
@@ -113,7 +113,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "parse arbitrary text as date",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "Screenshot from 2022-04-12 14:37:35.png",
 				},
@@ -134,7 +134,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "replace with Exif variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "pic.jpg",
@@ -154,7 +154,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "ensure slashes in ID3 variables are replaced with underscores",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "19. D_1993 F2.flac",
@@ -169,7 +169,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "replace with ID3 variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "audio.flac",
@@ -194,7 +194,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "replace with file hash variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "audio.flac",
@@ -214,7 +214,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "replace with Exiftool variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "image.dng",
@@ -234,7 +234,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "use file access and modification times",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "date.txt",
@@ -253,7 +253,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "use file birth and change times",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "date.txt",
@@ -272,7 +272,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "replace GPSPosition Exiftool tag using default settings",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "gps.jpg",
@@ -287,7 +287,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "use --coordFormat Exiftool option to customize GPS format",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "gps.jpg",
@@ -302,7 +302,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "use Exiftool GPSDateTime tag default format",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "gps.jpg",
@@ -317,7 +317,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "use --dateFormat Exiftool option to customize date format",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "gps.jpg",
@@ -332,7 +332,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "use --api Exiftool option to customize date format",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "gps.jpg",
@@ -347,7 +347,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "fail to find OtherSerialNumber tag without --extractEmbedded Exiftool option",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "embedded.mp4",
@@ -362,7 +362,7 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Name: "find OtherSerialNumber tag with --extractEmbedded Exiftool option",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "testdata",
 					Source:  "embedded.mp4",

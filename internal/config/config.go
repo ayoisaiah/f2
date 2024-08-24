@@ -3,6 +3,10 @@
 package config
 
 import (
+	"crypto/md5"
+	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -13,6 +17,12 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
+)
+
+var (
+	Stdin  io.Reader = os.Stdin
+	Stdout io.Writer = os.Stdout
+	Stderr io.Writer = os.Stderr
 )
 
 var (
@@ -72,12 +82,13 @@ type Config struct {
 	Exec                     bool           `json:"exec"`
 	StringLiteralMode        bool           `json:"string_literal_mode"`
 	JSON                     bool           `json:"json"`
-	Interactive              bool           `json:"interactive"`
-	Print                    bool           `json:"non_interactive"`
 	Debug                    bool           `json:"debug"`
 	Recursive                bool           `json:"recursive"`
 	ResetIndexPerDir         bool           `json:"reset_index_per_dir"`
 	SortPerDir               bool           `json:"sort_per_dir"`
+	IsOutputToPipe           bool           `json:"is_output_to_pipe"`
+	BackupLocation           io.Writer      `json:"-"`
+	BackupFilename           string         `json:"backup_filename"`
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -128,7 +139,6 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.Revert = ctx.Bool("undo")
 	c.Debug = ctx.Bool("debug")
 	c.FilesAndDirPaths = ctx.Args().Slice()
-	c.Print = ctx.Bool("print")
 
 	if len(ctx.Args().Slice()) > 0 {
 		c.FilesAndDirPaths = ctx.Args().Slice()
@@ -166,7 +176,6 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.Quiet = ctx.Bool("quiet")
 	c.JSON = ctx.Bool("json")
 	c.Exec = ctx.Bool("exec")
-	c.Interactive = ctx.Bool("interactive")
 	c.FixConflictsPattern = ctx.String("fix-conflicts-pattern")
 	c.ResetIndexPerDir = ctx.Bool("reset-index-per-dir")
 	c.SortPerDir = ctx.Bool("sort-per-dir")
@@ -203,14 +212,6 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		c.ExcludeDirRegex = excludeDirMatchRegex
 	}
 
-	if c.JSON {
-		c.Interactive = false
-	}
-
-	if c.Interactive {
-		c.Exec = true
-	}
-
 	if c.OnlyDir {
 		c.IncludeDir = true
 	}
@@ -244,6 +245,15 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	}
 
 	return nil
+}
+
+// generateBackupFilename generates a unique filename for storing backup data
+// based on the MD5 hash of the working directory path
+func generateBackupFilename(workingDir string) string {
+	h := md5.New()
+	h.Write([]byte(workingDir))
+
+	return fmt.Sprintf("%x", h.Sum(nil)) + ".json"
 }
 
 // IsATTY checks if the given file descriptor is associated with a terminal.
@@ -286,6 +296,8 @@ func Init(ctx *cli.Context) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	conf.BackupFilename = generateBackupFilename(conf.WorkingDir)
 
 	if conf.NoColor {
 		pterm.DisableStyling()

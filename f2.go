@@ -1,16 +1,13 @@
 package f2
 
 import (
-	"errors"
-	"fmt"
 	"io"
-	"log/slog"
-	"os"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/ayoisaiah/f2/app"
 	"github.com/ayoisaiah/f2/find"
+	"github.com/ayoisaiah/f2/internal/apperr"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/rename"
 	"github.com/ayoisaiah/f2/replace"
@@ -18,48 +15,31 @@ import (
 	"github.com/ayoisaiah/f2/validate"
 )
 
-var errConflictDetected = errors.New(
-	"resolve conflicts before proceeding or use -F/--fix-conflicts to auto-fix",
-)
+var errConflictDetected = &apperr.Error{
+	Message: "resolve conflicts manually or use -F/--fix-conflicts",
+}
 
 // execute initiates a new renaming operation based on the provided CLI context
 func execute(ctx *cli.Context) error {
 	appConfig := config.Get()
 
-	report.Stdout = ctx.App.Writer
-	report.Stderr = os.Stderr
-
-	if appConfig.Revert {
-		return rename.Undo(appConfig)
-	}
-
-	findMatches, err := find.Find(appConfig)
+	changes, err := find.Find(appConfig)
 	if err != nil {
 		return err
 	}
 
-	if len(findMatches) == 0 {
-		slog.Info("find matches completed: no matches found")
-		report.NoMatches(appConfig.JSON)
+	if len(changes) == 0 {
+		report.NoMatches(appConfig)
 
 		return nil
 	}
 
-	slog.Info(
-		fmt.Sprintf(
-			"find matches completed: found %d matches",
-			len(findMatches),
-		),
-		slog.Any("find_matches", findMatches),
-		slog.Int("num_matches", len(findMatches)),
-	)
-
-	changes, err := replace.Replace(appConfig, findMatches)
-	if err != nil {
-		return err
+	if !appConfig.Revert {
+		changes, err = replace.Replace(appConfig, changes)
+		if err != nil {
+			return err
+		}
 	}
-
-	slog.Info("bulk renaming completed", slog.Any("changes", changes))
 
 	hasConflicts := validate.Validate(
 		changes,
@@ -68,28 +48,21 @@ func execute(ctx *cli.Context) error {
 	)
 
 	if hasConflicts {
-		report.NonInteractive(changes, hasConflicts)
+		report.Report(appConfig, changes, hasConflicts)
 
 		return errConflictDetected
 	}
 
 	if !appConfig.Exec {
-		report.Report(appConfig, changes)
+		report.Report(appConfig, changes, hasConflicts)
 		return nil
 	}
 
-	err = rename.Rename(appConfig, changes)
-	if err != nil {
-		return err
-	}
+	err = rename.Rename(changes)
 
-	if appConfig.Print {
-		for i := range changes {
-			fmt.Println(changes[i].RelTargetPath)
-		}
-	}
+	rename.PostRename(appConfig, changes)
 
-	return nil
+	return err
 }
 
 // New creates a new CLI application for f2

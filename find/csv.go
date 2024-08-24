@@ -35,10 +35,10 @@ func readCSVFile(pathToCSV string) ([][]string, error) {
 
 // handleCSV reads the provided CSV file, and finds all the valid candidates
 // for renaming.
-func handleCSV(conf *config.Config) ([]*file.Change, error) {
+func handleCSV(conf *config.Config) (file.Changes, error) {
 	processed := make(map[string]bool)
 
-	var changes []*file.Change
+	var changes file.Changes
 
 	records, err := readCSVFile(conf.CSVFilename)
 	if err != nil {

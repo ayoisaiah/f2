@@ -118,12 +118,6 @@ func helpText(app *cli.App) string {
 		flagIgnoreExt.GetUsage(),
 	)
 
-	flagInteractiveHelp := fmt.Sprintf(
-		`%s %s`,
-		pterm.Green("--", flagInteractive.Name),
-		flagInteractive.GetUsage(),
-	)
-
 	flagJSONHelp := fmt.Sprintf(
 		`%s %s`,
 		pterm.Green("--", flagJSON.Name),
@@ -141,12 +135,6 @@ func helpText(app *cli.App) string {
 		`%s %s`,
 		pterm.Green("--", flagNoColor.Name),
 		flagNoColor.GetUsage(),
-	)
-
-	flagPrintHelp := fmt.Sprintf(
-		`%s %s`,
-		pterm.Green("--", flagPrint.Name),
-		flagPrint.GetUsage(),
 	)
 
 	flagOnlyDirHelp := fmt.Sprintf(
@@ -299,10 +287,6 @@ Project repository: https://github.com/ayoisaiah/f2
 
 	%s
 
-	%s
-
-	%s
-
 %s
 	%s
 
@@ -336,11 +320,9 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagIncludeDirHelp,
 		flagIgnoreCaseHelp,
 		flagIgnoreExtHelp,
-		flagInteractiveHelp,
 		flagJSONHelp,
 		flagMaxDepthHelp,
 		flagNoColorHelp,
-		flagPrintHelp,
 		flagOnlyDirHelp,
 		flagQuietHelp,
 		flagRecursiveHelp,

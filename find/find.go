@@ -1,11 +1,13 @@
 package find
 
 import (
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/adrg/xdg"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/pathutil"
@@ -111,10 +113,10 @@ func createFileChange(dirPath string, fileInfo fs.FileInfo) *file.Change {
 
 // searchPaths walks through the filesystem and finds matches for the provided
 // search pattern.
-func searchPaths(conf *config.Config) ([]*file.Change, error) {
+func searchPaths(conf *config.Config) (file.Changes, error) {
 	processedPaths := make(map[string]bool)
 
-	var matches []*file.Change
+	var matches file.Changes
 
 	for _, rootPath := range conf.FilesAndDirPaths {
 		rootPath = filepath.Clean(rootPath)
@@ -218,9 +220,51 @@ func searchPaths(conf *config.Config) ([]*file.Change, error) {
 	return matches, nil
 }
 
+// loadFromBackup loads the details of the previous renaming operation
+// from the backup file. It returns the changes or an error if the backup file
+// cannot be found or parsed.
+func loadFromBackup(conf *config.Config) (file.Changes, error) {
+	backupFilePath, err := xdg.SearchDataFile(
+		filepath.Join("f2", "backups", conf.BackupFilename),
+	)
+	if err != nil {
+		// The file does not exist, but it's not an error in this context
+		return nil, nil
+	}
+
+	fileBytes, err := os.ReadFile(backupFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var changes file.Changes
+
+	if err = json.Unmarshal(fileBytes, &changes); err != nil {
+		return nil, err
+	}
+
+	// Swap source and target for each change to revert the renaming
+	for i := range changes {
+		ch := changes[i]
+		ch.Source, ch.Target = ch.Target, ch.Source
+		ch.RelSourcePath = filepath.Join(ch.BaseDir, ch.Source)
+		ch.RelTargetPath = filepath.Join(ch.BaseDir, ch.Target)
+		changes[i] = ch
+	}
+
+	// Always sort files before directories when undoing an operation
+	sortfiles.ForRenamingAndUndo(changes, conf.Revert)
+
+	return changes, nil
+}
+
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
-func Find(conf *config.Config) (changes []*file.Change, err error) {
+func Find(conf *config.Config) (changes file.Changes, err error) {
+	if conf.Revert {
+		return loadFromBackup(conf)
+	}
+
 	defer func() {
 		if conf.Sort != config.SortDefault && err == nil {
 			sortfiles.Changes(

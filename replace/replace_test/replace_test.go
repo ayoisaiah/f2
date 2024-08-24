@@ -25,10 +25,6 @@ func replaceTest(t *testing.T, cases []testutil.TestCase) {
 				ch.Source,
 			)
 		}
-	}
-
-	for i := range cases {
-		tc := cases[i]
 
 		t.Run(tc.Name, func(t *testing.T) {
 			if tc.SetupFunc != nil {
@@ -54,7 +50,7 @@ func TestReplace(t *testing.T) {
 	testCases := []testutil.TestCase{
 		{
 			Name: "basic replace",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "macos_update_notes_2023.txt",
 				},
@@ -70,7 +66,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Name: "replace only the first match",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "budget_budget_budget_2023.xlsx",
 				},
@@ -82,7 +78,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Name: "replace the first 2 matches in reverse",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "budget_budget_budget_2023.xlsx",
 				},
@@ -98,7 +94,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Name: "replace the first 2 matches in reverse",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "budget_budget_budget_2023.xlsx",
 				},
@@ -114,7 +110,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Name: "rename with capture variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "dsc-001.arw",
 				},
@@ -130,7 +126,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Name: "use capture variables in replacement chain",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "music",
 					Source:  "Overgrown (2013)",
@@ -173,7 +169,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Name: "transform capture variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "ebooks",
 					Source:  "atomic-habits.pdf",

@@ -26,7 +26,7 @@ type TestCase struct {
 	GoldenFile       string                               `json:"golden_file"`
 	Args             []string                             `json:"args"`
 	PathArgs         []string                             `json:"path_args"`
-	Changes          []*file.Change                       `json:"changes"`
+	Changes          file.Changes                         `json:"changes"`
 	Want             []string                             `json:"want"`
 }
 
@@ -91,13 +91,13 @@ func SetupFileSystem(
 }
 
 // CompareChanges compares the expected file changes to the ones received.
-func CompareChanges(t *testing.T, want []*file.Change, got []*file.Change) {
+func CompareChanges(t *testing.T, want file.Changes, got file.Changes) {
 	assert.Equal(t, want, got)
 }
 
 // CompareSourcePath compares the expected source paths to the actual source
 // paths.
-func CompareSourcePath(t *testing.T, want []string, changes []*file.Change) {
+func CompareSourcePath(t *testing.T, want []string, changes file.Changes) {
 	t.Helper()
 
 	got := make([]string, len(changes))
@@ -110,7 +110,7 @@ func CompareSourcePath(t *testing.T, want []string, changes []*file.Change) {
 }
 
 // CompareTargetPath verifies that the renaming target matches expectations.
-func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
+func CompareTargetPath(t *testing.T, want []string, changes file.Changes) {
 	t.Helper()
 
 	got := make([]string, len(changes))
@@ -124,10 +124,19 @@ func CompareTargetPath(t *testing.T, want []string, changes []*file.Change) {
 
 // CompareGoldenFile verifies that the output of a renaming operation matches
 // the expected output.
-func CompareGoldenFile(t *testing.T, tc *TestCase, result []byte) {
+func CompareGoldenFile(
+	t *testing.T,
+	tc *TestCase,
+	result []byte,
+	fileName ...string,
+) {
 	t.Helper()
 
 	goldenFile := strings.ReplaceAll(tc.Name, " ", "_")
+
+	if len(fileName) > 0 {
+		goldenFile = fileName[0]
+	}
 
 	g := goldie.New(
 		t,

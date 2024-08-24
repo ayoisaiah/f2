@@ -5,6 +5,7 @@ import "fmt"
 type Error struct {
 	Cause   error // The underlying error if any
 	Message string
+	Context any
 }
 
 func (e *Error) Error() string {
@@ -30,5 +31,10 @@ func (e *Error) Wrap(err error) *Error {
 // Fmt calls fmt.Sprintf on the error message.
 func (e *Error) Fmt(str ...any) *Error {
 	e.Message = fmt.Sprintf(e.Message, str...)
+	return e
+}
+
+func (e *Error) WithCtx(ctx any) *Error {
+	e.Context = ctx
 	return e
 }

@@ -22,7 +22,7 @@ import (
 // ForRenamingAndUndo is used to sort files before directories to avoid renaming
 // conflicts. It also ensures that child directories are renamed before their
 // parents and vice versa in undo mode.
-func ForRenamingAndUndo(changes []*file.Change, revert bool) {
+func ForRenamingAndUndo(changes file.Changes, revert bool) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		// sort files before directories
 		if !a.IsDir && b.IsDir {
@@ -41,7 +41,7 @@ func ForRenamingAndUndo(changes []*file.Change, revert bool) {
 
 // EnforceHierarchicalOrder ensures all files in the same directory are sorted
 // before children directories.
-func EnforceHierarchicalOrder(changes []*file.Change) {
+func EnforceHierarchicalOrder(changes file.Changes) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		lenA, lenB := len(a.BaseDir), len(b.BaseDir)
 		if lenA == lenB {
@@ -55,7 +55,7 @@ func EnforceHierarchicalOrder(changes []*file.Change) {
 // ByTime sorts the changes by the specified file timing attribute
 // (modified time, access time, change time, or birth time).
 func ByTime(
-	changes []*file.Change,
+	changes file.Changes,
 	sortName config.Sort,
 	reverseSort bool,
 	sortPerDir bool,
@@ -113,7 +113,7 @@ func ByTime(
 
 // BySize sorts the file changes in place based on their file size, either in
 // ascending or descending order depending on the `reverseSort` flag.
-func BySize(changes []*file.Change, reverseSort, sortPerDir bool) {
+func BySize(changes file.Changes, reverseSort, sortPerDir bool) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		var fileInfoA, fileInfoB fs.FileInfo
 		fileInfoA, errA := os.Stat(a.RelSourcePath)
@@ -144,7 +144,7 @@ func BySize(changes []*file.Change, reverseSort, sortPerDir bool) {
 // Natural sorts the changes according to natural order (meaning numbers are
 // interpreted naturally). However, non-numeric characters are remain sorted in
 // ASCII order.
-func Natural(changes []*file.Change, reverseSort bool) {
+func Natural(changes file.Changes, reverseSort bool) {
 	sort.SliceStable(changes, func(i, j int) bool {
 		sourceA := changes[i].RelSourcePath
 		sourceB := changes[j].RelSourcePath
@@ -159,7 +159,7 @@ func Natural(changes []*file.Change, reverseSort bool) {
 
 // Changes is used to sort changes according to the configured sort value.
 func Changes(
-	changes []*file.Change,
+	changes file.Changes,
 	sortName config.Sort,
 	reverseSort bool,
 	sortPerDir bool,

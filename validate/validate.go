@@ -31,7 +31,7 @@ func (ctx validationCtx) updateSeenPaths() {
 	}
 }
 
-var changes []*file.Change
+var changes file.Changes
 
 const (
 	// max filename length of 255 characters in Windows.
@@ -419,6 +419,9 @@ func checkAndHandleConflict(ctx validationCtx, loopIndex *int) bool {
 // detectConflicts checks the renamed files for various conflicts and
 // automatically fixes them if configured.
 func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
+	// TODO: Detect if user has write permissions for the parent directory?
+	// TODO: Detect if file is in use by another process (Windows-specific)?
+	// TODO: Check for immutable attribute on the file?
 	ctx := validationCtx{
 		autoFix:         autoFix,
 		allowOverwrites: allowOverwrites,
@@ -441,6 +444,7 @@ func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
 
 	if detected && autoFix {
 		// Since all the conflicts would have been fixed
+		// TODO: Don't change this manually
 		detected = false
 	}
 
@@ -450,7 +454,7 @@ func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
 // Validate detects and reports any conflicts that can occur while renaming a
 // file. Conflicts are automatically fixed if specified in the program options.
 func Validate(
-	matches []*file.Change,
+	matches file.Changes,
 	autoFix, allowOverwrites bool,
 ) bool {
 	changes = matches

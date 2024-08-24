@@ -118,10 +118,6 @@ OPTIONS
   -e, --ignore-ext 
     Ignores the file extension when searching for matches.
 
-  --interactive 
-    Prompts for confirmation before executing the renaming operation after a
-    dry-run.
-
   --json 
     Produces JSON output, except for error messages which are sent to the
     standard error.
@@ -132,15 +128,13 @@ OPTIONS
   --no-color 
     Disables colored output.
 
-  --print 
-    Prints all renamed paths after successful renaming.
-
   -D, --only-dir 
     Renames only directories, not files (implies -d/--include-dir).
 
   --quiet 
-    Suppresses all output to the standard output, except for errors which are 
-    sent to the standard error.
+    Don't print anything to stdout. If no matches are found, f2 will exit with
+    an error code instead of the normal success code without this flag.
+    Errors will continue to be written to stderr.
 
   -R, --recursive 
     Recursively traverses directories when searching for matches.

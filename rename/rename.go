@@ -1,44 +1,34 @@
-// Package rename commits the renaming operation to the filesystem and reports
-// errors if any. It also creates a backup file for the operation and provides a
-// way to undo any renaming operation
+// Package rename handles the actual file renaming operations and manages
+// backups for potential undo operations.
 package rename
 
 import (
-	"bufio"
-	"crypto/md5"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/adrg/xdg"
-	"github.com/pterm/pterm"
-
+	"github.com/ayoisaiah/f2/internal/apperr"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/jsonutil"
 	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/report"
 )
 
-var errRenameFailed = errors.New(
-	"some files could not be renamed. Revert the changes through the --undo flag",
-)
+var errRenameFailed = &apperr.Error{
+	Message: "some files could not be renamed",
+}
 
-var errs []int
-
-// rename iterates over all the matches and renames them on the filesystem.
+// commit iterates over all the matches and renames them on the filesystem.
 // Directories are auto-created if necessary, and errors are aggregated.
-func rename(
-	_ *config.Config,
-	changes []*file.Change,
-) []int {
-	for i := range changes {
-		change := changes[i]
+func commit(fileChanges file.Changes) []int {
+	var errIndices []int
+
+	for i := range fileChanges {
+		change := fileChanges[i]
 
 		targetPath := change.RelTargetPath
 
@@ -47,19 +37,19 @@ func rename(
 			continue
 		}
 
-		// Account for case insensitive filesystems where renaming a filename to its
-		// upper or lowercase equivalent doesn't work. Fixing this involves the
+		// Workaround for case insensitive filesystems where renaming a filename to
+		// its upper or lowercase equivalent doesn't work. Fixing this involves the
 		// following steps:
-		// 1. Prefix <target> with __<time>__ if case insensitive FS
+		// 1. Prefix and suffix <target> with __<time>__
 		// 2. Rename <source> to <target>
-		// 3. Rename __<time>__<target> to <target> if case insensitive FS
-		var caseInsensitiveFS bool
+		// 3. Rename __<time>__<target>__<time>__ to <target>
+		var isCaseChangeOnly bool // only the target case is changing
 		if strings.EqualFold(change.RelSourcePath, targetPath) {
-			caseInsensitiveFS = true
+			isCaseChangeOnly = true
 			timeStr := fmt.Sprintf("%d", time.Now().UnixNano())
 			targetPath = filepath.Join(
 				change.BaseDir,
-				"__"+timeStr+"__"+change.Target, // step 1
+				"__"+timeStr+"__"+change.Target+"__"+timeStr+"__", // step 1
 			)
 		}
 
@@ -72,10 +62,12 @@ func rename(
 			// consecutive slashes since `os.MkdirAll` handles that
 			dir := filepath.Dir(change.Target)
 
-			//nolint:gomnd // number can be understood from context
-			err := os.MkdirAll(filepath.Join(change.BaseDir, dir), 0o750)
+			err := os.MkdirAll(
+				filepath.Join(change.BaseDir, dir),
+				osutil.DirPermission,
+			)
 			if err != nil {
-				errs = append(errs, i)
+				errIndices = append(errIndices, i)
 				change.Error = err
 
 				continue
@@ -85,143 +77,60 @@ func rename(
 		err := os.Rename(change.RelSourcePath, targetPath) // step 2
 		// if the intermediate rename is successful,
 		// proceed with the original renaming operation
-		if err == nil && caseInsensitiveFS {
+		if err == nil && isCaseChangeOnly {
 			err = os.Rename(targetPath, change.RelTargetPath) // step 3
 		}
 
 		if err != nil {
-			errs = append(errs, i)
+			errIndices = append(errIndices, i)
 			change.Error = err
-
-			continue
 		}
 	}
 
-	return errs
+	return errIndices
 }
 
-func workingDirHash(workingDir string) string {
-	h := md5.New()
-	h.Write([]byte(workingDir))
+// Rename renames files according to the provided changes and configuration
+// handling conflicts and backups.
+func Rename(
+	fileChanges file.Changes,
+) error {
+	renameErrs := commit(fileChanges)
+	if renameErrs != nil {
+		return errRenameFailed.WithCtx(renameErrs)
+	}
 
-	return fmt.Sprintf("%x", h.Sum(nil)) + ".json"
+	return nil
 }
 
-// backupChanges records the details of a renaming operation to the filesystem
-// so that it may be reverted if necessary.
-func backupChanges(changes []*file.Change, workingDir string) error {
-	filename := workingDirHash(workingDir)
+// PostRename handles actions after a renaming operation, such as printing
+// results and creating a backup if applicable.
+func PostRename(conf *config.Config, fileChanges file.Changes) {
+	report.PrintResults(conf, fileChanges)
 
-	backupFilePath, err := xdg.DataFile(
-		filepath.Join("f2", "backups", filename),
-	)
-	if err != nil {
-		return err
-	}
-
-	// Create or truncate backupFile
-	backupFile, err := os.Create(backupFilePath)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		ferr := backupFile.Close()
-		if ferr != nil {
-			err = ferr
-		}
-	}()
-
-	successfulChanges := make([]*file.Change, len(changes))
-
-	copy(successfulChanges, changes)
-
-	// remove files that errored out
-	for i := len(successfulChanges) - 1; i >= 0; i-- {
-		if successfulChanges[i].Error != nil {
-			successfulChanges = append(
-				successfulChanges[:i],
-				successfulChanges[i+1:]...)
-		}
-	}
-
-	b, err := jsonutil.GetOutput(successfulChanges)
-	if err != nil {
-		return err
-	}
-
-	writer := bufio.NewWriter(backupFile)
-
-	_, err = writer.Write(b)
-	if err != nil {
-		return err
-	}
-
-	return writer.Flush()
-}
-
-// commit applies the renaming operation to the filesystem.
-// A backup file is auto created as long as at least one file
-// was renamed and it wasn't an undo operation.
-func commit(
-	conf *config.Config,
-	fileChanges []*file.Change,
-) []int {
-	errs = rename(conf, fileChanges)
-
-	if conf.Verbose {
-		for _, change := range fileChanges {
-			if change.Error != nil {
-				pterm.Error.Sprintf(
-					"Failed to rename %s to %s",
-					change.RelSourcePath,
-					change.RelTargetPath,
-				)
-
-				continue
-			}
-
-			pterm.Success.Printfln(
-				"%s\t->\t%s",
-				pterm.Yellow(change.RelSourcePath),
-				pterm.Yellow(change.RelTargetPath),
-			)
-		}
-	}
-
-	if !conf.Revert {
-		err := backupChanges(fileChanges, conf.WorkingDir)
+	if len(fileChanges) != 0 && !conf.Revert {
+		err := backupChanges(
+			fileChanges,
+			conf.BackupFilename,
+			conf.BackupLocation,
+		)
 		if err != nil {
 			report.BackupFailed(err)
 		}
 	}
 
-	if len(errs) > 0 {
-		sort.SliceStable(fileChanges, func(i, _ int) bool {
-			compareElement1 := fileChanges[i]
+	if conf.Revert {
+		backupFilePath, err := xdg.SearchDataFile(
+			filepath.Join("f2", "backups", conf.BackupFilename),
+		)
+		if err != nil {
+			report.BackupFileRemovalFailed(err)
+			return
+		}
 
-			return compareElement1.Error == nil
-		})
+		if err = os.Remove(backupFilePath); err != nil {
+			report.BackupFileRemovalFailed(err)
+			return
+		}
 	}
-
-	return errs
-}
-
-// Rename prints the changes to be made in dry-run mode
-// or commits the operation to the filesystem if in execute mode.
-func Rename(
-	conf *config.Config,
-	fileChanges []*file.Change,
-) error {
-	if conf.Interactive {
-		report.Interactive(fileChanges)
-	}
-
-	renameErrs := commit(conf, fileChanges)
-	if renameErrs != nil {
-		// FIXME: Print the errors
-		return errRenameFailed
-	}
-
-	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ayoisaiah/f2/app"
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/testutil"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
@@ -19,7 +20,13 @@ func TestShortHelp(t *testing.T) {
 
 	var buf bytes.Buffer
 
-	renamer, err := app.Get(os.Stdin, &buf)
+	config.Stderr = &buf
+
+	t.Cleanup(func() {
+		config.Stderr = os.Stderr
+	})
+
+	renamer, err := app.Get(os.Stdin, os.Stdin)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,7 +11,7 @@ func TestIndexing(t *testing.T) {
 	testCases := []testutil.TestCase{
 		{
 			Name: "replace with auto incrementing integers",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "a.txt",
 				},
@@ -27,7 +27,7 @@ func TestIndexing(t *testing.T) {
 		},
 		{
 			Name: "replace with multiple incrementing integers",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "a.txt",
 				},
@@ -43,7 +43,7 @@ func TestIndexing(t *testing.T) {
 		},
 		{
 			Name: "replace with non-arabic numerals",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "a.txt",
 				},
@@ -59,7 +59,7 @@ func TestIndexing(t *testing.T) {
 		},
 		{
 			Name: "skip some numbers when incrementing",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "a.txt",
 				},
@@ -75,7 +75,7 @@ func TestIndexing(t *testing.T) {
 		},
 		{
 			Name: "use integer capture variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "doc1.txt",
 				},
@@ -91,7 +91,7 @@ func TestIndexing(t *testing.T) {
 		},
 		{
 			Name: "use integer capture variables with explicit step",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "doc1.txt",
 				},
@@ -107,7 +107,7 @@ func TestIndexing(t *testing.T) {
 		},
 		{
 			Name: "skip some numbers while indexing with capture variables",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "doc1.txt",
 				},
@@ -123,7 +123,7 @@ func TestIndexing(t *testing.T) {
 		},
 		{
 			Name: "reset index per directory",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					BaseDir: "folder1",
 					Source:  "f1.log",

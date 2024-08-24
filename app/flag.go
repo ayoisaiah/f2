@@ -157,14 +157,6 @@ var (
 		Ignores the file extension when searching for matches.`,
 	}
 
-	flagInteractive = &cli.BoolFlag{
-		Name:    "interactive",
-		Aliases: []string{"n"},
-		Usage: `
-		Prompts for confirmation before executing the renaming operation after a
-		dry-run.`,
-	}
-
 	// TODO: JSON output should also be used for errors?
 	flagJSON = &cli.BoolFlag{
 		Name: "json",
@@ -188,14 +180,6 @@ var (
 		Disables colored output.`,
 	}
 
-	// TODO: Remove print option. Instead use CLI pipe to detect when renamed paths
-	// should be printed
-	flagPrint = &cli.BoolFlag{
-		Name: "print",
-		Usage: `
-		Prints all renamed paths after successful renaming.`,
-	}
-
 	flagOnlyDir = &cli.BoolFlag{
 		Name:    "only-dir",
 		Aliases: []string{"D"},
@@ -207,8 +191,9 @@ var (
 		Name:    "quiet",
 		Aliases: []string{"q"},
 		Usage: `
-		Suppresses all output to the standard output, except for errors which are 
-		sent to the standard error.`,
+		Don't print anything to stdout. If no matches are found, f2 will exit with
+	  an error code instead of the normal success code without this flag.
+		Errors will continue to be written to stderr.`,
 	}
 
 	flagRecursive = &cli.BoolFlag{

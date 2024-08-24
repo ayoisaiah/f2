@@ -37,7 +37,6 @@ var supportedDefaultOpts = []string{
 	flagIgnoreCase.Name,
 	flagIgnoreExt.Name,
 	flagIncludeDir.Name,
-	flagInteractive.Name,
 	flagJSON.Name,
 	flagMaxDepth.Name,
 	flagNoColor.Usage,
@@ -98,12 +97,6 @@ func initPrinter() {
 
 	if isOutputToPipe() {
 		pterm.DisableStyling()
-	}
-
-	pterm.Error.MessageStyle = pterm.NewStyle(pterm.FgRed)
-	pterm.Error.Prefix = pterm.Prefix{
-		Text:  "ERROR",
-		Style: pterm.NewStyle(pterm.BgRed, pterm.FgBlack),
 	}
 }
 
@@ -180,9 +173,12 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 	app.Before = func(ctx *cli.Context) (err error) {
 		// print short help and exit if no arguments or flags are present
 		if ctx.NumFlags() == 0 && !ctx.Args().Present() {
-			pterm.Fprintln(writer, ShortHelp(ctx.App))
+			pterm.Fprintln(config.Stderr, ShortHelp(ctx.App))
 			os.Exit(int(osutil.ExitOK))
 		}
+
+		config.Stdout = ctx.App.Writer
+		config.Stdin = ctx.App.Reader
 
 		defer (func() {
 			appConfig, initErr := config.Init(ctx)
@@ -190,6 +186,8 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 				err = initErr
 				return
 			}
+
+			appConfig.IsOutputToPipe = isOutputToPipe()
 
 			slog.Info("configuration loaded", slog.Any("app_config", appConfig))
 		})()
@@ -269,11 +267,9 @@ offers several options for fine-grained control over the renaming process.`,
 			flagIncludeDir,
 			flagIgnoreCase,
 			flagIgnoreExt,
-			flagInteractive,
 			flagJSON,
 			flagMaxDepth,
 			flagNoColor,
-			flagPrint,
 			flagOnlyDir,
 			flagQuiet,
 			flagRecursive,

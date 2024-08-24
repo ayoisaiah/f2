@@ -54,7 +54,7 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 
 			config := testutil.GetConfig(t, &tc, ".")
 
-			var expectedChanges []*file.Change
+			var expectedChanges file.Changes
 
 			err := copier.Copy(&expectedChanges, &tc.Changes)
 			if err != nil {
@@ -89,7 +89,7 @@ func TestValidate(t *testing.T) {
 	testCases := []testutil.TestCase{
 		{
 			Name: "detect empty filename conflict",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source:  "1984.pdf",
 					Target:  "",
@@ -101,7 +101,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "detect overwriting newly renamed path conflict",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source:  "index.js",
 					Target:  "index.svelte",
@@ -118,7 +118,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "report conflict when target path exists but changes AFTER the overwriting file is renamed",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source:  "dsc-001.arw",
 					Target:  "dsc-002.arw",
@@ -136,7 +136,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "don't report conflict if target file exists but changes BEFORE the overwriting file is renamed",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source:  "dsc-001.arw",
 					Target:  "dsc-000.arw",
@@ -155,7 +155,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "auto fix path exists conflict",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source:  "dsc-001.arw",
 					Target:  "dsc-002.arw",
@@ -169,7 +169,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "auto fix overwriting several files conflict",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source:  "1984.pdf",
 					Target:  "1.pdf",
@@ -207,7 +207,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "auto fix overwriting files conflict with custom pattern",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source:  "myFile.pdf",
 					Target:  "myFile.pdf",
@@ -245,7 +245,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "detect if target file is changing later",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "03.txt",
 					Target: "02.txt",
@@ -265,7 +265,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			Name: "auto fix target file changing later",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					Source: "03.txt",
 					Target: "02.txt",

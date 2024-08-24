@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/ayoisaiah/f2/internal/testutil"
@@ -14,7 +15,7 @@ func TestReport(t *testing.T) {
 	testCases := []testutil.TestCase{
 		{
 			Name: "report unchanged file names",
-			Changes: []*file.Change{
+			Changes: file.Changes{
 				{
 					RelSourcePath: "macos_update_notes_2023.txt",
 					RelTargetPath: "macos_update_notes_2023.txt",
@@ -26,6 +27,7 @@ func TestReport(t *testing.T) {
 					Status:        status.Unchanged,
 				},
 			},
+			Args: []string{"-r"},
 		},
 	}
 
@@ -47,11 +49,17 @@ func reportTest(t *testing.T, cases []testutil.TestCase) {
 				t.Cleanup(tc.SetupFunc(t))
 			}
 
-			var buf bytes.Buffer
-			report.Stdout = &buf
-			report.NonInteractive(tc.Changes, false)
+			conf := testutil.GetConfig(t, &tc, ".")
 
-			testutil.CompareGoldenFile(t, &tc, buf.Bytes())
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+
+			config.Stdout = &stdout
+			config.Stderr = &stderr
+
+			report.Report(conf, tc.Changes, false)
+
+			testutil.CompareGoldenFile(t, &tc, stdout.Bytes())
 		})
 	}
 }
