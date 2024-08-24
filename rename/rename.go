@@ -30,10 +30,10 @@ func commit(fileChanges file.Changes) []int {
 	for i := range fileChanges {
 		change := fileChanges[i]
 
-		targetPath := change.RelTargetPath
+		targetPath := change.TargetPath
 
 		// skip paths that are unchanged in every aspect
-		if change.RelSourcePath == targetPath {
+		if change.SourcePath == targetPath {
 			continue
 		}
 
@@ -44,7 +44,7 @@ func commit(fileChanges file.Changes) []int {
 		// 2. Rename <source> to <target>
 		// 3. Rename __<time>__<target>__<time>__ to <target>
 		var isCaseChangeOnly bool // only the target case is changing
-		if strings.EqualFold(change.RelSourcePath, targetPath) {
+		if strings.EqualFold(change.SourcePath, targetPath) {
 			isCaseChangeOnly = true
 			timeStr := fmt.Sprintf("%d", time.Now().UnixNano())
 			targetPath = filepath.Join(
@@ -74,11 +74,11 @@ func commit(fileChanges file.Changes) []int {
 			}
 		}
 
-		err := os.Rename(change.RelSourcePath, targetPath) // step 2
+		err := os.Rename(change.SourcePath, targetPath) // step 2
 		// if the intermediate rename is successful,
 		// proceed with the original renaming operation
 		if err == nil && isCaseChangeOnly {
-			err = os.Rename(targetPath, change.RelTargetPath) // step 3
+			err = os.Rename(targetPath, change.TargetPath) // step 3
 		}
 
 		if err != nil {

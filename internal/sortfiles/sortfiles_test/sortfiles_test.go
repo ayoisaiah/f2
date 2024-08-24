@@ -32,9 +32,9 @@ func sortTest(t *testing.T, unsorted []string) file.Changes {
 		v := unsorted[i]
 
 		changes[i] = &file.Change{
-			Source:        filepath.Base(v),
-			BaseDir:       filepath.Dir(v),
-			RelSourcePath: v,
+			Source:     filepath.Base(v),
+			BaseDir:    filepath.Dir(v),
+			SourcePath: v,
 		}
 
 		f, err := os.Stat(v)

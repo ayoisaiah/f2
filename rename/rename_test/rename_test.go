@@ -42,11 +42,11 @@ func renameTest(t *testing.T, cases []testutil.TestCase) {
 			ch := tc.Changes[j]
 
 			cases[i].Changes[j].BaseDir = baseDirPath
-			cases[i].Changes[j].RelSourcePath = filepath.Join(
+			cases[i].Changes[j].SourcePath = filepath.Join(
 				ch.BaseDir,
 				ch.Source,
 			)
-			cases[i].Changes[j].RelTargetPath = filepath.Join(
+			cases[i].Changes[j].TargetPath = filepath.Join(
 				ch.BaseDir,
 				ch.Target,
 			)
@@ -136,12 +136,12 @@ func postRename(t *testing.T, cases []testutil.TestCase) {
 		for j := range tc.Changes {
 			ch := tc.Changes[j]
 
-			cases[i].Changes[j].OriginalSource = ch.Source
-			cases[i].Changes[j].RelSourcePath = filepath.Join(
+			cases[i].Changes[j].OriginalName = ch.Source
+			cases[i].Changes[j].SourcePath = filepath.Join(
 				ch.BaseDir,
 				ch.Source,
 			)
-			cases[i].Changes[j].RelTargetPath = filepath.Join(
+			cases[i].Changes[j].TargetPath = filepath.Join(
 				ch.BaseDir,
 				ch.Target,
 			)

@@ -101,11 +101,11 @@ func createFileChange(dirPath string, fileInfo fs.FileInfo) *file.Change {
 	fileName := fileInfo.Name()
 
 	match := &file.Change{
-		BaseDir:        baseDir,
-		IsDir:          fileInfo.IsDir(),
-		Source:         fileName,
-		OriginalSource: fileName,
-		RelSourcePath:  filepath.Join(baseDir, fileName),
+		BaseDir:      baseDir,
+		IsDir:        fileInfo.IsDir(),
+		Source:       fileName,
+		OriginalName: fileName,
+		SourcePath:   filepath.Join(baseDir, fileName),
 	}
 
 	return match
@@ -247,8 +247,8 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 	for i := range changes {
 		ch := changes[i]
 		ch.Source, ch.Target = ch.Target, ch.Source
-		ch.RelSourcePath = filepath.Join(ch.BaseDir, ch.Source)
-		ch.RelTargetPath = filepath.Join(ch.BaseDir, ch.Target)
+		ch.SourcePath = filepath.Join(ch.BaseDir, ch.Source)
+		ch.TargetPath = filepath.Join(ch.BaseDir, ch.Target)
 		changes[i] = ch
 	}
 

@@ -19,8 +19,8 @@ func replaceTest(t *testing.T, cases []testutil.TestCase) {
 		for j := range tc.Changes {
 			ch := tc.Changes[j]
 
-			cases[i].Changes[j].OriginalSource = ch.Source
-			cases[i].Changes[j].RelSourcePath = filepath.Join(
+			cases[i].Changes[j].OriginalName = ch.Source
+			cases[i].Changes[j].SourcePath = filepath.Join(
 				ch.BaseDir,
 				ch.Source,
 			)

@@ -82,12 +82,12 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 		processed[absSourcePath] = true
 
 		match := &file.Change{
-			BaseDir:        sourceDir,
-			IsDir:          fileInfo.IsDir(),
-			Source:         fileName,
-			OriginalSource: fileName,
-			RelSourcePath:  absSourcePath,
-			CSVRow:         record,
+			BaseDir:      sourceDir,
+			IsDir:        fileInfo.IsDir(),
+			Source:       fileName,
+			OriginalName: fileName,
+			SourcePath:   absSourcePath,
+			CSVRow:       record,
 		}
 
 		changes = append(changes, match)

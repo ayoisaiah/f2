@@ -678,7 +678,7 @@ func replaceMatches(
 
 		change.Target = strings.TrimSpace(filepath.Clean(change.Target))
 		change.Status = status.OK
-		change.RelTargetPath = filepath.Join(change.BaseDir, change.Target)
+		change.TargetPath = filepath.Join(change.BaseDir, change.Target)
 		matches[i] = change
 	}
 

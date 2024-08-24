@@ -28,12 +28,12 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 				cases[i].Changes[j].Status = status.OK
 			}
 
-			cases[i].Changes[j].OriginalSource = ch.Source
-			cases[i].Changes[j].RelSourcePath = filepath.Join(
+			cases[i].Changes[j].OriginalName = ch.Source
+			cases[i].Changes[j].SourcePath = filepath.Join(
 				ch.BaseDir,
 				ch.Source,
 			)
-			cases[i].Changes[j].RelTargetPath = filepath.Join(
+			cases[i].Changes[j].TargetPath = filepath.Join(
 				ch.BaseDir,
 				ch.Target,
 			)

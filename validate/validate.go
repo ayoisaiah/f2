@@ -26,8 +26,8 @@ type validationCtx struct {
 }
 
 func (ctx validationCtx) updateSeenPaths() {
-	if _, ok := ctx.seenPaths[ctx.change.RelTargetPath]; !ok {
-		ctx.seenPaths[ctx.change.RelTargetPath] = ctx.changeIndex
+	if _, ok := ctx.seenPaths[ctx.change.TargetPath]; !ok {
+		ctx.seenPaths[ctx.change.TargetPath] = ctx.changeIndex
 	}
 }
 
@@ -108,10 +108,10 @@ func checkPathExistsConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
 	// Report if target path exists on the filesystem
-	if _, err := os.Stat(ctx.change.RelTargetPath); err == nil ||
+	if _, err := os.Stat(ctx.change.TargetPath); err == nil ||
 		errors.Is(err, os.ErrExist) {
 		// Don't report a conflict for an unchanged filename
-		if ctx.change.RelSourcePath == ctx.change.RelTargetPath {
+		if ctx.change.SourcePath == ctx.change.TargetPath {
 			ctx.change.Status = status.Unchanged
 			return
 		}
@@ -119,8 +119,8 @@ func checkPathExistsConflict(
 		// Case-insensitive filesystems should not report conflicts
 		// if only the case of the filename is being changed.
 		if strings.EqualFold(
-			ctx.change.RelSourcePath,
-			ctx.change.RelTargetPath,
+			ctx.change.SourcePath,
+			ctx.change.TargetPath,
 		) {
 			return
 		}
@@ -138,8 +138,8 @@ func checkPathExistsConflict(
 		for i := 0; i < len(changes); i++ {
 			ch := changes[i]
 
-			if ctx.change.RelTargetPath == ch.RelSourcePath &&
-				!strings.EqualFold(ch.RelSourcePath, ch.RelTargetPath) &&
+			if ctx.change.TargetPath == ch.SourcePath &&
+				!strings.EqualFold(ch.SourcePath, ch.TargetPath) &&
 				ctx.changeIndex > i {
 				return
 			}
@@ -159,7 +159,7 @@ func checkPathExistsConflict(
 func checkTargetFileChangingConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
-	seenIndex, ok := ctx.seenPaths[ctx.change.RelSourcePath]
+	seenIndex, ok := ctx.seenPaths[ctx.change.SourcePath]
 	if !ok {
 		return
 	}
@@ -181,7 +181,7 @@ func checkTargetFileChangingConflict(
 func checkOverwritingPathConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
-	if _, ok := ctx.seenPaths[ctx.change.RelTargetPath]; ok {
+	if _, ok := ctx.seenPaths[ctx.change.TargetPath]; ok {
 		conflictDetected = true
 		ctx.change.Status = status.OverwritingNewPath
 	}

@@ -17,14 +17,14 @@ func TestReport(t *testing.T) {
 			Name: "report unchanged file names",
 			Changes: file.Changes{
 				{
-					RelSourcePath: "macos_update_notes_2023.txt",
-					RelTargetPath: "macos_update_notes_2023.txt",
-					Status:        status.Unchanged,
+					SourcePath: "macos_update_notes_2023.txt",
+					TargetPath: "macos_update_notes_2023.txt",
+					Status:     status.Unchanged,
 				},
 				{
-					RelSourcePath: "macos_user_guide_macos_sierra.pdf",
-					RelTargetPath: "macos_user_guide_macos_sierra.pdf",
-					Status:        status.Unchanged,
+					SourcePath: "macos_user_guide_macos_sierra.pdf",
+					TargetPath: "macos_user_guide_macos_sierra.pdf",
+					Status:     status.Unchanged,
 				},
 			},
 			Args: []string{"-r"},

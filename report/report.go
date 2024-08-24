@@ -82,7 +82,7 @@ func PrintResults(conf *config.Config, fileChanges file.Changes) {
 		change := fileChanges[i]
 
 		if conf.IsOutputToPipe && change.Error != nil {
-			pterm.Println(change.RelTargetPath)
+			pterm.Println(change.TargetPath)
 		}
 
 		if !conf.Verbose {
@@ -93,8 +93,8 @@ func PrintResults(conf *config.Config, fileChanges file.Changes) {
 			pterm.Fprintln(config.Stderr,
 				pterm.Error.Sprintf(
 					"error renaming '%s' to '%s': %v",
-					change.RelSourcePath,
-					change.RelTargetPath,
+					change.SourcePath,
+					change.TargetPath,
 					change.Error,
 				),
 			)
@@ -105,8 +105,8 @@ func PrintResults(conf *config.Config, fileChanges file.Changes) {
 		pterm.Fprintln(config.Stderr,
 			pterm.Success.Sprintf(
 				"renamed: '%s' to '%s'",
-				change.RelSourcePath,
-				change.RelTargetPath,
+				change.SourcePath,
+				change.TargetPath,
 			),
 		)
 	}

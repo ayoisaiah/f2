@@ -12,29 +12,29 @@ import (
 )
 
 // Change represents a single renaming change.
-// TODO: review the naming of these fields especially
-// OriginalSource, RelSourcePath, & RelTargetPath
 type Change struct {
-	Error          error         `json:"error,omitempty"`
-	OriginalSource string        `json:"-"`
-	Status         status.Status `json:"status"`
-	BaseDir        string        `json:"base_dir"`
-	Source         string        `json:"source"`
-	Target         string        `json:"target"`
-	// RelSourcePath is BaseDir + Source
-	RelSourcePath string `json:"-"`
-	// RelTargetPath is BaseDir + Target
-	RelTargetPath string   `json:"-"`
+	Error error `json:"error,omitempty"`
+	// The original filename which can be different from source in
+	// a multi-step renaming operation
+	OriginalName string        `json:"-"`
+	Status       status.Status `json:"status"`
+	BaseDir      string        `json:"base_dir"`
+	Source       string        `json:"source"`
+	Target       string        `json:"target"`
+	// SourcePath is BaseDir + Source
+	SourcePath string `json:"-"`
+	// TargetPath is BaseDir + Target
+	TargetPath    string   `json:"-"`
 	CSVRow        []string `json:"-"`
 	Position      int      `json:"-"`
 	IsDir         bool     `json:"is_dir"`
-	WillOverwrite bool     `json:"will_overwrite"`
+	WillOverwrite bool     `json:"-"`
 }
 
 // AutoFixTarget sets the new target name
 func (c *Change) AutoFixTarget(newTarget string) {
 	c.Target = newTarget
-	c.RelTargetPath = filepath.Join(c.BaseDir, c.Target)
+	c.TargetPath = filepath.Join(c.BaseDir, c.Target)
 	c.Status = status.OK
 }
 
@@ -81,7 +81,7 @@ func (c Changes) RenderTable(w io.Writer) {
 			changeStatus = pterm.Red(strings.TrimPrefix(msg, ": "))
 		}
 
-		d := []string{change.RelSourcePath, change.RelTargetPath, changeStatus}
+		d := []string{change.SourcePath, change.TargetPath, changeStatus}
 		data[change.Position] = d
 	}
 

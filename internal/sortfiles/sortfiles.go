@@ -61,8 +61,8 @@ func ByTime(
 	sortPerDir bool,
 ) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
-		sourceA, errA := times.Stat(a.RelSourcePath)
-		sourceB, errB := times.Stat(b.RelSourcePath)
+		sourceA, errA := times.Stat(a.SourcePath)
+		sourceB, errB := times.Stat(b.SourcePath)
 
 		if errA != nil || errB != nil {
 			pterm.Error.Printfln(
@@ -99,7 +99,7 @@ func ByTime(
 		}
 
 		if sortPerDir &&
-			filepath.Dir(a.RelSourcePath) != filepath.Dir(b.RelSourcePath) {
+			filepath.Dir(a.SourcePath) != filepath.Dir(b.SourcePath) {
 			return 0
 		}
 
@@ -116,8 +116,8 @@ func ByTime(
 func BySize(changes file.Changes, reverseSort, sortPerDir bool) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		var fileInfoA, fileInfoB fs.FileInfo
-		fileInfoA, errA := os.Stat(a.RelSourcePath)
-		fileInfoB, errB := os.Stat(b.RelSourcePath)
+		fileInfoA, errA := os.Stat(a.SourcePath)
+		fileInfoB, errB := os.Stat(b.SourcePath)
 
 		if errA != nil || errB != nil {
 			pterm.Error.Printfln("error getting file info: %v, %v", errA, errB)
@@ -129,7 +129,7 @@ func BySize(changes file.Changes, reverseSort, sortPerDir bool) {
 
 		// Don't sort files in different directories relative to each other
 		if sortPerDir &&
-			filepath.Dir(a.RelSourcePath) != filepath.Dir(b.RelSourcePath) {
+			filepath.Dir(a.SourcePath) != filepath.Dir(b.SourcePath) {
 			return 0
 		}
 
@@ -146,8 +146,8 @@ func BySize(changes file.Changes, reverseSort, sortPerDir bool) {
 // ASCII order.
 func Natural(changes file.Changes, reverseSort bool) {
 	sort.SliceStable(changes, func(i, j int) bool {
-		sourceA := changes[i].RelSourcePath
-		sourceB := changes[j].RelSourcePath
+		sourceA := changes[i].SourcePath
+		sourceB := changes[j].SourcePath
 
 		if reverseSort {
 			return !natsort.Compare(sourceA, sourceB)
