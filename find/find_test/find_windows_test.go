@@ -26,5 +26,5 @@ var windowsTestCases = []testutil.TestCase{
 
 // TestFindWindows only tests search behaviors perculiar to Windows
 func TestFindWindows(t *testing.T) {
-	findTest(t, windowsTestCases, false)
+	findTest(t, windowsTestCases)
 }
