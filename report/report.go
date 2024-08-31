@@ -92,7 +92,7 @@ func PrintResults(conf *config.Config, fileChanges file.Changes) {
 		if change.Error != nil {
 			pterm.Fprintln(config.Stderr,
 				pterm.Error.Sprintf(
-					"error renaming '%s' to '%s': %v",
+					"renaming '%s' to '%s' failed: %v",
 					change.SourcePath,
 					change.TargetPath,
 					change.Error,
@@ -103,8 +103,9 @@ func PrintResults(conf *config.Config, fileChanges file.Changes) {
 		}
 
 		pterm.Fprintln(config.Stderr,
-			pterm.Success.Sprintf(
-				"renamed: '%s' to '%s'",
+			pterm.Sprintf(
+				"%s '%s' to '%s'",
+				pterm.Green("renamed:"),
 				change.SourcePath,
 				change.TargetPath,
 			),
