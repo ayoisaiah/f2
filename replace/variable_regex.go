@@ -63,7 +63,7 @@ func init() {
 		fmt.Sprintf("{+f(?:\\.%s)?}+", transformTokens),
 	)
 	extensionVarRegex = regexp.MustCompile(
-		fmt.Sprintf("{+ext(?:\\.%s)?}+", transformTokens),
+		fmt.Sprintf("{+(2)?ext(?:\\.%s)?}+", transformTokens),
 	)
 	parentDirVarRegex = regexp.MustCompile(
 		fmt.Sprintf("{+(\\d+)?p(?:\\.%s)?}+", transformTokens),

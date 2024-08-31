@@ -123,6 +123,7 @@ type filenameVars struct {
 type extVarMatch struct {
 	regex          *regexp.Regexp
 	transformToken string
+	doubleExt      bool
 }
 
 type extVars struct {

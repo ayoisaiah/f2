@@ -375,6 +375,26 @@ func TestVariables(t *testing.T) {
 				"-r", "{xt.OtherSerialNumber}{ext}", "--exiftool-opts", `--extractEmbedded`,
 			},
 		},
+		{
+			Name: "replace file with double extension",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "file.tar.gz",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "audio.mp3",
+				},
+			},
+			Want: []string{
+				"testdata/june.tar.gz",
+				"testdata/june.mp3",
+			},
+			Args: []string{
+				"-r", "june{2ext}",
+			},
+		},
 	}
 
 	replaceTest(t, testCases)

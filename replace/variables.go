@@ -47,13 +47,6 @@ const (
 	md5Hash    hashAlgorithm = "md5"
 )
 
-// var (
-// 	currentBaseDir string
-// 	// newDirIndex keeps track of the index of the first file in a new
-// 	// directory.
-// 	newDirIndex int
-// )
-
 // Exif represents exif information from an image file.
 type Exif struct {
 	Latitude              string
@@ -905,13 +898,30 @@ func replaceFilenameVars(
 	return target
 }
 
-func replaceExtVars(target, fileExt string, ev extVars) string {
+func getDoubleExtension(filename string) string {
+	ext := filepath.Ext(filename)
+	ext2 := filepath.Ext(pathutil.StripExtension(filename))
+
+	return ext2 + ext
+}
+
+func replaceExtVars(change *file.Change, ev extVars) (target string) {
 	for i := range ev.matches {
+		fileExt := filepath.Ext(change.OriginalName)
+
+		if change.IsDir {
+			fileExt = "" // Directory names do not have extensions
+		}
+
 		current := ev.matches[i]
+
+		if current.doubleExt {
+			fileExt = getDoubleExtension(change.OriginalName)
+		}
 
 		source := transformString(fileExt, current.transformToken)
 
-		target = regexReplace(current.regex, target, source, 0)
+		target = regexReplace(current.regex, change.Target, source, 0)
 	}
 
 	return target
@@ -924,8 +934,6 @@ func replaceVariables(
 	change *file.Change,
 	vars *variables,
 ) error {
-	fileExt := filepath.Ext(change.OriginalName)
-
 	if len(vars.filename.matches) > 0 {
 		sourceName := filepath.Base(change.OriginalName)
 		if !change.IsDir {
@@ -940,11 +948,7 @@ func replaceVariables(
 	}
 
 	if len(vars.ext.matches) > 0 {
-		if change.IsDir {
-			fileExt = ""
-		}
-
-		change.Target = replaceExtVars(change.Target, fileExt, vars.ext)
+		change.Target = replaceExtVars(change, vars.ext)
 	}
 
 	if len(vars.parentDir.matches) > 0 {

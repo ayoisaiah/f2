@@ -405,7 +405,7 @@ func getExtVars(replacementInput string) (extVars, error) {
 
 	submatches := extensionVarRegex.FindAllStringSubmatch(replacementInput, -1)
 
-	expectedLength := 2
+	expectedLength := 3
 
 	for _, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -421,7 +421,11 @@ func getExtVars(replacementInput string) (extVars, error) {
 
 		match.regex = regex
 
-		match.transformToken = submatch[1]
+		if submatch[1] != "" {
+			match.doubleExt = true
+		}
+
+		match.transformToken = submatch[2]
 
 		evMatches.matches = append(evMatches.matches, match)
 	}
