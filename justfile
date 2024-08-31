@@ -5,7 +5,7 @@ test:
 
 [no-cd]
 test-pkg filter='.*':
-  @go test ./... --json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | gotestfmt
+  @go test ./... --json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | gotestfmt -hide 'empty-packages'
 
 [no-cd]
 update-golden filter='.*':
