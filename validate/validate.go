@@ -252,7 +252,7 @@ func checkTrailingPeriodConflictInWindows(
 ) (conflictDetected bool) {
 	if runtime.GOOS == osutil.Windows {
 		pathComponents := strings.Split(
-			ctx.change.Target,
+			ctx.change.TargetPath,
 			string(os.PathSeparator),
 		)
 
