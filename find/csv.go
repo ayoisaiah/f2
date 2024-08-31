@@ -10,6 +10,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/report"
 )
 
 // readCSVFile reads all the records contained in a CSV file specified by
@@ -45,15 +46,17 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 		return nil, err
 	}
 
-	findSlice := make([]string, 0, len(records))
-	replacementSlice := make([]string, 0, len(records))
-
-	for _, record := range records {
+	for i, record := range records {
 		if len(record) == 0 {
 			continue
 		}
 
 		source := strings.TrimSpace(record[0])
+
+		err := os.Chdir(conf.WorkingDir)
+		if err != nil {
+			return nil, err
+		}
 
 		absSourcePath, absErr := filepath.Abs(source)
 		if absErr != nil {
@@ -64,6 +67,10 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 		if statErr != nil {
 			// Skip missing source files
 			if errors.Is(statErr, os.ErrNotExist) {
+				if conf.Verbose {
+					report.NonExistentFile(fileInfo.Name(), i+1)
+				}
+
 				continue
 			}
 			return nil, statErr
@@ -85,30 +92,17 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 			BaseDir:      sourceDir,
 			IsDir:        fileInfo.IsDir(),
 			Source:       fileName,
+			Target:       fileName,
 			OriginalName: fileName,
 			SourcePath:   absSourcePath,
 			CSVRow:       record,
+			Position:     i,
 		}
 
 		changes = append(changes, match)
 
-		var target string
 		if len(record) > 1 {
-			target = strings.TrimSpace(record[1])
-		}
-
-		findSlice = append(findSlice, fileName)
-
-		replacementSlice = append(replacementSlice, target)
-	}
-
-	if len(conf.ReplacementSlice) == 0 && len(conf.FindSlice) == 0 {
-		conf.FindSlice = findSlice
-		conf.ReplacementSlice = replacementSlice
-
-		err = conf.SetFindStringRegex(0)
-		if err != nil {
-			return nil, err
+			match.Target = strings.TrimSpace(record[1])
 		}
 	}
 

@@ -32,6 +32,17 @@ func BackupFileRemovalFailed(err error) {
 	)
 }
 
+func NonExistentFile(name string, row int) {
+	pterm.Fprintln(
+		config.Stderr,
+		pterm.Sprintf(
+			"skipping non existent source file at row %d: %s",
+			row,
+			name,
+		),
+	)
+}
+
 // NoMatches prints out a message indicating that the find string failed
 // to match any files.
 func NoMatches(conf *config.Config) {

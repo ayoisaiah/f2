@@ -628,6 +628,40 @@ func replaceString(conf *config.Config, originalName string) string {
 	)
 }
 
+// applyReplacements applies the configured replacement patterns to the source
+// filename
+func applyReplacement(
+	conf *config.Config,
+	vars *variables,
+	change *file.Change,
+) error {
+	originalName := change.Source
+	fileExt := filepath.Ext(originalName)
+
+	if conf.IgnoreExt && !change.IsDir {
+		originalName = pathutil.StripExtension(originalName)
+	}
+
+	change.Target = replaceString(conf, originalName)
+
+	// Replace any variables present with their corresponding values
+	err := replaceVariables(conf, change, vars)
+	if err != nil {
+		return err
+	}
+
+	// Reattach the original extension to the new file name
+	if conf.IgnoreExt && !change.IsDir {
+		change.Target += fileExt
+	}
+
+	change.Target = strings.TrimSpace(filepath.Clean(change.Target))
+	change.Status = status.OK
+	change.TargetPath = filepath.Join(change.BaseDir, change.Target)
+
+	return nil
+}
+
 // replaceMatches handles the replacement of matches in each file with the
 // replacement string.
 func replaceMatches(
@@ -646,39 +680,12 @@ func replaceMatches(
 	for i := range matches {
 		change := matches[i]
 
-		// FIXME: Produces wrong result when a sort is provided
-		if len(change.CSVRow) > 0 && i != conf.Search.Index {
-			if change.Target == "" {
-				matches[i].Target = change.Source
-			}
-
-			continue
-		}
-
 		change.Position = i
-		originalName := change.Source
-		fileExt := filepath.Ext(originalName)
-
-		if conf.IgnoreExt && !change.IsDir {
-			originalName = pathutil.StripExtension(originalName)
-		}
-
-		change.Target = replaceString(conf, originalName)
-
-		// Replace any variables present with their corresponding values
-		err = replaceVariables(conf, change, &vars)
+		err := applyReplacement(conf, &vars, change)
 		if err != nil {
 			return nil, err
 		}
 
-		// Reattach the original extension to the new file name
-		if conf.IgnoreExt && !change.IsDir {
-			change.Target += fileExt
-		}
-
-		change.Target = strings.TrimSpace(filepath.Clean(change.Target))
-		change.Status = status.OK
-		change.TargetPath = filepath.Join(change.BaseDir, change.Target)
 		matches[i] = change
 	}
 
@@ -732,6 +739,23 @@ func Replace(
 	changes file.Changes,
 ) (file.Changes, error) {
 	var err error
+
+	if conf.CSVFilename != "" {
+		for i := range changes {
+			ch := changes[i]
+
+			conf.Replacement = ch.Target
+			vars, err := extractVariables(conf.Replacement)
+			if err != nil {
+				return nil, err
+			}
+
+			err = applyReplacement(conf, &vars, ch)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	changes, err = handleReplacementChain(conf, changes)
 	if err != nil {

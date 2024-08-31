@@ -14,6 +14,7 @@ import (
 	"github.com/ayoisaiah/f2/app"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
+	cp "github.com/otiai10/copy"
 )
 
 // TestCase represents a unique test case.
@@ -43,6 +44,8 @@ func SetupFileSystem(
 	if err != nil {
 		tb.Fatal(err)
 	}
+
+	_ = cp.Copy("testdata", testDir)
 
 	tb.Cleanup(func() {
 		err = os.RemoveAll(testDir)

@@ -82,7 +82,7 @@ func (c Changes) RenderTable(w io.Writer) {
 		}
 
 		d := []string{change.SourcePath, change.TargetPath, changeStatus}
-		data[change.Position] = d
+		data[i] = d
 	}
 
 	printTable(data, w)

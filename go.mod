@@ -24,6 +24,7 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/otiai10/copy v1.14.0
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/stretchr/testify v1.8.4
 	github.com/veqryn/slog-context v0.7.0
@@ -44,6 +45,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -140,6 +140,15 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.Debug = ctx.Bool("debug")
 	c.FilesAndDirPaths = ctx.Args().Slice()
 
+	if c.CSVFilename != "" {
+		absPath, err := filepath.Abs(filepath.Dir(c.CSVFilename))
+		if err != nil {
+			return err
+		}
+
+		c.WorkingDir = absPath
+	}
+
 	if len(ctx.Args().Slice()) > 0 {
 		c.FilesAndDirPaths = ctx.Args().Slice()
 	}
@@ -291,10 +300,12 @@ func Init(ctx *cli.Context) (*Config, error) {
 		return nil, err
 	}
 
-	// Get the current working directory
-	conf.WorkingDir, err = filepath.Abs(".")
-	if err != nil {
-		return nil, err
+	if conf.WorkingDir == "" {
+		// Get the current working directory
+		conf.WorkingDir, err = filepath.Abs(".")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	conf.BackupFilename = generateBackupFilename(conf.WorkingDir)
