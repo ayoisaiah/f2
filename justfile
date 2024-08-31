@@ -14,6 +14,9 @@ update-golden filter='.*':
 build:
 	@go build -o bin/{{APP}} ./cmd...
 
+build-win:
+	@go build -o bin/{{APP}}.exe ./cmd...
+
 lint:
 	@golangci-lint run ./...
 
