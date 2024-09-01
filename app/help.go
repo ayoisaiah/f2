@@ -283,7 +283,8 @@ Project repository: https://github.com/ayoisaiah/f2
 	%s
 
 %s
-  Read the manual at https://github.com/ayoisaiah/f2/wiki`,
+  Read the manual at https://github.com/ayoisaiah/f2/wiki
+`,
 		app.Name,
 		app.Version,
 		app.Authors[0].String(),
