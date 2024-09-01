@@ -68,9 +68,9 @@ jobs:
           prerelease: true
 
       - name: Build assets with Goreleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
+          version: "~> v2"
           args: release --clean --snapshot
 
       - name: Upload assets to nightly release
@@ -118,9 +118,9 @@ jobs:
           prerelease: false
 
       - name: Run Goreleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
+          version: "~> v2"
           args: release --clean
         env:
           GORELEASER_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
