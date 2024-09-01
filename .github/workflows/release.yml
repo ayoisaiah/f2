@@ -58,7 +58,7 @@ jobs:
           gh release delete nightly --yes || true
 
       - name: Create nightly release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: refs/tags/${{ env.dev_tag }}
           name: Development build (master)
@@ -109,7 +109,7 @@ jobs:
           go-version: ${{ env.go_version }}
 
       - name: Create stable release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref }}
           name: ${{ github.ref }}
