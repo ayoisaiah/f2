@@ -79,7 +79,7 @@ func skipFileIfHidden(
 
 // isMaxDepth reports whether the configured max depth has been reached.
 func isMaxDepth(rootPath, currentPath string, maxDepth int) bool {
-	if rootPath == filepath.Dir(currentPath) {
+	if rootPath == filepath.Dir(currentPath) || maxDepth == 0 {
 		return false
 	}
 
@@ -87,13 +87,13 @@ func isMaxDepth(rootPath, currentPath string, maxDepth int) bool {
 		return true
 	}
 
-	p := strings.Replace(currentPath, rootPath+string(os.PathSeparator), "", 1)
+	relativePath := strings.TrimPrefix(
+		currentPath,
+		rootPath+string(os.PathSeparator),
+	)
+	depthCount := strings.Count(relativePath, string(os.PathSeparator))
 
-	if strings.Count(p, string(os.PathSeparator)) > maxDepth && maxDepth != 0 {
-		return true
-	}
-
-	return false
+	return depthCount > maxDepth
 }
 
 func createFileChange(dirPath string, fileInfo fs.FileInfo) *file.Change {
