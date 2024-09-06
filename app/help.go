@@ -8,8 +8,7 @@ import (
 )
 
 const usageText = `f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
-  command | f2 FLAGS [OPTIONS]
-  command | f2 FIND [REPLACE]`
+  command | f2 FLAGS [OPTIONS]`
 
 func helpText(app *cli.App) string {
 	flagCSVHelp := fmt.Sprintf(
@@ -138,6 +137,19 @@ func helpText(app *cli.App) string {
 		flagOnlyDir.GetUsage(),
 	)
 
+	flagPairHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("--", flagPair.Aliases[0]),
+		pterm.Green("--", flagPair.Name),
+		flagPair.GetUsage(),
+	)
+
+	flagPairOrderHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagPairOrder.Name),
+		flagPairOrder.GetUsage(),
+	)
+
 	flagQuietHelp := fmt.Sprintf(
 		`%s %s`,
 		pterm.Green("--", flagQuiet.Name),
@@ -208,18 +220,9 @@ Project repository: https://github.com/ayoisaiah/f2
 
 %s
   %s
-    A regular expression pattern used for matching files and directories.
-    It accepts the syntax defined by the RE2 standard.
-
-  %s
-    The replacement string which replaces each match in the file name.
-    It supports capture variables, built-in variables, and exiftool variables.
-    If omitted, it defaults to an empty string.
-
-  %s
     Optionally provide one or more files and directories to search for matches. 
 		If omitted, it searches the current directory alone. Also, note that 
-		directories are not searched recursively.
+		directories are not searched recursively unless --recursive/-R is used.
 
 %s
   %s
@@ -279,6 +282,10 @@ Project repository: https://github.com/ayoisaiah/f2
 
 	%s
 
+	%s
+
+	%s
+
 %s
 	%s
 
@@ -292,9 +299,7 @@ Project repository: https://github.com/ayoisaiah/f2
 		pterm.Bold.Sprintf("USAGE"),
 		usageText,
 		pterm.Bold.Sprintf("POSITIONAL ARGUMENTS"),
-		pterm.Green("<FIND>"),
-		pterm.Green("[REPLACE]"),
-		pterm.Green("[PATHS]"),
+		pterm.Green("[PATHS TO FILES AND DIRECTORIES...]"),
 		pterm.Bold.Sprintf("FLAGS"),
 		flagCSVHelp,
 		flagFindHelp,
@@ -316,6 +321,8 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagMaxDepthHelp,
 		flagNoColorHelp,
 		flagOnlyDirHelp,
+		flagPairHelp,
+		flagPairOrderHelp,
 		flagQuietHelp,
 		flagRecursiveHelp,
 		flagReplaceLimitHelp,

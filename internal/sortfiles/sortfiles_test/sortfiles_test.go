@@ -815,3 +815,95 @@ func TestSortFiles_ForRenamingAndUndo(t *testing.T) {
 		})
 	}
 }
+
+func TestSortFiles_Pairs(t *testing.T) {
+	testCases := []sortTestCase{
+		{
+			Name: "sort file pairs",
+			Unsorted: []string{
+				"image.dng",
+				"a.jpg",
+				"image.heif",
+				"b.arw",
+				"image.jpg",
+			},
+			Sorted: []string{
+				"a.jpg",
+				"b.arw",
+				"image.dng",
+				"image.heif",
+				"image.jpg",
+			},
+		},
+		{
+			Name: "provide a pair order",
+			Unsorted: []string{
+				"image.dng",
+				"a.jpg",
+				"image.heif",
+				"b.arw",
+				"image.jpg",
+			},
+			Sorted: []string{
+				"a.jpg",
+				"b.arw",
+				"image.heif",
+				"image.dng",
+				"image.jpg",
+			},
+			Order: []string{"heif", "dng", "jpg"},
+		},
+		{
+			Name: "sort multiple file pairs",
+			Unsorted: []string{
+				"image.dng",
+				"a.jpg",
+				"image.heif",
+				"b.arw",
+				"image.jpg",
+				"a.pdf",
+			},
+			Sorted: []string{
+				"a.jpg",
+				"a.pdf",
+				"b.arw",
+				"image.jpg",
+				"image.dng",
+				"image.heif",
+			},
+			Order: []string{"jpg"},
+		},
+		{
+			Name: "order multiple file pairings",
+			Unsorted: []string{
+				"image.dng",
+				"a.jpg",
+				"image.heif",
+				"b.arw",
+				"image.jpg",
+				"a.pdf",
+			},
+			Sorted: []string{
+				"a.pdf",
+				"a.jpg",
+				"b.arw",
+				"image.jpg",
+				"image.dng",
+				"image.heif",
+			},
+			Order: []string{"pdf", "jpg"},
+		},
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.Name, func(t *testing.T) {
+			unsorted := sortTest(t, tc.Unsorted)
+
+			sortfiles.Pairs(unsorted, tc.Order)
+
+			testutil.CompareSourcePath(t, tc.Sorted, unsorted)
+		})
+	}
+}

@@ -89,6 +89,8 @@ type Config struct {
 	IsOutputToPipe           bool           `json:"is_output_to_pipe"`
 	BackupLocation           io.Writer      `json:"-"`
 	BackupFilename           string         `json:"backup_filename"`
+	Pair                     bool           `json:"pair"`
+	PairOrder                []string       `json:"pair_order"`
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -189,6 +191,12 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.ResetIndexPerDir = ctx.Bool("reset-index-per-dir")
 	c.SortPerDir = ctx.Bool("sort-per-dir")
 	c.NoColor = ctx.Bool("no-color")
+	c.Pair = ctx.Bool("pair")
+	c.PairOrder = strings.Split(ctx.String("pair-order"), ",")
+
+	if c.Pair {
+		c.IgnoreExt = true
+	}
 
 	if c.FixConflictsPattern == "" {
 		c.FixConflictsPattern = defaultFixConflictsPattern

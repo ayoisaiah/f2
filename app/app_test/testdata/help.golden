@@ -10,22 +10,12 @@ Project repository: https://github.com/ayoisaiah/f2
 USAGE
   f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
   command | f2 FLAGS [OPTIONS]
-  command | f2 FIND [REPLACE]
 
 POSITIONAL ARGUMENTS
-  <FIND>
-    A regular expression pattern used for matching files and directories.
-    It accepts the syntax defined by the RE2 standard.
-
-  [REPLACE]
-    The replacement string which replaces each match in the file name.
-    It supports capture variables, built-in variables, and exiftool variables.
-    If omitted, it defaults to an empty string.
-
-  [PATHS]
+  [PATHS TO FILES AND DIRECTORIES...]
     Optionally provide one or more files and directories to search for matches. 
     If omitted, it searches the current directory alone. Also, note that 
-    directories are not searched recursively.
+    directories are not searched recursively unless --recursive/-R is used.
 
 FLAGS
   --csv 
@@ -36,7 +26,7 @@ FLAGS
     It accepts the syntax defined by the RE2 standard and defaults to .* 
     if omitted which matches the entire file/directory name.
 
-    When -s/--string-mode is used, this pattern is treated as a literal string
+    When -s/--string-mode is used, this pattern is treated as a literal string.
 
   -r, --replace 
     The replacement string which replaces each match in the file name.
@@ -127,6 +117,27 @@ OPTIONS
 
   -D, --only-dir 
     Renames only directories, not files (implies -d/--include-dir).
+
+  --p, --pair 
+    Enable pair renaming to rename files with the same name (but different 
+    extensions) in the same directory to the same new name. In pair mode,
+    file extensions are ignored and --sort/--sortr has no effect.
+
+    Example:
+      Before: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+
+      $ f2 -r "Photo_{%03d}" --pair -x
+
+      After: Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG
+
+  --pair-order 
+    Order the paired files according to their extension. This helps you control 
+    the file to be renamed first, and whose metadata should be extracted when
+    using variables.
+
+    Example:
+      --pair-order 'dng,jpg' # rename dng files before jpg
+      --pair-order 'xmp,arw' # rename xmp files before arw
 
   --quiet 
     Don't print anything to stdout. If no matches are found, f2 will exit with

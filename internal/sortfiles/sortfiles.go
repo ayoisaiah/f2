@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strings"
 
 	"gopkg.in/djherbis/times.v1"
 
@@ -17,7 +18,37 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/pathutil"
 )
+
+// Pairs sorts the given file changes based on a custom pairing order.
+// Files with extensions matching earlier entries in pairOrder are sorted
+// before those matching later entries.
+func Pairs(changes file.Changes, pairOrder []string) {
+	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		// Compare stripped paths
+		if result := strings.Compare(
+			pathutil.StripExtension(a.SourcePath),
+			pathutil.StripExtension(b.SourcePath),
+		); result != 0 {
+			return result
+		}
+
+		// Compare extensions based on pairOrder
+		aExt, bExt := filepath.Ext(a.Source), filepath.Ext(b.Source)
+		for _, v := range pairOrder {
+			v = "." + v
+			switch {
+			case strings.EqualFold(aExt, v):
+				return -1
+			case strings.EqualFold(bExt, v):
+				return 1
+			}
+		}
+
+		return 0
+	})
+}
 
 // ForRenamingAndUndo is used to sort files before directories to avoid renaming
 // conflicts. It also ensures that child directories are renamed before their

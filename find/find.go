@@ -266,6 +266,11 @@ func Find(conf *config.Config) (changes file.Changes, err error) {
 	}
 
 	defer func() {
+		if conf.Pair && err == nil {
+			sortfiles.Pairs(changes, conf.PairOrder)
+			return
+		}
+
 		if conf.Sort != config.SortDefault && err == nil {
 			sortfiles.Changes(
 				changes,

@@ -185,6 +185,62 @@ func TestReplace(t *testing.T) {
 			},
 			Args: []string{"-f", "(.*)\\.(.*)", "-r", "{<$1>.up}.{<$2>.ti}"},
 		},
+		{
+			Name: "rename file pairs",
+			Changes: file.Changes{
+				{
+					Source: "image.dng",
+				},
+				{
+					Source: "image.heif",
+				},
+				{
+					Source: "image.jpg",
+				},
+				{
+					Source: "image.xmp",
+				},
+				{
+					Source: "some_image.jpg",
+				},
+			},
+			Want: []string{
+				"picture-001.dng",
+				"picture-001.heif",
+				"picture-001.jpg",
+				"picture-001.xmp",
+				"picture-002.jpg",
+			},
+			Args: []string{"-f", ".*", "-r", "picture-{%03d}", "--pair"},
+		},
+		{
+			Name: "multiple file pairs",
+			Changes: file.Changes{
+				{
+					Source: "image.dng",
+				},
+				{
+					Source: "image.heif",
+				},
+				{
+					Source: "image.jpg",
+				},
+				{
+					Source: "some_image.jpg",
+				},
+				{
+					Source: "some_image.xmp",
+				},
+			},
+			Want: []string{
+				"picture-001.dng",
+				"picture-001.heif",
+				"picture-001.jpg",
+				"picture-002.jpg",
+				"picture-002.xmp",
+			},
+			Args: []string{"-f", ".*", "-r", "picture-{%03d}", "--pair"},
+		},
 	}
 
 	replaceTest(t, testCases)

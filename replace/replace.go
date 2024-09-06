@@ -666,6 +666,14 @@ func applyReplacement(
 	return nil
 }
 
+func isPair(prev *file.Change, curr *file.Change) bool {
+	return pathutil.StripExtension(
+		prev.SourcePath,
+	) == pathutil.StripExtension(
+		curr.SourcePath,
+	)
+}
+
 // replaceMatches handles the replacement of matches in each file with the
 // replacement string.
 func replaceMatches(
@@ -681,10 +689,27 @@ func replaceMatches(
 		sortfiles.EnforceHierarchicalOrder(matches)
 	}
 
+	var pairs int
+
 	for i := range matches {
 		change := matches[i]
 
-		change.Position = i
+		// Detect and rename file pairs
+		if i > 0 && i < len(matches) && conf.Pair {
+			prev := matches[i-1]
+
+			if isPair(prev, change) {
+				ext := filepath.Ext(change.Source)
+				common := pathutil.StripExtension(prev.Target)
+				change.Target = common + ext
+				change.TargetPath = filepath.Join(change.BaseDir, change.Target)
+				change.Status = status.OK
+				pairs++
+				continue
+			}
+		}
+
+		change.Position = i - pairs
 		err := applyReplacement(conf, &vars, change)
 		if err != nil {
 			return nil, err
@@ -766,6 +791,7 @@ func Replace(
 		return nil, err
 	}
 
+	// TODO: This should also apply for CSV renaming
 	if conf.IncludeDir {
 		sortfiles.ForRenamingAndUndo(changes, conf.Revert)
 	}

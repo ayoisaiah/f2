@@ -19,7 +19,7 @@ var (
     It accepts the syntax defined by the RE2 standard and defaults to .* 
 		if omitted which matches the entire file/directory name.
 
-		When -s/--string-mode is used, this pattern is treated as a literal string`,
+		When -s/--string-mode is used, this pattern is treated as a literal string.`,
 		DefaultText: "<pattern>",
 	}
 
@@ -179,6 +179,34 @@ var (
 		Aliases: []string{"D"},
 		Usage: `
 		Renames only directories, not files (implies -d/--include-dir).`,
+	}
+
+	flagPair = &cli.BoolFlag{
+		Name:    "pair",
+		Aliases: []string{"p"},
+		Usage: `
+		Enable pair renaming to rename files with the same name (but different 
+		extensions) in the same directory to the same new name. In pair mode,
+		file extensions are ignored and --sort/--sortr has no effect.
+
+		Example:
+			Before: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+
+			$ f2 -r "Photo_{%03d}" --pair -x
+
+			After: Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG`,
+	}
+
+	flagPairOrder = &cli.StringFlag{
+		Name: "pair-order",
+		Usage: `
+		Order the paired files according to their extension. This helps you control 
+		the file to be renamed first, and whose metadata should be extracted when
+		using variables.
+
+		Example:
+		  --pair-order 'dng,jpg' # rename dng files before jpg
+		  --pair-order 'xmp,arw' # rename xmp files before arw`,
 	}
 
 	flagQuiet = &cli.BoolFlag{
