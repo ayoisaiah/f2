@@ -1,6 +1,9 @@
 package find
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
 func TestIsMaxDepth(t *testing.T) {
 	cases := []struct {
@@ -51,7 +54,14 @@ func TestIsMaxDepth(t *testing.T) {
 		tc := cases[i]
 
 		t.Run(tc.Name, func(t *testing.T) {
-			got := isMaxDepth(tc.RootPath, tc.CurrentPath, tc.MaxDepth)
+			// Ensure os-specifc separators are used
+			rootPath, currentPath := filepath.Join(
+				tc.RootPath,
+			), filepath.Join(
+				tc.CurrentPath,
+			)
+
+			got := isMaxDepth(rootPath, currentPath, tc.MaxDepth)
 
 			if got != tc.Expected {
 				t.Fatalf(
