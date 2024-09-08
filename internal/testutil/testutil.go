@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/ayoisaiah/f2/app"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/osutil"
 	cp "github.com/otiai10/copy"
 )
 
@@ -125,7 +127,7 @@ func CompareTargetPath(t *testing.T, want []string, changes file.Changes) {
 	assert.Equal(t, want, got)
 }
 
-// CompareGoldenFile verifies that the output of a renaming operation matches
+// CompareGoldenFile verifies that the output of an operation matches
 // the expected output.
 func CompareGoldenFile(
 	t *testing.T,
@@ -139,6 +141,10 @@ func CompareGoldenFile(
 
 	if len(fileName) > 0 {
 		goldenFile = fileName[0]
+	}
+
+	if runtime.GOOS == osutil.Windows {
+		goldenFile = goldenFile + "_windows"
 	}
 
 	g := goldie.New(
