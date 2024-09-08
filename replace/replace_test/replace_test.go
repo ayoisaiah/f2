@@ -28,7 +28,7 @@ func replaceTest(t *testing.T, cases []testutil.TestCase) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			if tc.SetupFunc != nil {
-				t.Cleanup(tc.SetupFunc(t))
+				t.Cleanup(tc.SetupFunc(t, ""))
 			}
 
 			config := testutil.GetConfig(t, &tc, ".")

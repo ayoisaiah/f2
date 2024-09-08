@@ -9,6 +9,14 @@ import (
 	"github.com/ayoisaiah/f2/internal/testutil"
 )
 
+func setHidden(path string) error {
+	return nil
+}
+
+func setupWindowsHidden(t *testing.T, testDir string) (teardown func()) {
+	return func() {}
+}
+
 var unixTestCases = []testutil.TestCase{
 	{
 		Name: "exclude hidden files by default",
@@ -20,9 +28,9 @@ var unixTestCases = []testutil.TestCase{
 		Name: "include hidden files in search",
 		Want: []string{
 			".hidden_file",
-			"backup/documents/.hidden_old_resume.txt",
+			"backup/documents/.hidden_resume.txt",
 			"documents/.hidden_file.txt",
-			"photos/vacation/mountains/.hidden_old_photo.jpg",
+			"photos/vacation/mountains/.hidden_photo.jpg",
 		},
 		Args: []string{"-f", "hidden", "-RH"},
 	},

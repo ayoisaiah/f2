@@ -19,7 +19,7 @@ func getCurrentDate() string {
 	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
 }
 
-func createDateFile(t *testing.T) func() {
+func createDateFile(t *testing.T, testDir string) func() {
 	t.Helper()
 
 	dateFilePath := filepath.Join("testdata", "date.txt")

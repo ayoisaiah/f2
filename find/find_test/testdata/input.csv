@@ -1,6 +1,6 @@
 Filename,Replacement,Random
 LICENSE.txt,LICENCE,GPLv3
-backup/documents/.hidden_old_resume.txt,not_hidden.txt,
+backup/documents/.hidden_resume.txt,not_hidden.txt,
 projects/project1/index.html,main.html,
 projects/project2/index.html,{csv.3},profile-page
 documents/cv.docx,resume.docx,myname

@@ -11,7 +11,7 @@ var csvCases = []testutil.TestCase{
 		Name: "find matches from csv file",
 		Want: []string{
 			"LICENSE.txt",
-			"backup/documents/.hidden_old_resume.txt",
+			"backup/documents/.hidden_resume.txt",
 			"projects/project1/index.html",
 			"projects/project2/index.html",
 			"videos/funny_cats (3).mp4",

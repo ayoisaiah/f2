@@ -11,7 +11,7 @@ import (
 
 var findFileSystem = []string{
 	"backup/archive.zip",
-	"backup/documents/.hidden_old_resume.txt",
+	"backup/documents/.hidden_resume.txt",
 	"backup/documents/old_cover_letter.docx",
 	"backup/documents/old_resume.docx",
 	"backup/important_data/file1.txt",
@@ -31,7 +31,7 @@ var findFileSystem = []string{
 	"photos/family/photo2.PNG",
 	"photos/family/photo3.gif",
 	"photos/vacation/beach.jpg",
-	"photos/vacation/mountains/.hidden_old_photo.jpg",
+	"photos/vacation/mountains/.hidden_photo.jpg",
 	"photos/vacation/mountains/OLDPHOTO3.JPG",
 	"photos/vacation/mountains/OLD_PHOTO5.JPG",
 	"photos/vacation/mountains/photo1.jpg",
@@ -101,7 +101,8 @@ var testCases = []testutil.TestCase{
 			"photos/family/photo3.gif",
 			"photos/vacation/mountains/photo1.jpg",
 		},
-		Args: []string{"-f", "photo", "-R", "-E", "^old", "-E", "webp$"},
+		Args:      []string{"-f", "photo", "-R", "-E", "^old", "-E", "webp$"},
+		SetupFunc: setupWindowsHidden,
 	},
 
 	{
@@ -130,9 +131,10 @@ var testCases = []testutil.TestCase{
 	},
 
 	{
-		Name: "match files at the top level",
-		Want: []string{"LICENSE.txt", "Makefile", "README.md", "main.go"},
-		Args: []string{"-f", ".*"},
+		Name:      "match files at the top level",
+		Want:      []string{"LICENSE.txt", "Makefile", "README.md", "main.go"},
+		Args:      []string{"-f", ".*"},
+		SetupFunc: setupWindowsHidden,
 	},
 
 	{
@@ -185,7 +187,7 @@ var testCases = []testutil.TestCase{
 	},
 
 	{
-		Name: "match files not containing an umulat",
+		Name: "match files containing an umulat",
 		Want: []string{
 			"photos/vacation/mountains/Öffnen.txt",
 		},
@@ -246,6 +248,10 @@ func findTest(t *testing.T, cases []testutil.TestCase) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			testutil.UpdateBaseDir(tc.Want, testDir)
+
+			if tc.SetupFunc != nil {
+				t.Cleanup(tc.SetupFunc(t, testDir))
+			}
 
 			// TODO: Make it possible to test without explicitly providing
 			// directory argument

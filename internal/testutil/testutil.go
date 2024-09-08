@@ -19,16 +19,16 @@ import (
 
 // TestCase represents a unique test case.
 type TestCase struct {
-	Error            error                                `json:"error"`
-	ConflictDetected bool                                 `json:"conflict_detected"`
-	SetupFunc        func(t *testing.T) (teardown func()) `json:"-"`
-	DefaultOpts      string                               `json:"default_opts"`
-	Name             string                               `json:"name"`
-	GoldenFile       string                               `json:"golden_file"`
-	Args             []string                             `json:"args"`
-	PathArgs         []string                             `json:"path_args"`
-	Changes          file.Changes                         `json:"changes"`
-	Want             []string                             `json:"want"`
+	Error            error                                                `json:"error"`
+	ConflictDetected bool                                                 `json:"conflict_detected"`
+	SetupFunc        func(t *testing.T, testDir string) (teardown func()) `json:"-"`
+	DefaultOpts      string                                               `json:"default_opts"`
+	Name             string                                               `json:"name"`
+	GoldenFile       string                                               `json:"golden_file"`
+	Args             []string                                             `json:"args"`
+	PathArgs         []string                                             `json:"path_args"`
+	Changes          file.Changes                                         `json:"changes"`
+	Want             []string                                             `json:"want"`
 }
 
 // SetupFileSystem creates all required files and folders for
