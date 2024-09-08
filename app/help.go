@@ -139,7 +139,7 @@ func helpText(app *cli.App) string {
 
 	flagPairHelp := fmt.Sprintf(
 		`%s, %s %s`,
-		pterm.Green("--", flagPair.Aliases[0]),
+		pterm.Green("-", flagPair.Aliases[0]),
 		pterm.Green("--", flagPair.Name),
 		flagPair.GetUsage(),
 	)

@@ -118,7 +118,7 @@ OPTIONS
   -D, --only-dir 
     Renames only directories, not files (implies -d/--include-dir).
 
-  --p, --pair 
+  -p, --pair 
     Enable pair renaming to rename files with the same name (but different 
     extensions) in the same directory to the same new name. In pair mode,
     file extensions are ignored and --sort/--sortr has no effect.
