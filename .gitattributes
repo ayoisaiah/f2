@@ -1,0 +1,7 @@
+# Set the default behavior for all files.
+* text=auto
+
+*.go text eol=lf
+
+# Don't modify line endings
+*.golden binary
