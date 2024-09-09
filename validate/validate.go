@@ -82,6 +82,23 @@ func newTarget(change *file.Change) string {
 	return filepath.Join(filepath.Dir(change.Target), target)
 }
 
+// checkSourceNotFoundConflict reports if the source file is missing in an
+// undo operation. It is automatically fixed by changing the status so that
+// the file is skipped when renaming
+func checkSourceNotFoundConflict(
+	ctx validationCtx,
+) (conflictDetected bool) {
+	if ctx.change.Status == status.SourceNotFound {
+		conflictDetected = true
+
+		if ctx.autoFix {
+			ctx.change.Status = status.Ignored
+		}
+	}
+
+	return
+}
+
 // checkEmptyFilenameConflict reports if the file renaming has resulted
 // in an empty string. This conflict is automatically fixed by leaving
 // the filename unchanged.
@@ -390,6 +407,7 @@ func checkAndHandleConflict(ctx validationCtx, loopIndex *int) bool {
 		checkPathExistsConflict,
 		checkOverwritingPathConflict,
 		checkTargetFileChangingConflict,
+		checkSourceNotFoundConflict,
 	}
 
 	for i, check := range checks {

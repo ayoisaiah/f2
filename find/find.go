@@ -2,6 +2,7 @@ package find
 
 import (
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/pathutil"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
+	"github.com/ayoisaiah/f2/internal/status"
 )
 
 const (
@@ -249,6 +251,13 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 		ch.Source, ch.Target = ch.Target, ch.Source
 		ch.SourcePath = filepath.Join(ch.BaseDir, ch.Source)
 		ch.TargetPath = filepath.Join(ch.BaseDir, ch.Target)
+		ch.Status = status.OK
+
+		_, err := os.Stat(ch.SourcePath)
+		if errors.Is(err, os.ErrNotExist) {
+			ch.Status = status.SourceNotFound
+		}
+
 		changes[i] = ch
 	}
 

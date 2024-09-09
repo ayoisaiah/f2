@@ -13,4 +13,6 @@ const (
 	InvalidCharacters      Status = "invalid characters: (%s)"
 	FilenameLengthExceeded Status = "filename too long: (%s)"
 	TargetFileChanging     Status = "target file is changing"
+	SourceNotFound         Status = "not found"
+	Ignored                Status = "ignored"
 )

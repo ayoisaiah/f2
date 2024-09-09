@@ -15,6 +15,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/osutil"
+	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/ayoisaiah/f2/report"
 )
 
@@ -29,6 +30,10 @@ func commit(fileChanges file.Changes) []int {
 
 	for i := range fileChanges {
 		change := fileChanges[i]
+
+		if change.Status == status.Ignored {
+			continue
+		}
 
 		targetPath := change.TargetPath
 

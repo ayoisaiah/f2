@@ -66,7 +66,7 @@ func (c Changes) RenderTable(w io.Writer) {
 		switch change.Status {
 		case status.OK:
 			changeStatus = pterm.Green(change.Status)
-		case status.Unchanged, status.Overwriting:
+		case status.Unchanged, status.Overwriting, status.Ignored:
 			changeStatus = pterm.Yellow(change.Status)
 		default:
 			changeStatus = pterm.Red(change.Status)
