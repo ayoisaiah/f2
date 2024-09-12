@@ -51,6 +51,10 @@ func NoMatches(conf *config.Config) {
 	}
 
 	msg := "the search criteria didn't match any files"
+	if conf.CSVFilename != "" {
+		msg = "no renaming candidates found in CSV file"
+	}
+
 	if conf.Revert {
 		msg = "nothing to undo"
 	}
