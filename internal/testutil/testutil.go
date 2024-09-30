@@ -107,7 +107,11 @@ func CompareSourcePath(t *testing.T, want []string, changes file.Changes) {
 	got := make([]string, len(changes))
 
 	for i := range changes {
-		got[i] = changes[i].SourcePath
+		got[i] = filepath.FromSlash(changes[i].SourcePath)
+	}
+
+	for i := range want {
+		want[i] = filepath.FromSlash(want[i])
 	}
 
 	assert.Equal(t, want, got)
@@ -120,7 +124,11 @@ func CompareTargetPath(t *testing.T, want []string, changes file.Changes) {
 	got := make([]string, len(changes))
 
 	for i := range changes {
-		got[i] = changes[i].TargetPath
+		got[i] = filepath.FromSlash(changes[i].TargetPath)
+	}
+
+	for i := range want {
+		want[i] = filepath.FromSlash(want[i])
 	}
 
 	assert.Equal(t, want, got)
