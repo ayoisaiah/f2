@@ -7,6 +7,7 @@ import (
 
 	"github.com/pterm/pterm"
 
+	"github.com/ayoisaiah/f2/internal/apperr"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/osutil"
@@ -88,32 +89,44 @@ func Report(
 	)
 }
 
-func PrintResults(conf *config.Config, fileChanges file.Changes) {
-	if !conf.Verbose && !conf.IsOutputToPipe {
+// PrintResults prints the results of a renaming operation, including any errors
+// encountered. It displays successful renames to stderr if verbose mode is
+// enabled, and prints renamed paths to stdout if output is piped. Errors are
+// always printed to stderr.
+func PrintResults(conf *config.Config, fileChanges file.Changes, err error) {
+	if err != nil {
+		renameErr, ok := err.(*apperr.Error)
+		if ok {
+			errIndices, ok := renameErr.Context.([]int)
+			if ok {
+				for _, index := range errIndices {
+					change := fileChanges[index]
+
+					pterm.Fprintln(
+						config.Stderr,
+						pterm.Sprintf(
+							"%s %v",
+							pterm.Red("error:"),
+							change.Error,
+						),
+					)
+				}
+			}
+		}
+	}
+
+	if !conf.Verbose && !conf.PipeOutput {
 		return
 	}
 
 	for i := range fileChanges {
 		change := fileChanges[i]
 
-		if conf.IsOutputToPipe && change.Error != nil {
-			pterm.Println(change.TargetPath)
+		if conf.PipeOutput && change.Error == nil {
+			pterm.Fprintln(config.Stdout, change.TargetPath)
 		}
 
 		if !conf.Verbose {
-			continue
-		}
-
-		if change.Error != nil {
-			pterm.Fprintln(config.Stderr,
-				pterm.Error.Sprintf(
-					"renaming '%s' to '%s' failed: %v",
-					change.SourcePath,
-					change.TargetPath,
-					change.Error,
-				),
-			)
-
 			continue
 		}
 

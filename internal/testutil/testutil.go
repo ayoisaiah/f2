@@ -1,13 +1,14 @@
 package testutil
 
 import (
-	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/pterm/pterm"
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -16,7 +17,6 @@ import (
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/osutil"
-	cp "github.com/otiai10/copy"
 )
 
 // TestCase represents a unique test case.
@@ -26,11 +26,18 @@ type TestCase struct {
 	SetupFunc        func(t *testing.T, testDir string) (teardown func()) `json:"-"`
 	DefaultOpts      string                                               `json:"default_opts"`
 	Name             string                                               `json:"name"`
-	GoldenFile       string                                               `json:"golden_file"`
-	Args             []string                                             `json:"args"`
-	PathArgs         []string                                             `json:"path_args"`
-	Changes          file.Changes                                         `json:"changes"`
-	Want             []string                                             `json:"want"`
+	SnapShot         struct {
+		Stdout []byte
+		Stderr []byte
+	} `json:"-"`
+	StdoutGoldenFile string            `json:"stdout_golden_file"`
+	StderrGoldenFile string            `json:"stderr_golden_file"`
+	Args             []string          `json:"args"`
+	PathArgs         []string          `json:"path_args"`
+	Changes          file.Changes      `json:"changes"`
+	Want             []string          `json:"want"`
+	SetEnv           map[string]string `json:"env"`
+	PipeOutput       bool              `json:"pipe_output"`
 }
 
 // SetupFileSystem creates all required files and folders for
@@ -47,20 +54,12 @@ func SetupFileSystem(
 		tb.Fatal(err)
 	}
 
-	_ = cp.Copy("testdata", testDir)
-
 	tb.Cleanup(func() {
 		err = os.RemoveAll(testDir)
 		if err != nil {
 			tb.Log(err)
 		}
 	})
-
-	// change to testDir directory
-	err = os.Chdir(testDir)
-	if err != nil {
-		tb.Fatal(err)
-	}
 
 	for _, v := range fileSystem {
 		dir := filepath.Dir(v)
@@ -129,22 +128,12 @@ func CompareTargetPath(t *testing.T, want []string, changes file.Changes) {
 
 // CompareGoldenFile verifies that the output of an operation matches
 // the expected output.
-func CompareGoldenFile(
-	t *testing.T,
-	tc *TestCase,
-	result []byte,
-	fileName ...string,
-) {
+func CompareGoldenFile(t *testing.T, tc *TestCase) {
 	t.Helper()
 
-	goldenFile := strings.ReplaceAll(tc.Name, " ", "_")
-
-	if len(fileName) > 0 {
-		goldenFile = fileName[0]
-	}
-
 	if runtime.GOOS == osutil.Windows {
-		goldenFile = goldenFile + "_windows"
+		// TODO: need to sort out line endings
+		t.Skip("skipping golden file test in Windows")
 	}
 
 	g := goldie.New(
@@ -152,7 +141,23 @@ func CompareGoldenFile(
 		goldie.WithFixtureDir("testdata"),
 	)
 
-	g.Assert(t, goldenFile, result)
+	compareOutput := func(output []byte, fileSuffix, goldenFileName string) {
+		if goldenFileName == "" {
+			goldenFileName = strings.ReplaceAll(tc.Name, " ", "_") + fileSuffix
+		}
+
+		if output != nil {
+			g.Assert(t, goldenFileName, output)
+		} else {
+			f := filepath.Join("testdata", goldenFileName+".golden")
+			if _, err := os.Stat(f); err == nil || errors.Is(err, os.ErrExist) {
+				t.Fatalf("expected no output, but golden file exists: %s", f)
+			}
+		}
+	}
+
+	compareOutput(tc.SnapShot.Stdout, "_stdout", tc.StdoutGoldenFile)
+	compareOutput(tc.SnapShot.Stderr, "_stderr", tc.StderrGoldenFile)
 }
 
 // UpdateBaseDir adds the testDir to each expected path for easy comparison.
@@ -162,11 +167,30 @@ func UpdateBaseDir(expected []string, testDir string) {
 	}
 }
 
+func UpdateFileChanges(files file.Changes) {
+	for i := range files {
+		ch := files[i]
+
+		files[i].OriginalName = ch.Source
+		files[i].Position = i
+		files[i].SourcePath = filepath.Join(
+			ch.BaseDir,
+			ch.Source,
+		)
+		files[i].TargetPath = filepath.Join(
+			ch.BaseDir,
+			ch.Target,
+		)
+	}
+}
+
 // GetConfig constructs the app configuration from command-line arguments.
 func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 	t.Helper()
 
-	var buf bytes.Buffer
+	for k, v := range tc.SetEnv {
+		t.Setenv(k, v)
+	}
 
 	// add fake binary name as first argument
 	args := append([]string{"f2_test"}, tc.Args...)
@@ -182,12 +206,16 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 	// add test directory as last argument
 	args = append(args, tc.PathArgs...)
 
-	f2App, err := app.Get(os.Stdin, &buf)
+	f2App, err := app.Get(os.Stdin, os.Stdout)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	f2App.Action = func(ctx *cli.Context) error {
+		// Reset pterm to default state
+		pterm.EnableStyling()
+		// Re-initialize config with pipe output value set per test
+		config.Init(ctx, tc.PipeOutput)
 		return nil
 	}
 

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
@@ -14,7 +15,7 @@ import (
 // Change represents a single renaming change.
 type Change struct {
 	Error error `json:"error,omitempty"`
-	// The original filename which can be different from source in
+	// The original filename which can be different from Source in
 	// a multi-step renaming operation
 	OriginalName string        `json:"-"`
 	Status       status.Status `json:"status"`
@@ -89,17 +90,24 @@ func (c Changes) RenderTable(w io.Writer) {
 }
 
 func printTable(data [][]string, w io.Writer) {
+	conf := config.Get()
+
+	// using tablewriter as pterm table rendering is too slow
 	table := tablewriter.NewWriter(w)
 	table.SetHeader([]string{"ORIGINAL", "RENAMED", "STATUS"})
 	table.SetCenterSeparator("*")
 	table.SetColumnSeparator("|")
 	table.SetRowSeparator("—")
 	table.SetAutoWrapText(false)
-	table.SetHeaderColor(
-		tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
-		tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
-		tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
-	)
+
+	if !conf.NoColor {
+		table.SetHeaderColor(
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
+		)
+	}
+
 	table.AppendBulk(data)
 
 	table.Render()

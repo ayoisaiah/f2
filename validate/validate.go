@@ -173,6 +173,9 @@ func checkPathExistsConflict(
 	return conflictDetected
 }
 
+// checkTargetFileChangingConflict ensures that renaming a file to a target that
+// is changing later is detected to prevent data loss. It is automatically fixed
+// by swapping the items around so that any renaming targets do not change later
 func checkTargetFileChangingConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
@@ -368,7 +371,7 @@ func checkForbiddenCharactersConflict(
 	forbiddenChars := checkForbiddenCharacters(ctx.change.Target)
 	if forbiddenChars != "" {
 		conflictDetected = true
-		ctx.change.Status = status.InvalidCharacters
+		ctx.change.Status = status.ForbiddenCharacters
 
 		if !ctx.autoFix {
 			return
@@ -397,7 +400,7 @@ func checkForbiddenCharactersConflict(
 	return
 }
 
-func checkAndHandleConflict(ctx validationCtx, loopIndex *int) bool {
+func checkAndHandleConflict(ctx validationCtx, loopIndex *int) (detected bool) {
 	// Slice of conflict-checking functions with consistent signatures
 	checks := []func(ctx validationCtx) bool{
 		checkEmptyFilenameConflict,
@@ -406,40 +409,40 @@ func checkAndHandleConflict(ctx validationCtx, loopIndex *int) bool {
 		checkForbiddenCharactersConflict,
 		checkPathExistsConflict,
 		checkOverwritingPathConflict,
-		checkTargetFileChangingConflict,
 		checkSourceNotFoundConflict,
+		checkTargetFileChangingConflict, // INFO: Needs to be the last check
 	}
 
 	for i, check := range checks {
-		detected := check(ctx)
-		if detected {
-			if ctx.autoFix {
-				if i == len(checks)-1 {
-					// Special handling for checkTargetFileChangingConflict
-					// Restart the iteration
-					*loopIndex = -1
-
-					clear(ctx.seenPaths)
-				} else {
-					*loopIndex-- // Go back an index for re-checking after fix
-				}
-			} else {
-				ctx.updateSeenPaths()
-			}
-
-			return true
+		detected = check(ctx)
+		if !detected {
+			continue
 		}
+
+		if !ctx.autoFix {
+			ctx.updateSeenPaths()
+			return detected
+		}
+
+		if i == len(checks)-1 {
+			// Special handling for checkTargetFileChangingConflict
+			// Restart the iteration from the beginning
+			*loopIndex = -1
+
+			clear(ctx.seenPaths)
+		} else {
+			*loopIndex-- // Go back an index for re-checking after fix
+		}
+
+		return detected
 	}
 
-	return false
+	return detected
 }
 
 // detectConflicts checks the renamed files for various conflicts and
 // automatically fixes them if configured.
 func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
-	// TODO: Detect if user has write permissions for the parent directory?
-	// TODO: Detect if file is in use by another process (Windows-specific)?
-	// TODO: Check for immutable attribute on the file?
 	ctx := validationCtx{
 		autoFix:         autoFix,
 		allowOverwrites: allowOverwrites,
@@ -452,18 +455,12 @@ func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
 		ctx.change = change
 		ctx.changeIndex = i
 
-		if checkAndHandleConflict(ctx, &i) {
-			detected = true
+		detected = checkAndHandleConflict(ctx, &i)
+		if detected {
 			continue
 		}
 
 		ctx.updateSeenPaths()
-	}
-
-	if detected && autoFix {
-		// Since all the conflicts would have been fixed
-		// TODO: Don't change this manually
-		detected = false
 	}
 
 	return

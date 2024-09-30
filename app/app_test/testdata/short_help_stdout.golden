@@ -1,14 +1,14 @@
 The batch renaming tool you'll actually enjoy using.
 
-USAGE
+[1mUSAGE[0m
   f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
   command | f2 FLAGS [OPTIONS]
 
-EXAMPLES
+[1mEXAMPLES[0m
   $ f2 -f 'jpeg' -r 'jpg'
   $ f2 js ts
   $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
 
-LEARN MORE
+[1mLEARN MORE[0m
   Use f2 --help to view the command-line options.
   Read the manual at https://github.com/ayoisaiah/f2/wiki

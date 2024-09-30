@@ -1,0 +1,8 @@
+*—————————————————————————————*—————————————————————————————*—————————————*
+|          ORIGINAL           |           RENAMED           |   STATUS    |
+*—————————————————————————————*—————————————————————————————*—————————————*
+| macos_update_notes_2023.txt | macos_update_notes_2023.txt | unchanged   |
+| file with spaces.txt        | file_with_underscores.txt   | ok          |
+| file1.txt                   | existing_file.txt           | overwriting |
+| nonexistent_file.txt        | file_with_underscores.txt   | ignored     |
+*—————————————————————————————*—————————————————————————————*—————————————*

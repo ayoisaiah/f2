@@ -10,9 +10,9 @@ const (
 	TrailingPeriod         Status = "trailing periods present"
 	PathExists             Status = "target exists"
 	OverwritingNewPath     Status = "overwriting new path"
-	InvalidCharacters      Status = "invalid characters: (%s)"
-	FilenameLengthExceeded Status = "filename too long: (%s)"
+	ForbiddenCharacters    Status = "forbidden characters present"
+	FilenameLengthExceeded Status = "filename too long"
 	TargetFileChanging     Status = "target file is changing"
-	SourceNotFound         Status = "not found"
+	SourceNotFound         Status = "source not found"
 	Ignored                Status = "ignored"
 )

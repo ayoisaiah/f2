@@ -1,0 +1,12 @@
+*——————————————————————*——————————————————————————————————————————————————————————————————————————*——————————————————————————————*
+|       ORIGINAL       |                                 RENAMED                                  |            STATUS            |
+*——————————————————————*——————————————————————————————————————————————————————————————————————————*——————————————————————————————*
+| original.txt         |                                                                          | empty filename               |
+| original.txt         | new_file.                                                                | trailing periods present     |
+| file1.txt            | existing_file.txt                                                        | target exists                |
+| original.txt         | new:file.txt                                                             | forbidden characters present |
+| file2.txt            | new_file.txt                                                             | overwriting new path         |
+| original.txt         | this_is_a_very_long_filename_that_exceeds_the_maximum_allowed_length.txt | filename too long            |
+| 1.txt                | 2.txt                                                                    | target file is changing      |
+| nonexistent_file.txt | new_name.txt                                                             | source not found             |
+*——————————————————————*——————————————————————————————————————————————————————————————————————————*——————————————————————————————*

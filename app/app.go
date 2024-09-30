@@ -17,8 +17,6 @@ import (
 )
 
 const (
-	EnvNoColor     = "NO_COLOR"
-	EnvF2NoColor   = "F2_NO_COLOR"
 	EnvDefaultOpts = "F2_DEFAULT_OPTS"
 	EnvDebug       = "F2_DEBUG"
 )
@@ -84,23 +82,6 @@ func initLogger() {
 	slog.SetDefault(l)
 }
 
-// initPrinter sets up some defaults for the global printer
-func initPrinter() {
-	// Disable coloured output if NO_COLOR is set
-	if _, exists := os.LookupEnv(EnvNoColor); exists {
-		pterm.DisableStyling()
-	}
-
-	// Disable coloured output if F2_NO_COLOR is set
-	if _, exists := os.LookupEnv(EnvF2NoColor); exists {
-		pterm.DisableStyling()
-	}
-
-	if isOutputToPipe() {
-		pterm.DisableStyling()
-	}
-}
-
 // handlePipeInput processes input from a pipe and appends it to os.Args
 func handlePipeInput(reader io.Reader) error {
 	if !isInputFromPipe() {
@@ -157,8 +138,6 @@ func loadDefaultOpts() (*cli.Context, error) {
 func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 	initLogger()
 
-	initPrinter()
-
 	err := handlePipeInput(reader)
 	if err != nil {
 		return nil, err
@@ -182,13 +161,11 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 		config.Stdin = ctx.App.Reader
 
 		defer (func() {
-			appConfig, initErr := config.Init(ctx)
+			appConfig, initErr := config.Init(ctx, isOutputToPipe())
 			if initErr != nil && err == nil {
 				err = initErr
 				return
 			}
-
-			appConfig.IsOutputToPipe = isOutputToPipe()
 
 			slog.Info("configuration loaded", slog.Any("app_config", appConfig))
 		})()

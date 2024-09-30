@@ -133,19 +133,7 @@ func postRename(t *testing.T, cases []testutil.TestCase) {
 	for i := range cases {
 		tc := cases[i]
 
-		for j := range tc.Changes {
-			ch := tc.Changes[j]
-
-			cases[i].Changes[j].OriginalName = ch.Source
-			cases[i].Changes[j].SourcePath = filepath.Join(
-				ch.BaseDir,
-				ch.Source,
-			)
-			cases[i].Changes[j].TargetPath = filepath.Join(
-				ch.BaseDir,
-				ch.Target,
-			)
-		}
+		testutil.UpdateFileChanges(tc.Changes)
 
 		var stderr bytes.Buffer
 
@@ -158,16 +146,12 @@ func postRename(t *testing.T, cases []testutil.TestCase) {
 
 			conf.BackupLocation = &backup
 
-			rename.PostRename(conf, tc.Changes)
+			rename.PostRename(conf, tc.Changes, tc.Error)
 
-			testutil.CompareGoldenFile(t, &tc, stderr.Bytes())
+			tc.SnapShot.Stdout = backup.Bytes()
+			tc.SnapShot.Stderr = stderr.Bytes()
 
-			testutil.CompareGoldenFile(
-				t,
-				&tc,
-				backup.Bytes(),
-				"rename_a_file_backup",
-			)
+			testutil.CompareGoldenFile(t, &tc)
 		})
 
 	}
@@ -183,7 +167,9 @@ func TestPostRename(t *testing.T) {
 					Target: "myFile.txt",
 				},
 			},
-			Args: []string{"-r", "", "-V"},
+			StdoutGoldenFile: "rename_a_file_backup",
+			StderrGoldenFile: "rename_a_file_backup_stderr",
+			Args:             []string{"-r", "", "-V"},
 		},
 	}
 

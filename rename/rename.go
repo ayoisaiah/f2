@@ -101,7 +101,7 @@ func Rename(
 	fileChanges file.Changes,
 ) error {
 	renameErrs := commit(fileChanges)
-	if renameErrs != nil {
+	if len(renameErrs) > 0 {
 		return errRenameFailed.WithCtx(renameErrs)
 	}
 
@@ -109,9 +109,9 @@ func Rename(
 }
 
 // PostRename handles actions after a renaming operation, such as printing
-// results and creating a backup if applicable.
-func PostRename(conf *config.Config, fileChanges file.Changes) {
-	report.PrintResults(conf, fileChanges)
+// results and creating a backup file if applicable.
+func PostRename(conf *config.Config, fileChanges file.Changes, err error) {
+	report.PrintResults(conf, fileChanges, err)
 
 	if len(fileChanges) != 0 && !conf.Revert {
 		err := backupChanges(

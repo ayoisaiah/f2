@@ -8,7 +8,6 @@ import (
 	"github.com/ayoisaiah/f2/app"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/testutil"
-	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 )
 
@@ -18,9 +17,9 @@ func TestShortHelp(t *testing.T) {
 		Args: []string{"f2_test"},
 	}
 
-	var buf bytes.Buffer
+	var stdout bytes.Buffer
 
-	config.Stderr = &buf
+	config.Stderr = &stdout
 
 	t.Cleanup(func() {
 		config.Stderr = os.Stderr
@@ -38,7 +37,9 @@ func TestShortHelp(t *testing.T) {
 			t.Fatal("Expected a panic due to os.Exit(0) but got none")
 		}
 
-		testutil.CompareGoldenFile(t, tc, buf.Bytes())
+		tc.SnapShot.Stdout = stdout.Bytes()
+
+		testutil.CompareGoldenFile(t, tc)
 	}()
 
 	err = renamer.Run(tc.Args)
@@ -53,9 +54,9 @@ func TestHelp(t *testing.T) {
 		Args: []string{"f2_test", "--help"},
 	}
 
-	var buf bytes.Buffer
+	var stdout bytes.Buffer
 
-	renamer, err := app.Get(os.Stdin, &buf)
+	renamer, err := app.Get(os.Stdin, &stdout)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,8 @@ func TestHelp(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testutil.CompareGoldenFile(t, tc, buf.Bytes())
+	tc.SnapShot.Stdout = stdout.Bytes()
+	testutil.CompareGoldenFile(t, tc)
 }
 
 func TestVersion(t *testing.T) {
@@ -74,9 +76,9 @@ func TestVersion(t *testing.T) {
 		Args: []string{"f2_test", "--version"},
 	}
 
-	var buf bytes.Buffer
+	var stdout bytes.Buffer
 
-	renamer, err := app.Get(os.Stdin, &buf)
+	renamer, err := app.Get(os.Stdin, &stdout)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,43 +88,8 @@ func TestVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testutil.CompareGoldenFile(t, tc, buf.Bytes())
-}
-
-func TestNoColor(t *testing.T) {
-	env := []string{app.EnvNoColor, app.EnvF2NoColor}
-
-	for _, v := range env {
-		t.Run(v, func(t *testing.T) {
-			defaultSetting := pterm.RawOutput
-
-			defer (func() {
-				pterm.RawOutput = defaultSetting
-			})()
-
-			pterm.EnableStyling()
-
-			var buf bytes.Buffer
-
-			if pterm.RawOutput {
-				t.Fatal("pterm styling is already disabled")
-			}
-
-			t.Setenv(v, "1")
-
-			_, err := app.Get(os.Stdin, &buf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if !pterm.RawOutput {
-				t.Fatalf(
-					"pterm styling should be disabled with %s, but is enabled",
-					v,
-				)
-			}
-		})
-	}
+	tc.SnapShot.Stdout = stdout.Bytes()
+	testutil.CompareGoldenFile(t, tc)
 }
 
 func TestDefaultEnv(t *testing.T) {

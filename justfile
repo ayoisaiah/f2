@@ -1,15 +1,18 @@
 APP := "f2"
 
 test:
-	@go test ./... --json -coverprofile=coverage.out -coverpkg=. | gotestfmt -hide 'empty-packages'
+	@go test ./... -json | gotestfmt -hide 'empty-packages'
+
+test-race:
+	@go test ./... -json -race | gotestfmt -hide 'empty-packages'
 
 [no-cd]
 test-pkg filter='.*':
-  @go test ./... --json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | gotestfmt -hide 'empty-packages'
+  @go test ./... -json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | gotestfmt -hide 'empty-packages'
 
 [no-cd]
 update-golden filter='.*':
-  @go test --update --json -run={{filter}} | gotestfmt
+  @go test ./... -update -json -race -run={{filter}} | gotestfmt
 
 build:
 	@go build -o bin/{{APP}} ./cmd...

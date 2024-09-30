@@ -19,6 +19,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const (
+	EnvNoColor   = "NO_COLOR"
+	EnvF2NoColor = "F2_NO_COLOR"
+)
+
 var (
 	Stdin  io.Reader = os.Stdin
 	Stdout io.Writer = os.Stdout
@@ -86,7 +91,7 @@ type Config struct {
 	Recursive                bool           `json:"recursive"`
 	ResetIndexPerDir         bool           `json:"reset_index_per_dir"`
 	SortPerDir               bool           `json:"sort_per_dir"`
-	IsOutputToPipe           bool           `json:"is_output_to_pipe"`
+	PipeOutput               bool           `json:"is_output_to_pipe"`
 	BackupLocation           io.Writer      `json:"-"`
 	BackupFilename           string         `json:"backup_filename"`
 	Pair                     bool           `json:"pair"`
@@ -288,12 +293,40 @@ func Get() *Config {
 	return conf
 }
 
+// configureOutput configures the output behavior of the application based
+// on environment variables and piping status. All output is suppressed in
+// quiet mode
+func (conf *Config) configureOutput() {
+	// Disable coloured output if NO_COLOR is set
+	if _, exists := os.LookupEnv(EnvNoColor); exists {
+		conf.NoColor = true
+	}
+
+	// Disable coloured output if F2_NO_COLOR is set
+	if _, exists := os.LookupEnv(EnvF2NoColor); exists {
+		conf.NoColor = true
+	}
+
+	if conf.PipeOutput {
+		conf.NoColor = true
+	}
+
+	if conf.NoColor {
+		pterm.DisableStyling()
+	}
+
+	if conf.Quiet {
+		pterm.DisableOutput()
+	}
+}
+
 // Get retrieves the current configuration or panics if not initialized.
-func Init(ctx *cli.Context) (*Config, error) {
+func Init(ctx *cli.Context, pipeOutput bool) (*Config, error) {
 	conf = &Config{
 		Date:             time.Now(),
 		FilesAndDirPaths: []string{"."},
 		Sort:             SortDefault,
+		PipeOutput:       pipeOutput,
 	}
 
 	var err error
@@ -318,13 +351,7 @@ func Init(ctx *cli.Context) (*Config, error) {
 
 	conf.BackupFilename = generateBackupFilename(conf.WorkingDir)
 
-	if conf.NoColor {
-		pterm.DisableStyling()
-	}
-
-	if conf.Quiet {
-		pterm.DisableOutput()
-	}
+	conf.configureOutput()
 
 	return conf, nil
 }

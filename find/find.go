@@ -261,8 +261,9 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 		changes[i] = ch
 	}
 
-	// Always sort files before directories when undoing an operation
-	sortfiles.ForRenamingAndUndo(changes, conf.Revert)
+	if conf.Exec {
+		sortfiles.ForRenamingAndUndo(changes, conf.Revert)
+	}
 
 	return changes, nil
 }

@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 
 	"github.com/ayoisaiah/f2/internal/file"
@@ -72,8 +71,11 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 			)
 
 			if tc.ConflictDetected && !conflictDetected {
-				spew.Dump(tc.Changes, conflictDetected)
 				t.Fatal("expected a conflict, but got none")
+			}
+
+			if !tc.ConflictDetected && conflictDetected {
+				t.Fatal("did not expect a conflict, but got one")
 			}
 
 			if tc.ConflictDetected {

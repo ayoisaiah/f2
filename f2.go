@@ -60,7 +60,7 @@ func execute(ctx *cli.Context) error {
 
 	err = rename.Rename(changes)
 
-	rename.PostRename(appConfig, changes)
+	rename.PostRename(appConfig, changes, err)
 
 	return err
 }
