@@ -39,7 +39,7 @@ var supportedDefaultOpts = []string{
 	flagIncludeDir.Name,
 	flagJSON.Name,
 	flagMaxDepth.Name,
-	flagNoColor.Usage,
+	flagNoColor.Name,
 	flagOnlyDir.Name,
 	flagPair.Name,
 	flagQuiet.Name,
