@@ -24,7 +24,6 @@ const (
 // supportedDefaultOpts contains flags whose values can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOpts = []string{
-	flagAllowOverwrites.Name,
 	flagExclude.Name,
 	flagExcludeDir.Name,
 	flagExec.Name,
@@ -36,13 +35,9 @@ var supportedDefaultOpts = []string{
 	flagIgnoreExt.Name,
 	flagIncludeDir.Name,
 	flagJSON.Name,
-	flagMaxDepth.Name,
 	flagNoColor.Name,
-	flagOnlyDir.Name,
-	flagPair.Name,
 	flagQuiet.Name,
 	flagRecursive.Name,
-	flagReplaceLimit.Name,
 	flagSort.Name,
 	flagSortr.Name,
 	flagResetIndexPerDir.Name,
