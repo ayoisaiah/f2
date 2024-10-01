@@ -3,9 +3,9 @@ package apperr
 import "fmt"
 
 type Error struct {
-	Cause   error // The underlying error if any
-	Message string
+	Cause   error
 	Context any
+	Message string
 }
 
 func (e *Error) Error() string {

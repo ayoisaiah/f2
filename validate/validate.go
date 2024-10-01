@@ -18,11 +18,11 @@ import (
 )
 
 type validationCtx struct {
-	autoFix         bool
-	allowOverwrites bool
-	changeIndex     int
 	change          *file.Change
 	seenPaths       map[string]int
+	changeIndex     int
+	autoFix         bool
+	allowOverwrites bool
 }
 
 func (ctx validationCtx) updateSeenPaths() {
@@ -84,7 +84,7 @@ func newTarget(change *file.Change) string {
 
 // checkSourceNotFoundConflict reports if the source file is missing in an
 // undo operation. It is automatically fixed by changing the status so that
-// the file is skipped when renaming
+// the file is skipped when renaming.
 func checkSourceNotFoundConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
@@ -175,7 +175,7 @@ func checkPathExistsConflict(
 
 // checkTargetFileChangingConflict ensures that renaming a file to a target that
 // is changing later is detected to prevent data loss. It is automatically fixed
-// by swapping the items around so that any renaming targets do not change later
+// by swapping the items around so that any renaming targets do not change later.
 func checkTargetFileChangingConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {

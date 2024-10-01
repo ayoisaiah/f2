@@ -22,22 +22,22 @@ import (
 // TestCase represents a unique test case.
 type TestCase struct {
 	Error            error                                                `json:"error"`
-	ConflictDetected bool                                                 `json:"conflict_detected"`
+	SetEnv           map[string]string                                    `json:"env"`
 	SetupFunc        func(t *testing.T, testDir string) (teardown func()) `json:"-"`
+	StdoutGoldenFile string                                               `json:"stdout_golden_file"`
 	DefaultOpts      string                                               `json:"default_opts"`
 	Name             string                                               `json:"name"`
+	StderrGoldenFile string                                               `json:"stderr_golden_file"`
 	SnapShot         struct {
 		Stdout []byte
 		Stderr []byte
 	} `json:"-"`
-	StdoutGoldenFile string            `json:"stdout_golden_file"`
-	StderrGoldenFile string            `json:"stderr_golden_file"`
-	Args             []string          `json:"args"`
-	PathArgs         []string          `json:"path_args"`
-	Changes          file.Changes      `json:"changes"`
-	Want             []string          `json:"want"`
-	SetEnv           map[string]string `json:"env"`
-	PipeOutput       bool              `json:"pipe_output"`
+	Args             []string     `json:"args"`
+	PathArgs         []string     `json:"path_args"`
+	Changes          file.Changes `json:"changes"`
+	Want             []string     `json:"want"`
+	ConflictDetected bool         `json:"conflict_detected"`
+	PipeOutput       bool         `json:"pipe_output"`
 }
 
 // SetupFileSystem creates all required files and folders for
@@ -95,7 +95,9 @@ func SetupFileSystem(
 }
 
 // CompareChanges compares the expected file changes to the ones received.
-func CompareChanges(t *testing.T, want file.Changes, got file.Changes) {
+func CompareChanges(t *testing.T, want, got file.Changes) {
+	t.Helper()
+
 	assert.Equal(t, want, got)
 }
 
@@ -223,7 +225,8 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 		// Reset pterm to default state
 		pterm.EnableStyling()
 		// Re-initialize config with pipe output value set per test
-		config.Init(ctx, tc.PipeOutput)
+		_, _ = config.Init(ctx, tc.PipeOutput)
+
 		return nil
 	}
 

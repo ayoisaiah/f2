@@ -99,6 +99,7 @@ func reportTest(t *testing.T, cases []testutil.TestCase) {
 			conf := testutil.GetConfig(t, &tc, ".")
 
 			var stdout bytes.Buffer
+
 			var stderr bytes.Buffer
 
 			config.Stdout = &stdout
@@ -264,6 +265,7 @@ func TestExitWithErr(t *testing.T) {
 	cmd.Env = append(os.Environ(), "BE_CRASHER=1")
 
 	err := cmd.Run()
+	//nolint:errorlint // checking if err matches exit error
 	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
 		return
 	}

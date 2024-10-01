@@ -5,10 +5,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/urfave/cli/v2"
+
 	"github.com/ayoisaiah/f2/app"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/testutil"
-	"github.com/urfave/cli/v2"
 )
 
 func TestShortHelp(t *testing.T) {
@@ -94,16 +95,18 @@ func TestVersion(t *testing.T) {
 
 func TestDefaultEnv(t *testing.T) {
 	cases := []struct {
-		Name        string
-		Args        []string
-		DefaultOpts string
 		Assert      func(t *testing.T, ctx *cli.Context)
+		Name        string
+		DefaultOpts string
+		Args        []string
 	}{
 		{
 			Name:        "enable hidden files",
 			Args:        []string{"f2_test", "--find", "jpeg"},
 			DefaultOpts: "--hidden",
 			Assert: func(t *testing.T, ctx *cli.Context) {
+				t.Helper()
+
 				if !ctx.Bool("hidden") {
 					t.Fatal("expected --hidden default option to be true")
 				}
@@ -114,6 +117,8 @@ func TestDefaultEnv(t *testing.T) {
 			Args:        []string{"f2_test", "--find", "jpeg"},
 			DefaultOpts: "--fix-conflicts-pattern _%03d",
 			Assert: func(t *testing.T, ctx *cli.Context) {
+				t.Helper()
+
 				if got := ctx.String("fix-conflicts-pattern"); got != "_%03d" {
 					t.Fatalf(
 						"expected --fix-conflicts-pattern to default option to be _%%03d, but got: %s",
@@ -133,6 +138,8 @@ func TestDefaultEnv(t *testing.T) {
 			},
 			DefaultOpts: "--fix-conflicts-pattern _%03d",
 			Assert: func(t *testing.T, ctx *cli.Context) {
+				t.Helper()
+
 				if got := ctx.String("fix-conflicts-pattern"); got != "_%02d" {
 					t.Fatalf(
 						"expected --fix-conflicts-pattern to default option to be _%%02d, but got: %s",
@@ -141,7 +148,7 @@ func TestDefaultEnv(t *testing.T) {
 				}
 			},
 		},
-		// TODO: Should repeatable options be overriden?
+		// TODO: Should repeatable options be overridden?
 		// {
 		// 	Name: "exclude node_modules and git",
 		// 	Args: []string{

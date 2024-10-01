@@ -19,8 +19,8 @@ var errConflictDetected = &apperr.Error{
 	Message: "resolve conflicts manually or use -F/--fix-conflicts",
 }
 
-// execute initiates a new renaming operation based on the provided CLI context
-func execute(ctx *cli.Context) error {
+// execute initiates a new renaming operation based on the provided CLI context.
+func execute(_ *cli.Context) error {
 	appConfig := config.Get()
 
 	changes, err := find.Find(appConfig)
@@ -65,7 +65,7 @@ func execute(ctx *cli.Context) error {
 	return err
 }
 
-// New creates a new CLI application for f2
+// New creates a new CLI application for f2.
 func New(reader io.Reader, writer io.Writer) (*cli.App, error) {
 	renamer, err := app.Get(reader, writer)
 	if err != nil {

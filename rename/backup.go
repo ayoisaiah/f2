@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/adrg/xdg"
+
 	"github.com/ayoisaiah/f2/internal/file"
 )
 
@@ -29,7 +30,7 @@ func createBackupFile(fileName string) (io.Writer, error) {
 
 // backupChanges records the details of a renaming operation to the specified
 // writer so that it may be reverted if necessary. If a writer is not specified
-// it records the changes to the filesystem
+// it records the changes to the filesystem.
 func backupChanges(
 	changes file.Changes,
 	fileName string,
@@ -41,14 +42,6 @@ func backupChanges(
 		w, err = createBackupFile(fileName)
 		if err != nil {
 			return err
-		}
-	}
-
-	successfulChanges := make(file.Changes, 0, len(changes))
-
-	for _, change := range changes {
-		if change.Error == nil {
-			successfulChanges = append(successfulChanges, change)
 		}
 	}
 

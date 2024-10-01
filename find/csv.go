@@ -73,6 +73,7 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 
 				continue
 			}
+
 			return nil, statErr
 		}
 

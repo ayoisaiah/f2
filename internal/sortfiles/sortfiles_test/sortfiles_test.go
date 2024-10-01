@@ -14,10 +14,10 @@ import (
 
 type sortTestCase struct {
 	Name        string
-	TimeSort    config.Sort
 	Unsorted    []string
 	Sorted      []string
 	Order       []string
+	TimeSort    config.Sort
 	ReverseSort bool
 	SortPerDir  bool
 	Revert      bool

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/pathutil"
@@ -230,7 +231,7 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 		filepath.Join("f2", "backups", conf.BackupFilename),
 	)
 	if err != nil {
-		// The file does not exist, but it's not an error in this context
+		//nolint:nilerr // The file does not exist, but it's not an error in this context
 		return nil, nil
 	}
 
@@ -241,7 +242,7 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 
 	var changes file.Changes
 
-	if err = json.Unmarshal(fileBytes, &changes); err != nil {
+	if err := json.Unmarshal(fileBytes, &changes); err != nil {
 		return nil, err
 	}
 

@@ -644,7 +644,7 @@ func replaceExifToolVars(
 func replaceIndex(
 	target string,
 	changeIndex int, // position of change in the entire renaming operation
-	indexing indexVars,
+	indexing *indexVars,
 ) string {
 	for i := range indexing.matches {
 		current := indexing.matches[i]
@@ -1082,7 +1082,7 @@ func replaceVariables(
 			vars.index.matches = numVar.matches
 		}
 
-		change.Target = replaceIndex(change.Target, changeIndex, vars.index)
+		change.Target = replaceIndex(change.Target, changeIndex, &vars.index)
 	}
 
 	return nil

@@ -63,14 +63,21 @@ func NoMatches(conf *config.Config) {
 	pterm.Fprintln(config.Stderr, pterm.Sprint(msg))
 }
 
-// Report prints a report of the renaming changes to be made
+// Report prints a report of the renaming changes to be made.
 func Report(
 	conf *config.Config,
 	fileChanges file.Changes,
 	conflictDetected bool,
 ) {
 	if conf.JSON {
-		fileChanges.RenderJSON(config.Stdout)
+		err := fileChanges.RenderJSON(config.Stdout)
+		if err != nil {
+			pterm.Fprintln(
+				config.Stderr,
+				pterm.Sprintf("%s %v", pterm.Red("error:"), err),
+			)
+		}
+
 		return
 	}
 
@@ -95,6 +102,7 @@ func Report(
 // always printed to stderr.
 func PrintResults(conf *config.Config, fileChanges file.Changes, err error) {
 	if err != nil {
+		//nolint:errorlint // checking if err matches custom interface
 		renameErr, ok := err.(*apperr.Error)
 		if ok {
 			errIndices, ok := renameErr.Context.([]int)

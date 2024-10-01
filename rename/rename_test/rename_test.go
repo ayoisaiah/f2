@@ -29,8 +29,8 @@ func renameTest(t *testing.T, cases []testutil.TestCase) {
 		}
 
 		t.Cleanup(func() {
-			os.RemoveAll(baseDirPath)
-			os.Chdir(workingDir)
+			_ = os.RemoveAll(baseDirPath)
+			_ = os.Chdir(workingDir)
 		})
 
 		err = os.Chdir(baseDirPath)
@@ -153,7 +153,6 @@ func postRename(t *testing.T, cases []testutil.TestCase) {
 
 			testutil.CompareGoldenFile(t, &tc)
 		})
-
 	}
 }
 

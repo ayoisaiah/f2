@@ -633,7 +633,7 @@ func replaceString(conf *config.Config, originalName string) string {
 }
 
 // applyReplacements applies the configured replacement patterns to the source
-// filename
+// filename.
 func applyReplacement(
 	conf *config.Config,
 	vars *variables,
@@ -666,7 +666,7 @@ func applyReplacement(
 	return nil
 }
 
-func isPair(prev *file.Change, curr *file.Change) bool {
+func isPair(prev, curr *file.Change) bool {
 	return pathutil.StripExtension(
 		prev.SourcePath,
 	) == pathutil.StripExtension(
@@ -705,11 +705,13 @@ func replaceMatches(
 				change.TargetPath = filepath.Join(change.BaseDir, change.Target)
 				change.Status = status.OK
 				pairs++
+
 				continue
 			}
 		}
 
 		change.Position = i - pairs
+
 		err := applyReplacement(conf, &vars, change)
 		if err != nil {
 			return nil, err
@@ -774,6 +776,7 @@ func Replace(
 			ch := changes[i]
 
 			conf.Replacement = ch.Target
+
 			vars, err := extractVariables(conf.Replacement)
 			if err != nil {
 				return nil, err

@@ -278,7 +278,7 @@ func TestFind(t *testing.T) {
 	findTest(t, testCases)
 }
 
-// TODO: Test reverting from a backup file
+// TODO: Test reverting from a backup file.
 func TestLoadFromBackup(t *testing.T) {
 	t.Skip("not implemented")
 }

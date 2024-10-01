@@ -357,7 +357,7 @@ func envHelp() string {
 	)
 }
 
-func ShortHelp(app *cli.App) string {
+func ShortHelp(_ *cli.App) string {
 	return fmt.Sprintf(
 		`The batch renaming tool you'll actually enjoy using.
 

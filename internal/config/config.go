@@ -56,25 +56,25 @@ type Search struct {
 // Config represents the program configuration.
 type Config struct {
 	Date                     time.Time      `json:"date"`
+	BackupLocation           io.Writer      `json:"-"`
 	ExcludeDirRegex          *regexp.Regexp `json:"exclude_dir_regex"`
 	ExcludeRegex             *regexp.Regexp `json:"exclude_regex"`
 	Search                   *Search        `json:"search_regex"`
 	FixConflictsPatternRegex *regexp.Regexp `json:"fix_conflicts_pattern_regex"`
-	Sort                     Sort           `json:"sort"`
 	Replacement              string         `json:"replacement"`
 	WorkingDir               string         `json:"working_dir"`
 	FixConflictsPattern      string         `json:"fix_conflicts_pattern"`
 	CSVFilename              string         `json:"csv_filename"`
+	BackupFilename           string         `json:"backup_filename"`
 	ExiftoolOpts             ExiftoolOpts   `json:"exiftool_opts"`
-	ReplacementSlice         []string       `json:"replacement_slice"`
-	FilesAndDirPaths         []string       `json:"files_and_dir_paths"`
+	PairOrder                []string       `json:"pair_order"`
 	FindSlice                []string       `json:"find_slice"`
-	MaxDepth                 int            `json:"max_depth"`
-	StartNumber              int            `json:"start_number"`
+	FilesAndDirPaths         []string       `json:"files_and_dir_paths"`
+	ReplacementSlice         []string       `json:"replacement_slice"`
 	ReplaceLimit             int            `json:"replace_limit"`
-	AllowOverwrites          bool           `json:"allow_overwrites"`
-	ReverseSort              bool           `json:"reverse_sort"`
-	OnlyDir                  bool           `json:"only_dir"`
+	StartNumber              int            `json:"start_number"`
+	MaxDepth                 int            `json:"max_depth"`
+	Sort                     Sort           `json:"sort"`
 	Revert                   bool           `json:"revert"`
 	IncludeDir               bool           `json:"include_dir"`
 	IgnoreExt                bool           `json:"ignore_ext"`
@@ -90,12 +90,12 @@ type Config struct {
 	Debug                    bool           `json:"debug"`
 	Recursive                bool           `json:"recursive"`
 	ResetIndexPerDir         bool           `json:"reset_index_per_dir"`
-	SortPerDir               bool           `json:"sort_per_dir"`
+	OnlyDir                  bool           `json:"only_dir"`
 	PipeOutput               bool           `json:"is_output_to_pipe"`
-	BackupLocation           io.Writer      `json:"-"`
-	BackupFilename           string         `json:"backup_filename"`
+	ReverseSort              bool           `json:"reverse_sort"`
+	AllowOverwrites          bool           `json:"allow_overwrites"`
 	Pair                     bool           `json:"pair"`
-	PairOrder                []string       `json:"pair_order"`
+	SortPerDir               bool           `json:"sort_per_dir"`
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -185,6 +185,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.Recursive = ctx.Bool("recursive")
 	c.OnlyDir = ctx.Bool("only-dir")
 	c.StringLiteralMode = ctx.Bool("string-mode")
+	//nolint:gosec // acceptable use
 	c.MaxDepth = int(ctx.Uint("max-depth"))
 	c.Verbose = ctx.Bool("verbose")
 	c.AllowOverwrites = ctx.Bool("allow-overwrites")
@@ -270,7 +271,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 }
 
 // generateBackupFilename generates a unique filename for storing backup data
-// based on the MD5 hash of the working directory path
+// based on the MD5 hash of the working directory path.
 func generateBackupFilename(workingDir string) string {
 	h := md5.New()
 	h.Write([]byte(workingDir))
@@ -295,27 +296,27 @@ func Get() *Config {
 
 // configureOutput configures the output behavior of the application based
 // on environment variables and piping status. All output is suppressed in
-// quiet mode
-func (conf *Config) configureOutput() {
+// quiet mode.
+func (c *Config) configureOutput() {
 	// Disable coloured output if NO_COLOR is set
 	if _, exists := os.LookupEnv(EnvNoColor); exists {
-		conf.NoColor = true
+		c.NoColor = true
 	}
 
 	// Disable coloured output if F2_NO_COLOR is set
 	if _, exists := os.LookupEnv(EnvF2NoColor); exists {
-		conf.NoColor = true
+		c.NoColor = true
 	}
 
-	if conf.PipeOutput {
-		conf.NoColor = true
+	if c.PipeOutput {
+		c.NoColor = true
 	}
 
-	if conf.NoColor {
+	if c.NoColor {
 		pterm.DisableStyling()
 	}
 
-	if conf.Quiet {
+	if c.Quiet {
 		pterm.DisableOutput()
 	}
 }

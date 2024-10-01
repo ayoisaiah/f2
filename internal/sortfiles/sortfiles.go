@@ -36,8 +36,10 @@ func Pairs(changes file.Changes, pairOrder []string) {
 
 		// Compare extensions based on pairOrder
 		aExt, bExt := filepath.Ext(a.Source), filepath.Ext(b.Source)
+
 		for _, v := range pairOrder {
 			v = "." + v
+
 			switch {
 			case strings.EqualFold(aExt, v):
 				return -1
@@ -106,6 +108,7 @@ func ByTime(
 
 		aTime, bTime := sourceA.ModTime(), sourceB.ModTime()
 
+		//nolint:exhaustive // considering time sorts alone
 		switch sortName {
 		case config.SortMtime:
 		case config.SortBtime:
@@ -200,6 +203,7 @@ func Changes(
 		EnforceHierarchicalOrder(changes)
 	}
 
+	//nolint:exhaustive // default sort not needed
 	switch sortName {
 	case config.SortNatural:
 		Natural(changes, reverseSort)

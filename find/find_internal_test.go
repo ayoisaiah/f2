@@ -55,9 +55,9 @@ func TestIsMaxDepth(t *testing.T) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			// Ensure os-specifc separators are used
-			rootPath, currentPath := filepath.Join(
+			rootPath, currentPath := filepath.FromSlash(
 				tc.RootPath,
-			), filepath.Join(
+			), filepath.FromSlash(
 				tc.CurrentPath,
 			)
 

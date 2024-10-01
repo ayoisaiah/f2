@@ -9,11 +9,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/testutil"
 )
 
-func setHidden(path string) error {
-	return nil
-}
-
-func setupWindowsHidden(t *testing.T, testDir string) (teardown func()) {
+func setupWindowsHidden(_ *testing.T, _ string) (teardown func()) {
 	return func() {}
 }
 

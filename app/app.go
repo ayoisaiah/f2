@@ -9,11 +9,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 	slogctx "github.com/veqryn/slog-context"
+
+	"github.com/ayoisaiah/f2/internal/config"
+	"github.com/ayoisaiah/f2/internal/osutil"
 )
 
 const (
@@ -45,20 +46,20 @@ var supportedDefaultOpts = []string{
 	flagVerbose.Name,
 }
 
-// isInputFromPipe detects if input is being piped to F2
+// isInputFromPipe detects if input is being piped to F2.
 func isInputFromPipe() bool {
 	fileInfo, _ := os.Stdin.Stat()
 	return fileInfo.Mode()&os.ModeCharDevice == 0
 }
 
-// isOutputToPipe detects if F2's output is being piped to another command
+// isOutputToPipe detects if F2's output is being piped to another command.
 func isOutputToPipe() bool {
 	fileInfo, _ := os.Stdout.Stat()
 
-	return !((fileInfo.Mode() & os.ModeCharDevice) == os.ModeCharDevice)
+	return ((fileInfo.Mode() & os.ModeCharDevice) != os.ModeCharDevice)
 }
 
-// initLogger sets up defaults for the global logger
+// initLogger sets up defaults for the global logger.
 func initLogger() {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelError,
@@ -77,7 +78,7 @@ func initLogger() {
 	slog.SetDefault(l)
 }
 
-// handlePipeInput processes input from a pipe and appends it to os.Args
+// handlePipeInput processes input from a pipe and appends it to os.Args.
 func handlePipeInput(reader io.Reader) error {
 	if !isInputFromPipe() {
 		return nil
@@ -97,7 +98,7 @@ func handlePipeInput(reader io.Reader) error {
 }
 
 // loadDefaultOpts creates a CLI context with default options (F2_DEFAULT_OPTS)
-// from the environment. Returns `nil` if default options do not exist
+// from the environment. Returns `nil` if default options do not exist.
 func loadDefaultOpts() (*cli.Context, error) {
 	var defaultCtx *cli.Context
 

@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/status"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
+
+	"github.com/ayoisaiah/f2/internal/config"
+	"github.com/ayoisaiah/f2/internal/status"
 )
 
 // Change represents a single renaming change.
@@ -32,7 +33,7 @@ type Change struct {
 	WillOverwrite bool     `json:"-"`
 }
 
-// AutoFixTarget sets the new target name
+// AutoFixTarget sets the new target name.
 func (c *Change) AutoFixTarget(newTarget string) {
 	c.Target = newTarget
 	c.TargetPath = filepath.Join(c.BaseDir, c.Target)

@@ -58,7 +58,7 @@ func TestValidateWindows(t *testing.T) {
 					Source:  "atomic-habits.pdf",
 					Target:  "<>:?etc.pdf",
 					BaseDir: "ebooks",
-					Status:  status.InvalidCharacters,
+					Status:  status.ForbiddenCharacters,
 				},
 			},
 		},

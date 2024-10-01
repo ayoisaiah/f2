@@ -18,7 +18,9 @@ var csvCases = []testutil.TestCase{
 }
 
 // TestFindCSV tests file matching with CSV files.
-// TODO: Test --csv
+// TODO: Test --csv.
 func TestFindCSV(t *testing.T) {
+	_ = csvCases
+
 	t.Skip("not implemented")
 }
