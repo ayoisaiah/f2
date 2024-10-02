@@ -24,6 +24,11 @@ const (
 	EnvF2NoColor = "F2_NO_COLOR"
 )
 
+const (
+	DefaultFixConflictsPattern = "(%d)"
+	DefaultWorkingDir          = "."
+)
+
 var (
 	Stdin  io.Reader = os.Stdin
 	Stdout io.Writer = os.Stdout
@@ -31,7 +36,6 @@ var (
 )
 
 var (
-	defaultFixConflictsPattern      = "(%d)"
 	defaultFixConflictsPatternRegex = regexp.MustCompile(`\((\d+)\)$`)
 	customFixConfictsPatternRegex   = regexp.MustCompile(`^(\D?(%(\d+)?d)\D?)$`)
 )
@@ -101,6 +105,12 @@ type Config struct {
 // SetFindStringRegex compiles a regular expression for the
 // find string of the corresponding replacement index (if any).
 // Otherwise, the created regex will match the entire file name.
+// It takes into account the StringLiteralMode and IgnoreCase options.
+//
+// If a find string exists for the given replacementIndex, it's used as the pattern.
+// Otherwise, the pattern defaults to ".*" to match the entire file name.
+//
+// Returns an error if the regex compilation fails.
 func (c *Config) SetFindStringRegex(replacementIndex int) error {
 	// findPattern is set to match the entire file name by default
 	// except if a find string for the corresponding replacement index
@@ -162,7 +172,7 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 
 	// Default to the current working directory if no path arguments are provided
 	if len(c.FilesAndDirPaths) == 0 {
-		c.FilesAndDirPaths = append(c.FilesAndDirPaths, ".")
+		c.FilesAndDirPaths = append(c.FilesAndDirPaths, DefaultWorkingDir)
 	}
 
 	// Ensure that each findString has a corresponding replacement.
@@ -205,7 +215,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	}
 
 	if c.FixConflictsPattern == "" {
-		c.FixConflictsPattern = defaultFixConflictsPattern
+		c.FixConflictsPattern = DefaultFixConflictsPattern
 		c.FixConflictsPatternRegex = defaultFixConflictsPatternRegex
 	} else if !customFixConfictsPatternRegex.MatchString(c.FixConflictsPattern) {
 		return errParsingFixConflictsPattern.Fmt(c.FixConflictsPattern)
@@ -325,7 +335,7 @@ func (c *Config) configureOutput() {
 func Init(ctx *cli.Context, pipeOutput bool) (*Config, error) {
 	conf = &Config{
 		Date:             time.Now(),
-		FilesAndDirPaths: []string{"."},
+		FilesAndDirPaths: []string{DefaultWorkingDir},
 		Sort:             SortDefault,
 		PipeOutput:       pipeOutput,
 	}
@@ -344,7 +354,7 @@ func Init(ctx *cli.Context, pipeOutput bool) (*Config, error) {
 
 	if conf.WorkingDir == "" {
 		// Get the current working directory
-		conf.WorkingDir, err = filepath.Abs(".")
+		conf.WorkingDir, err = filepath.Abs(DefaultWorkingDir)
 		if err != nil {
 			return nil, err
 		}
