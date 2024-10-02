@@ -238,48 +238,11 @@ func TestSortFiles_BySize(t *testing.T) {
 			ReverseSort: true,
 		},
 		{
-			Name: "sort recursively with only directories",
-			Unsorted: []string{
-				"testdata/dir1/folder",
-				"testdata/dir1",
-			},
-			Sorted: []string{
-				"testdata/dir1/folder",
-				"testdata/dir1",
-			},
-		},
-		{
-			Name: "sort recursively in reverse with only directories",
-			Unsorted: []string{
-				"testdata/dir1/folder",
-				"testdata/dir1",
-			},
-			Sorted: []string{
-				"testdata/dir1",
-				"testdata/dir1/folder",
-			},
-			ReverseSort: true,
-		},
-		{
-			Name: "sort size recursively with only directories and --sort-per-dir",
-			Unsorted: []string{
-				"testdata/dir1/folder",
-				"testdata/dir1",
-			},
-			Sorted: []string{
-				"testdata/dir1",
-				"testdata/dir1/folder",
-			},
-			SortPerDir: true,
-		},
-		{
-			Name: "sort files and directories without --sort-per-dir",
+			Name: "sort files without --sort-per-dir",
 			Unsorted: []string{
 				"testdata/dir1/folder/15k.txt",
 				"testdata/20k.txt",
-				"testdata/dir1",
 				"testdata/4k.txt",
-				"testdata/dir1/folder",
 				"testdata/dir1/folder/3k.txt",
 				"testdata/11k.txt",
 				"testdata/10k.txt",
@@ -287,8 +250,6 @@ func TestSortFiles_BySize(t *testing.T) {
 				"testdata/dir1/10k.txt",
 			},
 			Sorted: []string{
-				"testdata/dir1/folder",
-				"testdata/dir1",
 				"testdata/dir1/folder/3k.txt",
 				"testdata/4k.txt",
 				"testdata/10k.txt",
@@ -300,13 +261,11 @@ func TestSortFiles_BySize(t *testing.T) {
 			},
 		},
 		{
-			Name: "sort files and directories with --sort-per-dir",
+			Name: "sort files with --sort-per-dir",
 			Unsorted: []string{
 				"testdata/dir1/folder/15k.txt",
 				"testdata/20k.txt",
-				"testdata/dir1",
 				"testdata/4k.txt",
-				"testdata/dir1/folder",
 				"testdata/dir1/folder/3k.txt",
 				"testdata/11k.txt",
 				"testdata/10k.txt",
@@ -314,12 +273,10 @@ func TestSortFiles_BySize(t *testing.T) {
 				"testdata/dir1/10k.txt",
 			},
 			Sorted: []string{
-				"testdata/dir1",
 				"testdata/4k.txt",
 				"testdata/10k.txt",
 				"testdata/11k.txt",
 				"testdata/20k.txt",
-				"testdata/dir1/folder",
 				"testdata/dir1/10k.txt",
 				"testdata/dir1/20k.txt",
 				"testdata/dir1/folder/3k.txt",

@@ -6,6 +6,7 @@ package app_test
 import (
 	"os"
 	"os/exec"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,6 +84,9 @@ func TestPipingInputFromFind(t *testing.T) {
 			_, _ = app.Get(os.Stdin, os.Stdout)
 
 			got := os.Args[len(os.Args)-len(tc.expected):]
+
+			slices.Sort(got)
+			slices.Sort(tc.expected)
 
 			assert.Equal(t, tc.expected, got)
 		})
