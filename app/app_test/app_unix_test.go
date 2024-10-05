@@ -68,8 +68,15 @@ func TestPipingInputFromFind(t *testing.T) {
 			},
 		},
 		{
-			name:     "find a.txt and b.txt files",
-			findArgs: []string{"testdata", "-regex", `.*\/\(a\|b\)\.txt$`},
+			name: "find a.txt and b.txt files",
+			findArgs: []string{
+				"testdata",
+				"-name",
+				"a.txt",
+				"-o",
+				"-name",
+				"b.txt",
+			},
 			expected: []string{
 				"testdata/a.txt",
 				"testdata/b.txt",

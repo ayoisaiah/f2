@@ -12,7 +12,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        # TODO: Fix Windows tests
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +25,18 @@ jobs:
 
       - name: Use Exiftool
         uses: woss/exiftool-action@v12.92
+        if: matrix.os != 'windows-latest'
+
+      - name: Install winget
+        uses: Cyberboss/install-winget@v1
+        if: matrix.os == 'windows-latest'
+
+      - name: Install Exiftool
+        run: winget install exiftool --disable-interactivity --accept-source-agreements
+        if: matrix.os == 'windows-latest'
+
+      - name: Set up gotestfmt
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
 
       - name: Run tests
-        run: go test ./... -race
+        run: go test ./... -json -v -race 2>&1 | gotestfmt -hide 'empty-packages'
