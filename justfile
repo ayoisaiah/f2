@@ -23,6 +23,10 @@ build-win:
 lint:
 	@golangci-lint run ./...
 
+[no-cd]
+lint-pkg:
+	@golangci-lint run ./...
+
 pre-commit:
 	@pre-commit run
 

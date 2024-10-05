@@ -6,13 +6,13 @@ linters:
     - decorder
     - containedctx
     - contextcheck
+    - copyloopvar
     - dogsled
     - dupl
     - errcheck
     - errchkjson
     - errname
     - errorlint
-    - exportloopref
     - exhaustive
     - goconst
     - godot
@@ -47,6 +47,7 @@ linters:
     - usestdlibvars
     - unparam
     - unused
+    - wastedassign
     - whitespace
     - wsl
 
