@@ -107,6 +107,8 @@ func checkEmptyFilenameConflict(
 ) (conflictDetected bool) {
 	if ctx.change.Target == "." || ctx.change.Target == "" {
 		conflictDetected = true
+
+		ctx.change.AutoFixTarget("")
 		ctx.change.Status = status.EmptyFilename
 
 		if ctx.autoFix {

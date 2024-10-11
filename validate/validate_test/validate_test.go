@@ -32,10 +32,13 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 				ch.BaseDir,
 				ch.Source,
 			)
-			cases[i].Changes[j].TargetPath = filepath.Join(
-				ch.BaseDir,
-				ch.Target,
-			)
+
+			if cases[i].Changes[j].TargetPath == "" {
+				cases[i].Changes[j].TargetPath = filepath.Join(
+					ch.BaseDir,
+					ch.Target,
+				)
+			}
 		}
 	}
 
@@ -93,10 +96,11 @@ func TestValidate(t *testing.T) {
 			Name: "detect empty filename conflict",
 			Changes: file.Changes{
 				{
-					Source:  "1984.pdf",
-					Target:  "",
-					BaseDir: "ebooks",
-					Status:  status.EmptyFilename,
+					Source:     "1984.pdf",
+					Target:     "",
+					TargetPath: "ebooks/",
+					BaseDir:    "ebooks",
+					Status:     status.EmptyFilename,
 				},
 			},
 			ConflictDetected: true,

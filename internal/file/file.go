@@ -37,6 +37,16 @@ type Change struct {
 func (c *Change) AutoFixTarget(newTarget string) {
 	c.Target = newTarget
 	c.TargetPath = filepath.Join(c.BaseDir, c.Target)
+
+	// Ensure empty targets is reported as empty instead of as a dot
+	if c.TargetPath == "." {
+		c.TargetPath = ""
+	}
+
+	if c.Target == "" && c.TargetPath != "" {
+		c.TargetPath += "/"
+	}
+
 	c.Status = status.OK
 }
 
