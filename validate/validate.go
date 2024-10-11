@@ -111,7 +111,7 @@ func checkEmptyFilenameConflict(
 
 		if ctx.autoFix {
 			// The file is left unchanged
-			ctx.change.Target = ctx.change.Source
+			ctx.change.AutoFixTarget(ctx.change.Source)
 			ctx.change.Status = status.Unchanged
 		}
 	}
@@ -425,7 +425,7 @@ func checkAndHandleConflict(ctx validationCtx, loopIndex *int) (detected bool) {
 		}
 
 		if i == len(checks)-1 {
-			// Special handling for checkTargetFileChangingConflict
+			// INFO: Special handling for checkTargetFileChangingConflict
 			// Restart the iteration from the beginning
 			*loopIndex = -1
 

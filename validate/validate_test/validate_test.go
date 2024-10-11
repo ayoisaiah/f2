@@ -156,6 +156,19 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
+			Name: "auto fix empty filename conflict",
+			Changes: file.Changes{
+				{
+					Source:  "1984.pdf",
+					Target:  "",
+					BaseDir: "ebooks",
+					Status:  status.Unchanged,
+				},
+			},
+			Want: []string{"ebooks/1984.pdf"},
+			Args: autoFixArgs,
+		},
+		{
 			Name: "auto fix path exists conflict",
 			Changes: file.Changes{
 				{
