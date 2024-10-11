@@ -16,7 +16,7 @@ import (
 )
 
 var errConflictDetected = &apperr.Error{
-	Message: "resolve conflicts manually or use -F/--fix-conflicts",
+	Message: "conflict: resolve manually or use -F/--fix-conflicts",
 }
 
 // execute initiates a new renaming operation based on the provided CLI context.

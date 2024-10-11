@@ -4,6 +4,7 @@ package report
 
 import (
 	"os"
+	"strings"
 
 	"github.com/pterm/pterm"
 
@@ -15,9 +16,19 @@ import (
 
 func ExitWithErr(err error) {
 	pterm.EnableOutput()
+
+	errPrefix := "error:"
+	errMessage := err.Error()
+
+	s := strings.Split(errMessage, ":")
+	if len(s) > 1 {
+		errPrefix = strings.TrimSpace(s[0] + ":")
+		errMessage = strings.TrimSpace(s[1])
+	}
+
 	pterm.Fprintln(
 		config.Stderr,
-		pterm.Sprintf("%s %v", pterm.Red("error:"), err),
+		pterm.Sprintf("%s %v", pterm.Red(errPrefix), errMessage),
 	)
 	os.Exit(int(osutil.ExitError))
 }
