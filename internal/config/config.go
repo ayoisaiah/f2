@@ -37,7 +37,9 @@ var (
 
 var (
 	defaultFixConflictsPatternRegex = regexp.MustCompile(`\((\d+)\)$`)
-	customFixConfictsPatternRegex   = regexp.MustCompile(`^(\D?(%(\d+)?d)\D?)$`)
+	customFixConfictsPatternRegex   = regexp.MustCompile(
+		`^(\D*?(%(\d+)?d)\D*?)$`,
+	)
 )
 
 var conf *Config
