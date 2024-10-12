@@ -17,6 +17,7 @@ import (
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/osutil"
+	"github.com/ayoisaiah/f2/internal/status"
 )
 
 // TestCase represents a unique test case.
@@ -191,6 +192,53 @@ func UpdateFileChanges(files file.Changes) {
 			ch.BaseDir,
 			ch.Target,
 		)
+	}
+}
+
+func RunTestCase(
+	t *testing.T,
+	tc *TestCase,
+	runFunc func(t *testing.T, tc *TestCase),
+) {
+	t.Helper()
+
+	t.Run(tc.Name, func(t *testing.T) {
+		if tc.SetupFunc != nil {
+			t.Cleanup(tc.SetupFunc(t, ""))
+		}
+
+		runFunc(t, tc)
+	})
+}
+
+func ProcessTestCaseChanges(t *testing.T, cases []TestCase) {
+	t.Helper()
+
+	for i := range cases {
+		tc := cases[i]
+		for j := range tc.Changes {
+			ch := tc.Changes[j]
+
+			if ch.Status == "" {
+				cases[i].Changes[j].Status = status.OK
+			}
+
+			cases[i].Changes[j].OriginalName = ch.Source
+
+			if cases[i].Changes[j].TargetPath == "" {
+				cases[i].Changes[j].SourcePath = filepath.Join(
+					ch.BaseDir,
+					ch.Source,
+				)
+			}
+
+			if cases[i].Changes[j].TargetPath == "" {
+				cases[i].Changes[j].TargetPath = filepath.Join(
+					ch.BaseDir,
+					ch.Target,
+				)
+			}
+		}
 	}
 }
 

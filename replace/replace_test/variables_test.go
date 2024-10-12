@@ -50,7 +50,7 @@ func createDateFile(t *testing.T, _ string) func() {
 	return func() {
 		err = os.Remove(dateFilePath)
 		if err != nil {
-			t.Fatal(err)
+			t.Log(err)
 		}
 	}
 }

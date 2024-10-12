@@ -2,7 +2,6 @@ package replace_test
 
 import (
 	"errors"
-	"path/filepath"
 	"testing"
 
 	"github.com/ayoisaiah/f2/internal/file"
@@ -13,36 +12,30 @@ import (
 func replaceTest(t *testing.T, cases []testutil.TestCase) {
 	t.Helper()
 
+	testutil.ProcessTestCaseChanges(t, cases)
+
 	for i := range cases {
 		tc := cases[i]
 
-		for j := range tc.Changes {
-			ch := tc.Changes[j]
+		testutil.RunTestCase(
+			t,
+			&tc,
+			func(t *testing.T, tc *testutil.TestCase) {
+				t.Helper()
 
-			cases[i].Changes[j].OriginalName = ch.Source
-			cases[i].Changes[j].SourcePath = filepath.Join(
-				ch.BaseDir,
-				ch.Source,
-			)
-		}
+				conf := testutil.GetConfig(t, tc, ".")
 
-		t.Run(tc.Name, func(t *testing.T) {
-			if tc.SetupFunc != nil {
-				t.Cleanup(tc.SetupFunc(t, ""))
-			}
+				changes, err := replace.Replace(conf, tc.Changes)
+				if err == nil {
+					testutil.CompareTargetPath(t, tc.Want, changes)
+					return
+				}
 
-			config := testutil.GetConfig(t, &tc, ".")
-
-			changes, err := replace.Replace(config, tc.Changes)
-			if err == nil {
-				testutil.CompareTargetPath(t, tc.Want, changes)
-				return
-			}
-
-			if !errors.Is(err, tc.Error) {
-				t.Fatal(err)
-			}
-		})
+				if !errors.Is(err, tc.Error) {
+					t.Fatal(err)
+				}
+			},
+		)
 	}
 }
 

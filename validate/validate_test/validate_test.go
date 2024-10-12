@@ -1,7 +1,6 @@
 package validate_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/jinzhu/copier"
@@ -17,76 +16,55 @@ var autoFixArgs = []string{"-r", "", "-F"}
 func validateTest(t *testing.T, cases []testutil.TestCase) {
 	t.Helper()
 
+	testutil.ProcessTestCaseChanges(t, cases)
+
 	for i := range cases {
 		tc := cases[i]
 
-		for j := range tc.Changes {
-			ch := tc.Changes[j]
+		testutil.RunTestCase(
+			t,
+			&tc,
+			func(t *testing.T, tc *testutil.TestCase) {
+				t.Helper()
 
-			if ch.Status == "" {
-				cases[i].Changes[j].Status = status.OK
-			}
+				if len(tc.Args) == 0 {
+					tc.Args = []string{"-r", ""}
+				}
 
-			cases[i].Changes[j].OriginalName = ch.Source
-			cases[i].Changes[j].SourcePath = filepath.Join(
-				ch.BaseDir,
-				ch.Source,
-			)
+				conf := testutil.GetConfig(t, tc, ".")
 
-			if cases[i].Changes[j].TargetPath == "" {
-				cases[i].Changes[j].TargetPath = filepath.Join(
-					ch.BaseDir,
-					ch.Target,
+				var expectedChanges file.Changes
+
+				err := copier.Copy(&expectedChanges, &tc.Changes)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for j := range tc.Changes {
+					tc.Changes[j].Status = status.OK
+				}
+
+				conflictDetected := validate.Validate(
+					tc.Changes,
+					conf.AutoFixConflicts,
+					conf.AllowOverwrites,
 				)
-			}
-		}
-	}
 
-	for i := range cases {
-		tc := cases[i]
+				if tc.ConflictDetected && !conflictDetected {
+					t.Fatal("expected a conflict, but got none")
+				}
 
-		t.Run(tc.Name, func(t *testing.T) {
-			if tc.SetupFunc != nil {
-				t.Cleanup(tc.SetupFunc(t, ""))
-			}
+				if !tc.ConflictDetected && conflictDetected {
+					t.Fatal("did not expect a conflict, but got one")
+				}
 
-			if len(tc.Args) == 0 {
-				tc.Args = []string{"-r", ""}
-			}
-
-			config := testutil.GetConfig(t, &tc, ".")
-
-			var expectedChanges file.Changes
-
-			err := copier.Copy(&expectedChanges, &tc.Changes)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			for j := range tc.Changes {
-				tc.Changes[j].Status = status.OK
-			}
-
-			conflictDetected := validate.Validate(
-				tc.Changes,
-				config.AutoFixConflicts,
-				config.AllowOverwrites,
-			)
-
-			if tc.ConflictDetected && !conflictDetected {
-				t.Fatal("expected a conflict, but got none")
-			}
-
-			if !tc.ConflictDetected && conflictDetected {
-				t.Fatal("did not expect a conflict, but got one")
-			}
-
-			if tc.ConflictDetected {
-				testutil.CompareChanges(t, expectedChanges, tc.Changes)
-			} else {
-				testutil.CompareTargetPath(t, tc.Want, tc.Changes)
-			}
-		})
+				if tc.ConflictDetected {
+					testutil.CompareChanges(t, expectedChanges, tc.Changes)
+				} else {
+					testutil.CompareTargetPath(t, tc.Want, tc.Changes)
+				}
+			},
+		)
 	}
 }
 
