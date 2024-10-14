@@ -12,7 +12,7 @@ test-pkg filter='.*':
 
 [no-cd]
 update-golden filter='.*':
-  @go test ./... -update -json -race -run={{filter}} | gotestfmt
+  @go test ./... -update -json -run={{filter}} | gotestfmt
 
 build:
 	@go build -o bin/{{APP}} ./cmd...
