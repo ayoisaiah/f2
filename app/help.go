@@ -290,7 +290,7 @@ Project repository: https://github.com/ayoisaiah/f2
 	%s
 
 %s
-  Read the manual at https://github.com/ayoisaiah/f2/wiki
+  Read the manual at Read the manual at https://f2.freshman.tech
 `,
 		app.Name,
 		app.Version,
@@ -371,7 +371,7 @@ func ShortHelp(_ *cli.App) string {
 
 %s
   Use f2 --help to view the command-line options.
-  Read the manual at https://github.com/ayoisaiah/f2/wiki`,
+	Read the manual at https://f2.freshman.tech`,
 		pterm.Bold.Sprintf("USAGE"),
 		usageText,
 		pterm.Bold.Sprintf("EXAMPLES"),
