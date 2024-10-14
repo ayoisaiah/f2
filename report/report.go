@@ -44,6 +44,21 @@ func BackupFileRemovalFailed(err error) {
 	)
 }
 
+func ShortHelp(helpText string) {
+	pterm.Fprintln(config.Stderr, helpText)
+}
+
+func DefaultOpt(opt, val string) {
+	pterm.Fprintln(
+		config.Stderr,
+		pterm.Sprintf(
+			"default option '--%s' applied from the environment: %s",
+			pterm.Green(opt),
+			pterm.Yellow(val),
+		),
+	)
+}
+
 func NonExistentFile(name string, row int) {
 	pterm.Fprintln(
 		config.Stderr,

@@ -15,6 +15,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/osutil"
+	"github.com/ayoisaiah/f2/report"
 )
 
 const (
@@ -149,7 +150,7 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 	app.Before = func(ctx *cli.Context) (err error) {
 		// print short help and exit if no arguments or flags are present
 		if ctx.NumFlags() == 0 && !ctx.Args().Present() {
-			pterm.Fprintln(config.Stderr, ShortHelp(ctx.App))
+			report.ShortHelp(ShortHelp(ctx.App))
 			os.Exit(int(osutil.ExitOK))
 		}
 
@@ -174,6 +175,11 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 			return nil
 		}
 
+		verbose := ctx.Bool("verbose")
+		if !verbose {
+			verbose = defaultCtx.Bool("verbose")
+		}
+
 		for _, defaultOpt := range supportedDefaultOpts {
 			defaultValue := fmt.Sprintf("%v", defaultCtx.Value(defaultOpt))
 
@@ -190,6 +196,10 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 				if err != nil {
 					return errSetDefaultOpt.Wrap(err).
 						Fmt(defaultValue, defaultOpt)
+				}
+
+				if verbose {
+					report.DefaultOpt(defaultOpt, defaultValue)
 				}
 			}
 		}
