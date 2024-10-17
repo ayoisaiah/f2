@@ -234,6 +234,37 @@ func TestReplace(t *testing.T) {
 			},
 			Args: []string{"-f", ".*", "-r", "picture-{%03d}", "--pair"},
 		},
+		{
+			Name: "rename file pairs with a different target directory",
+			Changes: file.Changes{
+				{
+					Source:    "image.dng",
+					TargetDir: "pictures",
+				},
+				{
+					Source:    "image.heif",
+					TargetDir: "pictures",
+				},
+				{
+					Source:    "image.jpg",
+					TargetDir: "pictures",
+				},
+			},
+			Want: []string{
+				"pictures/picture-001.dng",
+				"pictures/picture-001.heif",
+				"pictures/picture-001.jpg",
+			},
+			Args: []string{
+				"-f",
+				".*",
+				"-r",
+				"picture-{%03d}",
+				"--pair",
+				"-t",
+				"pictures",
+			},
+		},
 	}
 
 	replaceTest(t, testCases)

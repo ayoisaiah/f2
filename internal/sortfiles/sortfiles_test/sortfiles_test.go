@@ -679,7 +679,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 			}
 		}
 
@@ -690,7 +690,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 			}
 		}
 
