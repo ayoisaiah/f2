@@ -3,11 +3,13 @@ package sortfiles_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/internal/testutil"
 )
@@ -292,7 +294,6 @@ func TestSortFiles_BySize(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			unsorted := sortTest(t, tc.Unsorted)
 
-			// sorts the slice in place
 			sortfiles.Changes(
 				unsorted,
 				config.SortSize,
@@ -410,7 +411,6 @@ func TestSortFiles_Natural(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			unsorted := sortTest(t, tc.Unsorted)
 
-			// sorts the slice in place
 			sortfiles.Changes(
 				unsorted,
 				config.SortNatural,
@@ -607,52 +607,51 @@ func TestSortFiles_ByTime(t *testing.T) {
 			TimeSort:    config.SortBtime,
 			ReverseSort: true,
 		},
-		// TODO: Fails in Windows
-		// {
-		// 	Name: "sort files by change time",
-		// 	Unsorted: []string{
-		// 		"testdata/4k.txt",
-		// 		"testdata/10k.txt",
-		// 		"testdata/11k.txt",
-		// 		"testdata/20k.txt",
-		// 	},
-		// 	Sorted: []string{
-		// 		"testdata/20k.txt",
-		// 		"testdata/4k.txt",
-		// 		"testdata/11k.txt",
-		// 		"testdata/10k.txt",
-		// 	},
-		// 	Order: []string{
-		// 		"testdata/20k.txt",
-		// 		"testdata/4k.txt",
-		// 		"testdata/11k.txt",
-		// 		"testdata/10k.txt",
-		// 	},
-		// 	TimeSort: config.SortCtime,
-		// },
-		// {
-		// 	Name: "sort files by change time in reverse",
-		// 	Unsorted: []string{
-		// 		"testdata/4k.txt",
-		// 		"testdata/10k.txt",
-		// 		"testdata/11k.txt",
-		// 		"testdata/20k.txt",
-		// 	},
-		// 	Sorted: []string{
-		// 		"testdata/10k.txt",
-		// 		"testdata/11k.txt",
-		// 		"testdata/4k.txt",
-		// 		"testdata/20k.txt",
-		// 	},
-		// 	Order: []string{
-		// 		"testdata/20k.txt",
-		// 		"testdata/4k.txt",
-		// 		"testdata/11k.txt",
-		// 		"testdata/10k.txt",
-		// 	},
-		// 	TimeSort:    config.SortCtime,
-		// 	ReverseSort: true,
-		// },
+		{
+			Name: "sort files by change time",
+			Unsorted: []string{
+				"testdata/4k.txt",
+				"testdata/10k.txt",
+				"testdata/11k.txt",
+				"testdata/20k.txt",
+			},
+			Sorted: []string{
+				"testdata/20k.txt",
+				"testdata/4k.txt",
+				"testdata/11k.txt",
+				"testdata/10k.txt",
+			},
+			Order: []string{
+				"testdata/20k.txt",
+				"testdata/4k.txt",
+				"testdata/11k.txt",
+				"testdata/10k.txt",
+			},
+			TimeSort: config.SortCtime,
+		},
+		{
+			Name: "sort files by change time in reverse",
+			Unsorted: []string{
+				"testdata/4k.txt",
+				"testdata/10k.txt",
+				"testdata/11k.txt",
+				"testdata/20k.txt",
+			},
+			Sorted: []string{
+				"testdata/10k.txt",
+				"testdata/11k.txt",
+				"testdata/4k.txt",
+				"testdata/20k.txt",
+			},
+			Order: []string{
+				"testdata/20k.txt",
+				"testdata/4k.txt",
+				"testdata/11k.txt",
+				"testdata/10k.txt",
+			},
+			TimeSort:    config.SortCtime,
+			ReverseSort: true,
+		},
 	}
 
 	for i := range testCases {
@@ -674,16 +673,22 @@ func TestSortFiles_ByTime(t *testing.T) {
 
 		if tc.TimeSort == config.SortBtime {
 			for _, v := range tc.Order {
-				_, err := os.Create(v)
+				f, err := os.Create(v)
 				if err != nil {
 					t.Fatal(err)
 				}
+
+				f.Close()
 
 				time.Sleep(10 * time.Millisecond)
 			}
 		}
 
 		if tc.TimeSort == config.SortCtime {
+			if runtime.GOOS == osutil.Windows {
+				t.Skip("skip change time test in Windows")
+			}
+
 			for _, v := range tc.Order {
 				err := os.Chmod(v, 0o755)
 				if err != nil {
@@ -697,7 +702,6 @@ func TestSortFiles_ByTime(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			unsorted := sortTest(t, tc.Unsorted)
 
-			// sorts the slice in place
 			sortfiles.Changes(
 				unsorted,
 				tc.TimeSort,
@@ -766,7 +770,6 @@ func TestSortFiles_ForRenamingAndUndo(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			unsorted := sortTest(t, tc.Unsorted)
 
-			// sorts the slice in place
 			sortfiles.ForRenamingAndUndo(unsorted, tc.Revert)
 
 			testutil.CompareSourcePath(t, tc.Sorted, unsorted)

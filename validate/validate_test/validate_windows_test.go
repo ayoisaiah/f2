@@ -61,6 +61,7 @@ func TestValidateWindows(t *testing.T) {
 					Status:  status.ForbiddenCharacters,
 				},
 			},
+			ConflictDetected: true,
 		},
 		{
 			Name: "detect filename longer than 255 characters",
