@@ -72,6 +72,7 @@ type Config struct {
 	FixConflictsPattern      string         `json:"fix_conflicts_pattern"`
 	CSVFilename              string         `json:"csv_filename"`
 	BackupFilename           string         `json:"backup_filename"`
+	TargetDir                string         `json:"target_dir"`
 	ExiftoolOpts             ExiftoolOpts   `json:"exiftool_opts"`
 	PairOrder                []string       `json:"pair_order"`
 	FindSlice                []string       `json:"find_slice"`
@@ -158,6 +159,18 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.Revert = ctx.Bool("undo")
 	c.Debug = ctx.Bool("debug")
 	c.FilesAndDirPaths = ctx.Args().Slice()
+	c.TargetDir = ctx.String("target-dir")
+
+	if c.TargetDir != "" {
+		info, err := os.Stat(c.TargetDir)
+		if err == nil && !info.IsDir() {
+			return errInvalidTargetDir.Fmt(c.TargetDir)
+		}
+
+		if err != nil && os.IsExist(err) {
+			return err
+		}
+	}
 
 	if c.CSVFilename != "" {
 		absPath, err := filepath.Abs(filepath.Dir(c.CSVFilename))

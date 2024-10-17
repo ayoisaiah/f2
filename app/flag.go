@@ -281,6 +281,14 @@ var (
 		instead of a regular expression.`,
 	}
 
+	flagTargetDir = &cli.StringFlag{
+		Name:    "target-dir",
+		Aliases: []string{"t"},
+		Usage: `
+		Specify a target directory to move renamed files and reorganize your 
+		filesystem.`,
+	}
+
 	flagVerbose = &cli.BoolFlag{
 		Name:    "verbose",
 		Aliases: []string{"V"},

@@ -182,6 +182,10 @@ func UpdateFileChanges(files file.Changes) {
 	for i := range files {
 		ch := files[i]
 
+		if ch.TargetDir == "" {
+			ch.TargetDir = ch.BaseDir
+		}
+
 		files[i].OriginalName = ch.Source
 		files[i].Position = i
 		files[i].SourcePath = filepath.Join(
@@ -189,7 +193,7 @@ func UpdateFileChanges(files file.Changes) {
 			ch.Source,
 		)
 		files[i].TargetPath = filepath.Join(
-			ch.BaseDir,
+			ch.TargetDir,
 			ch.Target,
 		)
 	}
@@ -219,6 +223,10 @@ func ProcessTestCaseChanges(t *testing.T, cases []TestCase) {
 		for j := range tc.Changes {
 			ch := tc.Changes[j]
 
+			if ch.TargetDir == "" {
+				ch.TargetDir = ch.BaseDir
+			}
+
 			if ch.Status == "" {
 				cases[i].Changes[j].Status = status.OK
 			}
@@ -234,7 +242,7 @@ func ProcessTestCaseChanges(t *testing.T, cases []TestCase) {
 
 			if cases[i].Changes[j].TargetPath == "" {
 				cases[i].Changes[j].TargetPath = filepath.Join(
-					ch.BaseDir,
+					ch.TargetDir,
 					ch.Target,
 				)
 			}
@@ -248,6 +256,10 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 
 	for k, v := range tc.SetEnv {
 		t.Setenv(k, v)
+	}
+
+	if len(tc.Args) == 0 {
+		tc.Args = []string{"-f", "", "-r", ""}
 	}
 
 	// add fake binary name as first argument

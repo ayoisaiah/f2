@@ -54,7 +54,7 @@ func commit(fileChanges file.Changes) []int {
 			isCaseChangeOnly = true
 			timeStr := fmt.Sprintf("%d", time.Now().UnixNano())
 			targetPath = filepath.Join(
-				change.BaseDir,
+				change.TargetDir,
 				"__"+timeStr+"__"+change.Target+"__"+timeStr+"__", // step 1
 			)
 		}
@@ -69,7 +69,7 @@ func commit(fileChanges file.Changes) []int {
 			dir := filepath.Dir(change.Target)
 
 			err := os.MkdirAll(
-				filepath.Join(change.BaseDir, dir),
+				filepath.Join(change.TargetDir, dir),
 				osutil.DirPermission,
 			)
 			if err != nil {
@@ -99,8 +99,16 @@ func commit(fileChanges file.Changes) []int {
 // Rename renames files according to the provided changes and configuration
 // handling conflicts and backups.
 func Rename(
+	conf *config.Config,
 	fileChanges file.Changes,
 ) error {
+	if conf.TargetDir != "" {
+		err := os.MkdirAll(conf.TargetDir, osutil.DirPermission)
+		if err != nil {
+			return err
+		}
+	}
+
 	renameErrs := commit(fileChanges)
 	if len(renameErrs) > 0 {
 		return errRenameFailed.WithCtx(renameErrs)

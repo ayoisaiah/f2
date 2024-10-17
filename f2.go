@@ -58,7 +58,7 @@ func execute(_ *cli.Context) error {
 		return nil
 	}
 
-	err = rename.Rename(changes)
+	err = rename.Rename(appConfig, changes)
 
 	rename.PostRename(appConfig, changes, err)
 

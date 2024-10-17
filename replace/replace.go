@@ -661,7 +661,7 @@ func applyReplacement(
 
 	change.Target = strings.TrimSpace(filepath.Clean(change.Target))
 	change.Status = status.OK
-	change.TargetPath = filepath.Join(change.BaseDir, change.Target)
+	change.TargetPath = filepath.Join(change.TargetDir, change.Target)
 
 	return nil
 }
@@ -702,7 +702,10 @@ func replaceMatches(
 				ext := filepath.Ext(change.Source)
 				common := pathutil.StripExtension(prev.Target)
 				change.Target = common + ext
-				change.TargetPath = filepath.Join(change.BaseDir, change.Target)
+				change.TargetPath = filepath.Join(
+					change.TargetDir,
+					change.Target,
+				)
 				change.Status = status.OK
 				pairs++
 

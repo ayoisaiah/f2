@@ -91,6 +91,7 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 
 		match := &file.Change{
 			BaseDir:      sourceDir,
+			TargetDir:    sourceDir,
 			IsDir:        fileInfo.IsDir(),
 			Source:       fileName,
 			Target:       fileName,
@@ -100,11 +101,20 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 			Position:     i,
 		}
 
-		changes = append(changes, match)
+		if conf.TargetDir != "" {
+			match.TargetDir = conf.TargetDir
+		}
 
 		if len(record) > 1 {
 			match.Target = strings.TrimSpace(record[1])
+
+			if filepath.IsAbs(match.Target) {
+				match.TargetDir = ""
+				continue
+			}
 		}
+
+		changes = append(changes, match)
 	}
 
 	return changes, nil

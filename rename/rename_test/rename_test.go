@@ -15,23 +15,20 @@ import (
 func renameTest(t *testing.T, cases []testutil.TestCase) {
 	t.Helper()
 
+	workingDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for i := range cases {
 		tc := cases[i]
 
-		baseDirPath, err := os.MkdirTemp("", "f2_test")
+		conf := testutil.GetConfig(t, &tc, ".")
+
+		baseDirPath, err := os.MkdirTemp(".", "f2_test")
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		workingDir, err := os.Getwd()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		t.Cleanup(func() {
-			_ = os.RemoveAll(baseDirPath)
-			_ = os.Chdir(workingDir)
-		})
 
 		err = os.Chdir(baseDirPath)
 		if err != nil {
@@ -41,13 +38,12 @@ func renameTest(t *testing.T, cases []testutil.TestCase) {
 		for j := range tc.Changes {
 			ch := tc.Changes[j]
 
-			cases[i].Changes[j].BaseDir = baseDirPath
 			cases[i].Changes[j].SourcePath = filepath.Join(
 				ch.BaseDir,
 				ch.Source,
 			)
 			cases[i].Changes[j].TargetPath = filepath.Join(
-				ch.BaseDir,
+				ch.TargetDir,
 				ch.Target,
 			)
 
@@ -63,20 +59,29 @@ func renameTest(t *testing.T, cases []testutil.TestCase) {
 		}
 
 		t.Run(tc.Name, func(t *testing.T) {
-			err := rename.Rename(tc.Changes)
+			err := rename.Rename(conf, tc.Changes)
 			if err != nil {
-				// TODO: better error report
 				t.Fatal(err)
 			}
 
 			for j := range tc.Changes {
 				ch := tc.Changes[j]
 
-				if _, err := os.Stat(ch.Target); err != nil {
+				if _, err := os.Stat(ch.TargetPath); err != nil {
 					t.Fatal(err)
 				}
 			}
 		})
+
+		err = os.Chdir(workingDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = os.RemoveAll(baseDirPath)
+		if err != nil {
+			t.Log(err)
+		}
 	}
 }
 
@@ -121,6 +126,17 @@ func TestRename(t *testing.T) {
 					Target: "new_folder/myFile.txt",
 				},
 			},
+		},
+		{
+			Name: "rename with a different target directory",
+			Changes: file.Changes{
+				{
+					Source:    "File.txt",
+					Target:    "myFile.txt",
+					TargetDir: "one/two",
+				},
+			},
+			Args: []string{"-f", "", "--target-dir", "one/two"},
 		},
 	}
 

@@ -99,16 +99,25 @@ func isMaxDepth(rootPath, currentPath string, maxDepth int) bool {
 	return depthCount > maxDepth
 }
 
-func createFileChange(dirPath string, fileInfo fs.FileInfo) *file.Change {
+func createFileChange(
+	conf *config.Config,
+	dirPath string,
+	fileInfo fs.FileInfo,
+) *file.Change {
 	baseDir := filepath.Dir(dirPath)
 	fileName := fileInfo.Name()
 
 	match := &file.Change{
 		BaseDir:      baseDir,
+		TargetDir:    baseDir,
 		IsDir:        fileInfo.IsDir(),
 		Source:       fileName,
 		OriginalName: fileName,
 		SourcePath:   filepath.Join(baseDir, fileName),
+	}
+
+	if conf.TargetDir != "" {
+		match.TargetDir = conf.TargetDir
 	}
 
 	return match
@@ -135,7 +144,7 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 			}
 
 			if conf.Search.Regex.MatchString(fileInfo.Name()) {
-				match := createFileChange(rootPath, fileInfo)
+				match := createFileChange(conf, rootPath, fileInfo)
 
 				if !shouldFilter(conf, match) {
 					matches = append(matches, match)
@@ -203,7 +212,7 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 						return infoErr
 					}
 
-					match := createFileChange(currentPath, fileInfo)
+					match := createFileChange(conf, currentPath, fileInfo)
 
 					if !shouldFilter(conf, match) {
 						matches = append(matches, match)
@@ -250,7 +259,7 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 	for i := range changes {
 		ch := changes[i]
 		ch.Source, ch.Target = ch.Target, ch.Source
-		ch.SourcePath = filepath.Join(ch.BaseDir, ch.Source)
+		ch.SourcePath = filepath.Join(ch.TargetDir, ch.Source)
 		ch.TargetPath = filepath.Join(ch.BaseDir, ch.Target)
 		ch.Status = status.OK
 

@@ -14,4 +14,8 @@ var (
 	errInvalidSort = &apperr.Error{
 		Message: "the provided sort '%s' is invalid",
 	}
+
+	errInvalidTargetDir = &apperr.Error{
+		Message: "target path '%s' exists but is not a directory",
+	}
 )

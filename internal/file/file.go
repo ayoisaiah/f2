@@ -16,16 +16,18 @@ import (
 // Change represents a single renaming change.
 type Change struct {
 	Error error `json:"error,omitempty"`
-	// The original filename which can be different from Source in
+	// The original filename can be different from the `Source` in
 	// a multi-step renaming operation
 	OriginalName string        `json:"-"`
 	Status       status.Status `json:"status"`
 	BaseDir      string        `json:"base_dir"`
-	Source       string        `json:"source"`
-	Target       string        `json:"target"`
+	// TargetDir is the same as BaseDir unless `--target-dir` is provided
+	TargetDir string `json:"target_dir"`
+	Source    string `json:"source"`
+	Target    string `json:"target"`
 	// SourcePath is BaseDir + Source
 	SourcePath string `json:"-"`
-	// TargetPath is BaseDir + Target
+	// TargetPath is TargetDir + Target
 	TargetPath    string   `json:"-"`
 	CSVRow        []string `json:"-"`
 	Position      int      `json:"-"`
@@ -36,7 +38,7 @@ type Change struct {
 // AutoFixTarget sets the new target name.
 func (c *Change) AutoFixTarget(newTarget string) {
 	c.Target = newTarget
-	c.TargetPath = filepath.Join(c.BaseDir, c.Target)
+	c.TargetPath = filepath.Join(c.TargetDir, c.Target)
 
 	// Ensure empty targets is reported as empty instead of as a dot
 	if c.TargetPath == "." {

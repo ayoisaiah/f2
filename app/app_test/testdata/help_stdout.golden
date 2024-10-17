@@ -179,9 +179,12 @@ Project repository: https://github.com/ayoisaiah/f2
     Treats the search pattern (specified by -f/--find) as a literal string
     instead of a regular expression.
 
+  [32m-t[0m, [32m--target-dir[0m 
+    Specify a target directory to move renamed files and reorganize your 
+    filesystem.
+
   [32m-V[0m, [32m--verbose[0m 
     Enables verbose output during the renaming operation.
-
 [1mENVIRONMENTAL VARIABLES[0m
   [32mF2_DEFAULT_OPTS[0m
     Override the default options according to your preferences. For example, 

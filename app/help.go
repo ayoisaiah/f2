@@ -201,6 +201,13 @@ func helpText(app *cli.App) string {
 		flagStringMode.GetUsage(),
 	)
 
+	flagTargetDirHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagTargetDir.Aliases[0]),
+		pterm.Green("--", flagTargetDir.Name),
+		flagTargetDir.GetUsage(),
+	)
+
 	flagVerboseHelp := fmt.Sprintf(
 		`%s, %s %s`,
 		pterm.Green("-", flagVerbose.Aliases[0]),
@@ -286,6 +293,7 @@ Project repository: https://github.com/ayoisaiah/f2
 
 	%s
 
+	%s
 %s
 	%s
 
@@ -331,6 +339,7 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagSortrHelp,
 		flagSortPerDirHelp,
 		flagStringModeHelp,
+		flagTargetDirHelp,
 		flagVerboseHelp,
 		pterm.Bold.Sprintf("ENVIRONMENTAL VARIABLES"),
 		envHelp(),
