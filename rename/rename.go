@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adrg/xdg"
-
 	"github.com/ayoisaiah/f2/internal/apperr"
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
@@ -34,16 +32,16 @@ func commit(fileChanges file.Changes) []int {
 	var errIndices []int
 
 	for i := range fileChanges {
-		change := fileChanges[i]
+		ch := fileChanges[i]
 
-		if change.Status == status.Ignored {
+		if ch.Status == status.Ignored {
 			continue
 		}
 
-		targetPath := change.TargetPath
+		targetPath := ch.TargetPath
 
 		// skip paths that are unchanged in every aspect
-		if change.SourcePath == targetPath {
+		if ch.SourcePath == targetPath {
 			continue
 		}
 
@@ -54,48 +52,48 @@ func commit(fileChanges file.Changes) []int {
 		// 2. Rename <source> to <target>
 		// 3. Rename __<time>__<target>__<time>__ to <target>
 		var isCaseChangeOnly bool // only the target case is changing
-		if strings.EqualFold(change.SourcePath, targetPath) {
+		if strings.EqualFold(ch.SourcePath, targetPath) {
 			isCaseChangeOnly = true
 			timeStr := fmt.Sprintf("%d", time.Now().UnixNano())
 			targetPath = filepath.Join(
-				change.TargetDir,
-				"__"+timeStr+"__"+change.Target+"__"+timeStr+"__", // step 1
+				ch.TargetDir,
+				"__"+timeStr+"__"+ch.Target+"__"+timeStr+"__", // step 1
 			)
 		}
 
 		// If target contains a slash, create all missing
 		// directories before renaming the file
-		if strings.Contains(change.Target, "/") ||
-			strings.Contains(change.Target, `\`) &&
+		if strings.Contains(ch.Target, "/") ||
+			strings.Contains(ch.Target, `\`) &&
 				runtime.GOOS == osutil.Windows {
 			// No need to check if the `dir` exists or if there are several
 			// consecutive slashes since `os.MkdirAll` handles that
-			dir := filepath.Dir(change.Target)
+			dir := filepath.Dir(ch.Target)
 
 			err := os.MkdirAll(
-				filepath.Join(change.TargetDir, dir),
+				filepath.Join(ch.TargetDir, dir),
 				osutil.DirPermission,
 			)
 			if err != nil {
 				errIndices = append(errIndices, i)
-				change.Error = err
+				ch.Error = err
 
 				continue
 			}
 		}
 
-		traversedDirs[change.BaseDir] = change.BaseDir
+		traversedDirs[ch.BaseDir] = ch.BaseDir
 
-		err := os.Rename(change.SourcePath, targetPath) // step 2
+		err := os.Rename(ch.SourcePath, targetPath) // step 2
 		// if the intermediate rename is successful,
 		// proceed with the original renaming operation
 		if err == nil && isCaseChangeOnly {
-			err = os.Rename(targetPath, change.TargetPath) // step 3
+			err = os.Rename(targetPath, ch.TargetPath) // step 3
 		}
 
 		if err != nil {
 			errIndices = append(errIndices, i)
-			change.Error = err
+			ch.Error = err
 		}
 	}
 
@@ -134,7 +132,7 @@ func PostRename(
 
 	var cleanedDirs []string
 
-	if conf.Clean {
+	if conf.Clean && !conf.Revert {
 		for _, dir := range traversedDirs {
 			if dir == "." { // don't try to clean the working directory
 				continue
@@ -162,15 +160,14 @@ func PostRename(
 	}
 
 	if conf.Revert && renameErr == nil {
-		backupFilePath, err := xdg.SearchDataFile(
-			filepath.Join("f2", "backups", conf.BackupFilename),
+		backupFilePath := filepath.Join(
+			os.TempDir(),
+			"f2",
+			"backups",
+			conf.BackupFilename,
 		)
-		if err != nil {
-			report.BackupFileRemovalFailed(err)
-			return
-		}
 
-		if err = os.Remove(backupFilePath); err != nil {
+		if err := os.Remove(backupFilePath); err != nil {
 			report.BackupFileRemovalFailed(err)
 			return
 		}

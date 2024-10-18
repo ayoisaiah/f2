@@ -6,16 +6,20 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/adrg/xdg"
-
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/osutil"
 )
 
 func createBackupFile(fileName string) (io.Writer, error) {
-	backupFilePath, err := xdg.DataFile(
-		filepath.Join("f2", "backups", fileName),
+	backupFilePath := filepath.Join(
+		os.TempDir(),
+		"f2",
+		"backups",
+		fileName,
 	)
+
+	err := os.MkdirAll(filepath.Dir(backupFilePath), osutil.DirPermission)
 	if err != nil {
 		return nil, err
 	}

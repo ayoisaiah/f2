@@ -1,4 +1,4 @@
 Filename,Replacement,Random
 a.txt,aa.txt,GPLv3
-c.txt,[csv.3}.txt,myname
+c.txt,{csv.3}.txt,myname
 d.txt,dd.txt,

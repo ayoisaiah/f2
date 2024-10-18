@@ -82,5 +82,7 @@ var windowsTestCases = []testutil.TestCase{
 
 // TestFindWindows only tests search behaviors perculiar to Windows
 func TestFindWindows(t *testing.T) {
-	findTest(t, windowsTestCases)
+	testDir := testutil.SetupFileSystem(t, "find", findFileSystem)
+
+	findTest(t, windowsTestCases, testDir)
 }

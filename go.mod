@@ -3,7 +3,6 @@ module github.com/ayoisaiah/f2
 go 1.23
 
 require (
-	github.com/adrg/xdg v0.5.0
 	github.com/barasher/go-exiftool v1.10.0
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51

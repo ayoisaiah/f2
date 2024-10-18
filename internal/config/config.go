@@ -58,7 +58,7 @@ type ExiftoolOpts struct {
 
 type Backup struct {
 	Changes     file.Changes `json:"changes"`
-	CleanedDirs []string     `json:"cleaned_dirs"`
+	CleanedDirs []string     `json:"cleaned_dirs,omitempty"`
 }
 
 func (b Backup) RenderJSON(w io.Writer) error {

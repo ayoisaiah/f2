@@ -238,10 +238,8 @@ var testCases = []testutil.TestCase{
 	},
 }
 
-func findTest(t *testing.T, cases []testutil.TestCase) {
+func findTest(t *testing.T, cases []testutil.TestCase, testDir string) {
 	t.Helper()
-
-	testDir := testutil.SetupFileSystem(t, "find", findFileSystem)
 
 	for i := range cases {
 		tc := cases[i]
@@ -275,7 +273,9 @@ func findTest(t *testing.T, cases []testutil.TestCase) {
 // exclude, hidden, include-dir, only-dir, ignore-case, ignore-ext, max-depth,
 // recursive, string-mode.
 func TestFind(t *testing.T) {
-	findTest(t, testCases)
+	testDir := testutil.SetupFileSystem(t, "find", findFileSystem)
+
+	findTest(t, testCases, testDir)
 }
 
 // TODO: Test reverting from a backup file.

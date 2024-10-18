@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/adrg/xdg"
-
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 	"github.com/ayoisaiah/f2/internal/osutil"
@@ -237,12 +235,18 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 // from the backup file. It returns the changes or an error if the backup file
 // cannot be found or parsed.
 func loadFromBackup(conf *config.Config) (file.Changes, error) {
-	backupFilePath, err := xdg.SearchDataFile(
-		filepath.Join("f2", "backups", conf.BackupFilename),
+	backupFilePath := filepath.Join(
+		os.TempDir(),
+		"f2",
+		"backups",
+		conf.BackupFilename,
 	)
-	if err != nil {
-		//nolint:nilerr // The file does not exist, but it's not an error in this context
+
+	_, err := os.Stat(backupFilePath)
+	if os.IsNotExist(err) {
 		return nil, nil
+	} else if err != nil {
+		return nil, err
 	}
 
 	fileBytes, err := os.ReadFile(backupFilePath)
@@ -261,9 +265,14 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 	// Swap source and target for each change to revert the renaming
 	for i := range changes {
 		ch := changes[i]
+		p := filepath.Join(ch.TargetDir, ch.Target)
+		ch.Target = filepath.Base(p)
+		ch.TargetDir = filepath.Dir(p)
+
 		ch.Source, ch.Target = ch.Target, ch.Source
-		ch.SourcePath = filepath.Join(ch.TargetDir, ch.Source)
-		ch.TargetPath = filepath.Join(ch.BaseDir, ch.Target)
+		ch.BaseDir, ch.TargetDir = ch.TargetDir, ch.BaseDir
+		ch.SourcePath = filepath.Join(ch.BaseDir, ch.Source)
+		ch.TargetPath = filepath.Join(ch.TargetDir, ch.Target)
 		ch.Status = status.OK
 
 		_, err := os.Stat(ch.SourcePath)

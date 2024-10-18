@@ -34,13 +34,16 @@ func ExitWithErr(err error) {
 }
 
 func BackupFailed(err error) {
-	pterm.Fprintln(config.Stderr, pterm.Sprintf("backup failed: %v", err))
+	pterm.Fprintln(
+		config.Stderr,
+		pterm.Sprintf("%s: %v", pterm.Red("backup failed"), err),
+	)
 }
 
 func BackupFileRemovalFailed(err error) {
 	pterm.Fprintln(
 		config.Stderr,
-		pterm.Sprintf("backup file cleanup failed: %v", err),
+		pterm.Sprintf("%s: %v", pterm.Red("backup file cleanup failed"), err),
 	)
 }
 

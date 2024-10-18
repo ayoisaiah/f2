@@ -53,17 +53,13 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 
 		source := strings.TrimSpace(record[0])
 
+		// Change to the directory of the CSV file
 		err := os.Chdir(conf.WorkingDir)
 		if err != nil {
 			return nil, err
 		}
 
-		absSourcePath, absErr := filepath.Abs(source)
-		if absErr != nil {
-			return nil, absErr
-		}
-
-		fileInfo, statErr := os.Stat(absSourcePath)
+		fileInfo, statErr := os.Stat(source)
 		if statErr != nil {
 			// Skip missing source files
 			if errors.Is(statErr, os.ErrNotExist) {
@@ -79,15 +75,15 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 
 		fileName := fileInfo.Name()
 
-		sourceDir := filepath.Dir(absSourcePath)
+		sourceDir := filepath.Dir(source)
 
 		// Ensure that the file is not already processed in the case of
 		// duplicate rows
-		if processed[absSourcePath] {
+		if processed[source] {
 			continue
 		}
 
-		processed[absSourcePath] = true
+		processed[source] = true
 
 		match := &file.Change{
 			BaseDir:      sourceDir,
@@ -96,7 +92,7 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 			Source:       fileName,
 			Target:       fileName,
 			OriginalName: fileName,
-			SourcePath:   absSourcePath,
+			SourcePath:   filepath.Join(sourceDir, fileName),
 			CSVRow:       record,
 			Position:     i,
 		}

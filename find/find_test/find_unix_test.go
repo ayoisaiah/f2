@@ -34,5 +34,7 @@ var unixTestCases = []testutil.TestCase{
 
 // TestFindUnix only tests search behaviors perculiar to Linux and macOS.
 func TestFindUnix(t *testing.T) {
-	findTest(t, unixTestCases)
+	testDir := testutil.SetupFileSystem(t, "find", findFileSystem)
+
+	findTest(t, unixTestCases, testDir)
 }
