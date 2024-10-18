@@ -9,7 +9,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/status"
 )
 
@@ -68,7 +67,7 @@ func (c Changes) RenderJSON(w io.Writer) error {
 	return nil
 }
 
-func (c Changes) RenderTable(w io.Writer) {
+func (c Changes) RenderTable(w io.Writer, noColor bool) {
 	data := make([][]string, len(c))
 
 	for i := range c {
@@ -99,12 +98,10 @@ func (c Changes) RenderTable(w io.Writer) {
 		data[i] = d
 	}
 
-	printTable(data, w)
+	printTable(data, w, noColor)
 }
 
-func printTable(data [][]string, w io.Writer) {
-	conf := config.Get()
-
+func printTable(data [][]string, w io.Writer, noColor bool) {
 	// using tablewriter as pterm table rendering is too slow
 	table := tablewriter.NewWriter(w)
 	table.SetHeader([]string{"ORIGINAL", "RENAMED", "STATUS"})
@@ -113,7 +110,7 @@ func printTable(data [][]string, w io.Writer) {
 	table.SetRowSeparator("—")
 	table.SetAutoWrapText(false)
 
-	if !conf.NoColor {
+	if !noColor {
 		table.SetHeaderColor(
 			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
 			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},

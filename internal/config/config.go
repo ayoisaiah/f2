@@ -4,6 +4,7 @@ package config
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -17,6 +18,8 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
+
+	"github.com/ayoisaiah/f2/internal/file"
 )
 
 const (
@@ -51,6 +54,25 @@ type ExiftoolOpts struct {
 	CoordFormat     string `long:"coordFormat"     json:"coord_format"`     // corresponds to the `-coordFormat` flag
 	DateFormat      string `long:"dateFormat"      json:"date_format"`      // corresponds to the `-dateFormat` flag
 	ExtractEmbedded bool   `long:"extractEmbedded" json:"extract_embedded"` // corresponds to the `-extractEmbedded` flag
+}
+
+type Backup struct {
+	Changes     file.Changes `json:"changes"`
+	CleanedDirs []string     `json:"cleaned_dirs"`
+}
+
+func (b Backup) RenderJSON(w io.Writer) error {
+	jsonData, err := json.Marshal(b)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(jsonData)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type Search struct {
@@ -103,6 +125,7 @@ type Config struct {
 	AllowOverwrites          bool           `json:"allow_overwrites"`
 	Pair                     bool           `json:"pair"`
 	SortPerDir               bool           `json:"sort_per_dir"`
+	Clean                    bool           `json:"clean"`
 }
 
 // SetFindStringRegex compiles a regular expression for the
@@ -224,6 +247,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.NoColor = ctx.Bool("no-color")
 	c.Pair = ctx.Bool("pair")
 	c.PairOrder = strings.Split(ctx.String("pair-order"), ",")
+	c.Clean = ctx.Bool("clean")
 
 	if c.Pair {
 		c.IgnoreExt = true

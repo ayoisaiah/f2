@@ -107,7 +107,7 @@ func Report(
 		return
 	}
 
-	fileChanges.RenderTable(config.Stdout)
+	fileChanges.RenderTable(config.Stdout, conf.NoColor)
 
 	if conflictDetected || conf.JSON {
 		return

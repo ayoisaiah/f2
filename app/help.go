@@ -44,6 +44,13 @@ func helpText(app *cli.App) string {
 		flagAllowOverwrites.GetUsage(),
 	)
 
+	flagCleanHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagClean.Aliases[0]),
+		pterm.Green("--", flagClean.Name),
+		flagClean.GetUsage(),
+	)
+
 	flagExcludeHelp := fmt.Sprintf(
 		`%s, %s %s`,
 		pterm.Green("-", flagExclude.Aliases[0]),
@@ -294,11 +301,13 @@ Project repository: https://github.com/ayoisaiah/f2
 	%s
 
 	%s
+
+	%s
 %s
 	%s
 
 %s
-  Read the manual at Read the manual at https://f2.freshman.tech
+  Read the manual at https://f2.freshman.tech
 `,
 		app.Name,
 		app.Version,
@@ -315,6 +324,7 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagUndoHelp,
 		pterm.Bold.Sprintf("OPTIONS"),
 		flagAllowOverwritesHelp,
+		flagCleanHelp,
 		flagExcludeHelp,
 		flagExcludeDirHelp,
 		flagExiftoolOptsHelp,

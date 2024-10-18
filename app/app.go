@@ -26,6 +26,7 @@ const (
 // supportedDefaultOpts contains flags whose values can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOpts = []string{
+	flagClean.Name,
 	flagExclude.Name,
 	flagExcludeDir.Name,
 	flagExec.Name,
@@ -241,6 +242,7 @@ offers several options for fine-grained control over the renaming process.`,
 			flagReplace,
 			flagUndo,
 			flagAllowOverwrites,
+			flagClean,
 			flagExclude,
 			flagExcludeDir,
 			flagExec,

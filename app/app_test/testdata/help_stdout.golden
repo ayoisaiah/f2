@@ -41,6 +41,9 @@ Project repository: https://github.com/ayoisaiah/f2
     Allows the renaming operation to overwrite existing files.
     Caution: Using this option can lead to unrecoverable data loss.
   
+  [32m-c[0m, [32m--clean[0m 
+    Clean empty directories that were traversed in a renaming operation.
+
   [32m-E[0m, [32m--exclude[0m 
     Excludes files and directories that match the provided regular expression.
     This flag can be repeated to specify multiple exclude patterns.
@@ -199,4 +202,4 @@ Project repository: https://github.com/ayoisaiah/f2
     Enable debug mode.
 
 [1mLEARN MORE[0m
-  Read the manual at Read the manual at https://f2.freshman.tech
+  Read the manual at https://f2.freshman.tech

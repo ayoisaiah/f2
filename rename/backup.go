@@ -8,6 +8,7 @@ import (
 
 	"github.com/adrg/xdg"
 
+	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
 )
 
@@ -33,6 +34,7 @@ func createBackupFile(fileName string) (io.Writer, error) {
 // it records the changes to the filesystem.
 func backupChanges(
 	changes file.Changes,
+	cleanedDirs []string,
 	fileName string,
 	w io.Writer,
 ) error {
@@ -45,7 +47,12 @@ func backupChanges(
 		}
 	}
 
-	err = changes.RenderJSON(w)
+	b := config.Backup{
+		Changes:     changes,
+		CleanedDirs: cleanedDirs,
+	}
+
+	err = b.RenderJSON(w)
 	if err != nil {
 		return err
 	}

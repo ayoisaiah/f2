@@ -24,6 +24,10 @@ var errRenameFailed = &apperr.Error{
 	Message: "some files could not be renamed",
 }
 
+// traversedDirs records the directories that were traversed during a renaming
+// operation.
+var traversedDirs = make(map[string]string)
+
 // commit iterates over all the matches and renames them on the filesystem.
 // Directories are auto-created if necessary, and errors are aggregated.
 func commit(fileChanges file.Changes) []int {
@@ -80,6 +84,8 @@ func commit(fileChanges file.Changes) []int {
 			}
 		}
 
+		traversedDirs[change.BaseDir] = change.BaseDir
+
 		err := os.Rename(change.SourcePath, targetPath) // step 2
 		// if the intermediate rename is successful,
 		// proceed with the original renaming operation
@@ -118,13 +124,35 @@ func Rename(
 }
 
 // PostRename handles actions after a renaming operation, such as printing
-// results and creating a backup file if applicable.
-func PostRename(conf *config.Config, fileChanges file.Changes, err error) {
-	report.PrintResults(conf, fileChanges, err)
+// results, cleaning empty directories, and creating a backup file if applicable.
+func PostRename(
+	conf *config.Config,
+	fileChanges file.Changes,
+	renameErr error,
+) {
+	report.PrintResults(conf, fileChanges, renameErr)
+
+	var cleanedDirs []string
+
+	if conf.Clean {
+		for _, dir := range traversedDirs {
+			if dir == "." { // don't try to clean the working directory
+				continue
+			}
+
+			// This will fail if the directory is not empty so no need
+			// to check before hand
+			err := os.Remove(dir)
+			if err == nil {
+				cleanedDirs = append(cleanedDirs, dir)
+			}
+		}
+	}
 
 	if len(fileChanges) != 0 && !conf.Revert {
 		err := backupChanges(
 			fileChanges,
+			cleanedDirs,
 			conf.BackupFilename,
 			conf.BackupLocation,
 		)
@@ -133,7 +161,7 @@ func PostRename(conf *config.Config, fileChanges file.Changes, err error) {
 		}
 	}
 
-	if conf.Revert {
+	if conf.Revert && renameErr == nil {
 		backupFilePath, err := xdg.SearchDataFile(
 			filepath.Join("f2", "backups", conf.BackupFilename),
 		)

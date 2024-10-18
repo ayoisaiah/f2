@@ -12,6 +12,7 @@ import (
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/osutil"
 	"github.com/ayoisaiah/f2/internal/pathutil"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/internal/status"
@@ -249,11 +250,13 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 		return nil, err
 	}
 
-	var changes file.Changes
+	var backup config.Backup
 
-	if err := json.Unmarshal(fileBytes, &changes); err != nil {
+	if err := json.Unmarshal(fileBytes, &backup); err != nil {
 		return nil, err
 	}
+
+	changes := backup.Changes
 
 	// Swap source and target for each change to revert the renaming
 	for i := range changes {
@@ -273,6 +276,11 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 
 	if conf.Exec {
 		sortfiles.ForRenamingAndUndo(changes, conf.Revert)
+
+		// recreate empty directories that were cleaned
+		for _, v := range backup.CleanedDirs {
+			_ = os.MkdirAll(v, osutil.DirPermission)
+		}
 	}
 
 	return changes, nil

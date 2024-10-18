@@ -47,6 +47,13 @@ var (
 		Caution: Using this option can lead to unrecoverable data loss.`,
 	}
 
+	flagClean = &cli.BoolFlag{
+		Name:    "clean",
+		Aliases: []string{"c"},
+		Usage: `
+		Clean empty directories that were traversed in a renaming operation.`,
+	}
+
 	flagExclude = &cli.StringSliceFlag{
 		Name:    "exclude",
 		Aliases: []string{"E"},
