@@ -1,4 +1,4 @@
-package replace
+package variables
 
 import (
 	"crypto/md5"
@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -139,6 +140,56 @@ func integerToRoman(integer int) string {
 	}
 
 	return roman.String()
+}
+
+// TODO: move this
+// regexReplace replaces matched substrings in the input with the replacement.
+// It respects the specified replacement limit. A negative limit indicates that
+// replacement should start from the end of the fileName.
+func regexReplace(
+	regex *regexp.Regexp,
+	input, replacement string,
+	replaceLimit int,
+) string {
+	var output string
+
+	switch limit := replaceLimit; {
+	case limit > 0:
+		counter := 0
+		output = regex.ReplaceAllStringFunc(
+			input,
+			func(val string) string {
+				if counter == replaceLimit {
+					return val
+				}
+
+				counter++
+
+				return regex.ReplaceAllString(val, replacement)
+			},
+		)
+	case limit < 0:
+		matches := regex.FindAllString(input, -1)
+
+		l := len(matches) + limit
+		counter := 0
+		output = regex.ReplaceAllStringFunc(
+			input,
+			func(val string) string {
+				if counter >= l {
+					return regex.ReplaceAllString(val, replacement)
+				}
+
+				counter++
+
+				return val
+			},
+		)
+	default:
+		output = regex.ReplaceAllString(input, replacement)
+	}
+
+	return output
 }
 
 // getHash retrieves the appropriate hash value for the specified file.
@@ -927,12 +978,12 @@ func replaceExtVars(change *file.Change, ev extVars) (target string) {
 	return target
 }
 
-// replaceVariables checks if any variables are present in the target filename
+// Replace checks if any variables are present in the target filename
 // and delegates the variable replacement to the appropriate function.
-func replaceVariables(
+func Replace(
 	conf *config.Config,
 	change *file.Change,
-	vars *variables,
+	vars *Variables,
 ) error {
 	if len(vars.filename.matches) > 0 {
 		sourceName := filepath.Base(change.OriginalName)

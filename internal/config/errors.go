@@ -15,6 +15,10 @@ var (
 		Message: "the provided sort '%s' is invalid",
 	}
 
+	errInvalidSortVariable = &apperr.Error{
+		Message: "the provided sort variable '%s' is invalid",
+	}
+
 	errInvalidTargetDir = &apperr.Error{
 		Message: "target path '%s' exists but is not a directory",
 	}

@@ -21,6 +21,14 @@ import (
 	"github.com/ayoisaiah/f2/internal/pathutil"
 )
 
+func isPair(prev, curr *file.Change) bool {
+	return pathutil.StripExtension(
+		prev.SourcePath,
+	) == pathutil.StripExtension(
+		curr.SourcePath,
+	)
+}
+
 // Pairs sorts the given file changes based on a custom pairing order.
 // Files with extensions matching earlier entries in pairOrder are sorted
 // before those matching later entries.
@@ -50,6 +58,20 @@ func Pairs(changes file.Changes, pairOrder []string) {
 
 		return 0
 	})
+
+	for i, v := range changes {
+		if i > 0 && i < len(changes) {
+			prev := changes[i-1]
+
+			if isPair(prev, v) {
+				if prev.PrimaryPair != nil {
+					v.PrimaryPair = prev.PrimaryPair
+				} else {
+					v.PrimaryPair = prev
+				}
+			}
+		}
+	}
 }
 
 // ForRenamingAndUndo is used to sort files before directories to avoid renaming
@@ -89,13 +111,21 @@ func EnforceHierarchicalOrder(changes file.Changes) {
 // (modified time, access time, change time, or birth time).
 func ByTime(
 	changes file.Changes,
-	sortName config.Sort,
-	reverseSort bool,
-	sortPerDir bool,
+	conf *config.Config,
 ) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
-		sourceA, errA := times.Stat(a.SourcePath)
-		sourceB, errB := times.Stat(b.SourcePath)
+		sourcePathA, sourcePathB := a.SourcePath, b.SourcePath
+
+		if a.PrimaryPair != nil {
+			sourcePathA = a.PrimaryPair.SourcePath
+		}
+
+		if b.PrimaryPair != nil {
+			sourcePathB = b.PrimaryPair.SourcePath
+		}
+
+		sourceA, errA := times.Stat(sourcePathA)
+		sourceB, errB := times.Stat(sourcePathB)
 
 		if errA != nil || errB != nil {
 			pterm.Error.Printfln(
@@ -109,7 +139,7 @@ func ByTime(
 		aTime, bTime := sourceA.ModTime(), sourceB.ModTime()
 
 		//nolint:exhaustive // considering time sorts alone
-		switch sortName {
+		switch conf.Sort {
 		case config.SortMtime:
 		case config.SortBtime:
 			if sourceA.HasBirthTime() {
@@ -132,12 +162,11 @@ func ByTime(
 			}
 		}
 
-		if sortPerDir &&
-			filepath.Dir(a.SourcePath) != filepath.Dir(b.SourcePath) {
+		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0
 		}
 
-		if reverseSort {
+		if conf.ReverseSort {
 			return -cmp.Compare(aTime.UnixNano(), bTime.UnixNano())
 		}
 
@@ -147,11 +176,21 @@ func ByTime(
 
 // BySize sorts the file changes in place based on their file size, either in
 // ascending or descending order depending on the `reverseSort` flag.
-func BySize(changes file.Changes, reverseSort, sortPerDir bool) {
+func BySize(changes file.Changes, conf *config.Config) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		sourcePathA, sourcePathB := a.SourcePath, b.SourcePath
+
+		if a.PrimaryPair != nil {
+			sourcePathA = a.PrimaryPair.SourcePath
+		}
+
+		if b.PrimaryPair != nil {
+			sourcePathB = b.PrimaryPair.SourcePath
+		}
+
 		var fileInfoA, fileInfoB fs.FileInfo
-		fileInfoA, errA := os.Stat(a.SourcePath)
-		fileInfoB, errB := os.Stat(b.SourcePath)
+		fileInfoA, errA := os.Stat(sourcePathA)
+		fileInfoB, errB := os.Stat(sourcePathB)
 
 		if errA != nil || errB != nil {
 			pterm.Error.Printfln("error getting file info: %v, %v", errA, errB)
@@ -162,12 +201,11 @@ func BySize(changes file.Changes, reverseSort, sortPerDir bool) {
 		fileBSize := fileInfoB.Size()
 
 		// Don't sort files in different directories relative to each other
-		if sortPerDir &&
-			filepath.Dir(a.SourcePath) != filepath.Dir(b.SourcePath) {
+		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0
 		}
 
-		if reverseSort {
+		if conf.ReverseSort {
 			return int(fileBSize - fileASize)
 		}
 
@@ -180,39 +218,51 @@ func BySize(changes file.Changes, reverseSort, sortPerDir bool) {
 // ASCII order.
 func Natural(changes file.Changes, reverseSort bool) {
 	sort.SliceStable(changes, func(i, j int) bool {
-		sourceA := changes[i].SourcePath
-		sourceB := changes[j].SourcePath
+		sourcePathA := changes[i].SourcePath
+		sourcePathB := changes[j].SourcePath
 
-		if reverseSort {
-			return !natsort.Compare(sourceA, sourceB)
+		if changes[i].PrimaryPair != nil {
+			sourcePathA = changes[i].PrimaryPair.SourcePath
 		}
 
-		return natsort.Compare(sourceA, sourceB)
+		if changes[j].PrimaryPair != nil {
+			sourcePathB = changes[j].PrimaryPair.SourcePath
+		}
+
+		if reverseSort {
+			return !natsort.Compare(sourcePathA, sourcePathB)
+		}
+
+		return natsort.Compare(sourcePathA, sourcePathB)
 	})
 }
 
 // Changes is used to sort changes according to the configured sort value.
 func Changes(
 	changes file.Changes,
-	sortName config.Sort,
-	reverseSort bool,
-	sortPerDir bool,
+	conf *config.Config,
 ) {
 	// TODO: EnforceHierarchicalOrder should be the default sort
-	if sortPerDir {
+	if conf.SortPerDir {
 		EnforceHierarchicalOrder(changes)
 	}
 
 	//nolint:exhaustive // default sort not needed
-	switch sortName {
+	switch conf.Sort {
 	case config.SortNatural:
-		Natural(changes, reverseSort)
+		Natural(changes, conf.ReverseSort)
 	case config.SortSize:
-		BySize(changes, reverseSort, sortPerDir)
+		BySize(changes, conf)
 	case config.SortMtime,
 		config.SortAtime,
 		config.SortBtime,
 		config.SortCtime:
-		ByTime(changes, sortName, reverseSort, sortPerDir)
+		ByTime(changes, conf)
+	case config.SortTimeVar:
+		ByTimeVar(changes, conf)
+	case config.SortStringVar:
+		ByStringVar(changes, conf)
+	case config.SortIntVar:
+		ByIntVar(changes, conf)
 	}
 }

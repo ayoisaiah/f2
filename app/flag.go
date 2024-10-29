@@ -194,7 +194,7 @@ var (
 		Usage: `
 		Enable pair renaming to rename files with the same name (but different 
 		extensions) in the same directory to the same new name. In pair mode,
-		file extensions are ignored and --sort/--sortr has no effect.
+		file extensions are ignored.
 
 		Example:
 			Before: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
@@ -256,13 +256,16 @@ var (
 		Sorts matches in ascending order based on the provided criteria.
 
     Allowed values:
-      * 'default'  : Lexicographical order.
-      * 'size'     : Sort by file size.
-      * 'natural'  : Sort according to natural order.
-      * 'mtime'    : Sort by file last modified time.
-      * 'btime'    : Sort by file creation time.
-      * 'atime'    : Sort by file last access time.
-      * 'ctime'    : Sort by file metadata last change time.`,
+      * 'default'    : Lexicographical order.
+      * 'size'       : Sort by file size.
+      * 'natural'    : Sort according to natural order.
+      * 'mtime'      : Sort by file last modified time.
+      * 'btime'      : Sort by file creation time.
+      * 'atime'      : Sort by file last access time.
+      * 'ctime'      : Sort by file metadata last change time.
+      * 'time_var'   : Sort by time variable.
+      * 'int_var'    : Sort by integer variable.
+      * 'string_var' : Sort lexicographically by string variable.`,
 		DefaultText: "<sort>",
 	}
 
@@ -278,6 +281,14 @@ var (
 		Usage: `
 		Ensures sorting is performed separately within each directory rather than
 		globally.`,
+	}
+
+	flagSortVar = &cli.StringFlag{
+		Name: "sort-var",
+		Usage: `
+		Active when using --sort/--sortr with time_var, int_var, or string_var.
+		Provide a supported variable to sort the files based on file metadata.
+		See https://f2.freshman.tech/guide/sorting for more details.`,
 	}
 
 	flagStringMode = &cli.BoolFlag{

@@ -1,4 +1,4 @@
-package replace
+package variables
 
 import (
 	"regexp"
@@ -140,7 +140,7 @@ type parentDirVars struct {
 	matches []parentDirVarMatch
 }
 
-type variables struct {
+type Variables struct {
 	csv       csvVars
 	exif      exifVars
 	filename  filenameVars
@@ -152,4 +152,8 @@ type variables struct {
 	ext       extVars
 	parentDir parentDirVars
 	index     indexVars
+}
+
+func (v *Variables) IndexMatches() int {
+	return len(v.index.matches)
 }

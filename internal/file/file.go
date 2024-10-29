@@ -5,6 +5,7 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
@@ -14,20 +15,21 @@ import (
 
 // Change represents a single renaming change.
 type Change struct {
-	Error error `json:"error,omitempty"`
-	// The original filename can be different from the `Source` in
-	// a multi-step renaming operation
+	Error        error         `json:"error,omitempty"`
+	PrimaryPair  *Change       `json:"-"`
+	TargetPath   string        `json:"-"`
+	BaseDir      string        `json:"base_dir"`
+	TargetDir    string        `json:"target_dir"`
+	Source       string        `json:"source"`
+	Target       string        `json:"target"`
 	OriginalName string        `json:"-"`
 	Status       status.Status `json:"status"`
-	BaseDir      string        `json:"base_dir"`
-	// TargetDir is the same as BaseDir unless `--target-dir` is provided
-	TargetDir string `json:"target_dir"`
-	Source    string `json:"source"`
-	Target    string `json:"target"`
-	// SourcePath is BaseDir + Source
-	SourcePath string `json:"-"`
-	// TargetPath is TargetDir + Target
-	TargetPath    string   `json:"-"`
+	SourcePath   string        `json:"-"`
+	CustomSort   struct {
+		Time   time.Time
+		String string
+		Int    int
+	} `json:"-"`
 	CSVRow        []string `json:"-"`
 	Position      int      `json:"-"`
 	IsDir         bool     `json:"is_dir"`

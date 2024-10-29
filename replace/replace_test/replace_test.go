@@ -2,9 +2,11 @@ package replace_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/internal/testutil"
 	"github.com/ayoisaiah/f2/replace"
 )
@@ -16,6 +18,10 @@ func replaceTest(t *testing.T, cases []testutil.TestCase) {
 
 	for i := range cases {
 		tc := cases[i]
+
+		if strings.Contains(tc.Name, "pair") {
+			sortfiles.Pairs(tc.Changes, []string{})
+		}
 
 		testutil.RunTestCase(
 			t,

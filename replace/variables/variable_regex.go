@@ -1,4 +1,4 @@
-package replace
+package variables
 
 import (
 	"fmt"

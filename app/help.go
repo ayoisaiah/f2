@@ -201,6 +201,12 @@ func helpText(app *cli.App) string {
 		flagSortPerDir.GetUsage(),
 	)
 
+	flagSortVarHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagSortVar.Name),
+		flagSortVar.GetUsage(),
+	)
+
 	flagStringModeHelp := fmt.Sprintf(
 		`%s, %s %s`,
 		pterm.Green("-", flagStringMode.Aliases[0]),
@@ -303,6 +309,8 @@ Project repository: https://github.com/ayoisaiah/f2
 	%s
 
 	%s
+
+	%s
 %s
 	%s
 
@@ -348,6 +356,7 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagSortHelp,
 		flagSortrHelp,
 		flagSortPerDirHelp,
+		flagSortVarHelp,
 		flagStringModeHelp,
 		flagTargetDirHelp,
 		flagVerboseHelp,

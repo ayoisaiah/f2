@@ -15,11 +15,12 @@ import (
 )
 
 type sortTestCase struct {
+	SortVar     string
 	Name        string
 	Unsorted    []string
 	Sorted      []string
 	Order       []string
-	TimeSort    config.Sort
+	SortValue   config.Sort
 	ReverseSort bool
 	SortPerDir  bool
 	Revert      bool
@@ -296,9 +297,12 @@ func TestSortFiles_BySize(t *testing.T) {
 
 			sortfiles.Changes(
 				unsorted,
-				config.SortSize,
-				tc.ReverseSort,
-				tc.SortPerDir,
+				&config.Config{
+					Sort:         config.SortSize,
+					ReverseSort:  tc.ReverseSort,
+					SortPerDir:   tc.SortPerDir,
+					SortVariable: tc.SortVar,
+				},
 			)
 
 			testutil.CompareSourcePath(t, tc.Sorted, unsorted)
@@ -413,9 +417,12 @@ func TestSortFiles_Natural(t *testing.T) {
 
 			sortfiles.Changes(
 				unsorted,
-				config.SortNatural,
-				tc.ReverseSort,
-				tc.SortPerDir,
+				&config.Config{
+					Sort:         config.SortNatural,
+					ReverseSort:  tc.ReverseSort,
+					SortPerDir:   tc.SortPerDir,
+					SortVariable: tc.SortVar,
+				},
 			)
 
 			testutil.CompareSourcePath(t, tc.Sorted, unsorted)
@@ -447,7 +454,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/4k.txt",
 				"testdata/dir1/folder/15k.txt",
 			},
-			TimeSort: config.SortMtime,
+			SortValue: config.SortMtime,
 			Order: []string{
 				"2025-05-30T06:58:00+01:00",
 				"2023-03-30T12:30:00+01:00",
@@ -481,7 +488,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/dir1/folder/3k.txt",
 				"testdata/dir1/folder/15k.txt",
 			},
-			TimeSort: config.SortMtime,
+			SortValue: config.SortMtime,
 			Order: []string{
 				"2023-03-30T12:30:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -508,7 +515,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/20k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort: config.SortMtime,
+			SortValue: config.SortMtime,
 			Order: []string{
 				"2024-06-20T00:29:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -531,7 +538,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/11k.txt",
 				"testdata/4k.txt",
 			},
-			TimeSort: config.SortAtime,
+			SortValue: config.SortAtime,
 			Order: []string{
 				"2024-06-20T00:29:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -553,7 +560,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/20k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort: config.SortAtime,
+			SortValue: config.SortAtime,
 			Order: []string{
 				"2024-06-20T00:29:00+01:00",
 				"2022-05-30T06:58:00+01:00",
@@ -582,7 +589,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/3.txt",
 				"testdata/4.txt",
 			},
-			TimeSort: config.SortBtime,
+			SortValue: config.SortBtime,
 		},
 		{
 			Name: "sort files by birth time in reverse",
@@ -604,7 +611,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/2.txt",
 				"testdata/1.txt",
 			},
-			TimeSort:    config.SortBtime,
+			SortValue:   config.SortBtime,
 			ReverseSort: true,
 		},
 		{
@@ -627,7 +634,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/11k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort: config.SortCtime,
+			SortValue: config.SortCtime,
 		},
 		{
 			Name: "sort files by change time in reverse",
@@ -649,7 +656,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 				"testdata/11k.txt",
 				"testdata/10k.txt",
 			},
-			TimeSort:    config.SortCtime,
+			SortValue:   config.SortCtime,
 			ReverseSort: true,
 		},
 	}
@@ -657,7 +664,8 @@ func TestSortFiles_ByTime(t *testing.T) {
 	for i := range testCases {
 		tc := testCases[i]
 
-		if tc.TimeSort == config.SortAtime || tc.TimeSort == config.SortMtime {
+		if tc.SortValue == config.SortAtime ||
+			tc.SortValue == config.SortMtime {
 			for i, v := range tc.Unsorted {
 				mtime, err := time.Parse(time.RFC3339, tc.Order[i])
 				if err != nil {
@@ -671,7 +679,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 			}
 		}
 
-		if tc.TimeSort == config.SortBtime {
+		if tc.SortValue == config.SortBtime {
 			for _, v := range tc.Order {
 				f, err := os.Create(v)
 				if err != nil {
@@ -684,7 +692,7 @@ func TestSortFiles_ByTime(t *testing.T) {
 			}
 		}
 
-		if tc.TimeSort == config.SortCtime {
+		if tc.SortValue == config.SortCtime {
 			if runtime.GOOS == osutil.Windows {
 				t.Skip("skip change time test in Windows")
 			}
@@ -704,14 +712,17 @@ func TestSortFiles_ByTime(t *testing.T) {
 
 			sortfiles.Changes(
 				unsorted,
-				tc.TimeSort,
-				tc.ReverseSort,
-				tc.SortPerDir,
+				&config.Config{
+					Sort:         tc.SortValue,
+					ReverseSort:  tc.ReverseSort,
+					SortPerDir:   tc.SortPerDir,
+					SortVariable: tc.SortVar,
+				},
 			)
 
 			testutil.CompareSourcePath(t, tc.Sorted, unsorted)
 
-			if tc.TimeSort == config.SortBtime {
+			if tc.SortValue == config.SortBtime {
 				t.Cleanup(func() {
 					for _, v := range tc.Order {
 						err := os.Remove(v)

@@ -282,3 +282,171 @@ func TestFind(t *testing.T) {
 func TestLoadFromBackup(t *testing.T) {
 	t.Skip("not implemented")
 }
+
+func TestCustomSort(t *testing.T) {
+	testDir := "testdata"
+
+	cases := []testutil.TestCase{
+		{
+			Name: "find dng files with default sort",
+			Want: []string{
+				"DSC100_John-Doe_20211012.dng",
+				"DSC200_Auba-Hall_20240909.dng",
+				"DSC400_Tim-Scott_20200102.dng",
+			},
+			Args: []string{"-f", `.*\.dng`},
+		},
+		{
+			Name: "sort dng files by time variable",
+			Want: []string{
+				"DSC400_Tim-Scott_20200102.dng",
+				"DSC100_John-Doe_20211012.dng",
+				"DSC200_Auba-Hall_20240909.dng",
+			},
+			Args: []string{
+				"-f",
+				`.*\.dng`,
+				"--sort",
+				"time_var",
+				"--sort-var",
+				"{xt.DateTimeOriginal}",
+			},
+		},
+		{
+			Name: "sort dng files by time variable in reverse",
+			Want: []string{
+				"DSC200_Auba-Hall_20240909.dng",
+				"DSC100_John-Doe_20211012.dng",
+				"DSC400_Tim-Scott_20200102.dng",
+			},
+			Args: []string{
+				"-f",
+				`.*\.dng`,
+				"--sortr",
+				"time_var",
+				"--sort-var",
+				"{xt.DateTimeOriginal}",
+			},
+		},
+		{
+			Name: "sort files by int variable",
+			Want: []string{
+				"DSC100_John-Doe_20211012.dng",
+				"DSC200_Auba-Hall_20240909.dng",
+				"DSC400_Tim-Scott_20200102.dng",
+			},
+			Args: []string{
+				"-f",
+				`.*\.dng`,
+				"--sort",
+				"int_var",
+				"--sort-var",
+				"{xt.ISO}",
+			},
+		},
+		{
+			Name: "sort files by int variable in reverse",
+			Want: []string{
+				"DSC400_Tim-Scott_20200102.dng",
+				"DSC200_Auba-Hall_20240909.dng",
+				"DSC100_John-Doe_20211012.dng",
+			},
+			Args: []string{
+				"-f",
+				`.*\.dng`,
+				"--sortr",
+				"int_var",
+				"--sort-var",
+				"{xt.ISO}",
+			},
+		},
+		{
+			Name: "sort files by string variable",
+			Want: []string{
+				"DSC200_Auba-Hall_20240909.dng",
+				"DSC100_John-Doe_20211012.dng",
+				"DSC400_Tim-Scott_20200102.dng",
+			},
+			Args: []string{
+				"-f",
+				`.*\.dng`,
+				"--sort",
+				"string_var",
+				"--sort-var",
+				"{xt.Artist}",
+			},
+		},
+		{
+			Name: "sort files by string variable in reverse",
+			Want: []string{
+				"DSC400_Tim-Scott_20200102.dng",
+				"DSC100_John-Doe_20211012.dng",
+				"DSC200_Auba-Hall_20240909.dng",
+			},
+			Args: []string{
+				"-f",
+				`.*\.dng`,
+				"--sortr",
+				"string_var",
+				"--sort-var",
+				"{xt.Artist}",
+			},
+		},
+	}
+
+	findTest(t, cases, testDir)
+}
+
+func TestSortWithPairing(t *testing.T) {
+	testDir := "testdata"
+
+	cases := []testutil.TestCase{
+		{
+			Name: "find files with default sort and pairing",
+			Want: []string{
+				"DSC100_John-Doe_20211012.dng",
+				"DSC100_John-Doe_20211012.jpg",
+				"DSC200_Auba-Hall_20240909.dng",
+				"DSC200_Auba-Hall_20240909.jpg",
+				"DSC400_Tim-Scott_20200102.dng",
+			},
+			Args: []string{"-f", `.*\.(dng|jpg)`, "--pair"},
+		},
+		{
+			Name: "find files with custom sort and pairing",
+			Want: []string{
+				"DSC400_Tim-Scott_20200102.dng",
+				"DSC100_John-Doe_20211012.dng",
+				"DSC100_John-Doe_20211012.jpg",
+				"DSC200_Auba-Hall_20240909.dng",
+				"DSC200_Auba-Hall_20240909.jpg",
+			},
+			Args: []string{
+				"-f", `.*\.(dng|jpg)`, "--pair",
+				"--sort",
+				"time_var",
+				"--sort-var",
+				"{xt.DateTimeOriginal}",
+			},
+		},
+		{
+			Name: "find files with custom sort and pair order",
+			Want: []string{
+				"DSC400_Tim-Scott_20200102.dng",
+				"DSC100_John-Doe_20211012.jpg",
+				"DSC100_John-Doe_20211012.dng",
+				"DSC200_Auba-Hall_20240909.jpg",
+				"DSC200_Auba-Hall_20240909.dng",
+			},
+			Args: []string{
+				"-f", `.*\.(dng|jpg)`, "--pair", "--pair-order", "jpg,dng",
+				"--sort",
+				"time_var",
+				"--sort-var",
+				"{xt.DateTimeOriginal}",
+			},
+		},
+	}
+
+	findTest(t, cases, testDir)
+}

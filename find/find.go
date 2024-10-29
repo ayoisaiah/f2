@@ -6,7 +6,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+
+	"github.com/araddon/dateparse"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/file"
@@ -14,11 +17,14 @@ import (
 	"github.com/ayoisaiah/f2/internal/pathutil"
 	"github.com/ayoisaiah/f2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/internal/status"
+	"github.com/ayoisaiah/f2/replace/variables"
 )
 
 const (
 	dotCharacter = 46
 )
+
+var vars variables.Variables
 
 // shouldFilter decides whether a match should be included in the final
 // pool of files for renaming.
@@ -98,6 +104,44 @@ func isMaxDepth(rootPath, currentPath string, maxDepth int) bool {
 	return depthCount > maxDepth
 }
 
+func extractCustomSort(
+	conf *config.Config,
+	ch *file.Change,
+	vars *variables.Variables,
+) error {
+	// Temporarily set Target to SortVariable due to how variables.Replace() works
+	ch.Target = conf.SortVariable
+
+	err := variables.Replace(conf, ch, vars)
+	if err != nil {
+		return err
+	}
+
+	if conf.Sort == config.SortTimeVar {
+		// if variable cannot be parsed into a valid time, default to zero value
+		timeVal, _ := dateparse.ParseAny(ch.Target)
+
+		ch.CustomSort.Time = timeVal
+	}
+
+	if conf.Sort == config.SortStringVar {
+		ch.CustomSort.String = ch.Target
+	}
+
+	if conf.Sort == config.SortIntVar {
+		// if variable cannot be parsed into a valid integer, default to zero
+		intVal, _ := strconv.Atoi(ch.Target)
+
+		ch.CustomSort.Int = intVal
+	}
+
+	// Reset to an empty string once custom sort variable has been extracted and
+	// assigned accordingly
+	ch.Target = ""
+
+	return nil
+}
+
 func createFileChange(
 	conf *config.Config,
 	dirPath string,
@@ -146,6 +190,11 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 				match := createFileChange(conf, rootPath, fileInfo)
 
 				if !shouldFilter(conf, match) {
+					err := extractCustomSort(conf, match, &vars)
+					if err != nil {
+						return nil, err
+					}
+
 					matches = append(matches, match)
 				}
 			}
@@ -201,6 +250,7 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 
 				entryIsDir := entry.IsDir()
 
+				// FIXME:: Pairing should not affect how files are matched
 				if conf.IgnoreExt && !entryIsDir {
 					fileName = pathutil.StripExtension(fileName)
 				}
@@ -214,6 +264,11 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 					match := createFileChange(conf, currentPath, fileInfo)
 
 					if !shouldFilter(conf, match) {
+						err := extractCustomSort(conf, match, &vars)
+						if err != nil {
+							return err
+						}
+
 						matches = append(matches, match)
 					}
 				}
@@ -298,6 +353,13 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
 func Find(conf *config.Config) (changes file.Changes, err error) {
+	if conf.SortVariable != "" {
+		vars, err = variables.Extract(conf.SortVariable)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if conf.Revert {
 		return loadFromBackup(conf)
 	}
@@ -305,16 +367,10 @@ func Find(conf *config.Config) (changes file.Changes, err error) {
 	defer func() {
 		if conf.Pair && err == nil {
 			sortfiles.Pairs(changes, conf.PairOrder)
-			return
 		}
 
 		if conf.Sort != config.SortDefault && err == nil {
-			sortfiles.Changes(
-				changes,
-				conf.Sort,
-				conf.ReverseSort,
-				conf.SortPerDir,
-			)
+			sortfiles.Changes(changes, conf)
 		}
 	}()
 

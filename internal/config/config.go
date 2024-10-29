@@ -39,6 +39,7 @@ var (
 )
 
 var (
+	sortVarRegex                    = regexp.MustCompile("^{.*}$")
 	defaultFixConflictsPatternRegex = regexp.MustCompile(`\((\d+)\)$`)
 	customFixConfictsPatternRegex   = regexp.MustCompile(
 		`^(\D*?(%(\d+)?d)\D*?)$`,
@@ -95,6 +96,7 @@ type Config struct {
 	CSVFilename              string         `json:"csv_filename"`
 	BackupFilename           string         `json:"backup_filename"`
 	TargetDir                string         `json:"target_dir"`
+	SortVariable             string         `json:"sort_variable"`
 	ExiftoolOpts             ExiftoolOpts   `json:"exiftool_opts"`
 	PairOrder                []string       `json:"pair_order"`
 	FindSlice                []string       `json:"find_slice"`
@@ -183,6 +185,15 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	c.Debug = ctx.Bool("debug")
 	c.FilesAndDirPaths = ctx.Args().Slice()
 	c.TargetDir = ctx.String("target-dir")
+	c.SortPerDir = ctx.Bool("sort-per-dir")
+	c.Pair = ctx.Bool("pair")
+	c.PairOrder = strings.Split(ctx.String("pair-order"), ",")
+	c.Clean = ctx.Bool("clean")
+	c.SortVariable = ctx.String("sort-var")
+
+	if c.SortVariable != "" && !sortVarRegex.MatchString(c.SortVariable) {
+		return errInvalidSortVariable.Fmt(c.SortVariable)
+	}
 
 	if c.TargetDir != "" {
 		info, err := os.Stat(c.TargetDir)
@@ -243,15 +254,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	c.Exec = ctx.Bool("exec")
 	c.FixConflictsPattern = ctx.String("fix-conflicts-pattern")
 	c.ResetIndexPerDir = ctx.Bool("reset-index-per-dir")
-	c.SortPerDir = ctx.Bool("sort-per-dir")
 	c.NoColor = ctx.Bool("no-color")
-	c.Pair = ctx.Bool("pair")
-	c.PairOrder = strings.Split(ctx.String("pair-order"), ",")
-	c.Clean = ctx.Bool("clean")
-
-	if c.Pair {
-		c.IgnoreExt = true
-	}
 
 	if c.FixConflictsPattern == "" {
 		c.FixConflictsPattern = DefaultFixConflictsPattern

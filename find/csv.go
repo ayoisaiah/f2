@@ -46,18 +46,27 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 		return nil, err
 	}
 
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	// Change to the directory of the CSV file
+	err = os.Chdir(conf.WorkingDir)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		_ = os.Chdir(currentDir)
+	}()
+
 	for i, record := range records {
 		if len(record) == 0 {
 			continue
 		}
 
 		source := strings.TrimSpace(record[0])
-
-		// Change to the directory of the CSV file
-		err := os.Chdir(conf.WorkingDir)
-		if err != nil {
-			return nil, err
-		}
 
 		fileInfo, statErr := os.Stat(source)
 		if statErr != nil {

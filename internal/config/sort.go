@@ -16,10 +16,13 @@ const (
 	SortBtime
 	SortAtime
 	SortCtime
+	SortTimeVar
+	SortIntVar
+	SortStringVar
 )
 
 func (s Sort) String() string {
-	return [...]string{"default", "size", "natural", timeutil.Mod, timeutil.Access, timeutil.Birth, timeutil.Change}[s]
+	return [...]string{"default", "size", "natural", timeutil.Mod, timeutil.Access, timeutil.Birth, timeutil.Change, "time_var", "int_var", "string_var"}[s]
 }
 
 func parseSortArg(arg string) (Sort, error) {
@@ -42,6 +45,12 @@ func parseSortArg(arg string) (Sort, error) {
 		return SortAtime, nil
 	case SortCtime.String():
 		return SortCtime, nil
+	case SortTimeVar.String():
+		return SortTimeVar, nil
+	case SortIntVar.String():
+		return SortIntVar, nil
+	case SortStringVar.String():
+		return SortStringVar, nil
 	}
 
 	return SortDefault, errInvalidSort.Fmt(arg)
