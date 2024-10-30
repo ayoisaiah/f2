@@ -152,6 +152,24 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "replace with Exif DateTimeOriginal",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "pic.jpg",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "image.dng",
+				},
+			},
+			Want: []string{
+				"testdata/2001-05-19T18:36:41Z.jpg",
+				"testdata/2005-08-03T18:59:18Z.dng",
+			},
+			Args: []string{"-f", ".*", "-r", "{x.cdt}{ext}"},
+		},
+		{
 			Name: "ensure slashes in ID3 variables are replaced with underscores",
 			Changes: file.Changes{
 				{

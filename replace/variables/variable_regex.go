@@ -105,7 +105,7 @@ func init() {
 
 	exifVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+(?:exif|x)\\.(?:(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)|(?:(cdt)\\.("+tokenString+")))(?:\\.%s)?}+",
+			"{+(?:exif|x)\\.(?:(iso|et|fl|w|h|wh|make|model|lens|fnum|fl35|lat|lon|soft)|(?:(cdt)(?:\\.("+tokenString+"))?))(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)

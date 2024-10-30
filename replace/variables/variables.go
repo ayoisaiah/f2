@@ -488,6 +488,10 @@ func getExifDate(exifData *Exif, format string) string {
 		return ""
 	}
 
+	if format == "" {
+		return dateTime.Format(time.RFC3339)
+	}
+
 	return dateTime.Format(dateTokens[format])
 }
 
