@@ -242,7 +242,7 @@ func Changes(
 	changes file.Changes,
 	conf *config.Config,
 ) {
-	// TODO: EnforceHierarchicalOrder should be the default sort
+	// TODO: EnforceHierarchicalOrder should be the default sort?
 	if conf.SortPerDir {
 		EnforceHierarchicalOrder(changes)
 	}

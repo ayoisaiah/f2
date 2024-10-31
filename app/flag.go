@@ -158,7 +158,6 @@ var (
 		Ignores the file extension when searching for matches.`,
 	}
 
-	// TODO: JSON output should also be used for errors?
 	flagJSON = &cli.BoolFlag{
 		Name: "json",
 		Usage: `

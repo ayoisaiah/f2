@@ -145,10 +145,10 @@ func TestReplace(t *testing.T) {
 				},
 			},
 			Want: []string{
+				"music/2013/overgrown",
 				"music/Overgrown (2013)/01-overgrown.flac",
 				"music/Overgrown (2013)/02-i-am-sold.flac",
 				"music/Overgrown (2013)/cover.jpg",
-				"music/2013/overgrown",
 			},
 			Args: []string{
 				"-f",

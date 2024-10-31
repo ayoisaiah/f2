@@ -250,7 +250,6 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 
 				entryIsDir := entry.IsDir()
 
-				// FIXME:: Pairing should not affect how files are matched
 				if conf.IgnoreExt && !entryIsDir {
 					fileName = pathutil.StripExtension(fileName)
 				}

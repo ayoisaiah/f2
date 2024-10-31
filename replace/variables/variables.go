@@ -95,9 +95,7 @@ func greatestCommonDivisor(a, b int) int {
 }
 
 // replaceSlashes replaces forward and backward slashes in the input with an
-// underscore character
-// TODO: Make replacement character configurable? Also possible to opt out per
-// variable?
+// underscore character.
 func replaceSlashes(input string) string {
 	r := strings.NewReplacer("/", "_", "\\", "_")
 	return r.Replace(input)
@@ -142,11 +140,10 @@ func integerToRoman(integer int) string {
 	return roman.String()
 }
 
-// TODO: move this
-// regexReplace replaces matched substrings in the input with the replacement.
+// RegexReplace replaces matched substrings in the input with the replacement.
 // It respects the specified replacement limit. A negative limit indicates that
 // replacement should start from the end of the fileName.
-func regexReplace(
+func RegexReplace(
 	regex *regexp.Regexp,
 	input, replacement string,
 	replaceLimit int,
@@ -239,7 +236,7 @@ func replaceFileHashVars(
 
 		hashValue = transformString(hashValue, current.transformToken)
 
-		target = regexReplace(current.regex, target, hashValue, 0)
+		target = RegexReplace(current.regex, target, hashValue, 0)
 	}
 
 	return target, nil
@@ -291,7 +288,7 @@ func replaceDateVars(
 
 		timeStr = transformString(timeStr, current.transformToken)
 
-		target = regexReplace(regex, target, timeStr, 0)
+		target = RegexReplace(regex, target, timeStr, 0)
 	}
 
 	return target, nil
@@ -395,7 +392,7 @@ func replaceID3Variables(
 
 		id3Tag = transformString(replaceSlashes(id3Tag), current.transformToken)
 
-		target = regexReplace(current.regex, target, id3Tag, 0)
+		target = RegexReplace(current.regex, target, id3Tag, 0)
 	}
 
 	return target, nil
@@ -616,7 +613,7 @@ func replaceExifVars(
 			current.transformToken,
 		)
 
-		target = regexReplace(regex, target, exifTag, 0)
+		target = RegexReplace(regex, target, exifTag, 0)
 	}
 
 	return target, nil
@@ -687,7 +684,7 @@ func replaceExifToolVars(
 
 		value = transformString(value, current.transformToken)
 
-		target = regexReplace(current.regex, target, value, 0)
+		target = RegexReplace(current.regex, target, value, 0)
 	}
 
 	return target, nil
@@ -787,14 +784,14 @@ func transformString(source, token string) string {
 		c := cases.Title(language.English)
 		return c.String(strings.ToLower(source))
 	case "win":
-		return regexReplace(
+		return RegexReplace(
 			osutil.CompleteWindowsForbiddenCharRegex,
 			source,
 			"",
 			0,
 		)
 	case "mac":
-		return regexReplace(osutil.MacForbiddenCharRegex, source, "", 0)
+		return RegexReplace(osutil.MacForbiddenCharRegex, source, "", 0)
 	case "di":
 		t := transform.Chain(
 			norm.NFD,
@@ -855,7 +852,7 @@ func replaceTransformVars(
 		// if capture variables aren't being used, transform the find matches
 		if match == "" {
 			for _, v := range matches {
-				target = regexReplace(
+				target = RegexReplace(
 					regex,
 					target,
 					transformString(v, current.token),
@@ -866,7 +863,7 @@ func replaceTransformVars(
 			continue
 		}
 
-		target = regexReplace(
+		target = RegexReplace(
 			regex,
 			target,
 			transformString(match, current.token),
@@ -893,7 +890,7 @@ func replaceCSVVars(target string, csvRow []string, cv csvVars) string {
 
 		value = transformString(value, current.transformToken)
 
-		target = regexReplace(current.regex, target, value, 0)
+		target = RegexReplace(current.regex, target, value, 0)
 	}
 
 	return target
@@ -932,7 +929,7 @@ func replaceParentDirVars(
 
 		source := transformString(parentDir, current.transformToken)
 
-		target = regexReplace(current.regex, target, source, 0)
+		target = RegexReplace(current.regex, target, source, 0)
 	}
 
 	return target
@@ -947,7 +944,7 @@ func replaceFilenameVars(
 
 		source := transformString(sourceName, current.transformToken)
 
-		target = regexReplace(current.regex, target, source, 0)
+		target = RegexReplace(current.regex, target, source, 0)
 	}
 
 	return target
@@ -976,7 +973,7 @@ func replaceExtVars(change *file.Change, ev extVars) (target string) {
 
 		source := transformString(fileExt, current.transformToken)
 
-		target = regexReplace(current.regex, change.Target, source, 0)
+		target = RegexReplace(current.regex, change.Target, source, 0)
 	}
 
 	return target

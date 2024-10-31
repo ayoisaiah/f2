@@ -5,7 +5,6 @@ package replace
 
 import (
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/ayoisaiah/f2/internal/config"
@@ -16,59 +15,10 @@ import (
 	"github.com/ayoisaiah/f2/replace/variables"
 )
 
-// regexReplace replaces matched substrings in the input with the replacement.
-// It respects the specified replacement limit. A negative limit indicates that
-// replacement should start from the end of the fileName.
-func regexReplace(
-	regex *regexp.Regexp,
-	input, replacement string,
-	replaceLimit int,
-) string {
-	var output string
-
-	switch limit := replaceLimit; {
-	case limit > 0:
-		counter := 0
-		output = regex.ReplaceAllStringFunc(
-			input,
-			func(val string) string {
-				if counter == replaceLimit {
-					return val
-				}
-
-				counter++
-
-				return regex.ReplaceAllString(val, replacement)
-			},
-		)
-	case limit < 0:
-		matches := regex.FindAllString(input, -1)
-
-		l := len(matches) + limit
-		counter := 0
-		output = regex.ReplaceAllStringFunc(
-			input,
-			func(val string) string {
-				if counter >= l {
-					return regex.ReplaceAllString(val, replacement)
-				}
-
-				counter++
-
-				return val
-			},
-		)
-	default:
-		output = regex.ReplaceAllString(input, replacement)
-	}
-
-	return output
-}
-
 // replaceString replaces all matches in the filename
 // with the replacement string.
 func replaceString(conf *config.Config, originalName string) string {
-	return regexReplace(
+	return variables.RegexReplace(
 		conf.Search.Regex,
 		originalName,
 		conf.Replacement,
@@ -234,8 +184,7 @@ func Replace(
 		return nil, err
 	}
 
-	// TODO: This should also apply for CSV renaming
-	if conf.IncludeDir {
+	if (conf.IncludeDir || conf.CSVFilename != "") && conf.Exec {
 		sortfiles.ForRenamingAndUndo(changes, conf.Revert)
 	}
 

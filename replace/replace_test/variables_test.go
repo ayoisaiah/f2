@@ -268,7 +268,7 @@ func TestVariables(t *testing.T) {
 			},
 			SetupFunc: createDateFile,
 		},
-		// TODO: Seem to be flaky
+		// FIXME: Seem to be flaky
 		// {
 		// 	Name: "use file birth and change times",
 		// 	Changes: file.Changes{
