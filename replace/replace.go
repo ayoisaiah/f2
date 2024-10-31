@@ -71,8 +71,10 @@ func replaceMatches(
 		return nil, err
 	}
 
-	if vars.IndexMatches() > 0 {
-		sortfiles.EnforceHierarchicalOrder(matches)
+	// If using indexes without an explicit sort, ensure that the files
+	// are arranged hierarchically
+	if vars.IndexMatches() > 0 && conf.Sort == config.SortDefault {
+		sortfiles.Hierarchically(matches)
 	}
 
 	var pairs int

@@ -94,9 +94,9 @@ func ForRenamingAndUndo(changes file.Changes, revert bool) {
 	})
 }
 
-// EnforceHierarchicalOrder ensures all files in the same directory are sorted
+// Hierarchically ensures all files in the same directory are sorted
 // before children directories.
-func EnforceHierarchicalOrder(changes file.Changes) {
+func Hierarchically(changes file.Changes) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		lenA, lenB := len(a.BaseDir), len(b.BaseDir)
 		if lenA == lenB {
@@ -242,9 +242,8 @@ func Changes(
 	changes file.Changes,
 	conf *config.Config,
 ) {
-	// TODO: EnforceHierarchicalOrder should be the default sort?
 	if conf.SortPerDir {
-		EnforceHierarchicalOrder(changes)
+		Hierarchically(changes)
 	}
 
 	//nolint:exhaustive // default sort not needed

@@ -104,7 +104,7 @@ func TestSortFiles_EnforceHierarchicalOrder(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			unsorted := sortTest(t, tc.Unsorted)
 
-			sortfiles.EnforceHierarchicalOrder(unsorted)
+			sortfiles.Hierarchically(unsorted)
 
 			testutil.CompareSourcePath(t, tc.Sorted, unsorted)
 		})

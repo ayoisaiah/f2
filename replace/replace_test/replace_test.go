@@ -92,22 +92,6 @@ func TestReplace(t *testing.T) {
 			Args: []string{"-f", "budget", "-r", "forecast", "-l", "-2"},
 		},
 		{
-			Name: "replace the first 2 matches in reverse",
-			Changes: file.Changes{
-				{
-					Source: "budget_budget_budget_2023.xlsx",
-				},
-				{
-					Source: "budget_2024.xlsx",
-				},
-			},
-			Want: []string{
-				"budget_forecast_forecast_2023.xlsx",
-				"forecast_2024.xlsx",
-			},
-			Args: []string{"-f", "budget", "-r", "forecast", "-l", "-2"},
-		},
-		{
 			Name: "rename with capture variables",
 			Changes: file.Changes{
 				{
@@ -269,6 +253,76 @@ func TestReplace(t *testing.T) {
 				"--pair",
 				"-t",
 				"pictures",
+			},
+		},
+		{
+			Name: "retain file order with an explicit sort",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata/dir1",
+					Source:  "doc.txt",
+				},
+				{
+					BaseDir: "testdata/dir1",
+					Source:  "file.md",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "audio.mp3",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "binary.mp3",
+				},
+			},
+			Want: []string{
+				"testdata/dir1/001.txt",
+				"testdata/dir1/002.md",
+				"testdata/003.mp3",
+				"testdata/004.mp3",
+			},
+			Args: []string{
+				"-f",
+				`.*\.(txt|md|mp3)`,
+				"-r",
+				"{%03d}{ext}",
+				"-R",
+				"--sort",
+				"size",
+			},
+		},
+		{
+			Name: "without an explicit sort, arrange hierarchically",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata/dir1",
+					Source:  "doc.txt",
+				},
+				{
+					BaseDir: "testdata/dir1",
+					Source:  "file.md",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "audio.mp3",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "binary.mp3",
+				},
+			},
+			Want: []string{
+				"testdata/001.mp3",
+				"testdata/002.mp3",
+				"testdata/dir1/003.txt",
+				"testdata/dir1/004.md",
+			},
+			Args: []string{
+				"-f",
+				`.*\.(txt|md|mp3)`,
+				"-r",
+				"{%03d}{ext}",
+				"-R",
 			},
 		},
 	}
