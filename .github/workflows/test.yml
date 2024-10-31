@@ -26,12 +26,9 @@ jobs:
         uses: woss/exiftool-action@v12.92
         if: matrix.os != 'windows-latest'
 
-      - name: Install winget
-        uses: Cyberboss/install-winget@v1
-        if: matrix.os == 'windows-latest'
-
-      - name: Install Exiftool
-        run: winget install exiftool --disable-interactivity --accept-source-agreements
+      - uses: MinoruSekine/setup-scoop@v4.0.1
+        with:
+          apps: exiftool
         if: matrix.os == 'windows-latest'
 
       - name: Set up gotestfmt
