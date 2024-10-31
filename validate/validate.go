@@ -444,12 +444,14 @@ func checkAndHandleConflict(ctx validationCtx, loopIndex *int) (detected bool) {
 
 // detectConflicts checks the renamed files for various conflicts and
 // automatically fixes them if configured.
-func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
+func detectConflicts(autoFix, allowOverwrites bool) bool {
 	ctx := validationCtx{
 		autoFix:         autoFix,
 		allowOverwrites: allowOverwrites,
 		seenPaths:       make(map[string]int),
 	}
+
+	conflicts := make(map[int]string)
 
 	for i := 0; i < len(changes); i++ {
 		change := changes[i]
@@ -457,15 +459,18 @@ func detectConflicts(autoFix, allowOverwrites bool) (detected bool) {
 		ctx.change = change
 		ctx.changeIndex = i
 
-		detected = checkAndHandleConflict(ctx, &i)
+		detected := checkAndHandleConflict(ctx, &i)
 		if detected {
+			conflicts[ctx.changeIndex] = change.SourcePath
 			continue
 		}
+
+		delete(conflicts, ctx.changeIndex)
 
 		ctx.updateSeenPaths()
 	}
 
-	return
+	return len(conflicts) > 0
 }
 
 // Validate detects and reports any conflicts that can occur while renaming a
