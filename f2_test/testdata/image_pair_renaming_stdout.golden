@@ -1,0 +1,26 @@
+*——————————————————————————————————————————*————————————————————————————————*————————*
+|                 ORIGINAL                 |            RENAMED             | STATUS |
+*——————————————————————————————————————————*————————————————————————————————*————————*
+| testdata/family trip - london/img1.dng   | 2024/05-May/2024-05-30/001.dng | ok     |
+| testdata/family trip - london/img1.jpg   | 2024/05-May/2024-05-30/001.jpg | ok     |
+| testdata/family trip - london/img2.dng   | 2024/05-May/2024-05-30/002.dng | ok     |
+| testdata/family trip - london/img2.jpg   | 2024/05-May/2024-05-30/002.jpg | ok     |
+| testdata/family trip - berlin/img90.dng  | 2024/06-Jun/2024-06-27/001.dng | ok     |
+| testdata/family trip - berlin/img90.jpg  | 2024/06-Jun/2024-06-27/001.jpg | ok     |
+| testdata/family trip - berlin/img99.dng  | 2024/06-Jun/2024-06-27/002.dng | ok     |
+| testdata/family trip - berlin/img99.jpg  | 2024/06-Jun/2024-06-27/002.jpg | ok     |
+| testdata/family trip - berlin/img101.dng | 2024/06-Jun/2024-06-27/003.dng | ok     |
+| testdata/family trip - berlin/img101.jpg | 2024/06-Jun/2024-06-27/003.jpg | ok     |
+| testdata/img34.dng                       | 2024/06-Jun/2024-06-28/001.dng | ok     |
+| testdata/img34.jpg                       | 2024/06-Jun/2024-06-28/001.jpg | ok     |
+| testdata/img66.dng                       | 2024/06-Jun/2024-06-28/002.dng | ok     |
+| testdata/img66.jpg                       | 2024/06-Jun/2024-06-28/002.jpg | ok     |
+| testdata/birthday-2024/img44.dng         | 2024/06-Jun/2024-06-28/003.dng | ok     |
+| testdata/birthday-2024/img44.jpg         | 2024/06-Jun/2024-06-28/003.jpg | ok     |
+| testdata/birthday-2024/img78.dng         | 2024/06-Jun/2024-06-28/004.dng | ok     |
+| testdata/birthday-2024/img78.jpg         | 2024/06-Jun/2024-06-28/004.jpg | ok     |
+| testdata/my-wedding/img33.dng            | 2024/07-Jul/2024-07-02/001.dng | ok     |
+| testdata/my-wedding/img33.jpg            | 2024/07-Jul/2024-07-02/001.jpg | ok     |
+| testdata/my-wedding/img67.dng            | 2024/07-Jul/2024-07-02/002.dng | ok     |
+| testdata/my-wedding/img67.jpg            | 2024/07-Jul/2024-07-02/002.jpg | ok     |
+*——————————————————————————————————————————*————————————————————————————————*————————*
