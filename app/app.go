@@ -233,7 +233,7 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.App {
 		Usage: `f2 bulk renames files and directories, matching files against a specified
 pattern. It employs safety checks to prevent accidental overwrites and
 offers several options for fine-grained control over the renaming process.`,
-		Version:              "v1.9.1",
+		Version:              "v2.0.0",
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			flagCSV,

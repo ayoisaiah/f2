@@ -1,3 +1,49 @@
+## 2.0.0 (2024-11-01)
+
+### New features
+
+- Add `natural` sort option for sorting filenames containing numbers in a
+  natural way.
+- Add ability to extract double extensions like `.tar.gz` using `{2ext}`
+- Add `--exiftool-opts` to customize Exiftool's output.
+- Add `--exclude-dir` flag for excluding whole directories when matching files.
+- Add ability to specify a custom pattern when fixing conflicts
+  (`--fix-conflicts-pattern`).
+- Add support for
+  [file pair renaming](https://f2.freshman.tech/guide/pair-renaming) with
+  `--pair` and `--pair-order`.
+- Add `--target-dir` option for specifying a target directory for renamed files.
+- Add `--clean` option for cleaning up empty directories after renaming.
+- Add ability to sort files based on arbitrary input using `--sort` and
+  `--sort-var`
+- Add ability to apply sorting per directory with `--sort-per-dir`
+- Add ability to reset an index when recursing into a new directory with
+  `--reset-index-per-dir`.
+
+### Enhancements
+
+- Significant performance improvements (up to ~3x faster than the previous
+  version).
+- Improve conflict detection by adding validations for:
+  - When the source file is not found.
+  - When the target name changes later in the same operation.
+- Clean up output reporting.
+- Improvements to `--undo`.
+- Improve CSV renaming implementation.
+- Improve help messages and documentation.
+
+### Bug fixes
+
+- Fix status reporting for unchanged files.
+- Fix dotfiles being regarded as hidden in Windows.
+- Fix piping file arguments from external commands.
+- Fix some Windows-specific bugs with CSV renaming.
+
+### Deprecations / Removals
+
+- Remove random variables.
+- Remove simple mode.
+
 ## 1.9.1 (2023-02-09)
 
 - Improve performance in dry-run mode (due to table rendering).

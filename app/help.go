@@ -399,7 +399,7 @@ func ShortHelp(_ *cli.App) string {
 
 %s
   Use f2 --help to view the command-line options.
-	Read the manual at https://f2.freshman.tech`,
+  Read the manual at https://f2.freshman.tech`,
 		pterm.Bold.Sprintf("USAGE"),
 		usageText,
 		pterm.Bold.Sprintf("EXAMPLES"),
