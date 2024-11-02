@@ -5,9 +5,12 @@ f2_opts="
   --replace
   --undo
   --allow-overwrites
+  --clean
   --exclude
+  --exclude-dir
   --exec
   --fix-conflicts
+  --fix-conflicts-pattern
   --help
   --hidden
   --include-dir
@@ -17,12 +20,18 @@ f2_opts="
   --max-depth
   --no-color
   --only-dir
+  --pair
+  --pair-order
   --quiet
   --recursive
   --replace-limit
+  --reset-index-per-dir
   --sort
   --sortr
+  --sort-per-dir
+  --sort-var
   --string-mode
+  --target-dir
   --verbose
   --version
 "
