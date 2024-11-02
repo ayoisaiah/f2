@@ -31,22 +31,22 @@ archives:
       - goos: windows
         format: zip
 checksum:
-  name_template: 'checksums.txt'
+  name_template: checksums.txt
 snapshot:
-  version_template: 'master'
+  version_template: master
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
 
 nfpms:
   - id: main_packages
-    vendor: '{{ .Env.REPO_OWNER }}'
-    homepage: '{{ .Env.REPO_WEBSITE }}'
-    maintainer: '{{ .Env.REPO_MAINTAINER }}'
-    description: '{{ .Env.REPO_DESCRIPTION }}'
+    vendor: "{{ .Env.REPO_OWNER }}"
+    homepage: "{{ .Env.REPO_WEBSITE }}"
+    maintainer: "{{ .Env.REPO_MAINTAINER }}"
+    description: "{{ .Env.REPO_DESCRIPTION }}"
     license: MIT
     formats:
       - deb
@@ -68,10 +68,10 @@ nfpms:
           mode: 0644
 
   - id: other_packages
-    vendor: '{{ .Env.REPO_OWNER }}'
-    homepage: '{{ .Env.REPO_WEBSITE }}'
-    maintainer: '{{ .Env.REPO_MAINTAINER }}'
-    description: '{{ .Env.REPO_DESCRIPTION }}'
+    vendor: "{{ .Env.REPO_OWNER }}"
+    homepage: "{{ .Env.REPO_WEBSITE }}"
+    maintainer: "{{ .Env.REPO_MAINTAINER }}"
+    description: "{{ .Env.REPO_DESCRIPTION }}"
     license: MIT
     formats:
       - apk
@@ -97,20 +97,20 @@ publishers:
   - name: fury.io
     ids:
       - main_packages
-    dir: '{{ dir .ArtifactPath }}'
+    dir: "{{ dir .ArtifactPath }}"
     cmd: curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_PUSH_TOKEN }}@push.fury.io/{{ .Env.FURY_USERNAME }}/
 
 winget:
-  - publisher: '{{ .Env.REPO_OWNER }}'
+  - publisher: "{{ .Env.REPO_OWNER }}"
     license: MIT
-    copyright: '{{ .Env.REPO_AUTHOR_NAME }}'
-    homepage: '{{ .Env.REPO_WEBSITE }}'
-    short_description: '{{ .Env.REPO_DESCRIPTION }}'
+    copyright: "{{ .Env.REPO_AUTHOR_NAME }}"
+    homepage: "{{ .Env.REPO_WEBSITE }}"
+    short_description: "{{ .Env.REPO_DESCRIPTION }}"
     repository:
-      owner: '{{ .Env.REPO_OWNER }}'
-      token: '{{ .Env.GORELEASER_GITHUB_TOKEN }}'
+      owner: "{{ .Env.REPO_OWNER }}"
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
       name: winget-pkgs
-      branch: '{{.ProjectName}}-{{.Version}}'
+      branch: "{{.ProjectName}}-{{.Version}}"
       pull_request:
         enabled: true
         draft: false
@@ -120,28 +120,28 @@ winget:
           branch: master
 
 scoops:
-  - url_template: 'https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
+  - url_template: https://github.com/ayoisaiah/f2/releases/download/{{ .Tag }}/{{ .ArtifactName }}
     repository:
-      owner: '{{ .Env.REPO_OWNER }}'
+      owner: "{{ .Env.REPO_OWNER }}"
       name: scoop-bucket
-      token: '{{ .Env.GORELEASER_GITHUB_TOKEN }}'
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
     commit_author:
       name: goreleaserbot
       email: goreleaser@carlosbecker.com
-    homepage: '{{ .Env.REPO_WEBSITE }}'
-    description: '{{ .Env.REPO_DESCRIPTION }}'
+    homepage: "{{ .Env.REPO_WEBSITE }}"
+    description: "{{ .Env.REPO_DESCRIPTION }}"
     license: MIT
 
 brews:
   - repository:
-      owner: '{{ .Env.REPO_OWNER }}'
+      owner: "{{ .Env.REPO_OWNER }}"
       name: homebrew-tap
-      token: '{{ .Env.GORELEASER_GITHUB_TOKEN }}'
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
     commit_author:
       name: goreleaserbot
       email: goreleaser@carlosbecker.com
-    homepage: '{{ .Env.REPO_WEBSITE }}'
-    description: '{{ .Env.REPO_DESCRIPTION }}'
+    homepage: "{{ .Env.REPO_WEBSITE }}"
+    description: "{{ .Env.REPO_DESCRIPTION }}"
     install: |-
       bin.install "{{ with .Env.REPO_BINARY_NAME }}{{ . }}{{ else }}{{ .ProjectName }}{{ end }}"
     dependencies:
