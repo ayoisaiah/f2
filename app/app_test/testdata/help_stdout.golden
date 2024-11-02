@@ -196,6 +196,7 @@ Project repository: https://github.com/ayoisaiah/f2
 
   [32m-V[0m, [32m--verbose[0m 
     Enables verbose output during the renaming operation.
+
 [1mENVIRONMENTAL VARIABLES[0m
   [32mF2_DEFAULT_OPTS[0m
     Override the default options according to your preferences. For example, 
