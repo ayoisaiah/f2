@@ -1,0 +1,22 @@
+{
+  "name": "@ayoisaiah/f2",
+  "version": "2.0.0",
+  "description": "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
+  "main": "index.js",
+  "repository": "https://github.com/ayoisaiah/f2",
+  "author": "Ayooluwa Isaiah <ayo@freshman.tech>",
+  "license": "MIT",
+  "dependencies": {
+    "@ayoisaiah/go-npm": "^0.1.13"
+  },
+  "scripts": {
+    "postinstall": "go-npm install",
+    "preuninstall": "go-npm uninstall"
+  },
+  "goBinary": {
+    "name": "f2",
+    "path": "./bin",
+    "url": "https://github.com/ayoisaiah/f2/releases/download/v{{version}}/f2_{{version}}_{{platform}}_{{arch}}.tar.gz"
+  },
+  "private": false
+}
