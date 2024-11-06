@@ -52,7 +52,7 @@ If you're a Go developer, F2 can be installed with `go install` (requires v1.23
 or later):
 
 ```bash
-go install github.com/ayoisaiah/f2/cmd/f2@latest
+go install github.com/ayoisaiah/f2/v2/cmd/f2@latest
 ```
 
 Other installation methods are
