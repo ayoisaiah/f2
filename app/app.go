@@ -5,13 +5,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
-	slogctx "github.com/veqryn/slog-context"
 
 	"github.com/ayoisaiah/f2/internal/config"
 	"github.com/ayoisaiah/f2/internal/osutil"
@@ -20,7 +18,6 @@ import (
 
 const (
 	EnvDefaultOpts = "F2_DEFAULT_OPTS"
-	EnvDebug       = "F2_DEBUG"
 )
 
 // supportedDefaultOpts contains flags whose values can be
@@ -59,25 +56,6 @@ func isOutputToPipe() bool {
 	fileInfo, _ := os.Stdout.Stat()
 
 	return ((fileInfo.Mode() & os.ModeCharDevice) != os.ModeCharDevice)
-}
-
-// initLogger sets up defaults for the global logger.
-func initLogger() {
-	opts := &slog.HandlerOptions{
-		Level: slog.LevelError,
-	}
-
-	if debugVal, ok := os.LookupEnv(EnvDebug); ok {
-		opts.Level = slog.LevelInfo
-	} else if debugVal == "0" {
-		opts.Level = slog.LevelDebug
-	}
-
-	h := slogctx.NewHandler(slog.NewJSONHandler(os.Stderr, opts), nil)
-
-	l := slog.New(h)
-
-	slog.SetDefault(l)
 }
 
 // handlePipeInput processes input from a pipe and appends it to os.Args.
@@ -134,8 +112,6 @@ func loadDefaultOpts() (*cli.Context, error) {
 
 // Get returns an F2 instance that reads from `reader` and writes to `writer`.
 func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
-	initLogger()
-
 	err := handlePipeInput(reader)
 	if err != nil {
 		return nil, err
@@ -159,13 +135,11 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 		config.Stdin = ctx.App.Reader
 
 		defer (func() {
-			appConfig, initErr := config.Init(ctx, isOutputToPipe())
+			_, initErr := config.Init(ctx, isOutputToPipe())
 			if initErr != nil && err == nil {
 				err = initErr
 				return
 			}
-
-			slog.Info("configuration loaded", slog.Any("app_config", appConfig))
 		})()
 
 		app.Metadata["ctx"] = ctx

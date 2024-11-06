@@ -375,14 +375,10 @@ func envHelp() string {
 		export F2_DEFAULT_OPTS=--exec --ignore-ext
 
 	%s, %s
-		Set to any value to disable coloured output.
-
-	%s
-		Enable debug mode.`,
+		Set to any value to disable coloured output.`,
 		pterm.Green("F2_DEFAULT_OPTS"),
 		pterm.Green("F2_NO_COLOR"),
 		pterm.Green("NO_COLOR"),
-		pterm.Green("F2_DEBUG"),
 	)
 }
 

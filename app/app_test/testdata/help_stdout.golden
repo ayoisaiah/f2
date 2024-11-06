@@ -207,8 +207,5 @@ Project repository: https://github.com/ayoisaiah/f2
   [32mF2_NO_COLOR[0m, [32mNO_COLOR[0m
     Set to any value to disable coloured output.
 
-  [32mF2_DEBUG[0m
-    Enable debug mode.
-
 [1mLEARN MORE[0m
   Read the manual at https://f2.freshman.tech
