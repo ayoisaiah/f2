@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/apperr"
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/internal/testutil"
-	"github.com/ayoisaiah/f2/report"
+	"github.com/ayoisaiah/f2/v2/internal/apperr"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/status"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/report"
 )
 
 var filesWithConflicts = file.Changes{

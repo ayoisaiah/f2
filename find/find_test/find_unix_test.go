@@ -6,7 +6,7 @@ package find_test
 import (
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
 
 func setupWindowsHidden(_ *testing.T, _ string) (teardown func()) {

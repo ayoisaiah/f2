@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/ayoisaiah/f2"
-	"github.com/ayoisaiah/f2/report"
+	"github.com/ayoisaiah/f2/v2"
+	"github.com/ayoisaiah/f2/v2/report"
 )
 
 func main() {

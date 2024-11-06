@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/osutil"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/osutil"
 )
 
 func createBackupFile(fileName string) (io.Writer, error) {

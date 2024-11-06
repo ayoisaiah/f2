@@ -1,4 +1,4 @@
-module github.com/ayoisaiah/f2
+module github.com/ayoisaiah/f2/v2
 
 go 1.23
 

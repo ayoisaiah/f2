@@ -6,8 +6,8 @@ package replace_test
 import (
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
 
 func TestMacOSTransforms(t *testing.T) {

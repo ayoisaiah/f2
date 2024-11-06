@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/testutil"
-	"github.com/ayoisaiah/f2/rename"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/rename"
 )
 
 func renameTest(t *testing.T, cases []testutil.TestCase) {

@@ -1,6 +1,6 @@
 package config
 
-import "github.com/ayoisaiah/f2/internal/apperr"
+import "github.com/ayoisaiah/f2/v2/internal/apperr"
 
 var (
 	errInvalidArgument = &apperr.Error{

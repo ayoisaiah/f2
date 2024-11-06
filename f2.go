@@ -5,14 +5,14 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/ayoisaiah/f2/app"
-	"github.com/ayoisaiah/f2/find"
-	"github.com/ayoisaiah/f2/internal/apperr"
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/rename"
-	"github.com/ayoisaiah/f2/replace"
-	"github.com/ayoisaiah/f2/report"
-	"github.com/ayoisaiah/f2/validate"
+	"github.com/ayoisaiah/f2/v2/app"
+	"github.com/ayoisaiah/f2/v2/find"
+	"github.com/ayoisaiah/f2/v2/internal/apperr"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/rename"
+	"github.com/ayoisaiah/f2/v2/replace"
+	"github.com/ayoisaiah/f2/v2/report"
+	"github.com/ayoisaiah/f2/v2/validate"
 )
 
 var errConflictDetected = &apperr.Error{

@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/sortfiles"
-	"github.com/ayoisaiah/f2/internal/testutil"
-	"github.com/ayoisaiah/f2/replace"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/sortfiles"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/replace"
 )
 
 func replaceTest(t *testing.T, cases []testutil.TestCase) {

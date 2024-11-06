@@ -11,9 +11,9 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/osutil"
-	"github.com/ayoisaiah/f2/report"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/osutil"
+	"github.com/ayoisaiah/f2/v2/report"
 )
 
 const (

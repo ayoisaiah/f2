@@ -5,10 +5,10 @@ import (
 
 	"github.com/jinzhu/copier"
 
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/internal/testutil"
-	"github.com/ayoisaiah/f2/validate"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/status"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/validate"
 )
 
 var autoFixArgs = []string{"-r", "", "-F"}

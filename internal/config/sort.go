@@ -3,7 +3,7 @@ package config
 import (
 	"strings"
 
-	"github.com/ayoisaiah/f2/internal/timeutil"
+	"github.com/ayoisaiah/f2/v2/internal/timeutil"
 )
 
 type Sort int

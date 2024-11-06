@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ayoisaiah/f2/app"
+	"github.com/ayoisaiah/f2/v2/app"
 )
 
 func simulatePipe(t *testing.T, name string, arg ...string) *exec.Cmd {

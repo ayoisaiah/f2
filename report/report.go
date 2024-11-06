@@ -8,10 +8,10 @@ import (
 
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/internal/apperr"
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/osutil"
+	"github.com/ayoisaiah/f2/v2/internal/apperr"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/osutil"
 )
 
 func ExitWithErr(err error) {

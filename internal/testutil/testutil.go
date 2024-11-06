@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 
-	"github.com/ayoisaiah/f2/app"
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/osutil"
-	"github.com/ayoisaiah/f2/internal/status"
+	"github.com/ayoisaiah/f2/v2/app"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/osutil"
+	"github.com/ayoisaiah/f2/v2/internal/status"
 )
 
 // TestCase represents a unique test case.

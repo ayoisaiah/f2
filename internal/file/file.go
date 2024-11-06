@@ -10,7 +10,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/internal/status"
+	"github.com/ayoisaiah/f2/v2/internal/status"
 )
 
 // Change represents a single renaming change.

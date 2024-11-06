@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/ayoisaiah/f2"
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
 
 func TestImagePairRenaming(t *testing.T) {

@@ -6,9 +6,9 @@ package validate_test
 import (
 	"testing"
 
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/status"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
 
 func TestValidateWindows(t *testing.T) {

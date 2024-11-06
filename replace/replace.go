@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/pathutil"
-	"github.com/ayoisaiah/f2/internal/sortfiles"
-	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/replace/variables"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/pathutil"
+	"github.com/ayoisaiah/f2/v2/internal/sortfiles"
+	"github.com/ayoisaiah/f2/v2/internal/status"
+	"github.com/ayoisaiah/f2/v2/replace/variables"
 )
 
 // replaceString replaces all matches in the filename

@@ -16,9 +16,9 @@ import (
 	"github.com/MagicalTux/natsort"
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/pathutil"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/pathutil"
 )
 
 func isPair(prev, curr *file.Change) bool {

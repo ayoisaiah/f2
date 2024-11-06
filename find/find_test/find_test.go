@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ayoisaiah/f2/find"
-	"github.com/ayoisaiah/f2/internal/testutil"
+	"github.com/ayoisaiah/f2/v2/find"
+	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
 
 var findFileSystem = []string{

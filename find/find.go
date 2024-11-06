@@ -11,13 +11,13 @@ import (
 
 	"github.com/araddon/dateparse"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
-	"github.com/ayoisaiah/f2/internal/osutil"
-	"github.com/ayoisaiah/f2/internal/pathutil"
-	"github.com/ayoisaiah/f2/internal/sortfiles"
-	"github.com/ayoisaiah/f2/internal/status"
-	"github.com/ayoisaiah/f2/replace/variables"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/osutil"
+	"github.com/ayoisaiah/f2/v2/internal/pathutil"
+	"github.com/ayoisaiah/f2/v2/internal/sortfiles"
+	"github.com/ayoisaiah/f2/v2/internal/status"
+	"github.com/ayoisaiah/f2/v2/replace/variables"
 )
 
 const (

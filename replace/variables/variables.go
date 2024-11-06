@@ -29,12 +29,12 @@ import (
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/ayoisaiah/f2/internal/osutil"
-	"github.com/ayoisaiah/f2/internal/pathutil"
-	"github.com/ayoisaiah/f2/internal/timeutil"
+	"github.com/ayoisaiah/f2/v2/internal/osutil"
+	"github.com/ayoisaiah/f2/v2/internal/pathutil"
+	"github.com/ayoisaiah/f2/v2/internal/timeutil"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
 
 	"github.com/araddon/dateparse"
 )

@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ayoisaiah/f2/internal/config"
-	"github.com/ayoisaiah/f2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
 )
 
 // ByTimeVar sorts changes by user-specified time variable.
