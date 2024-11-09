@@ -244,7 +244,8 @@ offers several options for fine-grained control over the renaming process.`,
 			flagTargetDir,
 			flagVerbose,
 		},
-		UseShortOptionHandling: true,
+		UseShortOptionHandling:    true,
+		DisableSliceFlagSeparator: true,
 		OnUsageError: func(_ *cli.Context, err error, _ bool) error {
 			return err
 		},

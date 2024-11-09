@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 
 	"github.com/ayoisaiah/f2/v2/app"
@@ -205,5 +206,47 @@ func TestDefaultEnv(t *testing.T) {
 
 			tc.Assert(t, ctx)
 		})
+	}
+}
+
+func TestStringSliceFlag(t *testing.T) {
+	cases := []*testutil.TestCase{
+		{
+			Name: "commas should not be interpreted as a separator",
+			Args: []string{
+				"f2_test",
+				"--replace",
+				"Windows, Linux Episode {%d}{ext}",
+			},
+			Want: []string{"Windows, Linux Episode {%d}{ext}"},
+		},
+		{
+			Name: "multiple flags should add a separate value to the slice",
+			Args: []string{
+				"f2_test",
+				"--replace",
+				"Windows",
+				"--replace",
+				"Linux Episode {%d}{ext}",
+			},
+			Want: []string{"Windows", "Linux Episode {%d}{ext}"},
+		},
+	}
+
+	for _, tc := range cases {
+		var stdout bytes.Buffer
+
+		renamer, err := app.Get(os.Stdin, &stdout)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		renamer.Action = func(ctx *cli.Context) error {
+			assert.Equal(t, tc.Want, ctx.StringSlice("replace"))
+
+			return nil
+		}
+
+		_ = renamer.Run(tc.Args)
 	}
 }
