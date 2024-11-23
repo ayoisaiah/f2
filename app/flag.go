@@ -21,6 +21,7 @@ var (
 
 		When -s/--string-mode is used, this pattern is treated as a literal string.`,
 		DefaultText: "<pattern>",
+		KeepSpace:   true,
 	}
 
 	flagReplace = &cli.StringSliceFlag{
@@ -31,6 +32,7 @@ var (
     It supports capture variables, built-in variables, and exiftool variables.
     If omitted, it defaults to an empty string.`,
 		DefaultText: "<string>",
+		KeepSpace:   true,
 	}
 
 	flagUndo = &cli.BoolFlag{
@@ -70,6 +72,7 @@ var (
 			--exclude-dir instead).`,
 
 		DefaultText: "<pattern>",
+		KeepSpace:   true,
 	}
 
 	flagExcludeDir = &cli.StringSliceFlag{
@@ -78,6 +81,7 @@ var (
 		Prevents F2 from recursing into directories that match the provided regular
 		expression pattern.`,
 		DefaultText: "<pattern>",
+		KeepSpace:   true,
 	}
 
 	flagExec = &cli.BoolFlag{

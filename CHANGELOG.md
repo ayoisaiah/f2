@@ -1,3 +1,8 @@
+## 2.0.3 (2024-11-23)
+
+- Fix bug caused by space trimming in `--find`, `--replace`, `--exclude`, and
+  `--exclude-dir`
+
 ## 2.0.2 (2024-11-22)
 
 - Fix bug with using commas in find or replace strings
