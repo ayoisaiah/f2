@@ -55,7 +55,7 @@ func init() {
 	tokenString := strings.Join(tokens, "|")
 
 	transformTokens = fmt.Sprintf(
-		"(up|lw|ti|win|mac|di|(?:dt\\.(%s)))",
+		"(up|lw|ti|win|mac|di|norm|(?:dt\\.(%s)))",
 		tokenString,
 	)
 

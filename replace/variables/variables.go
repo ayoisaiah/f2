@@ -805,6 +805,13 @@ func transformString(source, token string) string {
 		}
 
 		return result
+	case "norm":
+		result, _, err := transform.String(norm.NFKC, source)
+		if err != nil {
+			return source
+		}
+
+		return result
 	}
 
 	if strings.HasPrefix(token, "dt.") {

@@ -86,6 +86,18 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "normalize unicode NFKC",
+			Changes: file.Changes{
+				{
+					Source: "𝐇𝐞𝐥𝐥𝐨 Ｗｏｒｌｄ Ⓗⓘ ᵂᵒʳˡᵈ 𝟙𝟚𝟛 ℍ𝕚 ℕ𝕦𝕞𝕓𝕖𝕣𝕤 １２３ ①②③ ⒈⒉⒊",
+				},
+			},
+			Want: []string{
+				"Hello World Hi World 123 Hi Numbers 123 123 1.2.3.",
+			},
+			Args: []string{"-f", ".*", "-r", "{.norm}"},
+		},
+		{
 			Name: "remove diacritics",
 			Changes: file.Changes{
 				{
