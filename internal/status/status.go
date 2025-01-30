@@ -12,7 +12,7 @@ const (
 	OverwritingNewPath     Status = "overwriting new path"
 	ForbiddenCharacters    Status = "forbidden characters present"
 	FilenameLengthExceeded Status = "filename too long"
-	TargetFileChanging     Status = "target file is changing"
+	SourceAlreadyRenamed   Status = "source already renamed"
 	SourceNotFound         Status = "source not found"
 	Ignored                Status = "ignored"
 )

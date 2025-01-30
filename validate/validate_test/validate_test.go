@@ -112,7 +112,7 @@ func TestValidate(t *testing.T) {
 				{
 					Source:  "dsc-002.arw",
 					Target:  "dsc-003.arw",
-					Status:  status.TargetFileChanging,
+					Status:  status.SourceAlreadyRenamed,
 					BaseDir: "testdata/images",
 				},
 			},
@@ -250,12 +250,12 @@ func TestValidate(t *testing.T) {
 				{
 					Source: "02.txt",
 					Target: "01.txt",
-					Status: status.TargetFileChanging,
+					Status: status.SourceAlreadyRenamed,
 				},
 				{
 					Source: "01.txt",
 					Target: "00.txt",
-					Status: status.TargetFileChanging,
+					Status: status.SourceAlreadyRenamed,
 				},
 			},
 			ConflictDetected: true,

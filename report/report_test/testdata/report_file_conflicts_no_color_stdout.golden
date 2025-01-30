@@ -7,6 +7,6 @@
 | original.txt         | new:file.txt                                                             | forbidden characters present |
 | file2.txt            | new_file.txt                                                             | overwriting new path         |
 | original.txt         | this_is_a_very_long_filename_that_exceeds_the_maximum_allowed_length.txt | filename too long            |
-| 1.txt                | 2.txt                                                                    | target file is changing      |
+| 1.txt                | 2.txt                                                                    | source already renamed       |
 | nonexistent_file.txt | new_name.txt                                                             | source not found             |
 *——————————————————————*——————————————————————————————————————————————————————————————————————————*——————————————————————————————*

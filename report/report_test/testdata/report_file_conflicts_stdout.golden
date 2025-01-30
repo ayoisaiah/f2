@@ -7,6 +7,6 @@
 | original.txt         | new:file.txt                                                             | [31mforbidden characters present[0m |
 | file2.txt            | new_file.txt                                                             | [31moverwriting new path[0m         |
 | original.txt         | this_is_a_very_long_filename_that_exceeds_the_maximum_allowed_length.txt | [31mfilename too long[0m            |
-| 1.txt                | 2.txt                                                                    | [31mtarget file is changing[0m      |
+| 1.txt                | 2.txt                                                                    | [31msource already renamed[0m       |
 | nonexistent_file.txt | new_name.txt                                                             | [31msource not found[0m             |
 *——————————————————————*——————————————————————————————————————————————————————————————————————————*——————————————————————————————*

@@ -175,10 +175,10 @@ func checkPathExistsConflict(
 	return conflictDetected
 }
 
-// checkTargetFileChangingConflict ensures that renaming a file to a target that
-// is changing later is detected to prevent data loss. It is automatically fixed
-// by swapping the items around so that any renaming targets do not change later.
-func checkTargetFileChangingConflict(
+// checkSourceAlreadyRenamedConflict ensures that renaming a file multiple times
+// is detected to prevent data loss. It is automatically fixed by swapping the
+// items around so that any renaming targets do not change later.
+func checkSourceAlreadyRenamedConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
 	seenIndex, ok := ctx.seenPaths[ctx.change.SourcePath]
@@ -187,7 +187,7 @@ func checkTargetFileChangingConflict(
 	}
 
 	conflictDetected = true
-	ctx.change.Status = status.TargetFileChanging
+	ctx.change.Status = status.SourceAlreadyRenamed
 
 	if ctx.autoFix {
 		changes[seenIndex], changes[ctx.changeIndex] = changes[ctx.changeIndex], changes[seenIndex]
@@ -412,7 +412,7 @@ func checkAndHandleConflict(ctx validationCtx, loopIndex *int) (detected bool) {
 		checkPathExistsConflict,
 		checkOverwritingPathConflict,
 		checkSourceNotFoundConflict,
-		checkTargetFileChangingConflict, // INFO: Needs to be the last check
+		checkSourceAlreadyRenamedConflict, // INFO: Needs to be the last check
 	}
 
 	for i, check := range checks {

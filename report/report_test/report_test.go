@@ -50,7 +50,7 @@ var filesWithConflicts = file.Changes{
 	{
 		Source: "1.txt",
 		Target: "2.txt",
-		Status: status.TargetFileChanging,
+		Status: status.SourceAlreadyRenamed,
 	},
 	{
 		Source: "nonexistent_file.txt",
