@@ -13,7 +13,7 @@ import (
 
 	"gopkg.in/djherbis/times.v1"
 
-	"github.com/MagicalTux/natsort"
+	"github.com/maruel/natural"
 	"github.com/pterm/pterm"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
@@ -230,10 +230,10 @@ func Natural(changes file.Changes, reverseSort bool) {
 		}
 
 		if reverseSort {
-			return !natsort.Compare(sourcePathA, sourcePathB)
+			return !natural.Less(sourcePathA, sourcePathB)
 		}
 
-		return natsort.Compare(sourcePathA, sourcePathB)
+		return natural.Less(sourcePathA, sourcePathB)
 	})
 }
 
