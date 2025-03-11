@@ -2,7 +2,7 @@ name: Release F2
 
 env:
   dev_tag: nightly
-  go_version: 1.23
+  go_version: ${{ vars.GO_VERSION }}
   REPO_OWNER: ${{ vars.REPO_OWNER }}
   REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
   REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
