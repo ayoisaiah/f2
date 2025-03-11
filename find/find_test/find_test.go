@@ -236,6 +236,15 @@ var testCases = []testutil.TestCase{
 		},
 		Args: []string{"-f", "jpg"},
 	},
+
+	{
+		Name: "only include specific files",
+		Want: []string{
+			"backup/documents/old_cover_letter.docx",
+			"backup/documents/old_resume.docx",
+		},
+		Args: []string{"-f", "old", "-R", "-I", "resume|letter"},
+	},
 }
 
 func findTest(t *testing.T, cases []testutil.TestCase, testDir string) {

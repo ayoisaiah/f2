@@ -97,6 +97,13 @@ func helpText(app *cli.App) string {
 		flagHidden.GetUsage(),
 	)
 
+	flagIncludeHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagInclude.Aliases[0]),
+		pterm.Green("--", flagInclude.Name),
+		flagInclude.GetUsage(),
+	)
+
 	flagIncludeDirHelp := fmt.Sprintf(
 		`%s, %s %s`,
 		pterm.Green("-", flagIncludeDir.Aliases[0]),
@@ -312,6 +319,8 @@ Project repository: https://github.com/ayoisaiah/f2
 
 	%s
 
+	%s
+
 %s
 	%s
 
@@ -341,6 +350,7 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagFixConflictsHelp,
 		flagFixConflictsPatternHelp,
 		flagHiddenHelp,
+		flagIncludeHelp,
 		flagIncludeDirHelp,
 		flagIgnoreCaseHelp,
 		flagIgnoreExtHelp,

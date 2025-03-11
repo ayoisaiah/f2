@@ -88,6 +88,7 @@ type Config struct {
 	BackupLocation           io.Writer      `json:"-"`
 	ExcludeDirRegex          *regexp.Regexp `json:"exclude_dir_regex"`
 	ExcludeRegex             *regexp.Regexp `json:"exclude_regex"`
+	IncludeRegex             *regexp.Regexp `json:"include_regex"`
 	Search                   *Search        `json:"search_regex"`
 	FixConflictsPatternRegex *regexp.Regexp `json:"fix_conflicts_pattern_regex"`
 	Replacement              string         `json:"replacement"`
@@ -193,6 +194,18 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 
 	if c.SortVariable != "" && !sortVarRegex.MatchString(c.SortVariable) {
 		return errInvalidSortVariable.Fmt(c.SortVariable)
+	}
+
+	includePattern := ctx.StringSlice("include")
+	if len(includePattern) > 0 {
+		includeMatchRegex, err := regexp.Compile(
+			strings.Join(includePattern, "|"),
+		)
+		if err != nil {
+			return err
+		}
+
+		c.IncludeRegex = includeMatchRegex
 	}
 
 	if c.TargetDir != "" {

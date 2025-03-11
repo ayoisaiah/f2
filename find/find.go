@@ -42,6 +42,11 @@ func shouldFilter(conf *config.Config, match *file.Change) bool {
 		return true
 	}
 
+	if conf.IncludeRegex != nil &&
+		!conf.IncludeRegex.MatchString(match.Source) {
+		return true
+	}
+
 	return false
 }
 

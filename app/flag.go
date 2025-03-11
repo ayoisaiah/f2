@@ -140,6 +140,19 @@ var (
 		flag.`,
 	}
 
+	flagInclude = &cli.StringSliceFlag{
+		Name:    "include",
+		Aliases: []string{"I"},
+		Usage: `
+		Only includes files that match the provided regular expression instead of 
+		all files matched by the --find flag.
+
+		This flag can be repeated to specify multiple include patterns.
+
+		Example: 
+			-I 'json' -I 'yml' (only include JSON and YAML files)`,
+	}
+
 	flagIncludeDir = &cli.BoolFlag{
 		Name:    "include-dir",
 		Aliases: []string{"d"},

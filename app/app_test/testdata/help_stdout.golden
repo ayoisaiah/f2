@@ -98,6 +98,15 @@ Project repository: https://github.com/ayoisaiah/f2
     To match hidden directories as well, combine this with the -d/--include-dir
     flag.
 
+  [32m-I[0m, [32m--include[0m 
+    Only includes files that match the provided regular expression instead of 
+    all files matched by the --find flag.
+
+    This flag can be repeated to specify multiple include patterns.
+
+    Example: 
+      -I 'json' -I 'yml' (only include JSON and YAML files)
+
   [32m-d[0m, [32m--include-dir[0m 
     Includes matching directories in the renaming operation (they are excluded
     by default).
