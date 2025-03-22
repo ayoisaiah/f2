@@ -128,8 +128,6 @@ func PostRename(
 	fileChanges file.Changes,
 	renameErr error,
 ) {
-	report.PrintResults(conf, fileChanges, renameErr)
-
 	var cleanedDirs []string
 
 	if conf.Clean && !conf.Revert {
@@ -169,7 +167,8 @@ func PostRename(
 
 		if err := os.Remove(backupFilePath); err != nil {
 			report.BackupFileRemovalFailed(err)
-			return
 		}
 	}
+
+	report.PrintResults(conf, fileChanges, renameErr)
 }
