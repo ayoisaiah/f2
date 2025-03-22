@@ -1,0 +1,48 @@
+name: Release stable
+
+env:
+  REPO_OWNER: ${{ vars.REPO_OWNER }}
+  REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
+  REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
+  REPO_MAINTAINER: ${{ vars.REPO_MAINTAINER }}
+  REPO_AUTHOR_NAME: ${{ vars.REPO_AUTHOR_NAME }}
+  REPO_AUTHOR_EMAIL: ${{ vars.REPO_AUTHOR_EMAIL }}
+  REPO_BINARY_NAME: ${{ vars.REPO_BINARY_NAME }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  repository_dispatch:
+    types: [release_stable]
+
+jobs:
+  release_stable:
+    name: Release stable version
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.head_branch == 'tag' && ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go ${{ vars.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+
+      - name: Create stable release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref }}
+          name: ${{ github.ref }}
+          body: ${{ env.CHANGELOG }}
+          draft: false
+          prerelease: false
+
+      - name: Run Goreleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: ~> v2
+          args: release --clean
+        env:
+          GORELEASER_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+          FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
+          FURY_USERNAME: ${{ secrets.FURY_USERNAME }}

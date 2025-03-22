@@ -1,0 +1,72 @@
+name: Release nightly
+
+env:
+  REPO_OWNER: ${{ vars.REPO_OWNER }}
+  REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
+  REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
+  REPO_MAINTAINER: ${{ vars.REPO_MAINTAINER }}
+  REPO_AUTHOR_NAME: ${{ vars.REPO_AUTHOR_NAME }}
+  REPO_AUTHOR_EMAIL: ${{ vars.REPO_AUTHOR_EMAIL }}
+  REPO_BINARY_NAME: ${{ vars.REPO_BINARY_NAME }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  create_nightly_tag:
+    name: Create nightly tag for master branch
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'branch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update nightly tag
+        run: |
+          git tag -d ${{ vars.NIGHTLY_TAG }} || true
+          git push origin :refs/tags/${{ vars.NIGHTLY_TAG }} || true
+          git tag ${{ vars.NIGHTLY_TAG }}
+          git push origin ${{ vars.NIGHTLY_TAG }}
+
+  release_nightly:
+    needs: create_nightly_tag
+    name: Release nightly version
+    runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go ${{ vars.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+
+      - name: Delete existing nightly release
+        run: |
+          gh release delete nightly --yes || true
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: refs/tags/${{ vars.NIGHTLY_TAG }}
+          name: Development build (master)
+          body: |
+            This build is directly sourced from the `master` branch in active development. As such, it may include experimental features and potential bugs.
+          draft: false
+          prerelease: true
+
+      - name: Build assets with Goreleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: ~> v2
+          args: release --clean --snapshot
+
+      - name: Upload assets to nightly release
+        run: gh release upload ${{ vars.NIGHTLY_TAG }} dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,*.apk,checksums.txt} --clobber
