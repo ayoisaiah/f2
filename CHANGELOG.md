@@ -1,11 +1,18 @@
+## 2.1.0 (2025-03-23)
+
+- Add Unicode normalization transform variable (`{.norm}`).
+- Fix natural sort bug.
+- Improve target changing error message.
+- Add `--include` flag for targeting specific files.
+
 ## 2.0.3 (2024-11-23)
 
 - Fix bug caused by space trimming in `--find`, `--replace`, `--exclude`, and
-  `--exclude-dir`
+  `--exclude-dir`.
 
 ## 2.0.2 (2024-11-22)
 
-- Fix bug with using commas in find or replace strings
+- Fix bug with using commas in find or replace strings.
 
 ## 2.0.1 (2024-11-06)
 

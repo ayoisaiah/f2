@@ -1,6 +1,6 @@
 {
   "name": "@ayoisaiah/f2",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "F2 is a command-line tool for batch renaming multiple files and directories quickly and safely",
   "main": "index.js",
   "repository": "https://github.com/ayoisaiah/f2",
