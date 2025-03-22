@@ -41,7 +41,7 @@ linters:
     - tagliatelle
     - tparallel
     - testpackage
-    - tenv
+    # - tenv
     - typecheck
     - unconvert
     - usestdlibvars
@@ -76,7 +76,6 @@ linters-settings:
       - condition
       - return
   govet:
-    shadow: true
     enable:
       - fieldalignment
   nestif:

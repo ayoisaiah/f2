@@ -1,6 +1,6 @@
 module github.com/ayoisaiah/f2/v2
 
-go 1.23
+go 1.24.0
 
 require (
 	github.com/barasher/go-exiftool v1.10.0
@@ -9,8 +9,8 @@ require (
 	github.com/pterm/pterm v0.12.79
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/urfave/cli/v2 v2.27.5
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.19.0
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.22.0
 	gopkg.in/djherbis/times.v1 v1.3.0
 )
 
@@ -23,7 +23,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sebdah/goldie/v2 v2.5.5
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 )
 
@@ -34,6 +34,7 @@ require (
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/golangci/golangci-lint v1.64.8 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -46,3 +47,5 @@ require (
 	golang.org/x/term v0.25.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+tool github.com/golangci/golangci-lint
