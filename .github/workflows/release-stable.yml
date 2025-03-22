@@ -18,7 +18,6 @@ jobs:
   release_stable:
     name: Release stable version
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.head_branch == 'tag' && ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,6 +42,6 @@ jobs:
           version: ~> v2
           args: release --clean
         env:
-          GORELEASER_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+          GORELEASER_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
           FURY_USERNAME: ${{ secrets.FURY_USERNAME }}
