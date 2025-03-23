@@ -30,8 +30,8 @@ jobs:
       - name: Create stable release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          name: ${{ github.ref }}
+          tag_name: ${{ github.event.client_payload.tag }}
+          name: ${{ github.event.client_payload.tag }}
           body: ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
@@ -45,3 +45,4 @@ jobs:
           GORELEASER_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
           FURY_USERNAME: ${{ secrets.FURY_USERNAME }}
+          GORELEASER_CURRENT_TAG: ${{ github.event.client_payload.name }}
