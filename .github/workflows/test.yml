@@ -51,4 +51,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
             https://api.github.com/repos/ayoisaiah/f2/dispatches \
-            -d '{"event_type": "release_stable", "client_payload":{"tag": "${{ github.ref }}", "name": "${{ github.ref_name }}" }}'
+            -d '{"event_type": "release_stable", "client_payload":{"tag_name": "${{ github.ref_name }}"}}'
