@@ -9,6 +9,7 @@ env:
   REPO_AUTHOR_EMAIL: ${{ vars.REPO_AUTHOR_EMAIL }}
   REPO_BINARY_NAME: ${{ vars.REPO_BINARY_NAME }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NIGHTLY_TAG: ${{ vars.NIGHTLY_TAG }}
 
 on:
   workflow_dispatch:
@@ -47,6 +48,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ vars.GO_VERSION }}
+          cache: false
+          check-latest: true
 
       - name: Delete existing nightly release
         run: |
@@ -70,3 +73,52 @@ jobs:
 
       - name: Upload assets to nightly release
         run: gh release upload ${{ vars.NIGHTLY_TAG }} dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,*.apk,checksums.txt} --clobber
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums
+          path: dist/checksums.txt
+          if-no-files-found: error
+
+  release_win7_nightly:
+    name: Build and upload Windows 7 binaries
+    needs: release_nightly
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.8'
+
+      - name: Build Windows 7 Binaries
+        run: |
+          go version
+          Remove-Item go.mod, go.sum
+          go mod init github.com/ayoisaiah/f2/v2
+          go mod tidy
+          $Env:CGO_ENABLED = "0"
+          $Env:GOARCH = "amd64"
+          go build -ldflags="-s -w" -o f2.exe ./cmd/...
+          Compress-Archive -Path f2.exe -DestinationPath f2_master_windows7-amd64.zip
+          $Env:GOARCH = "386"
+          go build -ldflags="-s -w" -o f2.exe ./cmd/...
+          Compress-Archive -Path f2.exe -DestinationPath f2_master_windows7-386.zip
+
+      - name: Download checksums
+        uses: actions/download-artifact@v4
+        with:
+          name: checksums
+
+      - name: Modify checksums
+        run: |
+          "$((Get-FileHash f2_master_windows7-amd64.zip -Algorithm SHA256).Hash)  f2_master_windows7-amd64.zip"
+          "$((Get-FileHash f2_master_windows7-386.zip -Algorithm SHA256).Hash)  f2_master_windows7-386.zip"
+
+      - name: Upload assets to nightly release
+        run: |
+          $zipFiles = Get-ChildItem -Path "." -Filter "*.zip" | Select-Object -ExpandProperty FullName
+          gh release upload $env:NIGHTLY_TAG $zipFiles ".\checksums.txt" --clobber
