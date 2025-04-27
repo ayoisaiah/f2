@@ -1,12 +1,15 @@
+version: "2"
+run:
+  issues-exit-code: 1
 linters:
-  disable-all: true
+  default: none
   enable:
-    - bodyclose
     - bidichk
-    - decorder
+    - bodyclose
     - containedctx
     - contextcheck
     - copyloopvar
+    - decorder
     - dogsled
     - dupl
     - errcheck
@@ -15,19 +18,16 @@ linters:
     - errorlint
     - exhaustive
     - goconst
-    - godot
     - gocritic
-    - gofmt
-    - goimports
-    - mnd
     - gocyclo
+    - godot
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
-    - ireturn
     - ineffassign
+    - ireturn
     - misspell
+    - mnd
     - nestif
     - nilerr
     - nilnil
@@ -36,79 +36,87 @@ linters:
     - predeclared
     - revive
     - staticcheck
-    - stylecheck
-    - thelper
     - tagliatelle
-    - tparallel
     - testpackage
-    # - tenv
-    - typecheck
+    - thelper
+    - tparallel
     - unconvert
-    - usestdlibvars
     - unparam
     - unused
+    - usestdlibvars
     - wastedassign
     - whitespace
     - wsl
-
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-  goimports:
-    # ensure placement of imports with this prefix after all other imports
-    # corresponds to `goimports -local`
-    local-prefixes: github.com/ayoisaiah/f2
-  mnd:
-    checks:
-      # don't include the "operation" and "assign" checks
-      - argument
-      - case
-      - condition
-      - return
-  govet:
-    enable:
-      - fieldalignment
-  nestif:
-    min-complexity: 15
-  nolintlint:
-    require-explanation: true
-    require-specific: true
-  tagliatelle:
-    case:
-      rules:
-        json: snake
-
+  settings:
+    errcheck:
+      check-type-assertions: true
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    govet:
+      enable:
+        - fieldalignment
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - return
+    nestif:
+      min-complexity: 15
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - gocyclo
+          - gosec
+          - varnamelen
+        path: _test\.go
+      - linters:
+          - gosec
+        text: weak cryptographic primitive
+      - linters:
+          - staticcheck
+        text: error strings should not be capitalized
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  fix: true
-  exclude-rules:
-    - path: _test\.go # disable some linters for test files
-      linters:
-        - gocyclo
-        - gosec
-        - dupl
-        - varnamelen
-    - linters:
-        - gosec
-      text: 'weak cryptographic primitive'
-    - linters:
-        - stylecheck
-      text: 'error strings should not be capitalized'
-    - linters:
-        - typecheck
-      text: 'undeclared name'
-
   max-issues-per-linter: 0
   max-same-issues: 0
-
-run:
-  issues-exit-code: 1
+  fix: true
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ayoisaiah/f2
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
