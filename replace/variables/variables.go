@@ -16,7 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	exiftool "github.com/barasher/go-exiftool"
 	"github.com/dhowden/tag"
@@ -25,7 +24,6 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 
@@ -793,18 +791,7 @@ func transformString(source, token string) string {
 	case "mac":
 		return RegexReplace(osutil.MacForbiddenCharRegex, source, "", 0)
 	case "di":
-		t := transform.Chain(
-			norm.NFD,
-			runes.Remove(runes.In(unicode.Mn)),
-			norm.NFC,
-		)
-
-		result, _, err := transform.String(t, source)
-		if err != nil {
-			return source
-		}
-
-		return result
+		return removeDiacritics(source)
 	case "norm":
 		result, _, err := transform.String(norm.NFKC, source)
 		if err != nil {

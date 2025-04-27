@@ -108,6 +108,18 @@ func TestVariables(t *testing.T) {
 			Args: []string{"-f", ".*", "-r", "{.di}"},
 		},
 		{
+			Name: "replace diacritics with non-diacritic equivalents",
+			Changes: file.Changes{
+				{
+					Source: "ÀÁÂÃÄÅĀĂĄǍÆÇĆĈĊČĎĐÈÉÊËĒĔĖĘĚÌÍÎÏĨĪĮİĴĶĹĻĽĿŁÑŃŅŇÒÓÔÕÖØŌŐŒŔŖŘŚŜŞŠŢŤŦÙÚÛÜŨŪŬŮŰŲŴÝŶŸŹŻŽàáâãäåāăąǎæçćĉċčďđèéêëēĕėęěìíîïĩīįıĵķĺļľŀłñńņňòóôõöøōőœŕŗřśŝşšţťŧùúûüũūŭůűųŵýÿŷźżž.docx",
+				},
+			},
+			Want: []string{
+				"AAAAAAAAAAAECCCCCDDEEEEEEEEEIIIIIIIIJKLLLLLNNNNOOOOOOOOOERRRSSSSTTTUUUUUUUUUUWYYYZZZaaaaaaaaaaaecccccddeeeeeeeeeiiiiiiiijklllllnnnnoooooooooerrrsssstttuuuuuuuuuuwyyyzzz.docx",
+			},
+			Args: []string{"-f", ".*", "-r", "{.di}"},
+		},
+		{
 			Name: "remove only some diacritics",
 			Changes: file.Changes{
 				{
