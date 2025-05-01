@@ -42,9 +42,6 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: View environmental variables
-        run: env
-
       - name: Run Goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
