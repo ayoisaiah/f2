@@ -1,9 +1,11 @@
-## 2.1.0 (2025-03-23)
+## 2.1.0 (2025-05-01)
 
-- Add Unicode normalization transform variable (`{.norm}`).
 - Fix natural sort bug.
 - Improve target changing error message.
 - Add `--include` flag for targeting specific files.
+- Improve diacritics transformation (`{.di}`).
+- Add Unicode normalization transform variable (`{.norm}`).
+- Fix crash when using capture variable indices.
 
 ## 2.0.3 (2024-11-23)
 
