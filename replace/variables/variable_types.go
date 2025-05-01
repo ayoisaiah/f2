@@ -19,7 +19,8 @@ type indexVarMatch struct {
 		isSet bool
 		value int
 	}
-	startNumber int
+	startNumber  int
+	isCaptureVar bool
 }
 
 type indexVars struct {

@@ -223,7 +223,7 @@ func getIndexingVars(replacementInput string) (indexVars, error) {
 		return indexMatches, nil
 	}
 
-	expectedLength := 8
+	expectedLength := 9
 
 	for i, submatch := range submatches {
 		if len(submatch) < expectedLength {
@@ -265,8 +265,7 @@ func getIndexingVars(replacementInput string) (indexVars, error) {
 
 		skipNumbers := submatch[7]
 		if skipNumbers != "" {
-			numRanges := strings.Split(skipNumbers, ";")
-			for _, val := range numRanges {
+			for val := range strings.SplitSeq(skipNumbers, ";") {
 				if strings.Contains(val, "-") {
 					numRange := strings.Split(val, "-")
 
@@ -298,6 +297,10 @@ func getIndexingVars(replacementInput string) (indexVars, error) {
 					min: num,
 				})
 			}
+		}
+
+		if submatch[8] != "" {
+			match.isCaptureVar = true
 		}
 
 		indexMatches.matches = append(indexMatches.matches, match)

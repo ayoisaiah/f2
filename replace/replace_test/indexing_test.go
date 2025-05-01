@@ -90,6 +90,46 @@ func TestIndexing(t *testing.T) {
 			Args: []string{"-f", "doc(\\d+)", "-r", "{$1%03d}"},
 		},
 		{
+			Name: "combine capture variable indices with regular indices",
+			Changes: file.Changes{
+				{
+					Source: "1 doc 2 4000.txt",
+				},
+				{
+					Source: "60 80 90.txt",
+				},
+				{
+					Source: "doc100 doc150.txt",
+				},
+			},
+			Want: []string{
+				"001_0005 doc 002_0005 4000_0005.txt",
+				"060_0006 080_0006 090_0006.txt",
+				"doc100_0007 doc150_0007.txt",
+			},
+			Args: []string{"-f", "(\\d+)", "-r", "{$1%03d}_{5%04d}"},
+		},
+		{
+			Name: "use multiple integer capture variables",
+			Changes: file.Changes{
+				{
+					Source: "1 doc 2 4000.txt",
+				},
+				{
+					Source: "60 80 90.txt",
+				},
+				{
+					Source: "doc100 doc150.txt",
+				},
+			},
+			Want: []string{
+				"001 doc 002 4000.txt",
+				"060 080 090.txt",
+				"doc100 doc150.txt",
+			},
+			Args: []string{"-f", "(\\d+)", "-r", "{$1%03d}"},
+		},
+		{
 			Name: "use integer capture variables with explicit step",
 			Changes: file.Changes{
 				{

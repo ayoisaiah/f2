@@ -21,7 +21,6 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/djherbis/times"
 	"github.com/rwcarlsen/goexif/exif"
-	"golang.org/x/exp/slices"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"golang.org/x/text/transform"
@@ -699,17 +698,14 @@ func replaceIndex(
 	for i := range indexing.matches {
 		current := indexing.matches[i]
 
-		// This means that the `startNumber` was derived from a captureVariable
-		isCaptureVar := slices.Contains(indexing.capturVarIndex, i)
-
-		if !current.step.isSet && !isCaptureVar {
+		if !current.step.isSet && !current.isCaptureVar {
 			current.step.value = 1
 		}
 
 		startNumber := current.startNumber
 		currentIndex := startNumber + (changeIndex * current.step.value) + indexing.offset[i]
 
-		if isCaptureVar {
+		if current.isCaptureVar {
 			currentIndex = startNumber + current.step.value + indexing.offset[i]
 		}
 
@@ -727,7 +723,7 @@ func replaceIndex(
 
 						currentIndex += step
 
-						if !isCaptureVar {
+						if !current.isCaptureVar {
 							indexing.offset[i] += step
 						}
 
@@ -1126,6 +1122,7 @@ func Replace(
 			}
 
 			vars.index.matches = numVar.matches
+			vars.index.offset = numVar.offset
 		}
 
 		change.Target = replaceIndex(change.Target, changeIndex, &vars.index)

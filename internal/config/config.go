@@ -44,6 +44,9 @@ var (
 	customFixConfictsPatternRegex   = regexp.MustCompile(
 		`^(\D*?(%(\d+)?d)\D*?)$`,
 	)
+	capturVarIndexRegex = regexp.MustCompile(
+		`{+(\$\d+)(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?}+`,
+	)
 )
 
 var conf *Config
@@ -241,6 +244,26 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 	// The replacement defaults to an empty string if unset
 	for len(c.FindSlice) > len(c.ReplacementSlice) {
 		c.ReplacementSlice = append(c.ReplacementSlice, "")
+	}
+
+	// Distinguish capture variable indices from regular indices by adding ##
+	for i, v := range c.ReplacementSlice {
+		if capturVarIndexRegex.MatchString(v) {
+			for _, match := range capturVarIndexRegex.FindAllString(v, -1) {
+				index := strings.Index(match, "}")
+				if index == -1 {
+					continue
+				}
+
+				captureVarIndex := match[:index] + "##" + match[index:]
+
+				c.ReplacementSlice[i] = strings.ReplaceAll(
+					v,
+					match,
+					captureVarIndex,
+				)
+			}
+		}
 	}
 
 	return c.SetFindStringRegex(0)
