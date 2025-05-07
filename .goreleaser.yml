@@ -32,8 +32,6 @@ archives:
         formats: [zip]
 checksum:
   name_template: checksums.txt
-snapshot:
-  version_template: master
 changelog:
   sort: asc
   filters:
