@@ -20,6 +20,8 @@ const (
 	EnvDefaultOpts = "F2_DEFAULT_OPTS"
 )
 
+var VersionString = "unset"
+
 // supportedDefaultOpts contains flags whose values can be
 // overridden through the `F2_DEFAULT_OPTS` environmental variable.
 var supportedDefaultOpts = []string{
@@ -190,9 +192,14 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.App {
 	oldVersionPrinter := cli.VersionPrinter
 	cli.VersionPrinter = func(ctx *cli.Context) {
 		oldVersionPrinter(ctx)
+		v := ctx.App.Version
+
+		if strings.Contains(v, "nightly") {
+			v = "nightly"
+		}
 		pterm.Fprint(
 			w,
-			"https://github.com/ayoisaiah/f2/releases/"+ctx.App.Version,
+			"https://github.com/ayoisaiah/f2/releases/"+v,
 		)
 	}
 
@@ -207,7 +214,7 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.App {
 		Usage: `f2 bulk renames files and directories, matching files against a specified
 pattern. It employs safety checks to prevent accidental overwrites and
 offers several options for fine-grained control over the renaming process.`,
-		Version:              "v2.1.0",
+		Version:              VersionString,
 		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			flagCSV,

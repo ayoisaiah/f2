@@ -1,5 +1,8 @@
 version: 2
 project_name: f2
+git:
+  ignore_tags:
+    - nightly
 
 before:
   hooks:
@@ -20,6 +23,8 @@ builds:
       - goos: windows
         goarch: arm64
     main: ./cmd/f2
+    ldflags:
+      - -X github.com/ayoisaiah/f2/v2/app.VersionString={{ .Version }}
 
 archives:
   - files:
@@ -33,7 +38,7 @@ archives:
 checksum:
   name_template: checksums.txt
 snapshot:
-  version_template: master
+  version_template: "{{ .Version }}-nightly-{{.ShortCommit}}"
 changelog:
   sort: asc
   filters:
