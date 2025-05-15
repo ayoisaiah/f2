@@ -197,6 +197,7 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.App {
 		if strings.Contains(v, "nightly") {
 			v = "nightly"
 		}
+
 		pterm.Fprint(
 			w,
 			"https://github.com/ayoisaiah/f2/releases/"+v,

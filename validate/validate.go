@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -54,13 +53,6 @@ func newTarget(change *file.Change) string {
 	}
 
 	regex := conf.FixConflictsPatternRegex
-
-	if regex == nil {
-		r := regexp.MustCompile(`%(\d+)?d`)
-		regex = regexp.MustCompile(
-			r.ReplaceAllString(conf.FixConflictsPattern, `(\d+)`),
-		)
-	}
 
 	// Extract the numbered index at the end of the filename (if any)
 	match := regex.FindStringSubmatch(baseName)

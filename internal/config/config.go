@@ -295,8 +295,15 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 	if c.FixConflictsPattern == "" {
 		c.FixConflictsPattern = DefaultFixConflictsPattern
 		c.FixConflictsPatternRegex = defaultFixConflictsPatternRegex
-	} else if !customFixConfictsPatternRegex.MatchString(c.FixConflictsPattern) {
-		return errParsingFixConflictsPattern.Fmt(c.FixConflictsPattern)
+	} else {
+		if !customFixConfictsPatternRegex.MatchString(c.FixConflictsPattern) {
+			return errParsingFixConflictsPattern.Fmt(c.FixConflictsPattern)
+		}
+
+		r := regexp.MustCompile(`%(\d+)?d`)
+		c.FixConflictsPatternRegex = regexp.MustCompile(
+			r.ReplaceAllString(conf.FixConflictsPattern, `(\d+)`),
+		)
 	}
 
 	excludePattern := ctx.StringSlice("exclude")
