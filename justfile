@@ -3,7 +3,7 @@ toolprefix := "go tool -modfile=tools.mod"
 
 # Run all tests
 test:
-	@go test ./... -coverprofile=coverage.out -coverpkg=. -json -race | {{toolprefix}} gotestfmt -hide 'empty-packages'
+	@go test ./... -coverprofile=coverage.out -coverpkg=. -json | {{toolprefix}} gotestfmt -hide 'empty-packages'
 
 [no-cd]
 test-pkg filter='.*':
@@ -54,5 +54,5 @@ clean:
 	@rm -r bin
 	@go clean
 
-sloc:
+scc:
   @{{toolprefix}} scc
