@@ -24,7 +24,7 @@ builds:
         goarch: arm64
     main: ./cmd/f2
     ldflags:
-      - -X github.com/ayoisaiah/f2/v2/app.VersionString={{ .Version }}
+      - -X github.com/ayoisaiah/f2/v2/app.VersionString=v{{ .Version }}
 
 archives:
   - files:
