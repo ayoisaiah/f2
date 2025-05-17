@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           registry-url: https://registry.npmjs.org/
-          node-version: "22"
+          node-version: ${{ vars.NODE_VERSION }}
 
       - name: Publish to NPM
         run: npm publish
