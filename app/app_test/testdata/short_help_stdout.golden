@@ -6,7 +6,6 @@ The batch renaming tool you'll actually enjoy using.
 
 [1mEXAMPLES[0m
   $ f2 -f 'jpeg' -r 'jpg'
-  $ f2 js ts
   $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
 
 [1mLEARN MORE[0m

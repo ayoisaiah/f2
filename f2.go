@@ -1,9 +1,10 @@
 package f2
 
 import (
+	"context"
 	"io"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/ayoisaiah/f2/v2/app"
 	"github.com/ayoisaiah/f2/v2/find"
@@ -20,7 +21,7 @@ var errConflictDetected = &apperr.Error{
 }
 
 // execute initiates a new renaming operation based on the provided CLI context.
-func execute(_ *cli.Context) error {
+func execute(_ context.Context, _ *cli.Command) error {
 	appConfig := config.Get()
 
 	changes, err := find.Find(appConfig)
@@ -66,7 +67,7 @@ func execute(_ *cli.Context) error {
 }
 
 // New creates a new CLI application for f2.
-func New(reader io.Reader, writer io.Writer) (*cli.App, error) {
+func New(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 	renamer, err := app.Get(reader, writer)
 	if err != nil {
 		return nil, err

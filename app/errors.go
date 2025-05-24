@@ -6,11 +6,7 @@ import (
 
 var (
 	errDefaultOptsParsing = &apperr.Error{
-		Message: "error parsing default options",
-	}
-
-	errSetDefaultOpt = &apperr.Error{
-		Message: "failed to apply the default value '%s' for the option '%s'",
+		Message: "F2_DEFAULT_OPTS error: unsupported flag '%s'",
 	}
 
 	errPipeRead = &apperr.Error{

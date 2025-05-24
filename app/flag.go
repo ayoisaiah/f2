@@ -1,6 +1,31 @@
 package app
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
+
+// supportedDefaultOpts contains flags whose values can be
+// overridden through the `F2_DEFAULT_OPTS` environmental variable.
+var supportedDefaultOpts = map[string]bool{
+	"--clean": true, "-c": true,
+	"--exclude": true, "-E": true,
+	"--exclude-dir": true,
+	"--exec":        true, "-x": true,
+	"--exiftool-opts": true,
+	"--fix-conflicts": true, "-F": true,
+	"--fix-conflicts-pattern": true,
+	"--hidden":                true, "-H": true,
+	"--ignore-case": true, "-i": true,
+	"--ignore-ext": true, "-e": true,
+	"--include-dir": true, "-d": true,
+	"--json":     true,
+	"--no-color": true,
+	"--quiet":    true, "-q": true,
+	"--recursive": true, "-R": true,
+	"--sort":                true,
+	"--sortr":               true,
+	"--reset-index-per-dir": true,
+	"--string-mode":         true, "-s": true,
+	"--verbose": true, "-V": true,
+}
 
 var (
 	flagCSV = &cli.StringFlag{
@@ -21,7 +46,6 @@ var (
 
 		When -s/--string-mode is used, this pattern is treated as a literal string.`,
 		DefaultText: "<pattern>",
-		KeepSpace:   true,
 	}
 
 	flagReplace = &cli.StringSliceFlag{
@@ -32,7 +56,6 @@ var (
     It supports capture variables, built-in variables, and exiftool variables.
     If omitted, it defaults to an empty string.`,
 		DefaultText: "<string>",
-		KeepSpace:   true,
 	}
 
 	flagUndo = &cli.BoolFlag{
@@ -72,7 +95,6 @@ var (
 			--exclude-dir instead).`,
 
 		DefaultText: "<pattern>",
-		KeepSpace:   true,
 	}
 
 	flagExcludeDir = &cli.StringSliceFlag{
@@ -81,7 +103,6 @@ var (
 		Prevents F2 from recursing into directories that match the provided regular
 		expression pattern.`,
 		DefaultText: "<pattern>",
-		KeepSpace:   true,
 	}
 
 	flagExec = &cli.BoolFlag{

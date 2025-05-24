@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/ayoisaiah/f2/v2"
@@ -13,7 +14,7 @@ func main() {
 		report.ExitWithErr(err)
 	}
 
-	err = renamer.Run(os.Args)
+	err = renamer.Run(context.Background(), os.Args)
 	if err != nil {
 		report.ExitWithErr(err)
 	}

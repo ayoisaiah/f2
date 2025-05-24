@@ -23,7 +23,7 @@ func TestImagePairRenaming(t *testing.T) {
 
 	config.Stderr = &stderr
 
-	err = app.Run([]string{
+	err = app.Run(t.Context(), []string{
 		"f2_test",
 		"-r",
 		"{x.cdt.YYYY}/{x.cdt.MM}-{x.cdt.MMM}/{x.cdt.YYYY}-{x.cdt.MM}-{x.cdt.DD}/{%03d}",

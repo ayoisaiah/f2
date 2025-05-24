@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/pterm/pterm"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 const usageText = `f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
   command | f2 FLAGS [OPTIONS]`
 
-func helpText(app *cli.App) string {
+func helpText(app *cli.Command) string {
 	flagCSVHelp := fmt.Sprintf(
 		`%s %s`,
 		pterm.Green("--", flagCSV.Name),
@@ -329,7 +329,7 @@ Project repository: https://github.com/ayoisaiah/f2
 `,
 		app.Name,
 		app.Version,
-		app.Authors[0].String(),
+		app.Authors[0],
 		app.Usage,
 		pterm.Bold.Sprintf("USAGE"),
 		usageText,
@@ -392,7 +392,7 @@ func envHelp() string {
 	)
 }
 
-func ShortHelp(_ *cli.App) string {
+func ShortHelp(_ *cli.Command) string {
 	return fmt.Sprintf(
 		`The batch renaming tool you'll actually enjoy using.
 
@@ -401,7 +401,6 @@ func ShortHelp(_ *cli.App) string {
 
 %s
   $ f2 -f 'jpeg' -r 'jpg'
-  $ f2 js ts
   $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
 
 %s

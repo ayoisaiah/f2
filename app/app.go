@@ -2,14 +2,14 @@ package app
 
 import (
 	"bufio"
-	"bytes"
-	"fmt"
+	"context"
 	"io"
+	"net/mail"
 	"os"
 	"strings"
 
 	"github.com/pterm/pterm"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
@@ -21,31 +21,6 @@ const (
 )
 
 var VersionString = "unset"
-
-// supportedDefaultOpts contains flags whose values can be
-// overridden through the `F2_DEFAULT_OPTS` environmental variable.
-var supportedDefaultOpts = []string{
-	flagClean.Name,
-	flagExclude.Name,
-	flagExcludeDir.Name,
-	flagExec.Name,
-	flagExiftoolOpts.Name,
-	flagFixConflicts.Name,
-	flagFixConflictsPattern.Name,
-	flagHidden.Name,
-	flagIgnoreCase.Name,
-	flagIgnoreExt.Name,
-	flagIncludeDir.Name,
-	flagJSON.Name,
-	flagNoColor.Name,
-	flagQuiet.Name,
-	flagRecursive.Name,
-	flagSort.Name,
-	flagSortr.Name,
-	flagResetIndexPerDir.Name,
-	flagStringMode.Name,
-	flagVerbose.Name,
-}
 
 // isInputFromPipe detects if input is being piped to F2.
 func isInputFromPipe() bool {
@@ -79,41 +54,8 @@ func handlePipeInput(reader io.Reader) error {
 	return nil
 }
 
-// loadDefaultOpts creates a CLI context with default options (F2_DEFAULT_OPTS)
-// from the environment. Returns `nil` if default options do not exist.
-func loadDefaultOpts() (*cli.Context, error) {
-	var defaultCtx *cli.Context
-
-	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
-		defaultOpts := make([]string, len(os.Args))
-
-		copy(defaultOpts, os.Args)
-
-		defaultOpts = append(defaultOpts[:1], strings.Split(optsEnv, " ")...)
-
-		app := CreateCLIApp(bytes.NewReader(nil), io.Discard)
-
-		// override the default action to do nothing since only the
-		// cli context contstructed from default opts is needed
-		app.Action = func(ctx *cli.Context) error {
-			defaultCtx = ctx
-			return nil
-		}
-
-		// Run needs to be called here so that `defaultCtx` is populated.
-		// The only expected error is if the provided flags or arguments
-		// are incorrect
-		err := app.Run(defaultOpts)
-		if err != nil {
-			return nil, errDefaultOptsParsing.Wrap(err)
-		}
-	}
-
-	return defaultCtx, nil
-}
-
 // Get returns an F2 instance that reads from `reader` and writes to `writer`.
-func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
+func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 	err := handlePipeInput(reader)
 	if err != nil {
 		return nil, err
@@ -121,78 +63,54 @@ func Get(reader io.Reader, writer io.Writer) (*cli.App, error) {
 
 	app := CreateCLIApp(reader, writer)
 
-	defaultCtx, err := loadDefaultOpts()
-	if err != nil {
-		return nil, err
+	origArgs := make([]string, len(os.Args))
+
+	copy(origArgs, os.Args)
+
+	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
+		tokens := strings.Fields(optsEnv)
+
+		for _, token := range tokens {
+			if strings.HasPrefix(token, "-") {
+				if !supportedDefaultOpts[token] {
+					return nil, errDefaultOptsParsing.Fmt(token)
+				}
+			}
+		}
+
+		args := append(strings.Fields(optsEnv), os.Args[1:]...)
+		os.Args = append(os.Args[:1], args...)
 	}
 
-	app.Before = func(ctx *cli.Context) (err error) {
+	app.Before = func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 		// print short help and exit if no arguments or flags are present
-		if ctx.NumFlags() == 0 && !ctx.Args().Present() {
-			report.ShortHelp(ShortHelp(ctx.App))
+		if cmd.NumFlags() == 0 && !cmd.Args().Present() || len(origArgs) <= 1 {
+			report.ShortHelp(ShortHelp(cmd))
 			os.Exit(int(osutil.ExitOK))
 		}
 
-		config.Stdout = ctx.App.Writer
-		config.Stdin = ctx.App.Reader
+		config.Stdout = cmd.Writer
+		config.Stdin = cmd.Reader
 
-		defer (func() {
-			_, initErr := config.Init(ctx, isOutputToPipe())
-			if initErr != nil && err == nil {
-				err = initErr
-				return
-			}
-		})()
+		app.Metadata["ctx"] = cmd
 
-		app.Metadata["ctx"] = ctx
-
-		// defaultCtx will be nil if `F2_DEFAULT_OPTS` is not set
-		// in the environment
-		if defaultCtx == nil {
-			return nil
+		_, err := config.Init(cmd, isOutputToPipe())
+		if err != nil {
+			return ctx, err
 		}
 
-		verbose := ctx.Bool("verbose")
-		if !verbose {
-			verbose = defaultCtx.Bool("verbose")
-		}
-
-		for _, defaultOpt := range supportedDefaultOpts {
-			defaultValue := fmt.Sprintf("%v", defaultCtx.Value(defaultOpt))
-
-			if ctx.IsSet(defaultOpt) && defaultCtx.IsSet(defaultOpt) {
-				continue
-			}
-
-			if !ctx.IsSet(defaultOpt) && defaultCtx.IsSet(defaultOpt) {
-				if x, ok := defaultCtx.Value(defaultOpt).(cli.StringSlice); ok {
-					defaultValue = strings.Join(x.Value(), "|")
-				}
-
-				err := ctx.Set(defaultOpt, defaultValue)
-				if err != nil {
-					return errSetDefaultOpt.Wrap(err).
-						Fmt(defaultValue, defaultOpt)
-				}
-
-				if verbose {
-					report.DefaultOpt(defaultOpt, defaultValue)
-				}
-			}
-		}
-
-		return nil
+		return ctx, nil
 	}
 
 	return app, nil
 }
 
-func CreateCLIApp(r io.Reader, w io.Writer) *cli.App {
+func CreateCLIApp(r io.Reader, w io.Writer) *cli.Command {
 	// Override the default version printer
 	oldVersionPrinter := cli.VersionPrinter
-	cli.VersionPrinter = func(ctx *cli.Context) {
-		oldVersionPrinter(ctx)
-		v := ctx.App.Version
+	cli.VersionPrinter = func(cmd *cli.Command) {
+		oldVersionPrinter(cmd)
+		v := cmd.Version
 
 		if strings.Contains(v, "nightly") {
 			v = "nightly"
@@ -204,19 +122,19 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.App {
 		)
 	}
 
-	app := &cli.App{
+	app := &cli.Command{
 		Name: "f2",
-		Authors: []*cli.Author{
-			{
-				Name:  "Ayooluwa Isaiah",
-				Email: "ayo@freshman.tech",
+		Authors: []any{
+			&mail.Address{
+				Name:    "Ayooluwa Isaiah",
+				Address: "ayo@freshman.tech",
 			},
 		},
 		Usage: `f2 bulk renames files and directories, matching files against a specified
 pattern. It employs safety checks to prevent accidental overwrites and
 offers several options for fine-grained control over the renaming process.`,
-		Version:              VersionString,
-		EnableBashCompletion: true,
+		Version:               VersionString,
+		EnableShellCompletion: true,
 		Flags: []cli.Flag{
 			flagCSV,
 			flagExiftoolOpts,
@@ -255,7 +173,7 @@ offers several options for fine-grained control over the renaming process.`,
 		},
 		UseShortOptionHandling:    true,
 		DisableSliceFlagSeparator: true,
-		OnUsageError: func(_ *cli.Context, err error, _ bool) error {
+		OnUsageError: func(_ context.Context, _ *cli.Command, err error, _ bool) error {
 			return err
 		},
 		Writer: w,
@@ -263,7 +181,7 @@ offers several options for fine-grained control over the renaming process.`,
 	}
 
 	// Override the default help template
-	cli.AppHelpTemplate = helpText(app)
+	app.CustomRootCommandHelpTemplate = helpText(app)
 
 	return app
 }

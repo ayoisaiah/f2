@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/ayoisaiah/f2/v2/app"
 	"github.com/ayoisaiah/f2/v2/internal/config"
@@ -281,17 +282,17 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 		t.Fatal(err)
 	}
 
-	f2App.Action = func(ctx *cli.Context) error {
+	f2App.Action = func(_ context.Context, cmd *cli.Command) error {
 		// Reset pterm to default state
 		pterm.EnableStyling()
 		// Re-initialize config with pipe output value set per test
-		_, _ = config.Init(ctx, tc.PipeOutput)
+		_, _ = config.Init(cmd, tc.PipeOutput)
 
 		return nil
 	}
 
 	// Initialize the config
-	err = f2App.Run(args)
+	err = f2App.Run(t.Context(), args)
 	if err != nil {
 		t.Fatal(err)
 	}

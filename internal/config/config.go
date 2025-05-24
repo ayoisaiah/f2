@@ -17,7 +17,7 @@ import (
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/ayoisaiah/f2/v2/internal/file"
 )
@@ -174,32 +174,32 @@ func (c *Config) SetFindStringRegex(replacementIndex int) error {
 	return nil
 }
 
-func (c *Config) setOptions(ctx *cli.Context) error {
-	if len(ctx.StringSlice("find")) == 0 &&
-		len(ctx.StringSlice("replace")) == 0 &&
-		ctx.String("csv") == "" &&
-		!ctx.Bool("undo") {
+func (c *Config) setOptions(cmd *cli.Command) error {
+	if len(cmd.StringSlice("find")) == 0 &&
+		len(cmd.StringSlice("replace")) == 0 &&
+		cmd.String("csv") == "" &&
+		!cmd.Bool("undo") {
 		return errInvalidArgument
 	}
 
-	c.FindSlice = ctx.StringSlice("find")
-	c.ReplacementSlice = ctx.StringSlice("replace")
-	c.CSVFilename = ctx.String("csv")
-	c.Revert = ctx.Bool("undo")
-	c.Debug = ctx.Bool("debug")
-	c.FilesAndDirPaths = ctx.Args().Slice()
-	c.TargetDir = ctx.String("target-dir")
-	c.SortPerDir = ctx.Bool("sort-per-dir")
-	c.Pair = ctx.Bool("pair")
-	c.PairOrder = strings.Split(ctx.String("pair-order"), ",")
-	c.Clean = ctx.Bool("clean")
-	c.SortVariable = ctx.String("sort-var")
+	c.FindSlice = cmd.StringSlice("find")
+	c.ReplacementSlice = cmd.StringSlice("replace")
+	c.CSVFilename = cmd.String("csv")
+	c.Revert = cmd.Bool("undo")
+	c.Debug = cmd.Bool("debug")
+	c.FilesAndDirPaths = cmd.Args().Slice()
+	c.TargetDir = cmd.String("target-dir")
+	c.SortPerDir = cmd.Bool("sort-per-dir")
+	c.Pair = cmd.Bool("pair")
+	c.PairOrder = strings.Split(cmd.String("pair-order"), ",")
+	c.Clean = cmd.Bool("clean")
+	c.SortVariable = cmd.String("sort-var")
 
 	if c.SortVariable != "" && !sortVarRegex.MatchString(c.SortVariable) {
 		return errInvalidSortVariable.Fmt(c.SortVariable)
 	}
 
-	includePattern := ctx.StringSlice("include")
+	includePattern := cmd.StringSlice("include")
 	if len(includePattern) > 0 {
 		includeMatchRegex, err := regexp.Compile(
 			strings.Join(includePattern, "|"),
@@ -231,8 +231,8 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 		c.WorkingDir = absPath
 	}
 
-	if len(ctx.Args().Slice()) > 0 {
-		c.FilesAndDirPaths = ctx.Args().Slice()
+	if len(cmd.Args().Slice()) > 0 {
+		c.FilesAndDirPaths = cmd.Args().Slice()
 	}
 
 	// Default to the current working directory if no path arguments are provided
@@ -271,26 +271,26 @@ func (c *Config) setOptions(ctx *cli.Context) error {
 
 // setDefaultOpts applies any options that may be set through
 // F2_DEFAULT_OPTS.
-func (c *Config) setDefaultOpts(ctx *cli.Context) error {
-	c.AutoFixConflicts = ctx.Bool("fix-conflicts")
-	c.IncludeDir = ctx.Bool("include-dir")
-	c.IncludeHidden = ctx.Bool("hidden")
-	c.IgnoreCase = ctx.Bool("ignore-case")
-	c.IgnoreExt = ctx.Bool("ignore-ext")
-	c.Recursive = ctx.Bool("recursive")
-	c.OnlyDir = ctx.Bool("only-dir")
-	c.StringLiteralMode = ctx.Bool("string-mode")
+func (c *Config) setDefaultOpts(cmd *cli.Command) error {
+	c.AutoFixConflicts = cmd.Bool("fix-conflicts")
+	c.IncludeDir = cmd.Bool("include-dir")
+	c.IncludeHidden = cmd.Bool("hidden")
+	c.IgnoreCase = cmd.Bool("ignore-case")
+	c.IgnoreExt = cmd.Bool("ignore-ext")
+	c.Recursive = cmd.Bool("recursive")
+	c.OnlyDir = cmd.Bool("only-dir")
+	c.StringLiteralMode = cmd.Bool("string-mode")
 	//nolint:gosec // acceptable use
-	c.MaxDepth = int(ctx.Uint("max-depth"))
-	c.Verbose = ctx.Bool("verbose")
-	c.AllowOverwrites = ctx.Bool("allow-overwrites")
-	c.ReplaceLimit = ctx.Int("replace-limit")
-	c.Quiet = ctx.Bool("quiet")
-	c.JSON = ctx.Bool("json")
-	c.Exec = ctx.Bool("exec")
-	c.FixConflictsPattern = ctx.String("fix-conflicts-pattern")
-	c.ResetIndexPerDir = ctx.Bool("reset-index-per-dir")
-	c.NoColor = ctx.Bool("no-color")
+	c.MaxDepth = int(cmd.Uint("max-depth"))
+	c.Verbose = cmd.Bool("verbose")
+	c.AllowOverwrites = cmd.Bool("allow-overwrites")
+	c.ReplaceLimit = cmd.Int("replace-limit")
+	c.Quiet = cmd.Bool("quiet")
+	c.JSON = cmd.Bool("json")
+	c.Exec = cmd.Bool("exec")
+	c.FixConflictsPattern = cmd.String("fix-conflicts-pattern")
+	c.ResetIndexPerDir = cmd.Bool("reset-index-per-dir")
+	c.NoColor = cmd.Bool("no-color")
 
 	if c.FixConflictsPattern == "" {
 		c.FixConflictsPattern = DefaultFixConflictsPattern
@@ -306,7 +306,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		)
 	}
 
-	excludePattern := ctx.StringSlice("exclude")
+	excludePattern := cmd.StringSlice("exclude")
 	if len(excludePattern) > 0 {
 		excludeMatchRegex, err := regexp.Compile(
 			strings.Join(excludePattern, "|"),
@@ -318,7 +318,7 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		c.ExcludeRegex = excludeMatchRegex
 	}
 
-	excludeDirPattern := ctx.StringSlice("exclude-dir")
+	excludeDirPattern := cmd.StringSlice("exclude-dir")
 	if len(excludeDirPattern) > 0 {
 		excludeDirMatchRegex, err := regexp.Compile(
 			strings.Join(excludeDirPattern, "|"),
@@ -336,13 +336,13 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 
 	// Sorting
 	var err error
-	if ctx.String("sort") != "" {
-		c.Sort, err = parseSortArg(ctx.String("sort"))
+	if cmd.String("sort") != "" {
+		c.Sort, err = parseSortArg(cmd.String("sort"))
 		if err != nil {
 			return err
 		}
-	} else if ctx.String("sortr") != "" {
-		c.Sort, err = parseSortArg(ctx.String("sortr"))
+	} else if cmd.String("sortr") != "" {
+		c.Sort, err = parseSortArg(cmd.String("sortr"))
 		if err != nil {
 			return err
 		}
@@ -350,8 +350,8 @@ func (c *Config) setDefaultOpts(ctx *cli.Context) error {
 		c.ReverseSort = true
 	}
 
-	if ctx.String("exiftool-opts") != "" {
-		args, err := shellquote.Split(ctx.String("exiftool-opts"))
+	if cmd.String("exiftool-opts") != "" {
+		args, err := shellquote.Split(cmd.String("exiftool-opts"))
 		if err != nil {
 			return err
 		}
@@ -417,7 +417,7 @@ func (c *Config) configureOutput() {
 }
 
 // Get retrieves the current configuration or panics if not initialized.
-func Init(ctx *cli.Context, pipeOutput bool) (*Config, error) {
+func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
 	conf = &Config{
 		Date:             time.Now(),
 		FilesAndDirPaths: []string{DefaultWorkingDir},
@@ -427,12 +427,12 @@ func Init(ctx *cli.Context, pipeOutput bool) (*Config, error) {
 
 	var err error
 
-	err = conf.setDefaultOpts(ctx)
+	err = conf.setDefaultOpts(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	err = conf.setOptions(ctx)
+	err = conf.setOptions(cmd)
 	if err != nil {
 		return nil, err
 	}
