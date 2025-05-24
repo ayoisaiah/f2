@@ -3,6 +3,7 @@ package f2
 import (
 	"context"
 	"io"
+	"os"
 
 	"github.com/urfave/cli/v3"
 
@@ -20,9 +21,18 @@ var errConflictDetected = &apperr.Error{
 	Message: "conflict: resolve manually or use -F/--fix-conflicts",
 }
 
+func isOutputToPipe() bool {
+	fileInfo, _ := os.Stdout.Stat()
+
+	return ((fileInfo.Mode() & os.ModeCharDevice) != os.ModeCharDevice)
+}
+
 // execute initiates a new renaming operation based on the provided CLI context.
-func execute(_ context.Context, _ *cli.Command) error {
-	appConfig := config.Get()
+func execute(_ context.Context, cmd *cli.Command) error {
+	appConfig, err := config.Init(cmd, isOutputToPipe())
+	if err != nil {
+		return err
+	}
 
 	changes, err := find.Find(appConfig)
 	if err != nil {

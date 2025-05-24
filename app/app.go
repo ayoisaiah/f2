@@ -29,12 +29,6 @@ func isInputFromPipe() bool {
 }
 
 // isOutputToPipe detects if F2's output is being piped to another command.
-func isOutputToPipe() bool {
-	fileInfo, _ := os.Stdout.Stat()
-
-	return ((fileInfo.Mode() & os.ModeCharDevice) != os.ModeCharDevice)
-}
-
 // handlePipeInput processes input from a pipe and appends it to os.Args.
 func handlePipeInput(reader io.Reader) error {
 	if !isInputFromPipe() {
@@ -93,11 +87,6 @@ func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 		config.Stdin = cmd.Reader
 
 		app.Metadata["ctx"] = cmd
-
-		_, err := config.Init(cmd, isOutputToPipe())
-		if err != nil {
-			return ctx, err
-		}
 
 		return ctx, nil
 	}
