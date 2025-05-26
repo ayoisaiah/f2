@@ -28,6 +28,24 @@ func TestValidateWindows(t *testing.T) {
 			ConflictDetected: true,
 		},
 		{
+			Name: ".. and . should not trigger a conflict",
+			Changes: file.Changes{
+				{
+					Source:  "index.js",
+					Target:  "../index.js",
+					BaseDir: "dev/nested",
+					Status:  status.OK,
+				},
+				{
+					Source:  "main.js",
+					Target:  "./main.js",
+					BaseDir: "dev",
+					Status:  status.Unchanged,
+				},
+			},
+			Want: []string{"dev/index.js", "dev/main.js"},
+		},
+		{
 			Name: "detect trailing period conflict in directories",
 			Changes: file.Changes{
 				{

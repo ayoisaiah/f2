@@ -271,6 +271,10 @@ func checkTrailingPeriodConflictInWindows(
 		)
 
 		for _, v := range pathComponents {
+			if v == "." || v == ".." {
+				continue
+			}
+
 			if v != strings.TrimRight(v, ".") {
 				conflictDetected = true
 
@@ -284,6 +288,10 @@ func checkTrailingPeriodConflictInWindows(
 
 		if ctx.autoFix && conflictDetected {
 			for j, v := range pathComponents {
+				if v == "." || v == ".." {
+					continue
+				}
+
 				s := strings.TrimRight(v, ".")
 				pathComponents[j] = s
 			}

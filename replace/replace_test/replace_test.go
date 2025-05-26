@@ -325,6 +325,29 @@ func TestReplace(t *testing.T) {
 				"-R",
 			},
 		},
+		{
+			Name: "move each file two levels up",
+			Changes: file.Changes{
+				{
+					BaseDir: "dev/scripts/js",
+					Source:  "main.js",
+				},
+				{
+					BaseDir: "dev/scripts/js",
+					Source:  "server.js",
+				},
+			},
+			Want: []string{
+				"dev/main.js",
+				"dev/server.js",
+			},
+			Args: []string{
+				"-f",
+				".*",
+				"-r",
+				"../../{f}{ext}",
+			},
+		},
 	}
 
 	replaceTest(t, testCases)
