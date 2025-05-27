@@ -1,3 +1,7 @@
+## 2.1.2 (2025-05-27)
+
+- `--target-dir` now works with relative paths in Windows
+
 ## 2.1.1 (2025-05-16)
 
 - Fix UNC path bug in Windows.
