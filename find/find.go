@@ -184,14 +184,14 @@ func evaluateSearchCondition(
 	conf *config.Config,
 	currentPath string,
 	fileInfo os.FileInfo,
-) (*file.Change, error) {
+) (*file.Change, bool, error) {
 	match := createFileChange(conf, currentPath, fileInfo)
 
 	match.Target = conf.Search.FindCond.String()
 
 	err := variables.Replace(conf, match, &searchVars)
 	if err != nil {
-		return nil, err
+		return match, false, err
 	}
 
 	eval := goval.NewEvaluator()
@@ -202,40 +202,40 @@ func evaluateSearchCondition(
 			report.SearchEvalFailed(currentPath, match.Target, err)
 		}
 
-		//nolint:nilnil // error can be safely ignored
-		return nil, nil
+		return match, false, nil
 	}
 
 	r, _ := result.(bool)
 	if !r {
-		//nolint:nilnil // error can be safely ignored
-		return nil, nil
+		return match, false, nil
 	}
 
 	match.Target = ""
 	match.MatchesFindCond = true
 
-	return match, nil
+	return match, true, nil
 }
 
 func checkIfMatch(
 	conf *config.Config,
 	path string,
 	entry fs.DirEntry,
-) (*file.Change, error) {
+) (*file.Change, bool, error) {
 	var match *file.Change
 
 	var err error
 
 	fileInfo, err := entry.Info()
 	if err != nil {
-		return nil, err
+		return match, false, err
 	}
 
+	var isMatch bool
+
 	if conf.Search.FindCond != nil {
-		match, err = evaluateSearchCondition(conf, path, fileInfo)
+		match, isMatch, err = evaluateSearchCondition(conf, path, fileInfo)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	} else {
 		fileName := entry.Name()
@@ -246,20 +246,20 @@ func checkIfMatch(
 
 		if conf.Search.Regex.MatchString(fileName) {
 			match = createFileChange(conf, path, fileInfo)
+			isMatch = true
 		}
 	}
 
-	if !shouldFilter(conf, match) {
-		err := extractCustomSort(conf, match, &vars)
-		if err != nil {
-			return nil, err
-		}
-
-		return match, nil
+	if shouldFilter(conf, match) {
+		return match, false, nil
 	}
 
-	//nolint:nilnil // returning nil is ok
-	return nil, nil
+	err = extractCustomSort(conf, match, &vars)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return match, isMatch, nil
 }
 
 // searchPaths walks through the filesystem and finds matches for the provided
@@ -282,7 +282,7 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 				continue
 			}
 
-			match, err := checkIfMatch(
+			match, isMatch, err := checkIfMatch(
 				conf,
 				rootPath,
 				fs.FileInfoToDirEntry(fileInfo),
@@ -291,7 +291,7 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 				return nil, err
 			}
 
-			if match != nil {
+			if isMatch {
 				matches = append(matches, match)
 			}
 
@@ -342,12 +342,12 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 					return fs.SkipDir
 				}
 
-				match, err := checkIfMatch(conf, currentPath, entry)
+				match, isMatch, err := checkIfMatch(conf, currentPath, entry)
 				if err != nil {
 					return err
 				}
 
-				if match != nil {
+				if isMatch {
 					matches = append(matches, match)
 				}
 
