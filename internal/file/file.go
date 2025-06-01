@@ -19,7 +19,7 @@ type Change struct {
 	PrimaryPair  *Change       `json:"-"`
 	TargetPath   string        `json:"-"`
 	BaseDir      string        `json:"base_dir"`
-	TargetDir    string        `json:"target_dir"`
+	TargetDir    string        `json:"target_dir"` // TODO: Remove this
 	Source       string        `json:"source"`
 	Target       string        `json:"target"`
 	OriginalName string        `json:"-"`
@@ -30,10 +30,11 @@ type Change struct {
 		String string
 		Int    int
 	} `json:"-"`
-	CSVRow        []string `json:"-"`
-	Position      int      `json:"-"`
-	IsDir         bool     `json:"is_dir"`
-	WillOverwrite bool     `json:"-"`
+	CSVRow          []string `json:"-"`
+	Position        int      `json:"-"`
+	IsDir           bool     `json:"is_dir"`
+	WillOverwrite   bool     `json:"-"`
+	MatchesFindCond bool     `json:"-"`
 }
 
 // AutoFixTarget sets the new target name.

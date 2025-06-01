@@ -47,6 +47,7 @@ var (
 	capturVarIndexRegex = regexp.MustCompile(
 		`{+(\$\d+)(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?}+`,
 	)
+	findVariableRegex = regexp.MustCompile(`{(.*)}`)
 )
 
 var conf *Config
@@ -80,9 +81,9 @@ func (b Backup) RenderJSON(w io.Writer) error {
 }
 
 type Search struct {
-	Regex *regexp.Regexp `json:"regex"`
-	// Replacement index
-	Index int `json:"index"`
+	Regex    *regexp.Regexp `json:"regex"`
+	FindCond *regexp.Regexp
+	Index    int `json:"index"`
 }
 
 // Config represents the program configuration.
@@ -134,7 +135,28 @@ type Config struct {
 	Clean                    bool           `json:"clean"`
 }
 
-// SetFindStringRegex compiles a regular expression for the
+func (c *Config) setFindCond(replacementIndex int) error {
+	submatches := findVariableRegex.FindAllStringSubmatch(
+		c.FindSlice[replacementIndex],
+		-1,
+	)
+
+	re, err := regexp.Compile(submatches[0][1])
+	if err != nil {
+		return err
+	}
+
+	c.Search = &Search{
+		// When filtering using arbitrary condition, match the entire file name
+		Regex:    regexp.MustCompile(".*"),
+		FindCond: re,
+		Index:    replacementIndex,
+	}
+
+	return nil
+}
+
+// setFindRegex compiles a regular expression for the
 // find string of the corresponding replacement index (if any).
 // Otherwise, the created regex will match the entire file name.
 // It takes into account the StringLiteralMode and IgnoreCase options.
@@ -143,22 +165,16 @@ type Config struct {
 // Otherwise, the pattern defaults to ".*" to match the entire file name.
 //
 // Returns an error if the regex compilation fails.
-func (c *Config) SetFindStringRegex(replacementIndex int) error {
-	// findPattern is set to match the entire file name by default
-	// except if a find string for the corresponding replacement index
-	// is found
-	findPattern := ".*"
-	if len(c.FindSlice) > replacementIndex {
-		findPattern = c.FindSlice[replacementIndex]
+func (c *Config) setFindRegex(replacementIndex int) error {
+	findPattern := c.FindSlice[replacementIndex]
 
-		// Escape all regular expression metacharacters in string literal mode
-		if c.StringLiteralMode {
-			findPattern = regexp.QuoteMeta(findPattern)
-		}
+	// Escape all regular expression metacharacters in string literal mode
+	if c.StringLiteralMode {
+		findPattern = regexp.QuoteMeta(findPattern)
+	}
 
-		if c.IgnoreCase {
-			findPattern = "(?i)" + findPattern
-		}
+	if c.IgnoreCase {
+		findPattern = "(?i)" + findPattern
 	}
 
 	re, err := regexp.Compile(findPattern)
@@ -169,6 +185,18 @@ func (c *Config) SetFindStringRegex(replacementIndex int) error {
 	c.Search = &Search{
 		Regex: re,
 		Index: replacementIndex,
+	}
+
+	return nil
+}
+
+func (c *Config) SetFind(replacementIndex int) error {
+	if len(c.FindSlice) > replacementIndex {
+		if findVariableRegex.MatchString(c.FindSlice[replacementIndex]) {
+			return c.setFindCond(replacementIndex)
+		}
+
+		return c.setFindRegex(replacementIndex)
 	}
 
 	return nil
@@ -187,7 +215,6 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 	c.CSVFilename = cmd.String("csv")
 	c.Revert = cmd.Bool("undo")
 	c.Debug = cmd.Bool("debug")
-	c.FilesAndDirPaths = cmd.Args().Slice()
 	c.TargetDir = cmd.String("target-dir")
 	c.SortPerDir = cmd.Bool("sort-per-dir")
 	c.Pair = cmd.Bool("pair")
@@ -235,15 +262,14 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 		c.FilesAndDirPaths = cmd.Args().Slice()
 	}
 
-	// Default to the current working directory if no path arguments are provided
-	if len(c.FilesAndDirPaths) == 0 {
-		c.FilesAndDirPaths = append(c.FilesAndDirPaths, DefaultWorkingDir)
-	}
-
 	// Ensure that each findString has a corresponding replacement.
 	// The replacement defaults to an empty string if unset
 	for len(c.FindSlice) > len(c.ReplacementSlice) {
 		c.ReplacementSlice = append(c.ReplacementSlice, "")
+	}
+
+	for len(c.ReplacementSlice) > len(c.FindSlice) {
+		c.FindSlice = append(c.FindSlice, ".*")
 	}
 
 	// Distinguish capture variable indices from regular indices by adding ##
@@ -266,7 +292,7 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 		}
 	}
 
-	return c.SetFindStringRegex(0)
+	return c.SetFind(0)
 }
 
 // setDefaultOpts applies any options that may be set through
@@ -423,6 +449,9 @@ func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
 		FilesAndDirPaths: []string{DefaultWorkingDir},
 		Sort:             SortDefault,
 		PipeOutput:       pipeOutput,
+		Search: &Search{
+			Regex: regexp.MustCompile(".*"),
+		},
 	}
 
 	var err error

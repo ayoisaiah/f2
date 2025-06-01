@@ -7,12 +7,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/maja42/goval"
+
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
 	"github.com/ayoisaiah/f2/v2/internal/pathutil"
 	"github.com/ayoisaiah/f2/v2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/v2/internal/status"
 	"github.com/ayoisaiah/f2/v2/replace/variables"
+	"github.com/ayoisaiah/f2/v2/report"
 )
 
 // replaceString replaces all matches in the filename
@@ -82,6 +85,10 @@ func replaceMatches(
 	for i := range matches {
 		change := matches[i]
 
+		if conf.Search.FindCond != nil && !change.MatchesFindCond {
+			continue
+		}
+
 		// Detect and rename file pairs
 		if change.PrimaryPair != nil {
 			ext := filepath.Ext(change.Source)
@@ -114,40 +121,87 @@ func handleReplacementChain(
 	conf *config.Config,
 	matches file.Changes,
 ) (file.Changes, error) {
-	replacementSlice := conf.ReplacementSlice
-
-	for i, v := range replacementSlice {
+	for i, v := range conf.ReplacementSlice {
 		conf.Replacement = v
 
-		var err error
-
-		matches, err = replaceMatches(conf, matches)
+		matches, err := replaceMatches(conf, matches)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(replacementSlice) == 1 ||
-			(i > 0 && i == len(replacementSlice)-1) {
+		if len(conf.ReplacementSlice)-1 == i {
 			return matches, nil
 		}
 
-		for j := range matches {
-			change := matches[j]
-
-			// Update the source to the target from the previous replacement
-			// in preparation for the next replacement
-			if i != len(replacementSlice)-1 {
-				matches[j].Source = change.Target
-			}
+		err = conf.SetFind(i + 1)
+		if err != nil {
+			return nil, err
 		}
 
-		err = conf.SetFindStringRegex(i + 1)
+		err = prepNextChain(conf, matches)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return matches, nil
+}
+
+func prepNextChain(
+	conf *config.Config,
+	matches file.Changes,
+) (err error) {
+	var findVars variables.Variables
+
+	if conf.Search.FindCond != nil {
+		findVars, err = variables.Extract(
+			conf.Search.FindCond.String(),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	for j := range matches {
+		change := matches[j]
+
+		originalTarget := change.Target
+
+		// Update the source to the target from the previous replacement
+		// in preparation for the next replacement
+		matches[j].Source = change.Target
+
+		if conf.Search.FindCond == nil {
+			continue
+		}
+
+		change.Target = conf.Search.FindCond.String()
+
+		err := variables.Replace(conf, change, &findVars)
+		if err != nil {
+			return err
+		}
+
+		eval := goval.NewEvaluator()
+
+		result, err := eval.Evaluate(change.Target, nil, nil)
+		if err != nil {
+			if conf.Verbose {
+				report.SearchEvalFailed(change.SourcePath, change.Target, err)
+			}
+
+			matches[j].MatchesFindCond = false
+		}
+
+		r, _ := result.(bool)
+		if !r {
+			matches[j].MatchesFindCond = false
+		}
+
+		matches[j].Target = originalTarget
+	}
+
+	return nil
 }
 
 // Replace applies the file name replacements according to the --replace

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/araddon/dateparse"
+	"github.com/maja42/goval"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
@@ -18,17 +19,25 @@ import (
 	"github.com/ayoisaiah/f2/v2/internal/sortfiles"
 	"github.com/ayoisaiah/f2/v2/internal/status"
 	"github.com/ayoisaiah/f2/v2/replace/variables"
+	"github.com/ayoisaiah/f2/v2/report"
 )
 
 const (
 	dotCharacter = 46
 )
 
-var vars variables.Variables
+var (
+	vars       variables.Variables
+	searchVars variables.Variables
+)
 
 // shouldFilter decides whether a match should be included in the final
 // pool of files for renaming.
 func shouldFilter(conf *config.Config, match *file.Change) bool {
+	if match == nil {
+		return true
+	}
+
 	if conf.ExcludeRegex != nil &&
 		conf.ExcludeRegex.MatchString(match.Source) {
 		return true
@@ -171,8 +180,90 @@ func createFileChange(
 	return match
 }
 
+func evaluateSearchCondition(
+	conf *config.Config,
+	currentPath string,
+	fileInfo os.FileInfo,
+) (*file.Change, error) {
+	match := createFileChange(conf, currentPath, fileInfo)
+
+	match.Target = conf.Search.FindCond.String()
+
+	err := variables.Replace(conf, match, &searchVars)
+	if err != nil {
+		return nil, err
+	}
+
+	eval := goval.NewEvaluator()
+
+	result, err := eval.Evaluate(match.Target, nil, nil)
+	if err != nil {
+		if conf.Verbose {
+			report.SearchEvalFailed(currentPath, match.Target, err)
+		}
+
+		//nolint:nilnil // error can be safely ignored
+		return nil, nil
+	}
+
+	r, _ := result.(bool)
+	if !r {
+		//nolint:nilnil // error can be safely ignored
+		return nil, nil
+	}
+
+	match.Target = ""
+	match.MatchesFindCond = true
+
+	return match, nil
+}
+
+func checkIfMatch(
+	conf *config.Config,
+	path string,
+	entry fs.DirEntry,
+) (*file.Change, error) {
+	var match *file.Change
+
+	var err error
+
+	fileInfo, err := entry.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	if conf.Search.FindCond != nil {
+		match, err = evaluateSearchCondition(conf, path, fileInfo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		fileName := entry.Name()
+
+		if conf.IgnoreExt && !entry.IsDir() {
+			fileName = pathutil.StripExtension(fileName)
+		}
+
+		if conf.Search.Regex.MatchString(fileName) {
+			match = createFileChange(conf, path, fileInfo)
+		}
+	}
+
+	if !shouldFilter(conf, match) {
+		err := extractCustomSort(conf, match, &vars)
+		if err != nil {
+			return nil, err
+		}
+
+		return match, nil
+	}
+
+	//nolint:nilnil // returning nil is ok
+	return nil, nil
+}
+
 // searchPaths walks through the filesystem and finds matches for the provided
-// search pattern.
+// search pattern or variables comparison.
 func searchPaths(conf *config.Config) (file.Changes, error) {
 	processedPaths := make(map[string]bool)
 
@@ -191,17 +282,17 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 				continue
 			}
 
-			if conf.Search.Regex.MatchString(fileInfo.Name()) {
-				match := createFileChange(conf, rootPath, fileInfo)
+			match, err := checkIfMatch(
+				conf,
+				rootPath,
+				fs.FileInfoToDirEntry(fileInfo),
+			)
+			if err != nil {
+				return nil, err
+			}
 
-				if !shouldFilter(conf, match) {
-					err := extractCustomSort(conf, match, &vars)
-					if err != nil {
-						return nil, err
-					}
-
-					matches = append(matches, match)
-				}
+			if match != nil {
+				matches = append(matches, match)
 			}
 
 			processedPaths[rootPath] = true
@@ -251,30 +342,13 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 					return fs.SkipDir
 				}
 
-				fileName := entry.Name()
-
-				entryIsDir := entry.IsDir()
-
-				if conf.IgnoreExt && !entryIsDir {
-					fileName = pathutil.StripExtension(fileName)
+				match, err := checkIfMatch(conf, currentPath, entry)
+				if err != nil {
+					return err
 				}
 
-				if conf.Search.Regex.MatchString(fileName) {
-					fileInfo, infoErr := entry.Info()
-					if infoErr != nil {
-						return infoErr
-					}
-
-					match := createFileChange(conf, currentPath, fileInfo)
-
-					if !shouldFilter(conf, match) {
-						err := extractCustomSort(conf, match, &vars)
-						if err != nil {
-							return err
-						}
-
-						matches = append(matches, match)
-					}
+				if match != nil {
+					matches = append(matches, match)
 				}
 
 				processedPaths[currentPath] = true
@@ -359,6 +433,15 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 func Find(conf *config.Config) (changes file.Changes, err error) {
 	if conf.SortVariable != "" {
 		vars, err = variables.Extract(conf.SortVariable)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if conf.Search.FindCond != nil {
+		searchVars, err = variables.Extract(
+			conf.Search.FindCond.String(),
+		)
 		if err != nil {
 			return nil, err
 		}
