@@ -40,6 +40,18 @@ func BackupFailed(err error) {
 	)
 }
 
+func SearchEvalFailed(path, target string, err error) {
+	pterm.Fprintln(
+		config.Stderr,
+		pterm.Sprintf(
+			"%s: conditional search failed (%v) -> %s",
+			pterm.Yellow(path),
+			err,
+			target,
+		),
+	)
+}
+
 func BackupFileRemovalFailed(err error) {
 	pterm.Fprintln(
 		config.Stderr,

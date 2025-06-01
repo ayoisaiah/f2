@@ -58,3 +58,44 @@ func TestImagePairRenaming(t *testing.T) {
 
 	testutil.CompareGoldenFile(t, tc)
 }
+
+func TestConditionalSearch(t *testing.T) {
+	var stdout bytes.Buffer
+
+	var stdin bytes.Buffer
+
+	var stderr bytes.Buffer
+
+	app, err := f2.New(&stdin, &stdout)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config.Stderr = &stderr
+
+	err = app.Run(t.Context(), []string{
+		"f2_test",
+		"-f",
+		"{{x.cdt.DD} in [27, 28]}",
+		"-r",
+		"{f.up}",
+		"-f",
+		"{{x.cdt.DD} > 27}",
+		"-r",
+		"{%03d}",
+		"-R",
+		"--pair",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tc := &testutil.TestCase{
+		Name: "conditional search",
+	}
+
+	tc.SnapShot.Stdout = stdout.Bytes()
+	tc.SnapShot.Stderr = stderr.Bytes()
+
+	testutil.CompareGoldenFile(t, tc)
+}

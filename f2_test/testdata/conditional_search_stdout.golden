@@ -1,0 +1,18 @@
+*——————————————————————————————————————————*——————————————————————————————————————————*————————*
+|                 ORIGINAL                 |                 RENAMED                  | STATUS |
+*——————————————————————————————————————————*——————————————————————————————————————————*————————*
+| testdata/img34.dng                       | testdata/001.dng                         | ok     |
+| testdata/img34.jpg                       | testdata/001.jpg                         | ok     |
+| testdata/img66.dng                       | testdata/002.dng                         | ok     |
+| testdata/img66.jpg                       | testdata/002.jpg                         | ok     |
+| testdata/birthday-2024/img44.dng         | testdata/birthday-2024/003.dng           | ok     |
+| testdata/birthday-2024/img44.jpg         | testdata/birthday-2024/003.jpg           | ok     |
+| testdata/birthday-2024/img78.dng         | testdata/birthday-2024/004.dng           | ok     |
+| testdata/birthday-2024/img78.jpg         | testdata/birthday-2024/004.jpg           | ok     |
+| testdata/family trip - berlin/img101.dng | testdata/family trip - berlin/IMG101.dng | ok     |
+| testdata/family trip - berlin/img101.jpg | testdata/family trip - berlin/IMG101.jpg | ok     |
+| testdata/family trip - berlin/img90.dng  | testdata/family trip - berlin/IMG90.dng  | ok     |
+| testdata/family trip - berlin/img90.jpg  | testdata/family trip - berlin/IMG90.jpg  | ok     |
+| testdata/family trip - berlin/img99.dng  | testdata/family trip - berlin/IMG99.dng  | ok     |
+| testdata/family trip - berlin/img99.jpg  | testdata/family trip - berlin/IMG99.jpg  | ok     |
+*——————————————————————————————————————————*——————————————————————————————————————————*————————*
