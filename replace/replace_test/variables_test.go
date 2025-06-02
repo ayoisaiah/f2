@@ -300,13 +300,13 @@ func TestVariables(t *testing.T) {
 				},
 			},
 			Want: []string{
-				"testdata/Nov-05-2019_2019-01-05T13:00:00+01:00_1546689600.txt",
+				"testdata/Nov-05-2019_1546689600.txt",
 			}, // date is set in TestMain
 			Args: []string{
 				"-f",
 				".*",
 				"-r",
-				"{atime.MMM}-{mtime.DD}-{mtime.YYYY}_{mtime}_{mtime.unix}{ext}",
+				"{atime.MMM}-{mtime.DD}-{mtime.YYYY}_{mtime.unix}{ext}",
 			},
 			SetupFunc: createDateFile,
 		},
