@@ -176,6 +176,24 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "replace with Exif DateTimeOriginal in Unix time",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "pic.jpg",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "image.dng",
+				},
+			},
+			Want: []string{
+				"testdata/990297401.jpg",
+				"testdata/1123095558.dng",
+			},
+			Args: []string{"-f", ".*", "-r", "{x.cdt.unix}{ext}"},
+		},
+		{
 			Name: "replace with Exif DateTimeOriginal",
 			Changes: file.Changes{
 				{
@@ -282,13 +300,13 @@ func TestVariables(t *testing.T) {
 				},
 			},
 			Want: []string{
-				"testdata/Nov-05-2019.txt",
+				"testdata/Nov-05-2019_1546689600.txt",
 			}, // date is set in TestMain
 			Args: []string{
 				"-f",
 				".*",
 				"-r",
-				"{atime.MMM}-{mtime.DD}-{mtime.YYYY}{ext}",
+				"{atime.MMM}-{mtime.DD}-{mtime.YYYY}_{mtime.unix}{ext}",
 			},
 			SetupFunc: createDateFile,
 		},

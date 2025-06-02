@@ -239,8 +239,58 @@ func replaceFileHashVars(
 	return target, nil
 }
 
-// replaceDateVars replaces any date variables in the target
-// with the corresponding date value.
+// Helper function to select the appropriate time based on the attribute.
+// nowFunc is passed for testability of the "Current" time case.
+func getSelectedTime(
+	attr string,
+	spec times.Timespec,
+	nowFunc func() time.Time,
+) time.Time {
+	switch attr {
+	case timeutil.Mod:
+		return spec.ModTime()
+	case timeutil.Birth:
+		if spec.HasBirthTime() {
+			return spec.BirthTime()
+		}
+
+		return time.Time{}
+	case timeutil.Access:
+		return spec.AccessTime()
+	case timeutil.Change:
+		if spec.HasChangeTime() {
+			return spec.ChangeTime()
+		}
+
+		return spec.ModTime()
+	case timeutil.Current:
+		return nowFunc()
+	default:
+		return time.Time{}
+	}
+}
+
+func replaceDateToken(t time.Time, token string) string {
+	if token == "" || token == "dt" {
+		return t.Format(time.RFC3339)
+	}
+
+	token = strings.TrimPrefix(token, "dt.")
+
+	if token == "unix" {
+		return strconv.FormatInt(t.Unix(), 10)
+	}
+
+	if token == "since" {
+		dur := time.Since(t)
+		return strconv.FormatInt(int64(dur.Seconds()), 10)
+	}
+
+	return t.Format(dateTokens[token])
+}
+
+// replaceDateVars replaces any date variables in the target with the
+// corresponding date value.
 func replaceDateVars(
 	target, sourcePath string,
 	dateVarMatches dateVars,
@@ -253,35 +303,10 @@ func replaceDateVars(
 	for i := range dateVarMatches.matches {
 		current := dateVarMatches.matches[i]
 		regex := current.regex
-		token := current.token
 
-		var timeStr string
+		selectedTime := getSelectedTime(current.attr, timeSpec, time.Now)
 
-		switch current.attr {
-		case timeutil.Mod:
-			modTime := timeSpec.ModTime()
-			timeStr = modTime.Format(dateTokens[token])
-		case timeutil.Birth:
-			var birthTime time.Time
-			if timeSpec.HasBirthTime() {
-				birthTime = timeSpec.BirthTime()
-			}
-
-			timeStr = birthTime.Format(dateTokens[token])
-		case timeutil.Access:
-			accessTime := timeSpec.AccessTime()
-			timeStr = accessTime.Format(dateTokens[token])
-		case timeutil.Change:
-			changeTime := timeSpec.ModTime()
-			if timeSpec.HasChangeTime() {
-				changeTime = timeSpec.ChangeTime()
-			}
-
-			timeStr = changeTime.Format(dateTokens[token])
-		case timeutil.Current:
-			currentTime := time.Now()
-			timeStr = currentTime.Format(dateTokens[token])
-		}
+		timeStr := replaceDateToken(selectedTime, current.token)
 
 		timeStr = transformString(timeStr, current.transformToken)
 
@@ -464,7 +489,7 @@ func getExifExposureTime(exifData *Exif) string {
 
 // getExifDate parses the exif original date and returns it
 // in the specified format.
-func getExifDate(exifData *Exif, format string) string {
+func getExifDate(exifData *Exif, token string) string {
 	dateTimeString := exifData.DateTimeOriginal
 	dateTimeSlice := strings.Split(dateTimeString, " ")
 
@@ -482,11 +507,7 @@ func getExifDate(exifData *Exif, format string) string {
 		return ""
 	}
 
-	if format == "" {
-		return dateTime.Format(time.RFC3339)
-	}
-
-	return dateTime.Format(dateTokens[format])
+	return replaceDateToken(dateTime, token)
 }
 
 // getDecimalFromFraction converts a value in the following format: [8/5]
@@ -797,19 +818,13 @@ func transformString(source, token string) string {
 		return result
 	}
 
-	if strings.HasPrefix(token, "dt.") {
+	if strings.HasPrefix(token, "dt") {
 		dateTime, err := dateparse.ParseAny(source)
 		if err != nil {
 			return source
 		}
 
-		format := strings.TrimPrefix(token, "dt.")
-
-		if _, ok := dateTokens[format]; !ok {
-			return source
-		}
-
-		return dateTime.Format(dateTokens[format])
+		return replaceDateToken(dateTime, token)
 	}
 
 	return source

@@ -25,25 +25,27 @@ var (
 )
 
 var dateTokens = map[string]string{
-	"YYYY": "2006",
-	"YY":   "06",
-	"MMMM": "January",
-	"MMM":  "Jan",
-	"MM":   "01",
-	"M":    "1",
-	"DDDD": "Monday",
-	"DDD":  "Mon",
-	"DD":   "02",
-	"D":    "2",
-	"H":    "15",
-	"hh":   "03",
-	"h":    "3",
-	"mm":   "04",
-	"m":    "4",
-	"ss":   "05",
-	"s":    "5",
-	"A":    "PM",
-	"a":    "pm",
+	"YYYY":  "2006",
+	"YY":    "06",
+	"MMMM":  "January",
+	"MMM":   "Jan",
+	"MM":    "01",
+	"M":     "1",
+	"DDDD":  "Monday",
+	"DDD":   "Mon",
+	"DD":    "02",
+	"D":     "2",
+	"H":     "15",
+	"hh":    "03",
+	"h":     "3",
+	"mm":    "04",
+	"m":     "4",
+	"ss":    "05",
+	"s":     "5",
+	"A":     "PM",
+	"a":     "pm",
+	"unix":  "unix",
+	"since": "since",
 }
 
 func init() {
@@ -55,7 +57,7 @@ func init() {
 	tokenString := strings.Join(tokens, "|")
 
 	transformTokens = fmt.Sprintf(
-		"(up|lw|ti|win|mac|di|norm|(?:dt\\.(%s)))",
+		"(up|lw|ti|win|mac|di|norm|(?:dt(?:\\.(%s))?))",
 		tokenString,
 	)
 
@@ -98,7 +100,7 @@ func init() {
 
 	dateVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+("+timeutil.Mod+"|"+timeutil.Change+"|"+timeutil.Birth+"|"+timeutil.Access+"|"+timeutil.Current+")\\.("+tokenString+")(?:\\.%s)?}+",
+			"{+("+timeutil.Mod+"|"+timeutil.Change+"|"+timeutil.Birth+"|"+timeutil.Access+"|"+timeutil.Current+")(?:\\.("+tokenString+"))?(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)
