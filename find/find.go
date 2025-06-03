@@ -26,11 +26,6 @@ const (
 	dotCharacter = 46
 )
 
-var (
-	vars       variables.Variables
-	searchVars variables.Variables
-)
-
 // shouldFilter decides whether a match should be included in the final
 // pool of files for renaming.
 func shouldFilter(conf *config.Config, match *file.Change) bool {
@@ -184,12 +179,13 @@ func evaluateSearchCondition(
 	conf *config.Config,
 	currentPath string,
 	fileInfo os.FileInfo,
+	searchVars *variables.Variables,
 ) (*file.Change, bool, error) {
 	match := createFileChange(conf, currentPath, fileInfo)
 
 	match.Target = conf.Search.FindCond.String()
 
-	err := variables.Replace(conf, match, &searchVars)
+	err := variables.Replace(conf, match, searchVars)
 	if err != nil {
 		return match, false, err
 	}
@@ -220,6 +216,8 @@ func checkIfMatch(
 	conf *config.Config,
 	path string,
 	entry fs.DirEntry,
+	sortVars,
+	searchVars *variables.Variables,
 ) (*file.Change, bool, error) {
 	var match *file.Change
 
@@ -233,7 +231,12 @@ func checkIfMatch(
 	var isMatch bool
 
 	if conf.Search.FindCond != nil {
-		match, isMatch, err = evaluateSearchCondition(conf, path, fileInfo)
+		match, isMatch, err = evaluateSearchCondition(
+			conf,
+			path,
+			fileInfo,
+			searchVars,
+		)
 		if err != nil {
 			return nil, false, err
 		}
@@ -254,7 +257,7 @@ func checkIfMatch(
 		return match, false, nil
 	}
 
-	err = extractCustomSort(conf, match, &vars)
+	err = extractCustomSort(conf, match, sortVars)
 	if err != nil {
 		return nil, false, err
 	}
@@ -264,7 +267,10 @@ func checkIfMatch(
 
 // searchPaths walks through the filesystem and finds matches for the provided
 // search pattern or variables comparison.
-func searchPaths(conf *config.Config) (file.Changes, error) {
+func searchPaths(
+	conf *config.Config,
+	sortVars, searchVars *variables.Variables,
+) (file.Changes, error) {
 	processedPaths := make(map[string]bool)
 
 	var matches file.Changes
@@ -286,6 +292,8 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 				conf,
 				rootPath,
 				fs.FileInfoToDirEntry(fileInfo),
+				sortVars,
+				searchVars,
 			)
 			if err != nil {
 				return nil, err
@@ -342,7 +350,13 @@ func searchPaths(conf *config.Config) (file.Changes, error) {
 					return fs.SkipDir
 				}
 
-				match, isMatch, err := checkIfMatch(conf, currentPath, entry)
+				match, isMatch, err := checkIfMatch(
+					conf,
+					currentPath,
+					entry,
+					sortVars,
+					searchVars,
+				)
 				if err != nil {
 					return err
 				}
@@ -431,8 +445,13 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
 func Find(conf *config.Config) (changes file.Changes, err error) {
+	var (
+		sortVars   variables.Variables
+		searchVars variables.Variables
+	)
+
 	if conf.SortVariable != "" {
-		vars, err = variables.Extract(conf.SortVariable)
+		sortVars, err = variables.Extract(conf.SortVariable)
 		if err != nil {
 			return nil, err
 		}
@@ -465,5 +484,5 @@ func Find(conf *config.Config) (changes file.Changes, err error) {
 		return handleCSV(conf)
 	}
 
-	return searchPaths(conf)
+	return searchPaths(conf, &sortVars, &searchVars)
 }

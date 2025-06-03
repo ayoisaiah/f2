@@ -60,42 +60,58 @@ func TestImagePairRenaming(t *testing.T) {
 }
 
 func TestConditionalSearch(t *testing.T) {
-	var stdout bytes.Buffer
-
-	var stdin bytes.Buffer
-
-	var stderr bytes.Buffer
-
-	app, err := f2.New(&stdin, &stdout)
-	if err != nil {
-		t.Fatal(err)
+	cases := []testutil.TestCase{
+		{
+			Name: "use dates to conditionally match files",
+			Args: []string{
+				"f2_test",
+				"-f",
+				"{{x.cdt.DD} in [27, 28]}",
+				"-r",
+				"{f.up}",
+				"-f",
+				"{{x.cdt.DD} > 27}",
+				"-r",
+				"{%03d}",
+				"-R",
+				"--pair",
+			},
+		},
+		{
+			Name: "only match files named img33.dng",
+			Args: []string{
+				"f2_test",
+				"-f",
+				"{`{xt.FileName}` == `img33.dng`}",
+				"-r",
+				"{f.up}{ext.up}",
+				"-R",
+			},
+		},
 	}
 
-	config.Stderr = &stderr
+	for _, tc := range cases {
+		var stdout bytes.Buffer
 
-	err = app.Run(t.Context(), []string{
-		"f2_test",
-		"-f",
-		"{{x.cdt.DD} in [27, 28]}",
-		"-r",
-		"{f.up}",
-		"-f",
-		"{{x.cdt.DD} > 27}",
-		"-r",
-		"{%03d}",
-		"-R",
-		"--pair",
-	})
-	if err != nil {
-		t.Fatal(err)
+		var stdin bytes.Buffer
+
+		var stderr bytes.Buffer
+
+		app, err := f2.New(&stdin, &stdout)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		config.Stderr = &stderr
+
+		err = app.Run(t.Context(), tc.Args)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		tc.SnapShot.Stdout = stdout.Bytes()
+		tc.SnapShot.Stderr = stderr.Bytes()
+
+		testutil.CompareGoldenFile(t, &tc)
 	}
-
-	tc := &testutil.TestCase{
-		Name: "conditional search",
-	}
-
-	tc.SnapShot.Stdout = stdout.Bytes()
-	tc.SnapShot.Stderr = stderr.Bytes()
-
-	testutil.CompareGoldenFile(t, tc)
 }
