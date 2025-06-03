@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug F2",
+      "type": "go",
+      "mode": "debug",
+      "request": "launch",
+      "program": "${workspaceFolder}/cmd/f2"
+    }
+  ]
+}
