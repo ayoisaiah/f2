@@ -257,9 +257,11 @@ func checkIfMatch(
 		return match, false, nil
 	}
 
-	err = extractCustomSort(conf, match, sortVars)
-	if err != nil {
-		return nil, false, err
+	if conf.SortVariable != "" {
+		err = extractCustomSort(conf, match, sortVars)
+		if err != nil {
+			return nil, false, err
+		}
 	}
 
 	return match, isMatch, nil
