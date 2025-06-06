@@ -42,6 +42,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	go.withmatt.com/size v0.0.0-20250220224316-11aee5773e67 // indirect
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
 	golang.org/x/term v0.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

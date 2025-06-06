@@ -7,9 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/maja42/goval"
-
 	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/eval"
 	"github.com/ayoisaiah/f2/v2/internal/file"
 	"github.com/ayoisaiah/f2/v2/internal/pathutil"
 	"github.com/ayoisaiah/f2/v2/internal/sortfiles"
@@ -182,9 +181,7 @@ func prepNextChain(
 			return err
 		}
 
-		eval := goval.NewEvaluator()
-
-		result, err := eval.Evaluate(change.Target, nil, nil)
+		result, err := eval.Evaluate(change.Target)
 		if err != nil {
 			if conf.Verbose {
 				report.SearchEvalFailed(change.SourcePath, change.Target, err)
@@ -193,8 +190,7 @@ func prepNextChain(
 			matches[j].MatchesFindCond = false
 		}
 
-		r, _ := result.(bool)
-		if !r {
+		if !result {
 			matches[j].MatchesFindCond = false
 		}
 

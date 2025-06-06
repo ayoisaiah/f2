@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/araddon/dateparse"
-	"github.com/maja42/goval"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/eval"
 	"github.com/ayoisaiah/f2/v2/internal/file"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/internal/pathutil"
@@ -190,9 +190,7 @@ func evaluateSearchCondition(
 		return match, false, err
 	}
 
-	eval := goval.NewEvaluator()
-
-	result, err := eval.Evaluate(match.Target, nil, nil)
+	result, err := eval.Evaluate(match.Target)
 	if err != nil {
 		if conf.Verbose {
 			report.SearchEvalFailed(currentPath, match.Target, err)
@@ -201,8 +199,7 @@ func evaluateSearchCondition(
 		return match, false, nil
 	}
 
-	r, _ := result.(bool)
-	if !r {
+	if !result {
 		return match, false, nil
 	}
 
