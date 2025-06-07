@@ -113,11 +113,19 @@ func init() {
 
 		// Handle Exiftool format: "26 kB" -> "26K", "1.2 MB" -> "1.2M"
 		// Remove spaces between number and unit for compatibility with size.ParseCapacity
-		str = strings.ReplaceAll(str, " kB", "K")
-		str = strings.ReplaceAll(str, " MB", "M")
-		str = strings.ReplaceAll(str, " GB", "G")
-		str = strings.ReplaceAll(str, " TB", "T")
-		str = strings.ReplaceAll(str, " bytes", "")
+		r := strings.NewReplacer(
+			" kB",
+			"K",
+			" MB",
+			"M",
+			" GB",
+			"G",
+			" TB",
+			"T",
+			" bytes",
+			"",
+		)
+		str = r.Replace(str)
 
 		s, err := size.ParseCapacity(str)
 		if err != nil {
