@@ -637,67 +637,47 @@ func replaceExifVars(
 	return target, nil
 }
 
-// replaceExifToolVars replaces the all exiftool
-// variables in the target.
+// replaceExifToolVars replaces the all exiftool variables in the target.
 func replaceExifToolVars(
-	target, sourcePath string,
+	conf *config.Config,
+	change *file.Change,
 	xtVars exiftoolVars,
 ) (string, error) {
-	conf := config.Get()
+	target := change.Target
 
-	var opts []func(*exiftool.Exiftool) error
+	var fileMeta []exiftool.FileMetadata
 
-	if conf.ExiftoolOpts.API != "" {
-		opts = append(opts, exiftool.Api(conf.ExiftoolOpts.API))
+	if change.ExiftoolData == nil {
+		var err error
+
+		fileMeta, err = ExtractExiftoolMetadata(conf, change.SourcePath)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		fileMeta = append(fileMeta, *change.ExiftoolData)
 	}
-
-	if conf.ExiftoolOpts.Charset != "" {
-		opts = append(opts, exiftool.Charset(conf.ExiftoolOpts.Charset))
-	}
-
-	if conf.ExiftoolOpts.CoordFormat != "" {
-		opts = append(
-			opts,
-			exiftool.CoordFormant(conf.ExiftoolOpts.CoordFormat),
-		)
-	}
-
-	if conf.ExiftoolOpts.DateFormat != "" {
-		opts = append(opts, exiftool.DateFormant(conf.ExiftoolOpts.DateFormat))
-	}
-
-	if conf.ExiftoolOpts.ExtractEmbedded {
-		opts = append(opts, exiftool.ExtractEmbedded())
-	}
-
-	et, err := exiftool.NewExiftool(opts...)
-	if err != nil {
-		return "", fmt.Errorf("Failed to initialise exiftool: %w", err)
-	}
-
-	defer et.Close()
-
-	fileInfos := et.ExtractMetadata(sourcePath)
 
 	for i := range xtVars.matches {
 		current := xtVars.matches[i]
 
 		var value string
 
-		for _, fileInfo := range fileInfos {
-			if fileInfo.Err != nil {
+		for _, meta := range fileMeta {
+			if meta.Err != nil {
 				continue
 			}
 
-			for k, v := range fileInfo.Fields {
-				if current.attr == k {
-					value = fmt.Sprintf("%v", v)
-
-					value = replaceSlashes(value)
-
-					break
-				}
+			if change.ExiftoolData == nil {
+				change.ExiftoolData = &meta
 			}
+
+			v, err := meta.GetString(current.attr)
+			if err != nil {
+				continue
+			}
+
+			value = replaceSlashes(v)
 		}
 
 		value = transformString(value, current.transformToken)
@@ -984,6 +964,48 @@ func replaceExtVars(change *file.Change, ev extVars) (target string) {
 	return target
 }
 
+func ExtractExiftoolMetadata(
+	conf *config.Config,
+	fileNames ...string,
+) ([]exiftool.FileMetadata, error) {
+	var opts []func(*exiftool.Exiftool) error
+
+	if conf.ExiftoolOpts.API != "" {
+		opts = append(opts, exiftool.Api(conf.ExiftoolOpts.API))
+	}
+
+	if conf.ExiftoolOpts.Charset != "" {
+		opts = append(opts, exiftool.Charset(conf.ExiftoolOpts.Charset))
+	}
+
+	if conf.ExiftoolOpts.CoordFormat != "" {
+		opts = append(
+			opts,
+			exiftool.CoordFormant(conf.ExiftoolOpts.CoordFormat),
+		)
+	}
+
+	if conf.ExiftoolOpts.DateFormat != "" {
+		opts = append(
+			opts,
+			exiftool.DateFormant(conf.ExiftoolOpts.DateFormat),
+		)
+	}
+
+	if conf.ExiftoolOpts.ExtractEmbedded {
+		opts = append(opts, exiftool.ExtractEmbedded())
+	}
+
+	et, err := exiftool.NewExiftool(opts...)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initialise exiftool: %w", err)
+	}
+
+	defer et.Close()
+
+	return et.ExtractMetadata(fileNames...), nil
+}
+
 // Replace checks if any variables are present in the target filename
 // and delegates the variable replacement to the appropriate function.
 func Replace(
@@ -1036,8 +1058,8 @@ func Replace(
 
 	if len(vars.exiftool.matches) > 0 {
 		out, err := replaceExifToolVars(
-			change.Target,
-			change.SourcePath,
+			conf,
+			change,
 			vars.exiftool,
 		)
 		if err != nil {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/barasher/go-exiftool"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
 
@@ -15,16 +16,17 @@ import (
 
 // Change represents a single renaming change.
 type Change struct {
-	Error        error         `json:"error,omitempty"`
-	PrimaryPair  *Change       `json:"-"`
-	TargetPath   string        `json:"-"`
-	BaseDir      string        `json:"base_dir"`
-	TargetDir    string        `json:"target_dir"` // TODO: Remove this
-	Source       string        `json:"source"`
-	Target       string        `json:"target"`
-	OriginalName string        `json:"-"`
-	Status       status.Status `json:"status"`
-	SourcePath   string        `json:"-"`
+	Error        error                  `json:"error,omitempty"`
+	PrimaryPair  *Change                `json:"-"`
+	ExiftoolData *exiftool.FileMetadata `json:"-"`
+	Status       status.Status          `json:"status"`
+	TargetPath   string                 `json:"-"`
+	Source       string                 `json:"source"`
+	Target       string                 `json:"target"`
+	OriginalName string                 `json:"-"`
+	BaseDir      string                 `json:"base_dir"`
+	SourcePath   string                 `json:"-"`
+	TargetDir    string                 `json:"target_dir"`
 	CustomSort   struct {
 		Time   time.Time
 		String string
@@ -68,6 +70,22 @@ func (c Changes) RenderJSON(w io.Writer) error {
 	}
 
 	return nil
+}
+
+func (c Changes) SourceNames() (names []string) {
+	for i := range c {
+		names = append(names, c[i].SourcePath)
+	}
+
+	return
+}
+
+func (c Changes) ShouldExtract() bool {
+	if len(c) == 0 {
+		return false
+	}
+
+	return c[0].ExiftoolData == nil
 }
 
 func (c Changes) RenderTable(w io.Writer, noColor bool) {

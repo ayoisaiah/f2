@@ -469,19 +469,36 @@ func Find(conf *config.Config) (changes file.Changes, err error) {
 		return loadFromBackup(conf)
 	}
 
-	defer func() {
-		if conf.Pair && err == nil {
-			sortfiles.Pairs(changes, conf.PairOrder)
-		}
-
-		if conf.Sort != config.SortDefault && err == nil {
-			sortfiles.Changes(changes, conf)
-		}
-	}()
-
 	if conf.CSVFilename != "" {
 		return handleCSV(conf)
 	}
 
-	return searchPaths(conf, &sortVars, &searchVars)
+	changes, err = searchPaths(conf, &sortVars, &searchVars)
+	if err != nil {
+		return nil, err
+	}
+
+	if conf.ExifToolVarPresent && changes.ShouldExtract() {
+		fileMeta, extractErr := variables.ExtractExiftoolMetadata(
+			conf,
+			changes.SourceNames()...)
+		if extractErr != nil {
+			err = extractErr
+			return
+		}
+
+		for i := range fileMeta {
+			changes[i].ExiftoolData = &fileMeta[i]
+		}
+	}
+
+	if conf.Pair {
+		sortfiles.Pairs(changes, conf.PairOrder)
+	}
+
+	if conf.Sort != config.SortDefault {
+		sortfiles.Changes(changes, conf)
+	}
+
+	return
 }

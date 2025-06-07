@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -48,6 +49,7 @@ var (
 		`{+(\$\d+)(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?}+`,
 	)
 	findVariableRegex = regexp.MustCompile(`{(.*)}`)
+	exifToolVarRegex  = regexp.MustCompile(`{xt\..*}`)
 )
 
 var conf *Config
@@ -133,6 +135,7 @@ type Config struct {
 	Pair                     bool           `json:"pair"`
 	SortPerDir               bool           `json:"sort_per_dir"`
 	Clean                    bool           `json:"clean"`
+	ExifToolVarPresent       bool           `json:"-"`
 }
 
 func (c *Config) setFindCond(replacementIndex int) error {
@@ -442,6 +445,12 @@ func (c *Config) configureOutput() {
 	}
 }
 
+func (c *Config) checkIfExifToolVarIsPresent() bool {
+	return slices.ContainsFunc(c.FindSlice, exifToolVarRegex.MatchString) ||
+		slices.ContainsFunc(c.ReplacementSlice, exifToolVarRegex.MatchString) ||
+		exifToolVarRegex.MatchString(c.SortVariable)
+}
+
 // Get retrieves the current configuration or panics if not initialized.
 func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
 	conf = &Config{
@@ -477,6 +486,8 @@ func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
 	conf.BackupFilename = generateBackupFilename(conf.WorkingDir)
 
 	conf.configureOutput()
+
+	conf.ExifToolVarPresent = conf.checkIfExifToolVarIsPresent()
 
 	return conf, nil
 }
