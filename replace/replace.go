@@ -174,6 +174,11 @@ func prepNextChain(
 			continue
 		}
 
+		if change.PrimaryPair != nil && change.PrimaryPair.MatchesFindCond {
+			change.MatchesFindCond = true
+			continue
+		}
+
 		change.Target = conf.Search.FindCond.String()
 
 		err := variables.Replace(conf, change, &findVars)
@@ -208,9 +213,21 @@ func Replace(
 ) (file.Changes, error) {
 	var err error
 
-	// Don't replace the extension in pair mode
-	if conf.Pair {
-		conf.IgnoreExt = true
+	if conf.ExifToolVarPresent && changes.ShouldExtractExiftool() {
+		names, indices := changes.SourceNamesWithIndices(conf.Pair)
+
+		fileMeta, err := variables.ExtractExiftoolMetadata(
+			conf,
+			names...)
+		if err != nil {
+			return changes, err
+		}
+
+		for i := range fileMeta {
+			index := indices[i]
+
+			changes[index].ExiftoolData = &fileMeta[i]
+		}
 	}
 
 	if conf.CSVFilename != "" {

@@ -42,7 +42,7 @@ var (
 var (
 	sortVarRegex                    = regexp.MustCompile("^{.*}$")
 	defaultFixConflictsPatternRegex = regexp.MustCompile(`\((\d+)\)$`)
-	customFixConfictsPatternRegex   = regexp.MustCompile(
+	customFixConflictsPatternRegex  = regexp.MustCompile(
 		`^(\D*?(%(\d+)?d)\D*?)$`,
 	)
 	capturVarIndexRegex = regexp.MustCompile(
@@ -225,6 +225,11 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 	c.Clean = cmd.Bool("clean")
 	c.SortVariable = cmd.String("sort-var")
 
+	// Don't replace the extension in pair mode
+	if conf.Pair {
+		conf.IgnoreExt = true
+	}
+
 	if c.SortVariable != "" && !sortVarRegex.MatchString(c.SortVariable) {
 		return errInvalidSortVariable.Fmt(c.SortVariable)
 	}
@@ -325,7 +330,7 @@ func (c *Config) setDefaultOpts(cmd *cli.Command) error {
 		c.FixConflictsPattern = DefaultFixConflictsPattern
 		c.FixConflictsPatternRegex = defaultFixConflictsPatternRegex
 	} else {
-		if !customFixConfictsPatternRegex.MatchString(c.FixConflictsPattern) {
+		if !customFixConflictsPatternRegex.MatchString(c.FixConflictsPattern) {
 			return errParsingFixConflictsPattern.Fmt(c.FixConflictsPattern)
 		}
 

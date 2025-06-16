@@ -500,12 +500,11 @@ func getFilenameVars(replacementInput string) (filenameVars, error) {
 	return fvMatches, nil
 }
 
-// Extract retrieves all the variables present in the replacement
-// string.
-func Extract(replacement string) (Variables, error) {
-	var vars Variables
-
-	var err error
+// Extract retrieves all the variables present in the replacement string.
+func Extract(replacement string) (vars Variables, err error) {
+	if replacement == "" {
+		return
+	}
 
 	vars.filename, err = getFilenameVars(replacement)
 	if err != nil {

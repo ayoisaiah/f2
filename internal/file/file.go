@@ -72,20 +72,40 @@ func (c Changes) RenderJSON(w io.Writer) error {
 	return nil
 }
 
-func (c Changes) SourceNames() (names []string) {
+func (c Changes) SourceNamesWithIndices(
+	withPair bool,
+) (names []string, indices []int) {
 	for i := range c {
-		names = append(names, c[i].SourcePath)
+		ch := c[i]
+
+		if ch.IsDir {
+			continue
+		}
+
+		if withPair {
+			if ch.PrimaryPair == nil {
+				names = append(names, ch.SourcePath)
+				indices = append(indices, i)
+			}
+
+			continue
+		}
+
+		names = append(names, ch.SourcePath)
+		indices = append(indices, i)
 	}
 
 	return
 }
 
-func (c Changes) ShouldExtract() bool {
-	if len(c) == 0 {
-		return false
+func (c Changes) ShouldExtractExiftool() bool {
+	for _, v := range c {
+		if v.ExiftoolData != nil {
+			return false
+		}
 	}
 
-	return c[0].ExiftoolData == nil
+	return true
 }
 
 func (c Changes) RenderTable(w io.Writer, noColor bool) {

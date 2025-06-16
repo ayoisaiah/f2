@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -177,44 +178,40 @@ func createFileChange(
 
 func evaluateSearchCondition(
 	conf *config.Config,
-	currentPath string,
-	fileInfo os.FileInfo,
+	match *file.Change,
 	searchVars *variables.Variables,
-) (*file.Change, bool, error) {
-	match := createFileChange(conf, currentPath, fileInfo)
+) (removeMatch bool, err error) {
+	if match.PrimaryPair != nil && match.PrimaryPair.MatchesFindCond {
+		match.MatchesFindCond = true
+		return false, nil
+	}
 
-	match.Target = conf.Search.FindCond.String()
-
-	err := variables.Replace(conf, match, searchVars)
+	err = variables.Replace(conf, match, searchVars)
 	if err != nil {
-		return match, false, err
+		return true, err
 	}
 
 	result, err := eval.Evaluate(match.Target)
 	if err != nil {
-		if conf.Verbose {
-			report.SearchEvalFailed(currentPath, match.Target, err)
-		}
-
-		return match, false, nil
-	}
-
-	if !result {
-		return match, false, nil
+		return true, err
 	}
 
 	match.Target = ""
+
+	if !result {
+		return true, nil
+	}
+
 	match.MatchesFindCond = true
 
-	return match, true, nil
+	return false, nil
 }
 
 func checkIfMatch(
 	conf *config.Config,
 	path string,
 	entry fs.DirEntry,
-	sortVars,
-	searchVars *variables.Variables,
+	sortVars *variables.Variables,
 ) (*file.Change, bool, error) {
 	var match *file.Change
 
@@ -228,26 +225,21 @@ func checkIfMatch(
 	var isMatch bool
 
 	if conf.Search.FindCond != nil {
-		match, isMatch, err = evaluateSearchCondition(
-			conf,
-			path,
-			fileInfo,
-			searchVars,
-		)
-		if err != nil {
-			return nil, false, err
-		}
-	} else {
-		fileName := entry.Name()
+		match := createFileChange(conf, path, fileInfo)
+		match.Target = conf.Search.FindCond.String()
 
-		if conf.IgnoreExt && !entry.IsDir() {
-			fileName = pathutil.StripExtension(fileName)
-		}
+		return match, true, err
+	}
 
-		if conf.Search.Regex.MatchString(fileName) {
-			match = createFileChange(conf, path, fileInfo)
-			isMatch = true
-		}
+	fileName := entry.Name()
+
+	if conf.IgnoreExt && !entry.IsDir() && !conf.Pair {
+		fileName = pathutil.StripExtension(fileName)
+	}
+
+	if conf.Search.Regex.MatchString(fileName) {
+		match = createFileChange(conf, path, fileInfo)
+		isMatch = true
 	}
 
 	if shouldFilter(conf, match) {
@@ -262,6 +254,81 @@ func checkIfMatch(
 	}
 
 	return match, isMatch, nil
+}
+
+func walkDirectory(
+	conf *config.Config,
+	rootPath string,
+	processedPaths map[string]bool,
+	sortVars *variables.Variables,
+) (file.Changes, error) {
+	var matches file.Changes
+
+	maxDepth := -1
+	if conf.Recursive {
+		maxDepth = conf.MaxDepth
+	}
+
+	err := filepath.WalkDir(
+		rootPath,
+		func(currentPath string, entry fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if rootPath == currentPath || processedPaths[currentPath] {
+				return nil
+			}
+
+			if shouldSkipHidden, err := skipFileIfHidden(
+				currentPath,
+				conf.FilesAndDirPaths,
+				conf.IncludeHidden,
+			); err != nil {
+				return err
+			} else if shouldSkipHidden {
+				if entry.IsDir() {
+					return fs.SkipDir
+				}
+
+				return nil
+			}
+
+			if shouldSkipExcludedDir(conf, entry) {
+				return fs.SkipDir
+			}
+
+			if isMaxDepth(rootPath, currentPath, maxDepth) {
+				return fs.SkipDir
+			}
+
+			match, isMatch, err := checkIfMatch(
+				conf,
+				currentPath,
+				entry,
+				sortVars,
+			)
+			if err != nil {
+				return err
+			}
+
+			if isMatch {
+				matches = append(matches, match)
+			}
+
+			processedPaths[currentPath] = true
+
+			return nil
+		},
+	)
+
+	return matches, err
+}
+
+func shouldSkipExcludedDir(conf *config.Config, entry fs.DirEntry) bool {
+	return entry.IsDir() && conf.Recursive &&
+		conf.ExcludeDirRegex != nil &&
+		conf.ExcludeDirRegex.MatchString(entry.Name())
 }
 
 // searchPaths walks through the filesystem and finds matches for the provided
@@ -292,7 +359,6 @@ func searchPaths(
 				rootPath,
 				fs.FileInfoToDirEntry(fileInfo),
 				sortVars,
-				searchVars,
 			)
 			if err != nil {
 				return nil, err
@@ -307,72 +373,66 @@ func searchPaths(
 			continue
 		}
 
-		maxDepth := -1 // default value for non-recursive iterations
-		if conf.Recursive {
-			maxDepth = conf.MaxDepth
-		}
-
-		err = filepath.WalkDir(
+		dirMatches, err := walkDirectory(
+			conf,
 			rootPath,
-			func(currentPath string, entry fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-
-				// skip the root path and already processed paths
-				if rootPath == currentPath || processedPaths[currentPath] {
-					return nil
-				}
-
-				if skipHidden, hiddenErr := skipFileIfHidden(
-					currentPath,
-					conf.FilesAndDirPaths,
-					conf.IncludeHidden,
-				); hiddenErr != nil {
-					return hiddenErr
-				} else if skipHidden {
-					if entry.IsDir() {
-						return fs.SkipDir
-					}
-
-					return nil
-				}
-
-				if entry.IsDir() && conf.Recursive &&
-					conf.ExcludeDirRegex != nil {
-					if conf.ExcludeDirRegex.MatchString(entry.Name()) {
-						return fs.SkipDir
-					}
-				}
-
-				if isMaxDepth(rootPath, currentPath, maxDepth) {
-					return fs.SkipDir
-				}
-
-				match, isMatch, err := checkIfMatch(
-					conf,
-					currentPath,
-					entry,
-					sortVars,
-					searchVars,
-				)
-				if err != nil {
-					return err
-				}
-
-				if isMatch {
-					matches = append(matches, match)
-				}
-
-				processedPaths[currentPath] = true
-
-				return nil
-			},
+			processedPaths,
+			sortVars,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		matches = append(matches, dirMatches...)
 	}
+
+	if conf.Search.FindCond != nil {
+		var err error
+
+		matches, err = processFindExpression(conf, matches, searchVars)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return matches, nil
+}
+
+func processFindExpression(
+	conf *config.Config,
+	matches file.Changes,
+	searchVars *variables.Variables,
+) (file.Changes, error) {
+	if conf.Pair {
+		sortfiles.Pairs(matches, conf.PairOrder)
+	}
+
+	if conf.ExifToolVarPresent {
+		names, indices := matches.SourceNamesWithIndices(conf.Pair)
+
+		fileMeta, err := variables.ExtractExiftoolMetadata(
+			conf,
+			names...)
+		if err != nil {
+			return nil, err
+		}
+
+		for i := range fileMeta {
+			index := indices[i]
+			matches[index].ExiftoolData = &fileMeta[i]
+		}
+	}
+
+	matches = slices.DeleteFunc(matches, func(match *file.Change) bool {
+		removeMatch, err := evaluateSearchCondition(conf, match, searchVars)
+		if err != nil {
+			if conf.Verbose {
+				report.SearchEvalFailed(match.SourcePath, match.Target, err)
+			}
+		}
+
+		return removeMatch
+	})
 
 	return matches, nil
 }
@@ -444,18 +504,16 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
 func Find(conf *config.Config) (changes file.Changes, err error) {
-	var (
-		sortVars   variables.Variables
-		searchVars variables.Variables
-	)
-
-	if conf.SortVariable != "" {
-		sortVars, err = variables.Extract(conf.SortVariable)
-		if err != nil {
-			return nil, err
-		}
+	if conf.Revert {
+		return loadFromBackup(conf)
 	}
 
+	sortVars, err := variables.Extract(conf.SortVariable)
+	if err != nil {
+		return nil, err
+	}
+
+	var searchVars variables.Variables
 	if conf.Search.FindCond != nil {
 		searchVars, err = variables.Extract(
 			conf.Search.FindCond.String(),
@@ -465,34 +523,16 @@ func Find(conf *config.Config) (changes file.Changes, err error) {
 		}
 	}
 
-	if conf.Revert {
-		return loadFromBackup(conf)
-	}
-
 	if conf.CSVFilename != "" {
-		return handleCSV(conf)
-	}
-
-	changes, err = searchPaths(conf, &sortVars, &searchVars)
-	if err != nil {
-		return nil, err
-	}
-
-	if conf.ExifToolVarPresent && changes.ShouldExtract() {
-		fileMeta, extractErr := variables.ExtractExiftoolMetadata(
-			conf,
-			changes.SourceNames()...)
-		if extractErr != nil {
-			err = extractErr
-			return
-		}
-
-		for i := range fileMeta {
-			changes[i].ExiftoolData = &fileMeta[i]
+		changes, err = handleCSV(conf)
+	} else {
+		changes, err = searchPaths(conf, &sortVars, &searchVars)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	if conf.Pair {
+	if conf.Search.FindCond == nil && conf.Pair {
 		sortfiles.Pairs(changes, conf.PairOrder)
 	}
 
