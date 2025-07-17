@@ -272,6 +272,46 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "replace with file hash variables (xxHash)",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "audio.flac",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "pic.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/ddce01f1_a17d9c18766db149",
+				"testdata/437a7063_64e74ba441bb49b7",
+			},
+			Args: []string{
+				"-f", ".*", "-r", "{hash.xxh32}_{hash.xxh64}",
+			},
+		},
+		{
+			Name: "replace with file hash variables (xxHash, upper case)",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "audio.flac",
+				},
+				{
+					BaseDir: "testdata",
+					Source:  "pic.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/DDCE01F1_A17D9C18766DB149",
+				"testdata/437A7063_64E74BA441BB49B7",
+			},
+			Args: []string{
+				"-f", ".*", "-r", "{hash.xxh32.up}_{hash.xxh64.up}",
+			},
+		},
+		{
 			Name: "replace with Exiftool variables",
 			Changes: file.Changes{
 				{
