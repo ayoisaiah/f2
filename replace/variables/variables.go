@@ -17,7 +17,8 @@ import (
 	"strings"
 	"time"
 
-	exiftool "github.com/barasher/go-exiftool"
+	"github.com/OneOfOne/xxhash"
+	"github.com/barasher/go-exiftool"
 	"github.com/dhowden/tag"
 	"github.com/djherbis/times"
 	"github.com/rwcarlsen/goexif/exif"
@@ -43,6 +44,8 @@ const (
 	sha256Hash hashAlgorithm = "sha256"
 	sha512Hash hashAlgorithm = "sha512"
 	md5Hash    hashAlgorithm = "md5"
+	xxh32Hash  hashAlgorithm = "xxh32"
+	xxh64Hash  hashAlgorithm = "xxh64"
 )
 
 // Exif represents exif information from an image file.
@@ -206,6 +209,10 @@ func getHash(filePath string, hashValue hashAlgorithm) (string, error) {
 		newHash = sha512.New()
 	case md5Hash:
 		newHash = md5.New()
+	case xxh32Hash:
+		newHash = xxhash.New32()
+	case xxh64Hash:
+		newHash = xxhash.New64()
 	default:
 		return "", nil
 	}
