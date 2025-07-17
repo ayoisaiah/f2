@@ -75,7 +75,7 @@ func init() {
 	)
 	hashVarRegex = regexp.MustCompile(
 		fmt.Sprintf(
-			"{+hash.(sha1|sha256|sha512|md5)(?:\\.%s)?}+",
+			"{+hash.(sha1|sha256|sha512|md5|xxh32|xxh64)(?:\\.%s)?}+",
 			transformTokens,
 		),
 	)

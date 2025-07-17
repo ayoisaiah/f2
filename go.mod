@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/OneOfOne/xxhash v1.2.2
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/djherbis/times v1.6.0
 	github.com/jessevdk/go-flags v1.6.1
@@ -32,6 +33,7 @@ require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
+	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gookit/color v1.5.4 // indirect
