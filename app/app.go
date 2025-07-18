@@ -62,9 +62,9 @@ func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 	copy(origArgs, os.Args)
 
 	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
-		tokens := strings.Fields(optsEnv)
+		args := strings.Fields(optsEnv)
 
-		for _, token := range tokens {
+		for _, token := range args {
 			if strings.HasPrefix(token, "-") {
 				if !supportedDefaultOpts[token] {
 					return nil, errDefaultOptsParsing.Fmt(token)
@@ -72,7 +72,7 @@ func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 			}
 		}
 
-		args := append(strings.Fields(optsEnv), os.Args[1:]...)
+		args = append(args, os.Args[1:]...)
 		os.Args = append(os.Args[:1], args...)
 	}
 

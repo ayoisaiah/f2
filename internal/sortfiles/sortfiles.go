@@ -162,6 +162,9 @@ func ByTime(
 			}
 		}
 
+		a.SortCriterion.Time = aTime
+		b.SortCriterion.Time = bTime
+
 		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0
 		}
@@ -199,6 +202,9 @@ func BySize(changes file.Changes, conf *config.Config) {
 
 		fileASize := fileInfoA.Size()
 		fileBSize := fileInfoB.Size()
+
+		a.SortCriterion.Size = fileASize
+		b.SortCriterion.Size = fileBSize
 
 		// Don't sort files in different directories relative to each other
 		if conf.SortPerDir && a.BaseDir != b.BaseDir {

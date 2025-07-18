@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 )
@@ -51,7 +50,7 @@ func backupChanges(
 		}
 	}
 
-	b := config.Backup{
+	b := file.Backup{
 		Changes:     changes,
 		CleanedDirs: cleanedDirs,
 	}

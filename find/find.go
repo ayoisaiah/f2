@@ -3,7 +3,9 @@ package find
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -30,10 +32,6 @@ const (
 // shouldFilter decides whether a match should be included in the final
 // pool of files for renaming.
 func shouldFilter(conf *config.Config, match *file.Change) bool {
-	if match == nil {
-		return true
-	}
-
 	if conf.ExcludeRegex != nil &&
 		conf.ExcludeRegex.MatchString(match.Source) {
 		return true
@@ -131,18 +129,18 @@ func extractCustomSort(
 		// if variable cannot be parsed into a valid time, default to zero value
 		timeVal, _ := dateparse.ParseAny(ch.Target)
 
-		ch.CustomSort.Time = timeVal
+		ch.SortCriterion.TimeVar = timeVal
 	}
 
 	if conf.Sort == config.SortStringVar {
-		ch.CustomSort.String = ch.Target
+		ch.SortCriterion.StringVar = ch.Target
 	}
 
 	if conf.Sort == config.SortIntVar {
 		// if variable cannot be parsed into a valid integer, default to zero
 		intVal, _ := strconv.Atoi(ch.Target)
 
-		ch.CustomSort.Int = intVal
+		ch.SortCriterion.IntVar = intVal
 	}
 
 	// Reset to an empty string once custom sort variable has been extracted and
@@ -213,13 +211,11 @@ func checkIfMatch(
 	entry fs.DirEntry,
 	sortVars *variables.Variables,
 ) (*file.Change, bool, error) {
-	var match *file.Change
-
 	var err error
 
 	fileInfo, err := entry.Info()
 	if err != nil {
-		return match, false, err
+		return nil, false, err
 	}
 
 	var isMatch bool
@@ -237,12 +233,25 @@ func checkIfMatch(
 		fileName = pathutil.StripExtension(fileName)
 	}
 
-	if conf.Search.Regex.MatchString(fileName) {
-		match = createFileChange(conf, path, fileInfo)
-		isMatch = true
+	if !conf.Search.Regex.MatchString(fileName) {
+		return nil, false, nil
 	}
 
+	match := createFileChange(conf, path, fileInfo)
+
+	isMatch = true
+
+	slog.Debug(
+		"found file matching search pattern",
+		slog.Any("match", match),
+	)
+
 	if shouldFilter(conf, match) {
+		slog.Debug(
+			"excluding file based on filter criteria",
+			slog.Any("match", match),
+		)
+
 		return match, false, nil
 	}
 
@@ -280,13 +289,18 @@ func walkDirectory(
 				return nil
 			}
 
-			if shouldSkipHidden, err := skipFileIfHidden(
+			if shouldSkipHidden, skipErr := skipFileIfHidden(
 				currentPath,
 				conf.FilesAndDirPaths,
 				conf.IncludeHidden,
-			); err != nil {
-				return err
+			); skipErr != nil {
+				return skipErr
 			} else if shouldSkipHidden {
+				slog.Debug(
+					"skipping hidden path",
+					slog.String("path", currentPath),
+				)
+
 				if entry.IsDir() {
 					return fs.SkipDir
 				}
@@ -295,10 +309,22 @@ func walkDirectory(
 			}
 
 			if shouldSkipExcludedDir(conf, entry) {
+				slog.Debug(
+					"skipping excluded directory",
+					slog.String("path", currentPath),
+				)
+
 				return fs.SkipDir
 			}
 
 			if isMaxDepth(rootPath, currentPath, maxDepth) {
+				slog.Debug(
+					"max depth reached, skipping directory traversal",
+					slog.String("root_path", rootPath),
+					slog.String("path", currentPath),
+					slog.Int("max_depth", maxDepth),
+				)
+
 				return fs.SkipDir
 			}
 
@@ -354,14 +380,14 @@ func searchPaths(
 				continue
 			}
 
-			match, isMatch, err := checkIfMatch(
+			match, isMatch, matchErr := checkIfMatch(
 				conf,
 				rootPath,
 				fs.FileInfoToDirEntry(fileInfo),
 				sortVars,
 			)
-			if err != nil {
-				return nil, err
+			if matchErr != nil {
+				return nil, matchErr
 			}
 
 			if isMatch {
@@ -405,10 +431,16 @@ func processFindExpression(
 ) (file.Changes, error) {
 	if conf.Pair {
 		sortfiles.Pairs(matches, conf.PairOrder)
+		slog.Debug(
+			"finished sorting file pairings",
+			slog.Any("matches", matches),
+		)
 	}
 
 	if conf.ExifToolVarPresent {
 		names, indices := matches.SourceNamesWithIndices(conf.Pair)
+
+		slog.Debug("extracting exif variables", slog.Any("paths", names))
 
 		fileMeta, err := variables.ExtractExiftoolMetadata(
 			conf,
@@ -420,6 +452,15 @@ func processFindExpression(
 		for i := range fileMeta {
 			index := indices[i]
 			matches[index].ExiftoolData = &fileMeta[i]
+			slog.Debug(
+				"attaching exif data to file",
+				slog.String("match", matches[index].SourcePath),
+				slog.String("file", fileMeta[i].File),
+				slog.Bool(
+					"is_match",
+					fileMeta[i].File == matches[index].SourcePath,
+				),
+			)
 		}
 	}
 
@@ -429,6 +470,14 @@ func processFindExpression(
 			if conf.Verbose {
 				report.SearchEvalFailed(match.SourcePath, match.Target, err)
 			}
+		}
+
+		if removeMatch {
+			slog.Debug(
+				"excluding file: find condition evaluated to false",
+				slog.String("path", match.SourcePath),
+				slog.String("evaluated", match.Target),
+			)
 		}
 
 		return removeMatch
@@ -460,9 +509,10 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 		return nil, err
 	}
 
-	var backup config.Backup
+	var backup file.Backup
 
-	if err := json.Unmarshal(fileBytes, &backup); err != nil {
+	err = json.Unmarshal(fileBytes, &backup)
+	if err != nil {
 		return nil, err
 	}
 
@@ -481,7 +531,7 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 		ch.TargetPath = filepath.Join(ch.TargetDir, ch.Target)
 		ch.Status = status.OK
 
-		_, err := os.Stat(ch.SourcePath)
+		_, err = os.Stat(ch.SourcePath)
 		if errors.Is(err, os.ErrNotExist) {
 			ch.Status = status.SourceNotFound
 		}
@@ -494,7 +544,10 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 
 		// recreate empty directories that were cleaned
 		for _, v := range backup.CleanedDirs {
-			_ = os.MkdirAll(v, osutil.DirPermission)
+			err = os.MkdirAll(v, osutil.DirPermission)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -503,7 +556,7 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
-func Find(conf *config.Config) (changes file.Changes, err error) {
+func Find(conf *config.Config) (matches file.Changes, err error) {
 	if conf.Revert {
 		return loadFromBackup(conf)
 	}
@@ -524,20 +577,39 @@ func Find(conf *config.Config) (changes file.Changes, err error) {
 	}
 
 	if conf.CSVFilename != "" {
-		changes, err = handleCSV(conf)
+		matches, err = handleCSV(conf)
 	} else {
-		changes, err = searchPaths(conf, &sortVars, &searchVars)
+		matches, err = searchPaths(conf, &sortVars, &searchVars)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	slog.Debug(
+		"search complete",
+		slog.Any("matches", matches),
+	)
+
 	if conf.Search.FindCond == nil && conf.Pair {
-		sortfiles.Pairs(changes, conf.PairOrder)
+		sortfiles.Pairs(matches, conf.PairOrder)
+		slog.Debug(
+			"finished sorting file pairings",
+			slog.Any("matches", matches),
+		)
 	}
 
 	if conf.Sort != config.SortDefault {
-		sortfiles.Changes(changes, conf)
+		sortfiles.Changes(matches, conf)
+		slog.Debug(
+			fmt.Sprintf("finished sorting matches by %s", conf.Sort),
+			slog.Any("matches", matches),
+		)
+	}
+
+	// If using indices without an explicit sort, ensure that the files
+	// are arranged hierarchically
+	if conf.IndexPresent && conf.Sort == config.SortDefault {
+		sortfiles.Hierarchically(matches)
 	}
 
 	return

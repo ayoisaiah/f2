@@ -4,7 +4,6 @@ package config
 
 import (
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -19,13 +18,12 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v3"
-
-	"github.com/ayoisaiah/f2/v2/internal/file"
 )
 
 const (
 	EnvNoColor   = "NO_COLOR"
 	EnvF2NoColor = "F2_NO_COLOR"
+	EnvDebug     = "F2_DEBUG"
 )
 
 const (
@@ -48,6 +46,9 @@ var (
 	capturVarIndexRegex = regexp.MustCompile(
 		`{+(\$\d+)(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?}+`,
 	)
+	indexVarRegex = regexp.MustCompile(
+		`{+(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?(##)?}+`,
+	)
 	findVariableRegex = regexp.MustCompile(`{(.*)}`)
 	exifToolVarRegex  = regexp.MustCompile(`{xt\..*}`)
 )
@@ -61,25 +62,6 @@ type ExiftoolOpts struct {
 	CoordFormat     string `long:"coordFormat"     json:"coord_format"`     // corresponds to the `-coordFormat` flag
 	DateFormat      string `long:"dateFormat"      json:"date_format"`      // corresponds to the `-dateFormat` flag
 	ExtractEmbedded bool   `long:"extractEmbedded" json:"extract_embedded"` // corresponds to the `-extractEmbedded` flag
-}
-
-type Backup struct {
-	Changes     file.Changes `json:"changes"`
-	CleanedDirs []string     `json:"cleaned_dirs,omitempty"`
-}
-
-func (b Backup) RenderJSON(w io.Writer) error {
-	jsonData, err := json.Marshal(b)
-	if err != nil {
-		return err
-	}
-
-	_, err = w.Write(jsonData)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 type Search struct {
@@ -136,6 +118,7 @@ type Config struct {
 	SortPerDir               bool           `json:"sort_per_dir"`
 	Clean                    bool           `json:"clean"`
 	ExifToolVarPresent       bool           `json:"-"`
+	IndexPresent             bool           `json:"-"`
 }
 
 func (c *Config) setFindCond(replacementIndex int) error {
@@ -215,6 +198,7 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 
 	c.FindSlice = cmd.StringSlice("find")
 	c.ReplacementSlice = cmd.StringSlice("replace")
+
 	c.CSVFilename = cmd.String("csv")
 	c.Revert = cmd.Bool("undo")
 	c.Debug = cmd.Bool("debug")
@@ -493,6 +477,10 @@ func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
 	conf.configureOutput()
 
 	conf.ExifToolVarPresent = conf.checkIfExifToolVarIsPresent()
+	conf.IndexPresent = slices.ContainsFunc(
+		conf.ReplacementSlice,
+		indexVarRegex.MatchString,
+	)
 
 	return conf, nil
 }

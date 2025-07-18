@@ -16,15 +16,15 @@ func ByTimeVar(
 ) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		if a.PrimaryPair != nil {
-			a.CustomSort.Time = a.PrimaryPair.CustomSort.Time
+			a.SortCriterion.TimeVar = a.PrimaryPair.SortCriterion.TimeVar
 		}
 
 		if b.PrimaryPair != nil {
-			b.CustomSort.Time = b.PrimaryPair.CustomSort.Time
+			b.SortCriterion.TimeVar = b.PrimaryPair.SortCriterion.TimeVar
 		}
 
-		timeA := a.CustomSort.Time
-		timeB := b.CustomSort.Time
+		timeA := a.SortCriterion.TimeVar
+		timeB := b.SortCriterion.TimeVar
 
 		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0
@@ -46,15 +46,15 @@ func ByStringVar(
 ) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		if a.PrimaryPair != nil {
-			a.CustomSort.String = a.PrimaryPair.CustomSort.String
+			a.SortCriterion.StringVar = a.PrimaryPair.SortCriterion.StringVar
 		}
 
 		if b.PrimaryPair != nil {
-			b.CustomSort.String = b.PrimaryPair.CustomSort.String
+			b.SortCriterion.StringVar = b.PrimaryPair.SortCriterion.StringVar
 		}
 
-		strA := a.CustomSort.String
-		strB := b.CustomSort.String
+		strA := a.SortCriterion.StringVar
+		strB := b.SortCriterion.StringVar
 
 		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0
@@ -75,15 +75,15 @@ func ByIntVar(
 ) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		if a.PrimaryPair != nil {
-			a.CustomSort.Int = a.PrimaryPair.CustomSort.Int
+			a.SortCriterion.IntVar = a.PrimaryPair.SortCriterion.IntVar
 		}
 
 		if b.PrimaryPair != nil {
-			b.CustomSort.Int = b.PrimaryPair.CustomSort.Int
+			b.SortCriterion.IntVar = b.PrimaryPair.SortCriterion.IntVar
 		}
 
-		intA := a.CustomSort.Int
-		intB := b.CustomSort.Int
+		intA := a.SortCriterion.IntVar
+		intB := b.SortCriterion.IntVar
 
 		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0

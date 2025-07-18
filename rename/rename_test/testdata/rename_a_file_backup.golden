@@ -1,1 +1,1 @@
-{"changes":[{"status":"","source":"File.txt","target":"myFile.txt","base_dir":"","target_dir":"","is_dir":false}]}
+{"changes":[{"base_dir":"","target_dir":"","source":"File.txt","target":"myFile.txt","status":"","is_dir":false}]}

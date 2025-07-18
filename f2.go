@@ -3,6 +3,7 @@ package f2
 import (
 	"context"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -28,50 +29,62 @@ func isOutputToPipe() bool {
 }
 
 // execute initiates a new renaming operation based on the provided CLI context.
-func execute(_ context.Context, cmd *cli.Command) error {
+func execute(ctx context.Context, cmd *cli.Command) error {
 	appConfig, err := config.Init(cmd, isOutputToPipe())
 	if err != nil {
 		return err
 	}
 
-	changes, err := find.Find(appConfig)
+	slog.DebugContext(
+		ctx,
+		"working configuration",
+		slog.Any("config", appConfig),
+	)
+
+	matches, err := find.Find(appConfig)
 	if err != nil {
 		return err
 	}
 
-	if len(changes) == 0 {
+	slog.Debug(
+		"find results",
+		slog.Int("count", len(matches)),
+		slog.Any("matches", matches),
+	)
+
+	if len(matches) == 0 {
 		report.NoMatches(appConfig)
 
 		return nil
 	}
 
 	if !appConfig.Revert {
-		changes, err = replace.Replace(appConfig, changes)
+		matches, err = replace.Replace(appConfig, matches)
 		if err != nil {
 			return err
 		}
 	}
 
 	hasConflicts := validate.Validate(
-		changes,
+		matches,
 		appConfig.AutoFixConflicts,
 		appConfig.AllowOverwrites,
 	)
 
 	if hasConflicts {
-		report.Report(appConfig, changes, hasConflicts)
+		report.Report(appConfig, matches, hasConflicts)
 
 		return errConflictDetected
 	}
 
 	if !appConfig.Exec {
-		report.Report(appConfig, changes, hasConflicts)
+		report.Report(appConfig, matches, hasConflicts)
 		return nil
 	}
 
-	err = rename.Rename(appConfig, changes)
+	err = rename.Rename(appConfig, matches)
 
-	rename.PostRename(appConfig, changes, err)
+	rename.PostRename(appConfig, matches, err)
 
 	return err
 }

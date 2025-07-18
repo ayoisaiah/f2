@@ -3,6 +3,7 @@ package file
 import (
 	"encoding/json"
 	"io"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -11,32 +12,95 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
 
+	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/status"
 )
 
+type Backup struct {
+	Changes     Changes  `json:"changes"`
+	CleanedDirs []string `json:"cleaned_dirs,omitempty"`
+}
+
+func (b Backup) RenderJSON(w io.Writer) error {
+	jsonData, err := json.Marshal(b)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(jsonData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Change represents a single renaming change.
 type Change struct {
-	Error        error                  `json:"error,omitempty"`
-	PrimaryPair  *Change                `json:"-"`
-	ExiftoolData *exiftool.FileMetadata `json:"-"`
-	Status       status.Status          `json:"status"`
-	TargetPath   string                 `json:"-"`
-	Source       string                 `json:"source"`
-	Target       string                 `json:"target"`
-	OriginalName string                 `json:"-"`
-	BaseDir      string                 `json:"base_dir"`
-	SourcePath   string                 `json:"-"`
-	TargetDir    string                 `json:"target_dir"`
-	CustomSort   struct {
-		Time   time.Time
-		String string
-		Int    int
+	Error         error                  `json:"error,omitempty"`
+	PrimaryPair   *Change                `json:"-"`
+	ExiftoolData  *exiftool.FileMetadata `json:"-"`
+	BaseDir       string                 `json:"base_dir"`
+	TargetDir     string                 `json:"target_dir"`
+	Source        string                 `json:"source"`
+	Target        string                 `json:"target"`
+	OriginalName  string                 `json:"-"`
+	Status        status.Status          `json:"status"`
+	SourcePath    string                 `json:"-"`
+	TargetPath    string                 `json:"-"`
+	CSVRow        []string               `json:"-"`
+	SortCriterion struct {
+		TimeVar   time.Time
+		Time      time.Time
+		StringVar string
+		IntVar    int
+		Size      int64
 	} `json:"-"`
-	CSVRow          []string `json:"-"`
-	Position        int      `json:"-"`
-	IsDir           bool     `json:"is_dir"`
-	WillOverwrite   bool     `json:"-"`
-	MatchesFindCond bool     `json:"-"`
+	Position        int  `json:"-"`
+	IsDir           bool `json:"is_dir"`
+	WillOverwrite   bool `json:"-"`
+	MatchesFindCond bool `json:"-"`
+}
+
+func (c *Change) LogValue() slog.Value {
+	attrs := []slog.Attr{
+		slog.String("source_path", c.SourcePath),
+		slog.String("target", c.Target),
+		slog.Bool("is_dir", c.IsDir),
+	}
+
+	if !c.SortCriterion.TimeVar.IsZero() {
+		attrs = append(
+			attrs,
+			slog.Int64("time_var", c.SortCriterion.TimeVar.UnixNano()),
+		)
+	}
+
+	if !c.SortCriterion.Time.IsZero() {
+		attrs = append(
+			attrs,
+			slog.Int64("time", c.SortCriterion.Time.UnixNano()),
+		)
+	}
+
+	conf := config.Get()
+
+	if conf.Sort == config.SortStringVar {
+		attrs = append(
+			attrs,
+			slog.String("string_var", c.SortCriterion.StringVar),
+		)
+	}
+
+	if conf.Sort == config.SortIntVar {
+		attrs = append(attrs, slog.Int("int_var", c.SortCriterion.IntVar))
+	}
+
+	if conf.Sort == config.SortSize {
+		attrs = append(attrs, slog.Int64("size", c.SortCriterion.Size))
+	}
+
+	return slog.GroupValue(attrs...)
 }
 
 // AutoFixTarget sets the new target name.
@@ -44,7 +108,7 @@ func (c *Change) AutoFixTarget(newTarget string) {
 	c.Target = newTarget
 	c.TargetPath = filepath.Join(c.TargetDir, c.Target)
 
-	// Ensure empty targets is reported as empty instead of as a dot
+	// Ensure empty targets are reported as empty instead of as a dot
 	if c.TargetPath == "." {
 		c.TargetPath = ""
 	}
@@ -57,6 +121,20 @@ func (c *Change) AutoFixTarget(newTarget string) {
 }
 
 type Changes []*Change
+
+func (c Changes) LogValue() slog.Value {
+	vals := make([]slog.Value, len(c))
+
+	for i := range c {
+		ch := c[i]
+		vals[i] = slog.GroupValue(
+			slog.Int("index", i+1),
+			slog.Any("file", ch.LogValue()),
+		)
+	}
+
+	return slog.GroupValue(slog.Any("changes", vals))
+}
 
 func (c Changes) RenderJSON(w io.Writer) error {
 	jsonData, err := json.Marshal(c)

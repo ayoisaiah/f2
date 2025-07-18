@@ -4,6 +4,7 @@
 package replace
 
 import (
+	"log/slog"
 	"path/filepath"
 	"strings"
 
@@ -73,18 +74,17 @@ func replaceMatches(
 		return nil, err
 	}
 
-	// If using indexes without an explicit sort, ensure that the files
-	// are arranged hierarchically
-	if vars.IndexMatches() > 0 && conf.Sort == config.SortDefault {
-		sortfiles.Hierarchically(matches)
-	}
-
 	var pairs int
 
 	for i := range matches {
 		change := matches[i]
 
 		if conf.Search.FindCond != nil && !change.MatchesFindCond {
+			slog.Debug(
+				"skipping match due to not meeting find condition",
+				slog.Any("match", change),
+			)
+
 			continue
 		}
 
@@ -113,6 +113,11 @@ func replaceMatches(
 		matches[i] = change
 	}
 
+	slog.Debug(
+		"all replacements applied",
+		slog.Any("changes", matches),
+	)
+
 	return matches, nil
 }
 
@@ -123,7 +128,15 @@ func handleReplacementChain(
 	for i, v := range conf.ReplacementSlice {
 		conf.Replacement = v
 
-		matches, err := replaceMatches(conf, matches)
+		slog.Debug(
+			"handling replacement chain",
+			slog.Int("position", i),
+			slog.String("replacement", v),
+		)
+
+		var err error
+
+		matches, err = replaceMatches(conf, matches)
 		if err != nil {
 			return nil, err
 		}
@@ -170,6 +183,11 @@ func prepNextChain(
 		// in preparation for the next replacement
 		matches[j].Source = change.Target
 
+		slog.Debug(
+			"preparing for next replacement chain",
+			slog.Any("change", change),
+		)
+
 		if conf.Search.FindCond == nil {
 			continue
 		}
@@ -209,30 +227,40 @@ func prepNextChain(
 // argument.
 func Replace(
 	conf *config.Config,
-	changes file.Changes,
+	matches file.Changes,
 ) (file.Changes, error) {
-	var err error
+	if conf.ExifToolVarPresent && matches.ShouldExtractExiftool() {
+		names, indices := matches.SourceNamesWithIndices(conf.Pair)
 
-	if conf.ExifToolVarPresent && changes.ShouldExtractExiftool() {
-		names, indices := changes.SourceNamesWithIndices(conf.Pair)
+		slog.Debug("extracting exif variables", slog.Any("paths", names))
 
 		fileMeta, err := variables.ExtractExiftoolMetadata(
 			conf,
 			names...)
 		if err != nil {
-			return changes, err
+			return matches, err
 		}
 
 		for i := range fileMeta {
 			index := indices[i]
 
-			changes[index].ExiftoolData = &fileMeta[i]
+			slog.Debug(
+				"attaching exif data to file",
+				slog.String("match", matches[index].SourcePath),
+				slog.String("file", fileMeta[i].File),
+				slog.Bool(
+					"is_match",
+					fileMeta[i].File == matches[index].SourcePath,
+				),
+			)
+
+			matches[index].ExiftoolData = &fileMeta[i]
 		}
 	}
 
 	if conf.CSVFilename != "" {
-		for i := range changes {
-			ch := changes[i]
+		for i := range matches {
+			ch := matches[i]
 
 			conf.Replacement = ch.Target
 
@@ -248,14 +276,19 @@ func Replace(
 		}
 	}
 
-	changes, err = handleReplacementChain(conf, changes)
+	matches, err := handleReplacementChain(conf, matches)
 	if err != nil {
 		return nil, err
 	}
 
 	if (conf.IncludeDir || conf.CSVFilename != "") && conf.Exec {
-		sortfiles.ForRenamingAndUndo(changes, conf.Revert)
+		sortfiles.ForRenamingAndUndo(matches, conf.Revert)
 	}
 
-	return changes, nil
+	slog.Debug(
+		"replacement complete",
+		slog.Any("changes", matches),
+	)
+
+	return matches, nil
 }
