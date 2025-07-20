@@ -1,16 +1,5 @@
 name: Release nightly
 
-env:
-  REPO_OWNER: ${{ vars.REPO_OWNER }}
-  REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
-  REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
-  REPO_MAINTAINER: ${{ vars.REPO_MAINTAINER }}
-  REPO_AUTHOR_NAME: ${{ vars.REPO_AUTHOR_NAME }}
-  REPO_AUTHOR_EMAIL: ${{ vars.REPO_AUTHOR_EMAIL }}
-  REPO_BINARY_NAME: ${{ vars.REPO_BINARY_NAME }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  NIGHTLY_TAG: ${{ vars.NIGHTLY_TAG }}
-
 on:
   workflow_dispatch:
   push:
@@ -28,12 +17,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2.3.0
+        with:
+          load-mode: strict
+
       - name: Update nightly tag
         run: |
-          git tag -d ${{ vars.NIGHTLY_TAG }} || true
-          git push origin :refs/tags/${{ vars.NIGHTLY_TAG }} || true
-          git tag ${{ vars.NIGHTLY_TAG }}
-          git push origin ${{ vars.NIGHTLY_TAG }}
+          git tag -d ${{ env.NIGHTLY_TAG }} || true
+          git push origin :refs/tags/${{ env.NIGHTLY_TAG }} || true
+          git tag ${{ env.NIGHTLY_TAG }}
+          git push origin ${{ env.NIGHTLY_TAG }}
 
   release_nightly:
     needs: create_nightly_tag
@@ -48,10 +42,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go ${{ vars.GO_VERSION }}
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2.3.0
+        with:
+          load-mode: strict
+
+      - name: Set up Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ vars.GO_VERSION }}
+          go-version: ${{ env.GO_VERSION }}
           cache: false
           check-latest: true
 
@@ -62,7 +61,7 @@ jobs:
       - name: Create nightly release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: refs/tags/${{ vars.NIGHTLY_TAG }}
+          tag_name: refs/tags/${{ env.NIGHTLY_TAG }}
           name: Development build (master)
           body: |
             This build is directly sourced from the `master` branch in active development. As such, it may include experimental features and potential bugs.
@@ -76,4 +75,4 @@ jobs:
           args: release --clean --snapshot
 
       - name: Upload assets to nightly release
-        run: gh release upload ${{ vars.NIGHTLY_TAG }} dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,*.apk,checksums.txt} --clobber
+        run: gh release upload ${{ env.NIGHTLY_TAG }} dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,*.apk,checksums.txt} --clobber

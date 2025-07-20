@@ -1,18 +1,9 @@
 name: Release stable
 
 env:
-  REPO_OWNER: ${{ vars.REPO_OWNER }}
-  REPO_WEBSITE: ${{ vars.REPO_WEBSITE }}
-  REPO_DESCRIPTION: ${{ vars.REPO_DESCRIPTION }}
-  REPO_MAINTAINER: ${{ vars.REPO_MAINTAINER }}
-  REPO_AUTHOR_NAME: ${{ vars.REPO_AUTHOR_NAME }}
-  REPO_AUTHOR_EMAIL: ${{ vars.REPO_AUTHOR_EMAIL }}
-  REPO_BINARY_NAME: ${{ vars.REPO_BINARY_NAME }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GORELEASER_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
   FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
   FURY_USERNAME: ${{ secrets.FURY_USERNAME }}
-  GORELEASER_CURRENT_TAG: ${{ github.event.client_payload.tag_name }}
 
 on:
   repository_dispatch:
@@ -27,6 +18,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2.3.0
+        with:
+          load-mode: strict
 
       - name: Set up Go ${{ vars.GO_VERSION }}
         uses: actions/setup-go@v5
