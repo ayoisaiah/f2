@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.5.0
 	github.com/OneOfOne/xxhash v1.2.2
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/djherbis/times v1.6.0
@@ -22,6 +23,7 @@ require (
 	github.com/maja42/goval v1.6.0
 	github.com/maruel/natural v1.1.1
 	github.com/mattn/go-isatty v0.0.20
+	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/stretchr/testify v1.10.0
