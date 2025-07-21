@@ -3,14 +3,16 @@ package app
 import (
 	"fmt"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v3"
+
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 )
 
-const usageText = `f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
-  command | f2 FLAGS [OPTIONS]`
-
 func helpText(app *cli.Command) string {
+	usageText := localize.T("usageText")
+
 	flagCSVHelp := fmt.Sprintf(
 		`%s %s`,
 		pterm.Green("--", flagCSV.Name),
@@ -235,6 +237,10 @@ func helpText(app *cli.Command) string {
 		flagVerbose.GetUsage(),
 	)
 
+	positionalArgumentsHelp := localize.T("positionalArgumentsHelp")
+
+	learnMoreHelp := localize.T("learnMoreHelp")
+
 	return fmt.Sprintf(`%s %s
 %s
 
@@ -247,9 +253,7 @@ Project repository: https://github.com/ayoisaiah/f2
 
 %s
   %s
-    Optionally provide one or more files and directories to search for matches. 
-		If omitted, it searches the current directory alone. Also, note that 
-		directories are not searched recursively unless --recursive/-R is used.
+    %s
 
 %s
   %s
@@ -322,25 +326,26 @@ Project repository: https://github.com/ayoisaiah/f2
 	%s
 
 %s
-	%s
+  %s
 
 %s
-  Read the manual at https://f2.freshman.tech
+	%s
 `,
 		app.Name,
 		app.Version,
 		app.Authors[0],
 		app.Usage,
-		pterm.Bold.Sprintf("USAGE"),
+		pterm.Bold.Sprintf("%s", localize.T("usage")),
 		usageText,
-		pterm.Bold.Sprintf("POSITIONAL ARGUMENTS"),
+		pterm.Bold.Sprintf("%s", localize.T("positionalArguments")),
 		pterm.Green("[PATHS TO FILES AND DIRECTORIES...]"),
-		pterm.Bold.Sprintf("FLAGS"),
+		positionalArgumentsHelp,
+		pterm.Bold.Sprintf("%s", localize.T("flags")),
 		flagCSVHelp,
 		flagFindHelp,
 		flagReplaceHelp,
 		flagUndoHelp,
-		pterm.Bold.Sprintf("OPTIONS"),
+		pterm.Bold.Sprintf("%s", localize.T("options")),
 		flagAllowOverwritesHelp,
 		flagCleanHelp,
 		flagExcludeHelp,
@@ -371,44 +376,47 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagStringModeHelp,
 		flagTargetDirHelp,
 		flagVerboseHelp,
-		pterm.Bold.Sprintf("ENVIRONMENTAL VARIABLES"),
+		pterm.Bold.Sprintf("%s", localize.T("environmentalVariables")),
 		envHelp(),
-		pterm.Bold.Sprintf("LEARN MORE"),
+		pterm.Bold.Sprintf("%s", localize.T("learnMore")),
+		learnMoreHelp,
 	)
 }
 
 func envHelp() string {
-	return fmt.Sprintf(`%s
-		Override the default options according to your preferences. For example, 
-		you can enable execute mode and ignore file extensions by default:
+	envHelp := localize.T("envHelp")
 
-		export F2_DEFAULT_OPTS=--exec --ignore-ext
+	colorHelp := localize.T("colorHelp")
+
+	return fmt.Sprintf(`%s
+		%s
 
 	%s, %s
-		Set to any value to disable coloured output.`,
+		%s`,
 		pterm.Green("F2_DEFAULT_OPTS"),
+		envHelp,
 		pterm.Green("F2_NO_COLOR"),
 		pterm.Green("NO_COLOR"),
+		colorHelp,
 	)
 }
 
 func ShortHelp(_ *cli.Command) string {
-	return fmt.Sprintf(
-		`The batch renaming tool you'll actually enjoy using.
+	usageText := localize.T("usageText")
 
-%s
-  %s
+	usage := pterm.Bold.Sprintf("%s", localize.T("usage"))
 
-%s
-  $ f2 -f 'jpeg' -r 'jpg'
-  $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
+	examples := pterm.Bold.Sprintf("%s", localize.T("examples"))
 
-%s
-  Use f2 --help to view the command-line options.
-  Read the manual at https://f2.freshman.tech`,
-		pterm.Bold.Sprintf("USAGE"),
-		usageText,
-		pterm.Bold.Sprintf("EXAMPLES"),
-		pterm.Bold.Sprintf("LEARN MORE"),
-	)
+	learnMore := pterm.Bold.Sprintf("%s", localize.T("learnMore"))
+
+	return localize.TWithOpts(&i18n.LocalizeConfig{
+		MessageID: "shortHelp",
+		TemplateData: map[string]string{
+			"Usage":     usage,
+			"UsageText": usageText,
+			"Examples":  examples,
+			"LearnMore": learnMore,
+		},
+	})
 }

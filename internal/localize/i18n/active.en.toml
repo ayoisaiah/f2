@@ -1,0 +1,47 @@
+usageText = '''
+f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
+  command | f2 FLAGS [OPTIONS]'''
+
+usage = "USAGE"
+
+positionalArguments = "POSITIONAL ARGUMENTS"
+
+positionalArgumentsHelp = '''
+Optionally provide one or more files and directories to search for matches.
+    If omitted, it searches the current directory alone. Also, note that
+    directories are not searched recursively unless --recursive/-R is used.
+'''
+
+flags = "FLAGS"
+
+options = "OPTIONS"
+
+environmentalVariables = "ENVIRONMENTAL VARIABLES"
+
+learnMore = "LEARN MORE"
+
+learnMoreHelp = "Read the manual at https://f2.freshman.tech"
+
+envHelp = '''
+Override the default options according to your preferences. For example,
+    you can enable execute mode and ignore file extensions by default:
+
+    export F2_DEFAULT_OPTS=--exec --ignore-ext'''
+
+colorHelp = "Set to any value to disable coloured output."
+
+shortHelp = '''
+The batch renaming tool you'll actually enjoy using.
+
+{{.Usage}}
+  {{.UsageText}}
+
+{{.Examples}}
+  $ f2 -f 'jpeg' -r 'jpg'
+  $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
+
+{{.LearnMore}}
+  Use f2 --help to view the command-line options.
+  Read the manual at https://f2.freshman.tech'''
+
+examples = "EXAMPLES"
