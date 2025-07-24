@@ -17,7 +17,7 @@ var (
 	localizer *i18n.Localizer
 )
 
-func MustInit() {
+func init() {
 	bundle = i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 

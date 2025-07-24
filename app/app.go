@@ -12,7 +12,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
-	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/report"
 )
@@ -51,8 +50,6 @@ func handlePipeInput(reader io.Reader) error {
 
 // Get returns an F2 instance that reads from `reader` and writes to `writer`.
 func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
-	localize.MustInit()
-
 	err := handlePipeInput(reader)
 	if err != nil {
 		return nil, err
