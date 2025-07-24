@@ -11,7 +11,7 @@ import (
 )
 
 func helpText(app *cli.Command) string {
-	usageText := localize.T("usageText")
+	usageText := localize.T("help.usage.text")
 
 	flagCSVHelp := fmt.Sprintf(
 		`%s %s`,
@@ -237,9 +237,9 @@ func helpText(app *cli.Command) string {
 		flagVerbose.GetUsage(),
 	)
 
-	positionalArgumentsHelp := localize.T("positionalArgumentsHelp")
+	positionalArgumentsHelp := localize.T("help.positional_args.text")
 
-	learnMoreHelp := localize.T("learnMoreHelp")
+	learnMoreHelp := localize.T("help.learn_more.text")
 
 	return fmt.Sprintf(`%s %s
 %s
@@ -335,17 +335,17 @@ Project repository: https://github.com/ayoisaiah/f2
 		app.Version,
 		app.Authors[0],
 		app.Usage,
-		pterm.Bold.Sprintf("%s", localize.T("usage")),
+		pterm.Bold.Sprintf("%s", localize.T("help.usage.heading")),
 		usageText,
-		pterm.Bold.Sprintf("%s", localize.T("positionalArguments")),
+		pterm.Bold.Sprintf("%s", localize.T("help.positional_args.heading")),
 		pterm.Green("[PATHS TO FILES AND DIRECTORIES...]"),
 		positionalArgumentsHelp,
-		pterm.Bold.Sprintf("%s", localize.T("flags")),
+		pterm.Bold.Sprintf("%s", localize.T("flag.heading")),
 		flagCSVHelp,
 		flagFindHelp,
 		flagReplaceHelp,
 		flagUndoHelp,
-		pterm.Bold.Sprintf("%s", localize.T("options")),
+		pterm.Bold.Sprintf("%s", localize.T("help.options.heading")),
 		flagAllowOverwritesHelp,
 		flagCleanHelp,
 		flagExcludeHelp,
@@ -376,17 +376,17 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagStringModeHelp,
 		flagTargetDirHelp,
 		flagVerboseHelp,
-		pterm.Bold.Sprintf("%s", localize.T("environmentalVariables")),
+		pterm.Bold.Sprintf("%s", localize.T("help.env.heading")),
 		envHelp(),
-		pterm.Bold.Sprintf("%s", localize.T("learnMore")),
+		pterm.Bold.Sprintf("%s", localize.T("help.learn_more.heading")),
 		learnMoreHelp,
 	)
 }
 
 func envHelp() string {
-	envHelp := localize.T("envHelp")
+	envHelp := localize.T("help.env.text")
 
-	colorHelp := localize.T("colorHelp")
+	colorHelp := localize.T("help.color.text")
 
 	return fmt.Sprintf(`%s
 		%s
@@ -402,16 +402,16 @@ func envHelp() string {
 }
 
 func ShortHelp(_ *cli.Command) string {
-	usageText := localize.T("usageText")
+	usageText := localize.T("help.usage.text")
 
-	usage := pterm.Bold.Sprintf("%s", localize.T("usage"))
+	usage := pterm.Bold.Sprintf("%s", localize.T("help.usage.heading"))
 
-	examples := pterm.Bold.Sprintf("%s", localize.T("examples"))
+	examples := pterm.Bold.Sprintf("%s", localize.T("help.examples.heading"))
 
-	learnMore := pterm.Bold.Sprintf("%s", localize.T("learnMore"))
+	learnMore := pterm.Bold.Sprintf("%s", localize.T("help.learn_more.heading"))
 
 	return localize.TWithOpts(&i18n.LocalizeConfig{
-		MessageID: "shortHelp",
+		MessageID: "help.short.text",
 		TemplateData: map[string]string{
 			"Usage":     usage,
 			"UsageText": usageText,
