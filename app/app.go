@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/report"
 )
@@ -119,9 +120,7 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.Command {
 				Address: "ayo@freshman.tech",
 			},
 		},
-		Usage: `f2 bulk renames files and directories, matching files against a specified
-pattern. It employs safety checks to prevent accidental overwrites and
-offers several options for fine-grained control over the renaming process.`,
+		Usage:                 localize.T("app.usage"),
 		Version:               VersionString,
 		EnableShellCompletion: true,
 		Flags: []cli.Flag{
