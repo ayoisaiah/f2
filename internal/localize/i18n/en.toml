@@ -51,6 +51,12 @@ Override the default options according to your preferences. For example,
     heading = "EXAMPLES"
 
 
+[error]
+  [error.default_opts_parsing]
+    message = "F2_DEFAULT_OPTS error: unsupported flag '%s'"
+  [error.pipe_read]
+    message = "error reading from pipe"
+
 [flag]
   heading = "FLAGS"
 

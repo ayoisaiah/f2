@@ -51,6 +51,12 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
     heading = "EXEMPLES"
 
 
+[error]
+  [error.default_opts_parsing]
+    message = "Erreur F2_DEFAULT_OPTS : drapeau non pris en charge '%s'"
+  [error.pipe_read]
+    message = "erreur de lecture du pipe"
+
 [flag]
   heading = "DRAPEAUX"
 
