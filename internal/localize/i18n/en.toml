@@ -1,23 +1,23 @@
 [help]
   [help.usage]
-    text = '''
+    text = """
 f2 FLAGS [OPTIONS] [PATHS TO FILES AND DIRECTORIES...]
-  command | f2 FLAGS [OPTIONS]'''
+  command | f2 FLAGS [OPTIONS]"""
 
     heading = "USAGE"
   [help.positional_args]
     heading = "POSITIONAL ARGUMENTS"
 
-    text = '''
+    text = """
 Optionally provide one or more files and directories to search for matches.
     If omitted, it searches the current directory alone. Also, note that
-    directories are not searched recursively unless --recursive/-R is used.'''
+    directories are not searched recursively unless --recursive/-R is used."""
 
   [help.options]
     heading = "OPTIONS"
 
   [help.short]
-    text = '''
+    text = """
 The batch renaming tool you'll actually enjoy using.
 
 {{.Usage}}
@@ -29,7 +29,7 @@ The batch renaming tool you'll actually enjoy using.
 
 {{.LearnMore}}
   Use f2 --help to view the command-line options.
-  Read the manual at https://f2.freshman.tech'''
+  Read the manual at https://f2.freshman.tech"""
 
   [help.learn_more]
     heading = "LEARN MORE"
@@ -38,11 +38,11 @@ The batch renaming tool you'll actually enjoy using.
   [help.env]
     heading = "ENVIRONMENTAL VARIABLES"
 
-    text = '''
+    text = """
 Override the default options according to your preferences. For example,
     you can enable execute mode and ignore file extensions by default:
 
-    export F2_DEFAULT_OPTS=--exec --ignore-ext'''
+    export F2_DEFAULT_OPTS=--exec --ignore-ext"""
 
   [help.color]
     text = "Set to any value to disable coloured output."
@@ -61,39 +61,39 @@ Override the default options according to your preferences. For example,
   heading = "FLAGS"
 
   [flag.csv]
-   usage = '''
+   usage = """
 
-    Load a CSV file, and rename according to its contents.'''
+    Load a CSV file, and rename according to its contents."""
 
   [flag.find]
-    usage = '''
+    usage = """
 
     A regular expression pattern used for matching files and directories.
     It accepts the syntax defined by the RE2 standard and defaults to .*
 		if omitted which matches the entire file/directory name.
 
-		When -s/--string-mode is used, this pattern is treated as a literal string.'''
+		When -s/--string-mode is used, this pattern is treated as a literal string."""
   [flag.replace]
-    usage = '''
+    usage = """
 
     The replacement string which replaces each match in the file name.
     It supports capture variables, built-in variables, and exiftool variables.
-    If omitted, it defaults to an empty string.'''
+    If omitted, it defaults to an empty string."""
   [flag.undo]
-    usage = '''
+    usage = """
 
-    Undo the last renaming operation performed in the current working directory.'''
+    Undo the last renaming operation performed in the current working directory."""
   [flag.allowOverwrites]
-    usage = '''
+    usage = """
 
 		Allows the renaming operation to overwrite existing files.
-		Caution: Using this option can lead to unrecoverable data loss.'''
+		Caution: Using this option can lead to unrecoverable data loss."""
   [flag.clean]
-    usage = '''
+    usage = """
 
-    Clean empty directories that were traversed in a renaming operation.'''
+    Clean empty directories that were traversed in a renaming operation."""
   [flag.exclude]
-    usage = '''
+    usage = """
 
 		Excludes files and directories that match the provided regular expression.
 		This flag can be repeated to specify multiple exclude patterns.
@@ -104,18 +104,18 @@ Override the default options according to your preferences. For example,
 
 		Note:
 			This does not prevent recursing into matching directories (use
-			--exclude-dir instead).'''
+			--exclude-dir instead)."""
   [flag.excludeDir]
-    usage = '''
+    usage = """
 
 		Prevents F2 from recursing into directories that match the provided regular
-		expression pattern.'''
+		expression pattern."""
   [flag.exec]
-    usage = '''
+    usage = """
 
-    Executes the renaming operation and applies the changes to the filesystem.'''
+    Executes the renaming operation and applies the changes to the filesystem."""
   [flag.exiftoolOpts]
-    usage = '''
+    usage = """
 
 		Provides options to customize Exiftool's output when using ExifTool
 		variables in replacement patterns.
@@ -128,13 +128,13 @@ Override the default options according to your preferences. For example,
 			--extractEmbedded
 
 		Example:
-			$ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' '''
+			$ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
   [flag.fixConflicts]
-    usage = '''
+    usage = """
 
-    Automatically fixes renaming conflicts using predefined rules.'''
+    Automatically fixes renaming conflicts using predefined rules."""
   [flag.fixConflictsPattern]
-    usage = '''
+    usage = """
 
 		Specifies a custom pattern for renaming files when conflicts occur.
 		The pattern should be a valid Go format string containing a single '%d'
@@ -142,9 +142,9 @@ Override the default options according to your preferences. For example,
 
 		Example: '_%02d'  (generates _01, _02, etc.)
 
-		If not specified, the default pattern '(%d)' is used.'''
+		If not specified, the default pattern '(%d)' is used."""
   [flag.hidden]
-    usage = '''
+    usage = """
 
 		Includes hidden files and directories in the search and renaming process.
 
@@ -152,9 +152,9 @@ Override the default options according to your preferences. For example,
 		On Windows, only files with the 'hidden' attribute are considered hidden.
 
 		To match hidden directories as well, combine this with the -d/--include-dir
-		flag.'''
+		flag."""
   [flag.include]
-    usage = '''
+    usage = """
 
 		Only includes files that match the provided regular expression instead of
 		all files matched by the --find flag.
@@ -162,39 +162,39 @@ Override the default options according to your preferences. For example,
 		This flag can be repeated to specify multiple include patterns.
 
 		Example:
-			-I 'json' -I 'yml' (only include JSON and YAML files)'''
+			-I 'json' -I 'yml' (only include JSON and YAML files)"""
   [flag.includeDir]
-    usage = '''
+    usage = """
 
 		Includes matching directories in the renaming operation (they are excluded
-		by default).'''
+		by default)."""
   [flag.ignoreCase]
-    usage = '''
+    usage = """
 
-    Ignores case sensitivity when searching for matches.'''
+    Ignores case sensitivity when searching for matches."""
   [flag.ignoreExt]
-    usage = '''
+    usage = """
 
-    Ignores the file extension when searching for matches.'''
+    Ignores the file extension when searching for matches."""
   [flag.json]
-    usage = '''
+    usage = """
 
 		Produces JSON output, except for error messages which are sent to the
-		standard error.'''
+		standard error."""
   [flag.maxDepth]
-    usage = '''
+    usage = """
 
-    Limits the depth of recursive search. Set to 0 (default) for no limit.'''
+    Limits the depth of recursive search. Set to 0 (default) for no limit."""
   [flag.noColor]
-    usage = '''
+    usage = """
 
-    Disables colored output.'''
+    Disables colored output."""
   [flag.onlyDir]
-    usage = '''
+    usage = """
 
-    Renames only directories, not files (implies -d/--include-dir).'''
+    Renames only directories, not files (implies -d/--include-dir)."""
   [flag.pair]
-    usage = '''
+    usage = """
 
 		Enable pair renaming to rename files with the same name (but different
 		extensions) in the same directory to the same new name. In pair mode,
@@ -205,9 +205,9 @@ Override the default options according to your preferences. For example,
 
 			$ f2 -r "Photo_{%03d}" --pair -x
 
-			After: Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG'''
+			After: Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG"""
   [flag.pairOrder]
-    usage = '''
+    usage = """
 
 		Order the paired files according to their extension. This helps you control
 		the file to be renamed first, and whose metadata should be extracted when
@@ -215,30 +215,30 @@ Override the default options according to your preferences. For example,
 
 		Example:
 		  --pair-order 'dng,jpg' # rename dng files before jpg
-		  --pair-order 'xmp,arw' # rename xmp files before arw'''
+		  --pair-order 'xmp,arw' # rename xmp files before arw"""
   [flag.quiet]
-    usage = '''
+    usage = """
 
 		Don't print anything to stdout. If no matches are found, f2 will exit with
 	  an error code instead of the normal success code without this flag.
-		Errors will continue to be written to stderr.'''
+		Errors will continue to be written to stderr."""
   [flag.recursive]
-    usage = '''
+    usage = """
 
-    Recursively traverses directories when searching for matches.'''
+    Recursively traverses directories when searching for matches."""
   [flag.replaceLimit]
-    usage = '''
+    usage = """
 
 		Limits the number of replacements made on each matched file. 0 (default)
 		means replace all matches. Negative values replace from the end of the
-		filename.'''
+		filename."""
   [flag.resetIndexPerDir]
-    usage = '''
+    usage = """
 
 		Resets the auto-incrementing index when entering a new directory during a
-		recursive operation.'''
+		recursive operation."""
   [flag.sort]
-    usage = '''
+    usage = """
 
 		Sorts matches in ascending order based on the provided criteria.
 
@@ -252,31 +252,37 @@ Override the default options according to your preferences. For example,
       * 'ctime'      : Sort by file metadata last change time.
       * 'time_var'   : Sort by time variable.
       * 'int_var'    : Sort by integer variable.
-      * 'string_var' : Sort lexicographically by string variable.'''
+      * 'string_var' : Sort lexicographically by string variable."""
   [flag.sortr]
-    usage = '''
+    usage = """
 
-    Accepts the same values as --sort but sorts matches in descending order.'''
+    Accepts the same values as --sort but sorts matches in descending order."""
   [flag.sortPerDir]
-    usage = '''
+    usage = """
 
-    Ensures sorting is performed separately within each directory rather than globally.'''
+    Ensures sorting is performed separately within each directory rather than globally."""
   [flag.sortVar]
-    usage = '''
+    usage = """
 
 		Active when using --sort/--sortr with time_var, int_var, or string_var.
 		Provide a supported variable to sort the files based on file metadata.
-		See https://f2.freshman.tech/guide/sorting for more details.'''
+		See https://f2.freshman.tech/guide/sorting for more details."""
   [flag.stringMode]
-    usage = '''
+    usage = """
 
 		Treats the search pattern (specified by -f/--find) as a literal string
-		instead of a regular expression.'''
+		instead of a regular expression."""
   [flag.targetDir]
-    usage = '''
+    usage = """
 
-    Specify a target directory to move renamed files and reorganize your filesystem.'''
+    Specify a target directory to move renamed files and reorganize your filesystem."""
   [flag.verbose]
-    usage = '''
+    usage = """
 
-    Enables verbose output during the renaming operation.'''
+    Enables verbose output during the renaming operation."""
+
+[app]
+  usage = """
+f2 bulk renames files and directories, matching files against a specified
+pattern. It employs safety checks to prevent accidental overwrites and
+offers several options for fine-grained control over the renaming process. """

@@ -280,3 +280,10 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
     usage = '''
 
     Active la sortie détaillée pendant l'opération de renommage.'''
+
+[app]
+  usage = """
+f2 renomme en masse les fichiers et les répertoires, en faisant correspondre les fichiers à un motif spécifié.
+Il emploie des contrôles de sécurité pour empêcher les écrasements accidentels et
+offre plusieurs options pour un contrôle précis du processus de renommage.
+"""
