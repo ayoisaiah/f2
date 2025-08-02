@@ -1,0 +1,328 @@
+[help]
+  [help.usage]
+    text = """
+f2 FLAGS [OPÇÕES] [CAMINHOS PARA ARQUIVOS E DIRETÓRIOS...]
+  comando | f2 FLAGS [OPÇÕES]"""
+
+    heading = "USO"
+  [help.positional_args]
+    heading = "ARGUMENTOS POSICIONAIS"
+
+    text = """
+Opcionalmente, forneça um ou mais arquivos e diretórios para procurar correspondências.
+    Se omitido, ele procura apenas no diretório atual. Note também que os diretórios
+    não são pesquisados recursivamente, a menos que --recursive/-R seja usado."""
+
+  [help.options]
+    heading = "OPÇÕES"
+
+  [help.short]
+    text = """
+A ferramenta de renomeação em lote que você realmente vai gostar de usar.
+
+{{.Usage}}
+  {{.UsageText}}
+
+{{.Examples}}
+  $ f2 -f 'jpeg' -r 'jpg'
+  $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
+
+{{.LearnMore}}
+  Use f2 --help para ver as opções de linha de comando.
+  Leia o manual em https://f2.freshman.tech"""
+
+  [help.learn_more]
+    heading = "SAIBA MAIS"
+
+    text = "Leia o manual em https://f2.freshman.tech"
+  [help.env]
+    heading = "VARIÁVEIS DE AMBIENTE"
+
+    text = """
+Substitua as opções padrão de acordo com suas preferências. Por exemplo,
+    você pode habilitar o modo de execução e ignorar as extensões de arquivo por padrão:
+
+    export F2_DEFAULT_OPTS=--exec --ignore-ext"""
+
+  [help.color]
+    text = "Defina qualquer valor para desativar a saída colorida."
+
+  [help.examples]
+    heading = "EXEMPLOS"
+
+
+[error]
+  default_opts_parsing = "Erro F2_DEFAULT_OPTS: flag não suportado '%s'"
+  pipe_read            = "erro ao ler do pipe"
+  invalid_submatches   = "Número de subcorrespondências inválido"
+  exiftool_init        = "Falha ao inicializar o exiftool: %w"
+  invalid_argument            = "requer uma das seguintes opções: -f, -r, --csv, ou -u. Execute f2 --help para ver o uso"
+  invalid_sort                = "a ordenação '%s' fornecida é inválida"
+  invalid_sort_variable       = "a variável de ordenação '%s' fornecida é inválida"
+  invalid_target_dir          = "o caminho de destino '%s' existe, mas não é um diretório"
+  parsing_fix_conflicts_pattern = "o padrão --fix-conflicts-pattern '%s' fornecido é inválido"
+  rename_failed = "alguns arquivos não puderam ser renomeados"
+  eval_invalid_args = "argumentos inválidos"
+
+[flag]
+  heading = "FLAGS"
+
+  [flag.csv]
+    usage = """
+
+    Carrega um arquivo CSV e renomeia de acordo com seu conteúdo."""
+
+  [flag.find]
+    usage = """
+
+    Um padrão de expressão regular usado для encontrar arquivos e diretórios.
+    Aceita a sintaxe definida pelo padrão RE2 e, se omitido, o padrão é .*,
+      que corresponde ao nome completo do arquivo/diretório.
+
+      Quando -s/--string-mode é usado, este padrão é tratado como uma string literal."""
+  [flag.replace]
+    usage = """
+
+    A string de substituição que substitui cada correspondência no nome do arquivo.
+    Suporta variáveis de captura, variáveis ​​internas e variáveis ​​do exiftool.
+    Se omitida, o padrão é uma string vazia."""
+  [flag.undo]
+    usage = """
+
+    Desfaz a última operação de renomeação realizada no diretório de trabalho atual."""
+  [flag.allowOverwrites]
+    usage = """
+
+        Permite que a operação de renomeação substitua arquivos existentes.
+        Cuidado: o uso desta opção pode levar à perda irrecuperável de dados."""
+  [flag.clean]
+    usage = """
+
+    Limpa diretórios vazios que foram percorridos em uma operação de renomeação."""
+  [flag.exclude]
+    usage = """
+
+        Exclui arquivos e diretórios que correspondem à expressão regular fornecida.
+        Este flag pode ser repetido para especificar múltiplos padrões de exclusão.
+
+        Exemplo:
+            -E 'json' -E 'yml' (filtra arquivos JSON e YAML)
+            -E 'json|yaml' (equivalente ao anterior)
+
+        Nota:
+            Isso não impede a recursão em diretórios correspondentes (use
+            --exclude-dir em vez disso)."""
+  [flag.excludeDir]
+    usage = """
+
+        Impede que o F2 entre recursivamente em diretórios que correspondem ao padrão
+        de expressão regular fornecido."""
+  [flag.exec]
+    usage = """
+
+    Executa a operação de renomeação e aplica as alterações ao sistema de arquivos."""
+  [flag.exiftoolOpts]
+    usage = """
+
+        Fornece opções para personalizar a saída do Exiftool ao usar variáveis
+        ​​do ExifTool em padrões de substituição.
+
+        Opções suportadas:
+            --api
+            --charset
+            --coordFormat
+            --dateFormat
+            --extractEmbedded
+
+        Exemplo:
+            $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
+  [flag.fixConflicts]
+    usage = """
+
+    Corrige automaticamente conflitos de renomeação usando regras predefinidas."""
+  [flag.fixConflictsPattern]
+    usage = """
+
+        Especifica um padrão personalizado para renomear arquivos quando ocorrem conflitos.
+        O padrão deve ser uma string de formato Go válida contendo um único
+        marcador '%d' para o índice de conflito.
+
+        Exemplo: '_%02d'  (gera _01, _02, etc.)
+
+        Se não for especificado, o padrão '(%d)' é usado."""
+  [flag.hidden]
+    usage = """
+
+        Inclui arquivos e diretórios ocultos no processo de pesquisa e renomeação.
+
+        No Linux e macOS, arquivos ocultos são aqueles que começam com um caractere de ponto.
+        No Windows, apenas arquivos com o atributo 'oculto' são considerados ocultos.
+
+        Para corresponder também a diretórios ocultos, combine isso com o flag -d/--include-dir."""
+  [flag.include]
+    usage = """
+
+        Inclui apenas arquivos que correspondem à expressão regular fornecida, em vez de
+        todos os arquivos correspondidos pelo flag --find.
+
+        Este flag pode ser repetido para especificar múltiplos padrões de inclusão.
+
+        Exemplo:
+            -I 'json' -I 'yml' (inclui apenas arquivos JSON e YAML)"""
+  [flag.includeDir]
+    usage = """
+
+        Inclui diretórios correspondentes na operação de renomeação (eles são
+        excluídos por padrão)."""
+  [flag.ignoreCase]
+    usage = """
+
+    Ignora a sensibilidade a maiúsculas e minúsculas ao procurar correspondências."""
+  [flag.ignoreExt]
+    usage = """
+
+    Ignora a extensão do arquivo ao procurar correspondências."""
+  [flag.json]
+    usage = """
+
+        Produz saída JSON, exceto para mensagens de erro que são enviadas
+        para o erro padrão."""
+  [flag.maxDepth]
+    usage = """
+
+    Limita a profundidade da pesquisa recursiva. Defina como 0 (padrão) para nenhum limite."""
+  [flag.noColor]
+    usage = """
+
+    Desativa a saída colorida."""
+  [flag.onlyDir]
+    usage = """
+
+    Renomeia apenas diretórios, não arquivos (implica -d/--include-dir)."""
+  [flag.pair]
+    usage = """
+
+        Habilita a renomeação em par para renomear arquivos com o mesmo nome (mas extensões
+        diferentes) no mesmo diretório para o mesmo novo nome. No modo de par,
+        as extensões de arquivo são ignoradas.
+
+        Exemplo:
+            Antes: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+
+            $ f2 -r "Foto_{%03d}" --pair -x
+
+            Depois: Foto_001.ARW Foto_001.JPG Foto_002.ARW Foto_002.JPG"""
+  [flag.pairOrder]
+    usage = """
+
+        Ordena os arquivos emparelhados de acordo com sua extensão. Isso ajuda a controlar
+        qual arquivo será renomeado primeiro e cujos metadados devem ser extraídos
+        ao usar variáveis.
+
+        Exemplo:
+          --pair-order 'dng,jpg' # renomeia arquivos dng antes de jpg
+          --pair-order 'xmp,arw' # renomeia arquivos xmp antes de arw"""
+  [flag.quiet]
+    usage = """
+
+        Não imprime nada no stdout. Se nenhuma correspondência for encontrada, o f2 sairá
+      com um código de erro em vez do código de sucesso normal sem este flag.
+        Os erros continuarão a ser escritos no stderr."""
+  [flag.recursive]
+    usage = """
+
+    Percorre diretórios recursivamente ao procurar correspondências."""
+  [flag.replaceLimit]
+    usage = """
+
+        Limita o número de substituições feitas em cada arquivo correspondido. 0 (padrão)
+        significa substituir todas as correspondências. Valores negativos substituem a partir do final
+        do nome do arquivo."""
+  [flag.resetIndexPerDir]
+    usage = """
+
+        Redefine o índice de autoincremento ao entrar em um novo diretório durante uma
+        operação recursiva."""
+  [flag.sort]
+    usage = """
+
+        Ordena as correspondências em ordem crescente com base nos critérios fornecidos.
+
+    Valores permitidos:
+      * 'default'    : Ordem lexicográfica.
+      * 'size'       : Ordenar por tamanho do arquivo.
+      * 'natural'    : Ordenar de acordo com a ordem natural.
+      * 'mtime'      : Ordenar por hora da última modificação do arquivo.
+      * 'btime'      : Ordenar por hora de criação do arquivo.
+      * 'atime'      : Ordenar por hora do último acesso ao arquivo.
+      * 'ctime'      : Ordenar por hora da última alteração de metadados do arquivo.
+      * 'time_var'   : Ordenar por variável de tempo.
+      * 'int_var'    : Ordenar por variável inteira.
+      * 'string_var' : Ordenar lexicograficamente por variável de string."""
+  [flag.sortr]
+    usage = """
+
+    Aceita os mesmos valores que --sort, mas ordena as correspondências em ordem decrescente."""
+  [flag.sortPerDir]
+    usage = """
+
+    Garante que a ordenação seja realizada separadamente dentro de cada diretório, em vez de globalmente."""
+  [flag.sortVar]
+    usage = """
+
+        Ativo ao usar --sort/--sortr com time_var, int_var ou string_var.
+        Forneça uma variável suportada para ordenar os arquivos com base nos metadados do arquivo.
+        Consulte https://f2.freshman.tech/guide/sorting para mais detalhes."""
+  [flag.stringMode]
+    usage = """
+
+        Trata o padrão de pesquisa (especificado por -f/--find) como uma string
+        literal em vez de uma expressão regular."""
+  [flag.targetDir]
+    usage = """
+
+    Especifica um diretório de destino para mover arquivos renomeados e reorganizar seu sistema de arquivos."""
+  [flag.verbose]
+    usage = """
+
+    Habilita a saída detalhada durante a operação de renomeação."""
+
+[app]
+  usage = """
+f2 renomeia arquivos e diretórios em massa, combinando arquivos com um padrão
+especificado. Ele emprega verificações de segurança para evitar substituições
+acidentais e oferece várias opções para controle refinado sobre o processo
+de renomeação. """
+
+[report]
+  error = "erro"
+  backup_failed = "falha no backup"
+  backup_cleanup_failed = "falha na limpeza do arquivo de backup"
+  search_eval_failed = "falha na pesquisa condicional"
+  non_existent_file = "pulando arquivo de origem inexistente na linha"
+  no_matches = "os critérios de pesquisa não corresponderam a nenhum arquivo"
+  no_matches_csv = "nenhum candidato para renomeação encontrado no arquivo CSV"
+  no_matches_undo = "nada para desfazer"
+  dry_run = "execução de teste"
+  commit_changes = "confirme as alterações acima com o flag -x/--exec"
+  renamed = "renomeado"
+  default_opt = "opção padrão '--%s' aplicada do ambiente: %s"
+
+[status]
+  ok                         = "ok"
+  unchanged                  = "inalterado"
+  overwriting                = "sobrescrevendo"
+  empty_filename             = "nome de arquivo vazio"
+  trailing_periods_present   = "presença de pontos finais"
+  target_exists              = "o destino já existe"
+  overwriting_new_path       = "sobrescrevendo novo caminho"
+  forbidden_characters_present = "presença de caracteres proibidos"
+  filename_too_long          = "nome de arquivo muito longo"
+  source_already_renamed     = "origem já renomeada"
+  source_not_found           = "origem não encontrada"
+  ignored                    = "ignorado"
+
+[table]
+  original = "ORIGINAL"
+  renamed = "RENOMEADO"
+  status = "ESTADO"

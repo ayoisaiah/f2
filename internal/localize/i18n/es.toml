@@ -1,0 +1,328 @@
+[help]
+  [help.usage]
+    text = """
+f2 INDICADORES [OPCIONES] [RUTAS A ARCHIVOS Y DIRECTORIOS...]
+  comando | f2 INDICADORES [OPCIONES]"""
+
+    heading = "USO"
+  [help.positional_args]
+    heading = "ARGUMENTOS POSICIONALES"
+
+    text = """
+Opcionalmente, proporcione uno o más archivos y directorios para buscar coincidencias.
+    Si se omite, busca solo en el directorio actual. Tenga en cuenta que
+    los directorios no se buscan de forma recursiva a menos que se use --recursive/-R."""
+
+  [help.options]
+    heading = "OPCIONES"
+
+  [help.short]
+    text = """
+La herramienta de renombrado por lotes que realmente disfrutarás usar.
+
+{{.Usage}}
+  {{.UsageText}}
+
+{{.Examples}}
+  $ f2 -f 'jpeg' -r 'jpg'
+  $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
+
+{{.LearnMore}}
+  Use f2 --help para ver las opciones de la línea de comandos.
+  Lea el manual en https://f2.freshman.tech"""
+
+  [help.learn_more]
+    heading = "MÁS INFORMACIÓN"
+
+    text = "Lea el manual en https://f2.freshman.tech"
+  [help.env]
+    heading = "VARIABLES DE ENTORNO"
+
+    text = """
+Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
+    puede habilitar el modo de ejecución e ignorar las extensiones de archivo por defecto:
+
+    export F2_DEFAULT_OPTS=--exec --ignore-ext"""
+
+  [help.color]
+    text = "Establezca cualquier valor para desactivar la salida con color."
+
+  [help.examples]
+    heading = "EJEMPLOS"
+
+
+[error]
+  default_opts_parsing = "Error F2_DEFAULT_OPTS: indicador no soportado '%s'"
+  pipe_read            = "error leyendo desde la tubería"
+  invalid_submatches   = "Número de subcoincidencias inválido"
+  exiftool_init        = "Fallo al inicializar exiftool: %w"
+  invalid_argument            = "requiere una de las siguientes opciones: -f, -r, --csv, o -u. Ejecute f2 --help para ver el uso"
+  invalid_sort                = "el tipo de ordenamiento '%s' proporcionado es inválido"
+  invalid_sort_variable       = "la variable de ordenamiento '%s' proporcionada es inválida"
+  invalid_target_dir          = "la ruta de destino '%s' existe pero no es un directorio"
+  parsing_fix_conflicts_pattern = "el patrón --fix-conflicts-pattern '%s' proporcionado es inválido"
+  rename_failed = "algunos archivos no pudieron ser renombrados"
+  eval_invalid_args = "argumentos inválidos"
+
+[flag]
+  heading = "INDICADORES"
+
+  [flag.csv]
+    usage = """
+
+    Cargar un archivo CSV y renombrar según su contenido."""
+
+  [flag.find]
+    usage = """
+
+    Un patrón de expresión regular usado para encontrar archivos y directorios.
+    Acepta la sintaxis definida por el estándar RE2 y por defecto es .*
+      si se omite, lo que coincide con el nombre completo del archivo/directorio.
+
+      Cuando se usa -s/--string-mode, este patrón se trata como una cadena de texto literal."""
+  [flag.replace]
+    usage = """
+
+    La cadena de reemplazo que sustituye cada coincidencia en el nombre del archivo.
+    Admite variables de captura, variables integradas y variables de exiftool.
+    Si se omite, el valor predeterminado es una cadena vacía."""
+  [flag.undo]
+    usage = """
+
+    Deshacer la última operación de renombrado realizada en el directorio de trabajo actual."""
+  [flag.allowOverwrites]
+    usage = """
+
+        Permite que la operación de renombrado sobrescriba archivos existentes.
+        Precaución: Usar esta opción puede llevar a una pérdida de datos irrecuperable."""
+  [flag.clean]
+    usage = """
+
+    Limpiar los directorios vacíos que se recorrieron en una operación de renombrado."""
+  [flag.exclude]
+    usage = """
+
+        Excluye archivos y directorios que coincidan con la expresión regular proporcionada.
+        Este indicador se puede repetir para especificar múltiples patrones de exclusión.
+
+        Ejemplo:
+            -E 'json' -E 'yml' (filtra archivos JSON y YAML)
+            -E 'json|yaml' (equivalente al anterior)
+
+        Nota:
+            Esto no evita la recursión en directorios que coincidan (use
+            --exclude-dir en su lugar)."""
+  [flag.excludeDir]
+    usage = """
+
+        Evita que F2 entre de forma recursiva en directorios que coincidan con el patrón
+        de expresión regular proporcionado."""
+  [flag.exec]
+    usage = """
+
+    Ejecuta la operación de renombrado y aplica los cambios al sistema de archivos."""
+  [flag.exiftoolOpts]
+    usage = """
+
+        Proporciona opciones para personalizar la salida de Exiftool al usar variables de
+        ExifTool en patrones de reemplazo.
+
+        Opciones soportadas:
+            --api
+            --charset
+            --coordFormat
+            --dateFormat
+            --extractEmbedded
+
+        Ejemplo:
+            $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
+  [flag.fixConflicts]
+    usage = """
+
+    Corrige automáticamente los conflictos de renombrado usando reglas predefinidas."""
+  [flag.fixConflictsPattern]
+    usage = """
+
+        Especifica un patrón personalizado para renombrar archivos cuando ocurren conflictos.
+        El patrón debe ser una cadena de formato de Go válida que contenga un único
+        marcador de posición '%d' para el índice de conflicto.
+
+        Ejemplo: '_%02d'  (genera _01, _02, etc.)
+
+        Si no se especifica, se usa el patrón predeterminado '(%d)'."""
+  [flag.hidden]
+    usage = """
+
+        Incluye archivos y directorios ocultos en el proceso de búsqueda y renombrado.
+
+        En Linux y macOS, los archivos ocultos son aquellos que comienzan con un punto.
+        En Windows, solo los archivos con el atributo 'oculto' se consideran ocultos.
+
+        Para incluir también directorios ocultos, combine esto con el indicador -d/--include-dir."""
+  [flag.include]
+    usage = """
+
+        Solo incluye archivos que coincidan con la expresión regular proporcionada en lugar de
+        todos los archivos encontrados por el indicador --find.
+
+        Este indicador se puede repetir para especificar múltiples patrones de inclusión.
+
+        Ejemplo:
+            -I 'json' -I 'yml' (solo incluye archivos JSON y YAML)"""
+  [flag.includeDir]
+    usage = """
+
+        Incluye los directorios que coincidan en la operación de renombrado (son excluidos
+        por defecto)."""
+  [flag.ignoreCase]
+    usage = """
+
+    Ignora la distinción entre mayúsculas y minúsculas al buscar coincidencias."""
+  [flag.ignoreExt]
+    usage = """
+
+    Ignora la extensión del archivo al buscar coincidencias."""
+  [flag.json]
+    usage = """
+
+        Produce una salida en formato JSON, excepto los mensajes de error que se envían
+        al error estándar."""
+  [flag.maxDepth]
+    usage = """
+
+    Limita la profundidad de la búsqueda recursiva. Establezca en 0 (predeterminado) para no tener límite."""
+  [flag.noColor]
+    usage = """
+
+    Desactiva la salida con color."""
+  [flag.onlyDir]
+    usage = """
+
+    Renombra solo directorios, no archivos (implica -d/--include-dir)."""
+  [flag.pair]
+    usage = """
+
+        Habilita el renombrado en pares para renombrar archivos con el mismo nombre (pero diferentes
+        extensiones) en el mismo directorio al mismo nombre nuevo. En modo de par,
+        las extensiones de archivo se ignoran.
+
+        Ejemplo:
+            Antes: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+
+            $ f2 -r "Foto_{%03d}" --pair -x
+
+            Después: Foto_001.ARW Foto_001.JPG Foto_002.ARW Foto_002.JPG"""
+  [flag.pairOrder]
+    usage = """
+
+        Ordena los archivos emparejados según su extensión. Esto ayuda a controlar
+        qué archivo se renombrará primero y de cuál se deben extraer los metadatos al
+        usar variables.
+
+        Ejemplo:
+          --pair-order 'dng,jpg' # renombra archivos dng antes que jpg
+          --pair-order 'xmp,arw' # renombra archivos xmp antes que arw"""
+  [flag.quiet]
+    usage = """
+
+        No imprime nada en la salida estándar (stdout). Si no se encuentran coincidencias, f2 saldrá con
+      un código de error en lugar del código de éxito normal sin este indicador.
+        Los errores seguirán escribiéndose en el error estándar (stderr)."""
+  [flag.recursive]
+    usage = """
+
+    Recorre directorios de forma recursiva al buscar coincidencias."""
+  [flag.replaceLimit]
+    usage = """
+
+        Limita el número de reemplazos realizados en cada archivo encontrado. 0 (predeterminado)
+        significa reemplazar todas las coincidencias. Los valores negativos reemplazan desde el final del
+        nombre del archivo."""
+  [flag.resetIndexPerDir]
+    usage = """
+
+        Reinicia el índice de autoincremento al entrar en un nuevo directorio durante una
+        operación recursiva."""
+  [flag.sort]
+    usage = """
+
+        Ordena las coincidencias en orden ascendente según los criterios proporcionados.
+
+    Valores permitidos:
+      * 'default'    : Orden lexicográfico.
+      * 'size'       : Ordenar por tamaño de archivo.
+      * 'natural'    : Ordenar según el orden natural.
+      * 'mtime'      : Ordenar por fecha de última modificación.
+      * 'btime'      : Ordenar por fecha de creación.
+      * 'atime'      : Ordenar por fecha de último acceso.
+      * 'ctime'      : Ordenar por fecha de último cambio de metadatos.
+      * 'time_var'   : Ordenar por variable de tiempo.
+      * 'int_var'    : Ordenar por variable de entero.
+      * 'string_var' : Ordenar lexicográficamente por variable de cadena."""
+  [flag.sortr]
+    usage = """
+
+    Acepta los mismos valores que --sort pero ordena las coincidencias en orden descendente."""
+  [flag.sortPerDir]
+    usage = """
+
+    Asegura que el ordenamiento se realice por separado dentro de cada directorio en lugar de globalmente."""
+  [flag.sortVar]
+    usage = """
+
+        Activo al usar --sort/--sortr con time_var, int_var, o string_var.
+        Proporcione una variable compatible para ordenar los archivos según los metadatos del archivo.
+        Consulte https://f2.freshman.tech/guide/sorting para más detalles."""
+  [flag.stringMode]
+    usage = """
+
+        Trata el patrón de búsqueda (especificado por -f/--find) como una cadena de texto
+        literal en lugar de una expresión regular."""
+  [flag.targetDir]
+    usage = """
+
+    Especifica un directorio de destino para mover los archivos renombrados y reorganizar su sistema de archivos."""
+  [flag.verbose]
+    usage = """
+
+    Habilita la salida detallada durante la operación de renombrado."""
+
+[app]
+  usage = """
+f2 renombra archivos y directorios en masa, buscando coincidencias con un patrón
+especificado. Emplea verificaciones de seguridad para evitar sobrescrituras
+accidentales y ofrece varias opciones para un control detallado sobre el proceso
+de renombrado. """
+
+[report]
+  error = "error"
+  backup_failed = "falló la copia de seguridad"
+  backup_cleanup_failed = "falló la limpieza del archivo de copia de seguridad"
+  search_eval_failed = "falló la búsqueda condicional"
+  non_existent_file = "omitiendo archivo de origen inexistente en la fila"
+  no_matches = "los criterios de búsqueda no coincidieron con ningún archivo"
+  no_matches_csv = "no se encontraron candidatos para renombrar en el archivo CSV"
+  no_matches_undo = "nada que deshacer"
+  dry_run = "ejecución de prueba"
+  commit_changes = "confirme los cambios anteriores con el indicador -x/--exec"
+  renamed = "renombrados"
+  default_opt = "opción predeterminada '--%s' aplicada desde el entorno: %s"
+
+[status]
+  ok                         = "ok"
+  unchanged                  = "sin cambios"
+  overwriting                = "sobrescribiendo"
+  empty_filename             = "nombre de archivo vacío"
+  trailing_periods_present   = "presencia de puntos al final"
+  target_exists              = "el destino ya existe"
+  overwriting_new_path       = "sobrescribiendo nueva ruta"
+  forbidden_characters_present = "presencia de caracteres prohibidos"
+  filename_too_long          = "nombre de archivo demasiado largo"
+  source_already_renamed     = "origen ya renombrado"
+  source_not_found           = "origen no encontrado"
+  ignored                    = "ignorado"
+
+[table]
+  original = "ORIGINAL"
+  renamed = "RENOMBRADO"
+  status = "ESTADO"
