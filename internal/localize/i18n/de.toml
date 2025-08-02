@@ -1,0 +1,328 @@
+[help]
+  [help.usage]
+    text = """
+f2 FLAGS [OPTIONEN] [PFADE ZU DATEIEN UND VERZEICHNISSEN...]
+  befehl | f2 FLAGS [OPTIONEN]"""
+
+    heading = "ANWENDUNG"
+  [help.positional_args]
+    heading = "POSITIONALE ARGUMENTE"
+
+    text = """
+Geben Sie optional eine oder mehrere Dateien und Verzeichnisse an, um nach Übereinstimmungen zu suchen.
+    Wenn dies weggelassen wird, wird nur das aktuelle Verzeichnis durchsucht. Beachten Sie,
+    dass Verzeichnisse nicht rekursiv durchsucht werden, es sei denn, --recursive/-R wird verwendet."""
+
+  [help.options]
+    heading = "OPTIONEN"
+
+  [help.short]
+    text = """
+Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
+
+{{.Usage}}
+  {{.UsageText}}
+
+{{.Examples}}
+  $ f2 -f 'jpeg' -r 'jpg'
+  $ f2 -r '{id3.artist}/{id3.album}/${1}_{id3.title}{ext}'
+
+{{.LearnMore}}
+  Verwenden Sie f2 --help, um die Kommandozeilenoptionen anzuzeigen.
+  Lesen Sie das Handbuch unter https://f2.freshman.tech"""
+
+  [help.learn_more]
+    heading = "ERFAHREN SIE MEHR"
+
+    text = "Lesen Sie das Handbuch unter https://f2.freshman.tech"
+  [help.env]
+    heading = "UMGEBUNGSVARIABLEN"
+
+    text = """
+Überschreiben Sie die Standardoptionen nach Ihren Wünschen. Zum Beispiel,
+    können Sie standardmäßig den Ausführungsmodus aktivieren und Dateierweiterungen ignorieren:
+
+    export F2_DEFAULT_OPTS=--exec --ignore-ext"""
+
+  [help.color]
+    text = "Setzen Sie einen beliebigen Wert, um die farbige Ausgabe zu deaktivieren."
+
+  [help.examples]
+    heading = "BEISPIELE"
+
+
+[error]
+  default_opts_parsing = "F2_DEFAULT_OPTS Fehler: nicht unterstütztes Flag '%s'"
+  pipe_read            = "Fehler beim Lesen aus der Pipe"
+  invalid_submatches   = "Ungültige Anzahl von Teilübereinstimmungen"
+  exiftool_init        = "Initialisierung von exiftool fehlgeschlagen: %w"
+  invalid_argument            = "erfordert eine der folgenden Optionen: -f, -r, --csv, oder -u. Führen Sie f2 --help für die Anwendung aus"
+  invalid_sort                = "die angegebene Sortierung '%s' ist ungültig"
+  invalid_sort_variable       = "die angegebene Sortiervariable '%s' ist ungültig"
+  invalid_target_dir          = "Zielpfad '%s' existiert, ist aber kein Verzeichnis"
+  parsing_fix_conflicts_pattern = "das angegebene --fix-conflicts-pattern '%s' ist ungültig"
+  rename_failed = "einige Dateien konnten nicht umbenannt werden"
+  eval_invalid_args = "ungültige Argumente"
+
+[flag]
+  heading = "FLAGS"
+
+  [flag.csv]
+    usage = """
+
+    Lädt eine CSV-Datei und benennt sie entsprechend ihrem Inhalt um."""
+
+  [flag.find]
+    usage = """
+
+    Ein regulärer Ausdruck, der zum Abgleichen von Dateien und Verzeichnissen verwendet wird.
+    Es akzeptiert die vom RE2-Standard definierte Syntax und ist standardmäßig .*,
+      wenn es weggelassen wird, was dem gesamten Datei-/Verzeichnisnamen entspricht.
+
+      Wenn -s/--string-mode verwendet wird, wird dieses Muster als literaler String behandelt."""
+  [flag.replace]
+    usage = """
+
+    Die Ersatzzeichenfolge, die jede Übereinstimmung im Dateinamen ersetzt.
+    Sie unterstützt Erfassungsvariablen, integrierte Variablen und Exiftool-Variablen.
+    Wenn sie weggelassen wird, ist sie standardmäßig eine leere Zeichenfolge."""
+  [flag.undo]
+    usage = """
+
+    Macht den letzten Umbenennungsvorgang im aktuellen Arbeitsverzeichnis rückgängig."""
+  [flag.allowOverwrites]
+    usage = """
+
+        Ermöglicht dem Umbenennungsvorgang, vorhandene Dateien zu überschreiben.
+        Achtung: Die Verwendung dieser Option kann zu nicht wiederherstellbarem Datenverlust führen."""
+  [flag.clean]
+    usage = """
+
+    Bereinigt leere Verzeichnisse, die bei einem Umbenennungsvorgang durchlaufen wurden."""
+  [flag.exclude]
+    usage = """
+
+        Schließt Dateien und Verzeichnisse aus, die dem angegebenen regulären Ausdruck entsprechen.
+        Dieses Flag kann wiederholt werden, um mehrere Ausschlussmuster anzugeben.
+
+        Beispiel:
+            -E 'json' -E 'yml' (filtert JSON- und YAML-Dateien heraus)
+            -E 'json|yaml' (entspricht dem oben genannten)
+
+        Hinweis:
+            Dies verhindert nicht das rekursive Durchsuchen von passenden Verzeichnissen (verwenden
+            Sie stattdessen --exclude-dir)."""
+  [flag.excludeDir]
+    usage = """
+
+        Verhindert, dass F2 rekursiv in Verzeichnisse eintritt, die dem angegebenen
+        regulären Ausdrucksmuster entsprechen."""
+  [flag.exec]
+    usage = """
+
+    Führt den Umbenennungsvorgang aus und wendet die Änderungen auf das Dateisystem an."""
+  [flag.exiftoolOpts]
+    usage = """
+
+        Bietet Optionen zur Anpassung der Exiftool-Ausgabe bei Verwendung von
+        ExifTool-Variablen in Ersatzmustern.
+
+        Unterstützte Optionen:
+            --api
+            --charset
+            --coordFormat
+            --dateFormat
+            --extractEmbedded
+
+        Beispiel:
+            $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
+  [flag.fixConflicts]
+    usage = """
+
+    Behebt Umbenennungskonflikte automatisch mithilfe vordefinierter Regeln."""
+  [flag.fixConflictsPattern]
+    usage = """
+
+        Gibt ein benutzerdefiniertes Muster für die Umbenennung von Dateien bei Konflikten an.
+        Das Muster muss eine gültige Go-Formatzeichenfolge sein, die einen einzigen
+        '%d'-Platzhalter für den Konfliktindex enthält.
+
+        Beispiel: '_%02d'  (erzeugt _01, _02 usw.)
+
+        Wenn nicht angegeben, wird das Standardmuster '(%d)' verwendet."""
+  [flag.hidden]
+    usage = """
+
+        Schließt versteckte Dateien und Verzeichnisse in den Such- und Umbenennungsprozess ein.
+
+        Unter Linux und macOS sind versteckte Dateien solche, die mit einem Punkt beginnen.
+        Unter Windows gelten nur Dateien mit dem Attribut 'versteckt' als versteckt.
+
+        Um auch versteckte Verzeichnisse abzugleichen, kombinieren Sie dies mit dem Flag -d/--include-dir."""
+  [flag.include]
+    usage = """
+
+        Schließt nur Dateien ein, die dem angegebenen regulären Ausdruck entsprechen, anstatt
+        aller Dateien, die mit dem Flag --find übereinstimmen.
+
+        Dieses Flag kann wiederholt werden, um mehrere Einschlussmuster anzugeben.
+
+        Beispiel:
+            -I 'json' -I 'yml' (schließt nur JSON- und YAML-Dateien ein)"""
+  [flag.includeDir]
+    usage = """
+
+        Schließt passende Verzeichnisse in den Umbenennungsvorgang ein (sie sind
+        standardmäßig ausgeschlossen)."""
+  [flag.ignoreCase]
+    usage = """
+
+    Ignoriert die Groß-/Kleinschreibung bei der Suche nach Übereinstimmungen."""
+  [flag.ignoreExt]
+    usage = """
+
+    Ignoriert die Dateierweiterung bei der Suche nach Übereinstimmungen."""
+  [flag.json]
+    usage = """
+
+        Erzeugt eine JSON-Ausgabe, mit Ausnahme von Fehlermeldungen, die an den
+        Standardfehler gesendet werden."""
+  [flag.maxDepth]
+    usage = """
+
+    Begrenzt die Tiefe der rekursiven Suche. Setzen Sie auf 0 (Standard) für keine Begrenzung."""
+  [flag.noColor]
+    usage = """
+
+    Deaktiviert die farbige Ausgabe."""
+  [flag.onlyDir]
+    usage = """
+
+    Benennt nur Verzeichnisse um, keine Dateien (impliziert -d/--include-dir)."""
+  [flag.pair]
+    usage = """
+
+        Aktiviert die paarweise Umbenennung, um Dateien mit demselben Namen (aber unterschiedlichen
+        Erweiterungen) im selben Verzeichnis in denselben neuen Namen umzubenennen. Im Paarmodus
+        werden Dateierweiterungen ignoriert.
+
+        Beispiel:
+            Vorher: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+
+            $ f2 -r "Foto_{%03d}" --pair -x
+
+            Nachher: Foto_001.ARW Foto_001.JPG Foto_002.ARW Foto_002.JPG"""
+  [flag.pairOrder]
+    usage = """
+
+        Ordnet die gepaarten Dateien entsprechend ihrer Erweiterung. Dies hilft Ihnen zu steuern,
+        welche Datei zuerst umbenannt wird und wessen Metadaten bei der Verwendung von
+        Variablen extrahiert werden sollen.
+
+        Beispiel:
+          --pair-order 'dng,jpg' # benennt dng-Dateien vor jpg um
+          --pair-order 'xmp,arw' # benennt xmp-Dateien vor arw um"""
+  [flag.quiet]
+    usage = """
+
+        Gibt nichts auf stdout aus. Wenn keine Übereinstimmungen gefunden werden, wird f2 mit
+      einem Fehlercode anstelle des normalen Erfolgscodes beendet, wenn dieses Flag nicht gesetzt ist.
+        Fehler werden weiterhin nach stderr geschrieben."""
+  [flag.recursive]
+    usage = """
+
+    Durchläuft Verzeichnisse rekursiv bei der Suche nach Übereinstimmungen."""
+  [flag.replaceLimit]
+    usage = """
+
+        Begrenzt die Anzahl der Ersetzungen für jede übereinstimmende Datei. 0 (Standard)
+        bedeutet, alle Übereinstimmungen zu ersetzen. Negative Werte ersetzen vom Ende des
+        Dateinamens aus."""
+  [flag.resetIndexPerDir]
+    usage = """
+
+        Setzt den automatisch inkrementierenden Index zurück, wenn während eines
+        rekursiven Vorgangs ein neues Verzeichnis betreten wird."""
+  [flag.sort]
+    usage = """
+
+        Sortiert Übereinstimmungen in aufsteigender Reihenfolge nach den angegebenen Kriterien.
+
+    Erlaubte Werte:
+      * 'default'    : Lexikographische Reihenfolge.
+      * 'size'       : Nach Dateigröße sortieren.
+      * 'natural'    : Nach natürlicher Reihenfolge sortieren.
+      * 'mtime'      : Nach letzter Änderungszeit sortieren.
+      * 'btime'      : Nach Erstellungszeit sortieren.
+      * 'atime'      : Nach letzter Zugriffszeit sortieren.
+      * 'ctime'      : Nach letzter Metadaten-Änderungszeit sortieren.
+      * 'time_var'   : Nach Zeitvariable sortieren.
+      * 'int_var'    : Nach Integer-Variable sortieren.
+      * 'string_var' : Lexikographisch nach String-Variable sortieren."""
+  [flag.sortr]
+    usage = """
+
+    Akzeptiert dieselben Werte wie --sort, sortiert die Übereinstimmungen jedoch in absteigender Reihenfolge."""
+  [flag.sortPerDir]
+    usage = """
+
+    Stellt sicher, dass die Sortierung innerhalb jedes Verzeichnisses separat und nicht global durchgeführt wird."""
+  [flag.sortVar]
+    usage = """
+
+        Aktiv bei Verwendung von --sort/--sortr mit time_var, int_var oder string_var.
+        Geben Sie eine unterstützte Variable an, um die Dateien anhand von Dateimetadaten zu sortieren.
+        Weitere Details finden Sie unter https://f2.freshman.tech/guide/sorting."""
+  [flag.stringMode]
+    usage = """
+
+        Behandelt das Suchmuster (angegeben durch -f/--find) als literalen String
+        anstelle eines regulären Ausdrucks."""
+  [flag.targetDir]
+    usage = """
+
+    Gibt ein Zielverzeichnis an, um umbenannte Dateien zu verschieben und Ihr Dateisystem neu zu organisieren."""
+  [flag.verbose]
+    usage = """
+
+    Aktiviert die ausführliche Ausgabe während des Umbenennungsvorgangs."""
+
+[app]
+  usage = """
+f2 benennt Dateien und Verzeichnisse stapelweise um, indem es Dateien mit einem
+angegebenen Muster abgleicht. Es verwendet Sicherheitsprüfungen, um versehentliches
+Überschreiben zu verhindern, und bietet mehrere Optionen zur feingranularen Steuerung
+des Umbenennungsprozesses. """
+
+[report]
+  error = "Fehler"
+  backup_failed = "Sicherung fehlgeschlagen"
+  backup_cleanup_failed = "Bereinigung der Sicherungsdatei fehlgeschlagen"
+  search_eval_failed = "bedingte Suche fehlgeschlagen"
+  non_existent_file = "überspringe nicht existierende Quelldatei in Zeile"
+  no_matches = "die Suchkriterien stimmten mit keiner Datei überein"
+  no_matches_csv = "keine Umbenennungskandidaten in CSV-Datei gefunden"
+  no_matches_undo = "nichts zum Rückgängigmachen"
+  dry_run = "Testlauf"
+  commit_changes = "bestätigen Sie die obigen Änderungen mit dem Flag -x/--exec"
+  renamed = "umbenannt"
+  default_opt = "Standardoption '--%s' aus der Umgebung angewendet: %s"
+
+[status]
+  ok                         = "ok"
+  unchanged                  = "unverändert"
+  overwriting                = "überschreibend"
+  empty_filename             = "leerer Dateiname"
+  trailing_periods_present   = "nachfolgende Punkte vorhanden"
+  target_exists              = "Ziel existiert bereits"
+  overwriting_new_path       = "überschreibe neuen Pfad"
+  forbidden_characters_present = "verbotene Zeichen vorhanden"
+  filename_too_long          = "Dateiname zu lang"
+  source_already_renamed     = "Quelle bereits umbenannt"
+  source_not_found           = "Quelle nicht gefunden"
+  ignored                    = "ignoriert"
+
+[table]
+  original = "ORIGINAL"
+  renamed = "UMBENANNT"
+  status = "STATUS"
