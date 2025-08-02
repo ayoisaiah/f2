@@ -27,6 +27,8 @@ import (
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 
+	"github.com/ayoisaiah/f2/v2/internal/apperr"
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/internal/pathutil"
 	"github.com/ayoisaiah/f2/v2/internal/timeutil"
@@ -36,6 +38,10 @@ import (
 
 	"github.com/araddon/dateparse"
 )
+
+var errExiftoolInit = &apperr.Error{
+	Message: localize.T("error.exiftool_init"),
+}
 
 type hashAlgorithm string
 
@@ -1005,7 +1011,7 @@ func ExtractExiftoolMetadata(
 
 	et, err := exiftool.NewExiftool(opts...)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialise exiftool: %w", err)
+		return nil, errExiftoolInit.Wrap(err)
 	}
 
 	defer et.Close()

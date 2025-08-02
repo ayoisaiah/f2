@@ -1,25 +1,28 @@
 package config
 
-import "github.com/ayoisaiah/f2/v2/internal/apperr"
+import (
+	"github.com/ayoisaiah/f2/v2/internal/apperr"
+	"github.com/ayoisaiah/f2/v2/internal/localize"
+)
 
 var (
 	errInvalidArgument = &apperr.Error{
-		Message: "requires one of: -f, -r, --csv, or -u. Run f2 --help for usage",
+		Message: localize.T("error.invalid_argument"),
 	}
 
 	errParsingFixConflictsPattern = &apperr.Error{
-		Message: "the provided --fix-conflicts-pattern '%s' is invalid",
+		Message: localize.T("error.parsing_fix_conflicts_pattern"),
 	}
 
 	errInvalidSort = &apperr.Error{
-		Message: "the provided sort '%s' is invalid",
+		Message: localize.T("error.invalid_sort"),
 	}
 
 	errInvalidSortVariable = &apperr.Error{
-		Message: "the provided sort variable '%s' is invalid",
+		Message: localize.T("error.invalid_sort_variable"),
 	}
 
 	errInvalidTargetDir = &apperr.Error{
-		Message: "target path '%s' exists but is not a directory",
+		Message: localize.T("error.invalid_target_dir"),
 	}
 )

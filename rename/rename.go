@@ -13,13 +13,14 @@ import (
 	"github.com/ayoisaiah/f2/v2/internal/apperr"
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/internal/status"
 	"github.com/ayoisaiah/f2/v2/report"
 )
 
 var errRenameFailed = &apperr.Error{
-	Message: "some files could not be renamed",
+	Message: localize.T("error.rename_failed"),
 }
 
 // traversedDirs records the directories that were traversed during a renaming

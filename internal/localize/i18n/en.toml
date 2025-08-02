@@ -52,10 +52,17 @@ Override the default options according to your preferences. For example,
 
 
 [error]
-  [error.default_opts_parsing]
-    message = "F2_DEFAULT_OPTS error: unsupported flag '%s'"
-  [error.pipe_read]
-    message = "error reading from pipe"
+  default_opts_parsing = "F2_DEFAULT_OPTS error: unsupported flag '%s'"
+  pipe_read            = "error reading from pipe"
+  invalid_submatches   = "Invalid number of submatches"
+  exiftool_init        = "Failed to initialise exiftool: %w"
+  invalid_argument            = "requires one of: -f, -r, --csv, or -u. Run f2 --help for usage"
+  invalid_sort                = "the provided sort '%s' is invalid"
+  invalid_sort_variable       = "the provided sort variable '%s' is invalid"
+  invalid_target_dir          = "target path '%s' exists but is not a directory"
+  parsing_fix_conflicts_pattern = "the provided --fix-conflicts-pattern '%s' is invalid"
+  rename_failed = "some files could not be renamed"
+  eval_invalid_args = "invalid arguments"
 
 [flag]
   heading = "FLAGS"
@@ -286,3 +293,36 @@ Override the default options according to your preferences. For example,
 f2 bulk renames files and directories, matching files against a specified
 pattern. It employs safety checks to prevent accidental overwrites and
 offers several options for fine-grained control over the renaming process. """
+
+[report]
+  error = "error"
+  backup_failed = "backup failed"
+  backup_cleanup_failed = "backup file cleanup failed"
+  search_eval_failed = "conditional search failed"
+  non_existent_file = "skipping non existent source file at row"
+  no_matches = "the search criteria didn't match any files"
+  no_matches_csv = "no renaming candidates found in CSV file"
+  no_matches_undo = "nothing to undo"
+  dry_run = "dry run"
+  commit_changes = "commit the above changes with the -x/--exec flag"
+  renamed = "renamed"
+  default_opt = "default option '--%s' applied from the environment: %s"
+
+[status]
+  ok                         = "ok"
+  unchanged                  = "unchanged"
+  overwriting                = "overwriting"
+  empty_filename             = "empty filename"
+  trailing_periods_present   = "trailing periods present"
+  target_exists              = "target exists"
+  overwriting_new_path       = "overwriting new path"
+  forbidden_characters_present = "forbidden characters present"
+  filename_too_long          = "filename too long"
+  source_already_renamed     = "source already renamed"
+  source_not_found           = "source not found"
+  ignored                    = "ignored"
+
+[table]
+  original = "ORIGINAL"
+  renamed = "RENAMED"
+  status = "STATUS"

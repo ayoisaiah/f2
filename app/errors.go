@@ -7,10 +7,10 @@ import (
 
 var (
 	errDefaultOptsParsing = &apperr.Error{
-		Message: localize.T("error.default_opts_parsing.message"),
+		Message: localize.T("error.default_opts_parsing"),
 	}
 
 	errPipeRead = &apperr.Error{
-		Message: localize.T("error.pipe_read.message"),
+		Message: localize.T("error.pipe_read"),
 	}
 )

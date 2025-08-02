@@ -11,24 +11,25 @@ import (
 	"github.com/ayoisaiah/f2/v2/internal/apperr"
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 )
 
 func ExitWithErr(err error) {
 	pterm.EnableOutput()
 
-	errPrefix := "error:"
+	errPrefix := localize.T("report.error")
 	errMessage := err.Error()
 
 	s := strings.Split(errMessage, ":")
 	if len(s) > 1 {
-		errPrefix = strings.TrimSpace(s[0] + ":")
+		errPrefix = strings.TrimSpace(s[0])
 		errMessage = strings.TrimSpace(s[1])
 	}
 
 	pterm.Fprintln(
 		config.Stderr,
-		pterm.Sprintf("%s %v", pterm.Red(errPrefix), errMessage),
+		pterm.Sprintf("%s: %v", pterm.Red(errPrefix), errMessage),
 	)
 	os.Exit(int(osutil.ExitError))
 }
@@ -36,7 +37,11 @@ func ExitWithErr(err error) {
 func BackupFailed(err error) {
 	pterm.Fprintln(
 		config.Stderr,
-		pterm.Sprintf("%s: %v", pterm.Red("backup failed"), err),
+		pterm.Sprintf(
+			"%s: %v",
+			pterm.Red(localize.T("report.backup_failed")),
+			err,
+		),
 	)
 }
 
@@ -44,8 +49,9 @@ func SearchEvalFailed(path, target string, err error) {
 	pterm.Fprintln(
 		config.Stderr,
 		pterm.Sprintf(
-			"%s: conditional search failed (%v) -> %s",
+			"%s: %s (%v) -> %s",
 			pterm.Yellow(path),
+			localize.T("report.search_eval_failed"),
 			err,
 			target,
 		),
@@ -55,7 +61,11 @@ func SearchEvalFailed(path, target string, err error) {
 func BackupFileRemovalFailed(err error) {
 	pterm.Fprintln(
 		config.Stderr,
-		pterm.Sprintf("%s: %v", pterm.Red("backup file cleanup failed"), err),
+		pterm.Sprintf(
+			"%s: %v",
+			pterm.Red(localize.T("report.backup_cleanup_failed")),
+			err,
+		),
 	)
 }
 
@@ -67,7 +77,9 @@ func DefaultOpt(opt, val string) {
 	pterm.Fprintln(
 		config.Stderr,
 		pterm.Sprintf(
-			"default option '--%s' applied from the environment: %s",
+			localize.T(
+				"report.default_opt",
+			),
 			pterm.Green(opt),
 			pterm.Yellow(val),
 		),
@@ -78,7 +90,8 @@ func NonExistentFile(name string, row int) {
 	pterm.Fprintln(
 		config.Stderr,
 		pterm.Sprintf(
-			"skipping non existent source file at row %d: %s",
+			"%s %d: %s",
+			localize.T("report.non_existent_file"),
 			row,
 			name,
 		),
@@ -92,13 +105,13 @@ func NoMatches(conf *config.Config) {
 		os.Exit(int(osutil.ExitError))
 	}
 
-	msg := "the search criteria didn't match any files"
+	msg := localize.T("report.no_matches")
 	if conf.CSVFilename != "" {
-		msg = "no renaming candidates found in CSV file"
+		msg = localize.T("report.no_matches_csv")
 	}
 
 	if conf.Revert {
-		msg = "nothing to undo"
+		msg = localize.T("report.no_matches_undo")
 	}
 
 	pterm.Fprintln(config.Stderr, pterm.Sprint(msg))
@@ -115,7 +128,11 @@ func Report(
 		if err != nil {
 			pterm.Fprintln(
 				config.Stderr,
-				pterm.Sprintf("%s %v", pterm.Red("error:"), err),
+				pterm.Sprintf(
+					"%s %v",
+					pterm.Red(localize.T("report.error")),
+					err,
+				),
 			)
 		}
 
@@ -131,8 +148,9 @@ func Report(
 	pterm.Fprintln(
 		config.Stderr,
 		pterm.Sprintf(
-			"%s commit the above changes with the -x/--exec flag",
-			pterm.Green("dry run:"),
+			"%s %s",
+			pterm.Green(localize.T("report.dry_run"), ":"),
+			localize.T("report.commit_changes"),
 		),
 	)
 }
@@ -155,7 +173,7 @@ func PrintResults(conf *config.Config, fileChanges file.Changes, err error) {
 						config.Stderr,
 						pterm.Sprintf(
 							"%s %v",
-							pterm.Red("error:"),
+							pterm.Red(localize.T("report.error"), ":"),
 							change.Error,
 						),
 					)
@@ -182,7 +200,7 @@ func PrintResults(conf *config.Config, fileChanges file.Changes, err error) {
 		pterm.Fprintln(config.Stderr,
 			pterm.Sprintf(
 				"%s '%s' to '%s'",
-				pterm.Green("renamed:"),
+				pterm.Green(localize.T("report.renamed"), ":"),
 				change.SourcePath,
 				change.TargetPath,
 			),
