@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -16,6 +17,24 @@ var (
 	bundle    *i18n.Bundle
 	localizer *i18n.Localizer
 )
+
+// getMessagesLocale determines the effective locale for program messages
+// by checking standard environment variables in the correct order.
+func getMessagesLocale() string {
+	if locale := os.Getenv("LC_ALL"); locale != "" {
+		return locale
+	}
+
+	if locale := os.Getenv("LC_MESSAGES"); locale != "" {
+		return locale
+	}
+
+	if locale := os.Getenv("LANG"); locale != "" {
+		return locale
+	}
+
+	return ""
+}
 
 func init() {
 	bundle = i18n.NewBundle(language.English)
@@ -37,8 +56,15 @@ func init() {
 
 	lang := language.English.String()
 
-	if langEnv := os.Getenv("LANG"); langEnv != "" {
+	langEnv := getMessagesLocale()
+
+	if langEnv != "" {
 		lang = langEnv
+	}
+
+	before, _, found := strings.Cut(langEnv, "_")
+	if found {
+		lang = before
 	}
 
 	localizer = i18n.NewLocalizer(bundle, lang)

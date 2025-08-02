@@ -6,9 +6,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 )
 
-var errInvalidSubmatches = errors.New("Invalid number of submatches")
+var errInvalidSubmatches = errors.New(localize.T("error.invalid_submatches"))
 
 // getCSVVars retrieves all the csv variables in the replacement
 // string if any.

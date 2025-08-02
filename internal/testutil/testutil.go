@@ -228,7 +228,7 @@ func ProcessTestCaseChanges(t *testing.T, cases []TestCase) {
 				ch.TargetDir = ch.BaseDir
 			}
 
-			if ch.Status == "" {
+			if ch.Status.ID == "" {
 				cases[i].Changes[j].Status = status.OK
 			}
 

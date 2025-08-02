@@ -9,12 +9,13 @@ import (
 	"go.withmatt.com/size"
 
 	"github.com/ayoisaiah/f2/v2/internal/apperr"
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 )
 
 var functions = make(map[string]goval.ExpressionFunction)
 
 var errInvalidArgs = &apperr.Error{
-	Message: "invalid arguments",
+	Message: localize.T("error.eval_invalid_args"),
 }
 
 // ParseDuration parses a duration string.

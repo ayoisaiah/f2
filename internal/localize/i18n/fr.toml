@@ -52,10 +52,17 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 
 
 [error]
-  [error.default_opts_parsing]
-    message = "Erreur F2_DEFAULT_OPTS : drapeau non pris en charge '%s'"
-  [error.pipe_read]
-    message = "erreur de lecture du pipe"
+  default_opts_parsing = "Erreur F2_DEFAULT_OPTS : drapeau non pris en charge '%s'"
+  pipe_read            = "erreur de lecture du pipe"
+  invalid_submatches   = "Nombre de sous-correspondances invalide"
+  exiftool_init        = "Échec de l'initialisation d'exiftool: %w"
+  invalid_argument            = "nécessite l'un des arguments suivants : -f, -r, --csv, ou -u. Exécutez f2 --help pour l'utilisation"
+  invalid_sort                = "le tri '%s' fourni est invalide"
+  invalid_sort_variable       = "la variable de tri '%s' fournie est invalide"
+  invalid_target_dir          = "le chemin cible '%s' existe mais n'est pas un répertoire"
+  parsing_fix_conflicts_pattern = "le --fix-conflicts-pattern '%s' fourni est invalide"
+  rename_failed = "Certains fichiers n'ont pas pu être renommés"
+  eval_invalid_args = "arguments invalides"
 
 [flag]
   heading = "DRAPEAUX"
@@ -287,3 +294,36 @@ f2 renomme en masse les fichiers et les répertoires, en faisant correspondre le
 Il emploie des contrôles de sécurité pour empêcher les écrasements accidentels et
 offre plusieurs options pour un contrôle précis du processus de renommage.
 """
+
+[report]
+  error = "erreur"
+  backup_failed = "échec de la sauvegarde"
+  backup_cleanup_failed = "échec du nettoyage du fichier de sauvegarde"
+  search_eval_failed = "échec de la recherche conditionnelle"
+  non_existent_file = "saut du fichier source inexistant à la ligne"
+  no_matches = "les critères de recherche n'ont correspondu à aucun fichier"
+  no_matches_csv = "aucun candidat au renommage trouvé dans le fichier CSV"
+  no_matches_undo = "rien à annuler"
+  dry_run = "simulation"
+  commit_changes = "valider les modifications ci-dessus avec le drapeau -x/--exec"
+  renamed = "renommé"
+  default_opt = "option par défaut '--%s' appliquée depuis l'environnement : %s"
+
+[status]
+  ok                         = "ok"
+  unchanged                  = "inchangé"
+  overwriting                = "écrasement en cours"
+  empty_filename             = "nom de fichier vide"
+  trailing_periods_present   = "points en fin de nom présents"
+  target_exists              = "la cible existe déjà"
+  overwriting_new_path       = "écrasement du nouveau chemin"
+  forbidden_characters_present = "caractères interdits présents"
+  filename_too_long          = "nom de fichier trop long"
+  source_already_renamed     = "source déjà renommée"
+  source_not_found           = "source non trouvée"
+  ignored                    = "ignoré"
+
+[table]
+  original = "ORIGINAL"
+  renamed = "RENOMMÉ"
+  status = "STATUT"

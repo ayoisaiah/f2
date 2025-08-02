@@ -13,6 +13,7 @@ import (
 	"github.com/pterm/pterm"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/status"
 )
 
@@ -194,7 +195,6 @@ func (c Changes) RenderTable(w io.Writer, noColor bool) {
 
 		var changeStatus string
 
-		//nolint:exhaustive // default case covers other statuses
 		switch change.Status {
 		case status.OK:
 			changeStatus = pterm.Green(change.Status)
@@ -223,7 +223,13 @@ func (c Changes) RenderTable(w io.Writer, noColor bool) {
 func printTable(data [][]string, w io.Writer, noColor bool) {
 	// using tablewriter as pterm table rendering is too slow
 	table := tablewriter.NewWriter(w)
-	table.SetHeader([]string{"ORIGINAL", "RENAMED", "STATUS"})
+	table.SetHeader(
+		[]string{
+			localize.T("table.original"),
+			localize.T("table.renamed"),
+			localize.T("table.status"),
+		},
+	)
 	table.SetCenterSeparator("*")
 	table.SetColumnSeparator("|")
 	table.SetRowSeparator("—")
