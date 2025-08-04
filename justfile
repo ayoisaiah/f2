@@ -3,8 +3,8 @@ toolprefix := "go tool -modfile=" + justfile_directory() + "/tools.mod"
 toolsmod := "-modfile=" + justfile_directory() + "/tools.mod"
 
 # Run all tests
-test:
-	@go test ./... -coverprofile=coverage.out -coverpkg=. -json | {{toolprefix}} gotestfmt -hide 'empty-packages'
+test filter='.*':
+	@go test ./... -coverprofile=coverage.out -coverpkg=. -json -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
 
 [no-cd]
 test-pkg filter='.*':
