@@ -1,3 +1,5 @@
+**Lesen Sie dies in anderen Sprachen:** [English](/README.md) | [Español](/docs/README.es.md) | [Français](/docs/README.fr.md) | [Português](/docs/README.pt.md) | [Русский](/docs/README.ru.md) | [繁體中文](/docs/README.zh.md)
+
 <p align="center">
   <img src="https://ik.imagekit.io/turnupdev/f2_logo_02eDMiVt7.png" width="250" height="250" alt="f2">
 </p>
