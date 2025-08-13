@@ -45,7 +45,7 @@ f2 标志 [选项] [文件和目录路径...]
     export F2_DEFAULT_OPTS=--exec --ignore-ext"""
 
   [help.color]
-    text = "设置为任意值可禁用彩色输出。"
+    text = "设置为任意值以禁用彩色输出。"
 
   [help.examples]
     heading = "示例"
@@ -70,7 +70,7 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.csv]
     usage = """
 
-    加载 CSV 文件，并根据其内容进行重命名。"""
+    加载 CSV 文件，并根据其内容重命名。"""
 
   [flag.find]
     usage = """
@@ -120,7 +120,7 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.exec]
     usage = """
 
-    执行重命名操作并将更改应用于文件系统。"""
+    执行重命名操作并将更改应用到文件系统。"""
   [flag.exiftoolOpts]
     usage = """
 
@@ -165,7 +165,7 @@ f2 标志 [选项] [文件和目录路径...]
         仅包括与提供的正则表达式匹配的文件，而不是
         所有由 --find 标志匹配的文件。
 
-        此标志可以重复使用以指定多个包含模式。
+        此标志可重复使用以指定多个包含模式。
 
         示例:
             -I 'json' -I 'yml' (仅包括 JSON 和 YAML 文件)"""
@@ -186,7 +186,7 @@ f2 标志 [选项] [文件和目录路径...]
     usage = """
 
         生成 JSON 输出，但错误消息会发送到
-        标准错误流。"""
+        标准错误输出。"""
   [flag.maxDepth]
     usage = """
 
@@ -289,19 +289,19 @@ f2 标志 [选项] [文件和目录路径...]
 
 [app]
   usage = """
-f2 批量重命名文件和目录，根据指定的模式匹配文件。
-它采用安全检查以防止意外覆盖，并提供多种选项
-以对重命名过程进行精细控制。"""
+f2 批量重命名文件和目录，将文件与指定模式进行匹配。
+它采用安全检查以防止意外覆盖，并提供多个选项以精细
+控制重命名过程。"""
 
 [report]
   error = "错误"
   backup_failed = "备份失败"
   backup_cleanup_failed = "备份文件清理失败"
   search_eval_failed = "条件搜索失败"
-  non_existent_file = "跳过行中不存在的源文件"
+  non_existent_file = "跳过该行不存在的源文件"
   no_matches = "搜索条件未匹配任何文件"
   no_matches_csv = "在 CSV 文件中未找到重命名候选项"
-  no_matches_undo = "无可撤销的操作"
+  no_matches_undo = "无需撤销"
   dry_run = "模拟运行"
   commit_changes = "使用 -x/--exec 标志提交以上更改"
   renamed = "已重命名"
@@ -322,6 +322,6 @@ f2 批量重命名文件和目录，根据指定的模式匹配文件。
   ignored                    = "已忽略"
 
 [table]
-  original = "原始"
-  renamed = "重命名后"
+  original = "原始文件名"
+  renamed = "新文件名"
   status = "状态"
