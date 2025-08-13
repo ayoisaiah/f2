@@ -278,6 +278,22 @@ func TestReplace(t *testing.T) {
 				"../../{f}{ext}",
 			},
 		},
+		{
+			Name: "replace hypens with a space",
+			Changes: file.Changes{
+				{
+					Source: "test-1",
+				},
+				{
+					Source: "test-2-3-4",
+				},
+			},
+			Want: []string{
+				"test 1",
+				"test 2 3 4",
+			},
+			Args: []string{"-f", "-", "-r", " "},
+		},
 	}
 
 	replaceTest(t, testCases)
