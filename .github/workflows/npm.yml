@@ -18,11 +18,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2.3.0
+        with:
+          load-mode: strict
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           registry-url: https://registry.npmjs.org/
-          node-version: ${{ vars.NODE_VERSION }}
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Publish to NPM
         run: npm publish
