@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25.0-alpine AS builder
 
 WORKDIR /build
 
@@ -10,7 +10,7 @@ COPY . ./
 
 RUN go build -o /usr/bin/f2 ./cmd/f2...
 
-FROM alpine:3.20 AS final
+FROM alpine:3.22 AS final
 
 RUN apk add --no-cache exiftool
 

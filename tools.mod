@@ -1,6 +1,6 @@
 module github.com/ayoisaiah/f2/v2
 
-go 1.24.2
+go 1.25.0
 
 tool (
 	github.com/boyter/scc/v3
