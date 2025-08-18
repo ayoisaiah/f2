@@ -26,6 +26,7 @@ func replaceString(conf *config.Config, originalName string) string {
 		originalName,
 		conf.Replacement,
 		conf.ReplaceLimit,
+		conf.ReplaceRange,
 	)
 }
 

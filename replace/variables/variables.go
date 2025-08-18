@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -153,8 +154,24 @@ func RegexReplace(
 	regex *regexp.Regexp,
 	input, replacement string,
 	replaceLimit int,
+	replaceRange []int,
 ) string {
 	var output string
+
+	if len(replaceRange) > 0 {
+		counter := 0
+		output = regex.ReplaceAllStringFunc(input, func(val string) string {
+			counter++
+
+			if slices.Contains(replaceRange, counter) {
+				return regex.ReplaceAllString(val, replacement)
+			}
+
+			return val
+		})
+
+		return output
+	}
 
 	switch limit := replaceLimit; {
 	case limit > 0:
@@ -246,7 +263,7 @@ func replaceFileHashVars(
 
 		hashValue = transformString(hashValue, current.transformToken)
 
-		target = RegexReplace(current.regex, target, hashValue, 0)
+		target = RegexReplace(current.regex, target, hashValue, 0, nil)
 	}
 
 	return target, nil
@@ -323,7 +340,7 @@ func replaceDateVars(
 
 		timeStr = transformString(timeStr, current.transformToken)
 
-		target = RegexReplace(regex, target, timeStr, 0)
+		target = RegexReplace(regex, target, timeStr, 0, nil)
 	}
 
 	return target, nil
@@ -427,7 +444,7 @@ func replaceID3Variables(
 
 		id3Tag = transformString(replaceSlashes(id3Tag), current.transformToken)
 
-		target = RegexReplace(current.regex, target, id3Tag, 0)
+		target = RegexReplace(current.regex, target, id3Tag, 0, nil)
 	}
 
 	return target, nil
@@ -644,7 +661,7 @@ func replaceExifVars(
 			current.transformToken,
 		)
 
-		target = RegexReplace(regex, target, exifTag, 0)
+		target = RegexReplace(regex, target, exifTag, 0, nil)
 	}
 
 	return target, nil
@@ -695,7 +712,7 @@ func replaceExifToolVars(
 
 		value = transformString(value, current.transformToken)
 
-		target = RegexReplace(current.regex, target, value, 0)
+		target = RegexReplace(current.regex, target, value, 0, nil)
 	}
 
 	return target, nil
@@ -797,9 +814,10 @@ func transformString(source, token string) string {
 			source,
 			"",
 			0,
+			nil,
 		)
 	case "mac":
-		return RegexReplace(osutil.MacForbiddenCharRegex, source, "", 0)
+		return RegexReplace(osutil.MacForbiddenCharRegex, source, "", 0, nil)
 	case "di":
 		return removeDiacritics(source)
 	case "norm":
@@ -855,6 +873,7 @@ func replaceTransformVars(
 					target,
 					transformString(v, current.token),
 					1,
+					nil,
 				)
 			}
 
@@ -866,6 +885,7 @@ func replaceTransformVars(
 			target,
 			transformString(match, current.token),
 			0,
+			nil,
 		)
 	}
 
@@ -888,7 +908,7 @@ func replaceCSVVars(target string, csvRow []string, cv csvVars) string {
 
 		value = transformString(value, current.transformToken)
 
-		target = RegexReplace(current.regex, target, value, 0)
+		target = RegexReplace(current.regex, target, value, 0, nil)
 	}
 
 	return target
@@ -927,7 +947,7 @@ func replaceParentDirVars(
 
 		source := transformString(parentDir, current.transformToken)
 
-		target = RegexReplace(current.regex, target, source, 0)
+		target = RegexReplace(current.regex, target, source, 0, nil)
 	}
 
 	return target
@@ -942,7 +962,7 @@ func replaceFilenameVars(
 
 		source := transformString(sourceName, current.transformToken)
 
-		target = RegexReplace(current.regex, target, source, 0)
+		target = RegexReplace(current.regex, target, source, 0, nil)
 	}
 
 	return target
@@ -971,7 +991,7 @@ func replaceExtVars(change *file.Change, ev extVars) (target string) {
 
 		source := transformString(fileExt, current.transformToken)
 
-		target = RegexReplace(current.regex, change.Target, source, 0)
+		target = RegexReplace(current.regex, change.Target, source, 0, nil)
 	}
 
 	return target

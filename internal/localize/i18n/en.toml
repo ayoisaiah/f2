@@ -239,6 +239,12 @@ Override the default options according to your preferences. For example,
 		Limits the number of replacements made on each matched file. 0 (default)
 		means replace all matches. Negative values replace from the end of the
 		filename."""
+  [flag.replaceRange]
+    usage = """
+
+		Limits the number of replacements made on each matched file. 0 (default)
+		means replace all matches. Negative values replace from the end of the
+		filename."""
   [flag.resetIndexPerDir]
     usage = """
 

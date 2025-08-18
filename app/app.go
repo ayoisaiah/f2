@@ -150,6 +150,7 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.Command {
 			flagQuiet,
 			flagRecursive,
 			flagReplaceLimit,
+			flagReplaceRange,
 			flagResetIndexPerDir,
 			flagSort,
 			flagSortr,
@@ -163,6 +164,30 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.Command {
 		DisableSliceFlagSeparator: true,
 		OnUsageError: func(_ context.Context, _ *cli.Command, err error, _ bool) error {
 			return err
+		},
+		MutuallyExclusiveFlags: []cli.MutuallyExclusiveFlags{
+			{
+				Flags: [][]cli.Flag{
+					{
+						flagFind,
+						flagReplace,
+						flagCSV,
+					},
+					{
+						flagUndo,
+					},
+				},
+			},
+			{
+				Flags: [][]cli.Flag{
+					{
+						flagReplaceLimit,
+					},
+					{
+						flagReplaceRange,
+					},
+				},
+			},
 		},
 		Writer: w,
 		Reader: r,

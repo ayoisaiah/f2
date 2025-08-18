@@ -190,6 +190,12 @@ var (
 		DefaultText: "<integer>",
 	}
 
+	flagReplaceRange = &cli.StringFlag{
+		Name:    "replace-range",
+		Aliases: []string{""},
+		Usage:   localize.T("flag.replaceRange.usage"),
+	}
+
 	flagResetIndexPerDir = &cli.BoolFlag{
 		Name:  "reset-index-per-dir",
 		Usage: localize.T("flag.resetIndexPerDir.usage"),

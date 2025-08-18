@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -91,6 +92,7 @@ type Config struct {
 	FindSlice                []string       `json:"find_slice"`
 	FilesAndDirPaths         []string       `json:"files_and_dir_paths"`
 	ReplacementSlice         []string       `json:"replacement_slice"`
+	ReplaceRange             []int          `json:"replace_range"`
 	ReplaceLimit             int            `json:"replace_limit"`
 	StartNumber              int            `json:"start_number"`
 	MaxDepth                 int            `json:"max_depth"`
@@ -119,6 +121,63 @@ type Config struct {
 	Clean                    bool           `json:"clean"`
 	ExifToolVarPresent       bool           `json:"-"`
 	IndexPresent             bool           `json:"-"`
+}
+
+func parseRange(s string) (int, int, error) {
+	parts := strings.Split(s, "-")
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid range: %s", s)
+	}
+
+	start, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
+	end, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err1 != nil || err2 != nil {
+		return 0, 0, fmt.Errorf("invalid numbers in range: %s", s)
+	}
+
+	if start > end {
+		return 0, 0, fmt.Errorf("start > end")
+	}
+
+	return start, end, nil
+}
+
+func expandRange(s string) ([]int, error) {
+	start, end, err := parseRange(s)
+	if err != nil {
+		return nil, err
+	}
+
+	nums := make([]int, end-start+1)
+	for i := range nums {
+		nums[i] = start + i
+	}
+	return nums, nil
+}
+
+func parseMultiRange(s string) ([]int, error) {
+	var result []int
+
+	for part := range strings.SplitSeq(s, ",") {
+		part = strings.TrimSpace(part)
+
+		if strings.Contains(part, "-") {
+			nums, err := expandRange(part)
+			if err != nil {
+				return nil, err
+			}
+
+			result = append(result, nums...)
+		} else {
+			n, err := strconv.Atoi(part)
+			if err != nil {
+				return nil, err
+			}
+
+			result = append(result, n)
+		}
+	}
+	return result, nil
 }
 
 func (c *Config) setFindCond(replacementIndex int) error {
@@ -208,6 +267,13 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 	c.PairOrder = strings.Split(cmd.String("pair-order"), ",")
 	c.Clean = cmd.Bool("clean")
 	c.SortVariable = cmd.String("sort-var")
+
+	rng, err := parseMultiRange(cmd.String("replace-range"))
+	if err != nil {
+		return err
+	}
+
+	c.ReplaceRange = rng
 
 	// Don't replace the extension in pair mode
 	if conf.Pair {
