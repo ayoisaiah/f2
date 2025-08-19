@@ -192,6 +192,7 @@ func BySize(changes file.Changes, conf *config.Config) {
 		}
 
 		var fileInfoA, fileInfoB fs.FileInfo
+
 		fileInfoA, errA := os.Stat(sourcePathA)
 		fileInfoB, errB := os.Stat(sourcePathB)
 
