@@ -186,6 +186,13 @@ func helpText(app *cli.Command) string {
 		flagReplaceLimit.GetUsage(),
 	)
 
+	flagReplaceRangeHelp := fmt.Sprintf(
+		`%s, %s %s`,
+		pterm.Green("-", flagReplaceRange.Aliases[0]),
+		pterm.Green("--", flagReplaceRange.Name),
+		flagReplaceRange.GetUsage(),
+	)
+
 	flagResetIndexPerDirHelp := fmt.Sprintf(
 		`%s %s`,
 		pterm.Green("--", flagResetIndexPerDir.Name),
@@ -325,6 +332,8 @@ Project repository: https://github.com/ayoisaiah/f2
 
 	%s
 
+	%s
+
 %s
   %s
 
@@ -368,6 +377,7 @@ Project repository: https://github.com/ayoisaiah/f2
 		flagQuietHelp,
 		flagRecursiveHelp,
 		flagReplaceLimitHelp,
+		flagReplaceRangeHelp,
 		flagResetIndexPerDirHelp,
 		flagSortHelp,
 		flagSortrHelp,

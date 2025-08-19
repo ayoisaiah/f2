@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/internal/pathutil"
@@ -17,11 +17,13 @@ import (
 )
 
 type validationCtx struct {
-	change          *file.Change
-	seenPaths       map[string]int
-	changeIndex     int
-	autoFix         bool
-	allowOverwrites bool
+	change              *file.Change
+	seenPaths           map[string]int
+	fixConflictsRegex   *regexp.Regexp
+	fixConflictsPattern string
+	changeIndex         int
+	autoFix             bool
+	allowOverwrites     bool
 }
 
 func (ctx validationCtx) updateSeenPaths() {
@@ -42,9 +44,11 @@ const (
 // newTarget appends a number to the target file name so that it
 // does not conflict with an existing path on the filesystem or
 // another renamed file. For example: image.png becomes image(1).png.
-func newTarget(change *file.Change) string {
-	conf := config.Get()
-
+func newTarget(
+	change *file.Change,
+	fixConflictsRegex *regexp.Regexp,
+	fixConflictsPattern string,
+) string {
 	counter := 1
 
 	baseName := filepath.Base(change.Target)
@@ -52,21 +56,19 @@ func newTarget(change *file.Change) string {
 		baseName = pathutil.StripExtension(baseName)
 	}
 
-	regex := conf.FixConflictsPatternRegex
-
 	// Extract the numbered index at the end of the filename (if any)
-	match := regex.FindStringSubmatch(baseName)
+	match := fixConflictsRegex.FindStringSubmatch(baseName)
 
 	if len(match) > 0 {
 		num, _ := strconv.Atoi(match[1])
 		num += counter
 
-		baseName = regex.ReplaceAllString(
+		baseName = fixConflictsRegex.ReplaceAllString(
 			baseName,
-			fmt.Sprintf(conf.FixConflictsPattern, num),
+			fmt.Sprintf(fixConflictsPattern, num),
 		)
 	} else {
-		baseName += fmt.Sprintf(conf.FixConflictsPattern, counter)
+		baseName += fmt.Sprintf(fixConflictsPattern, counter)
 	}
 
 	target := baseName + filepath.Ext(change.Target)
@@ -160,7 +162,13 @@ func checkPathExistsConflict(
 		ctx.change.Status = status.PathExists
 
 		if ctx.autoFix {
-			ctx.change.AutoFixTarget(newTarget(ctx.change))
+			ctx.change.AutoFixTarget(
+				newTarget(
+					ctx.change,
+					ctx.fixConflictsRegex,
+					ctx.fixConflictsPattern,
+				),
+			)
 		}
 	}
 
@@ -205,7 +213,13 @@ func checkOverwritingPathConflict(
 	}
 
 	if ctx.autoFix {
-		ctx.change.AutoFixTarget(newTarget(ctx.change))
+		ctx.change.AutoFixTarget(
+			newTarget(
+				ctx.change,
+				ctx.fixConflictsRegex,
+				ctx.fixConflictsPattern,
+			),
+		)
 	}
 
 	return
@@ -444,11 +458,17 @@ func checkAndHandleConflict(ctx validationCtx, loopIndex *int) (detected bool) {
 
 // detectConflicts checks the renamed files for various conflicts and
 // automatically fixes them if configured.
-func detectConflicts(autoFix, allowOverwrites bool) bool {
+func detectConflicts(
+	autoFix, allowOverwrites bool,
+	fixConflictsRegex *regexp.Regexp,
+	fixConflictsPattern string,
+) bool {
 	ctx := validationCtx{
-		autoFix:         autoFix,
-		allowOverwrites: allowOverwrites,
-		seenPaths:       make(map[string]int),
+		autoFix:             autoFix,
+		allowOverwrites:     allowOverwrites,
+		fixConflictsRegex:   fixConflictsRegex,
+		fixConflictsPattern: fixConflictsPattern,
+		seenPaths:           make(map[string]int),
 	}
 
 	conflicts := make(map[int]string)
@@ -478,8 +498,15 @@ func detectConflicts(autoFix, allowOverwrites bool) bool {
 func Validate(
 	matches file.Changes,
 	autoFix, allowOverwrites bool,
+	fixConflictsRegex *regexp.Regexp,
+	fixConflictsPattern string,
 ) bool {
 	changes = matches
 
-	return detectConflicts(autoFix, allowOverwrites)
+	return detectConflicts(
+		autoFix,
+		allowOverwrites,
+		fixConflictsRegex,
+		fixConflictsPattern,
+	)
 }

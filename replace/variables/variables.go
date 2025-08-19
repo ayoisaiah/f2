@@ -156,57 +156,78 @@ func RegexReplace(
 	replaceLimit int,
 	replaceRange []int,
 ) string {
+	if len(replaceRange) > 0 {
+		return replaceByRange(regex, input, replacement, replaceRange)
+	}
+
+	return replaceByLimit(regex, input, replacement, replaceLimit)
+}
+
+func replaceByRange(
+	regex *regexp.Regexp,
+	input, replacement string,
+	replaceRange []int,
+) string {
+	matchCount := len(regex.FindAllString(input, -1))
+	counter := 1
+
+	output := regex.ReplaceAllStringFunc(input, func(val string) string {
+		defer func() { counter++ }()
+
+		if slices.Contains(replaceRange, counter) {
+			return replacement
+		}
+
+		for _, v := range replaceRange {
+			if v < 0 {
+				if counter == matchCount+v+1 {
+					return replacement
+				}
+			}
+		}
+
+		return val
+	})
+
+	return output
+}
+
+func replaceByLimit(
+	regex *regexp.Regexp,
+	input, replacement string,
+	limit int,
+) string {
+	if limit == 0 {
+		return regex.ReplaceAllString(input, replacement)
+	}
+
 	var output string
 
-	if len(replaceRange) > 0 {
+	if limit > 0 {
 		counter := 0
-		output = regex.ReplaceAllStringFunc(input, func(val string) string {
-			counter++
 
-			if slices.Contains(replaceRange, counter) {
-				return regex.ReplaceAllString(val, replacement)
+		output = regex.ReplaceAllStringFunc(input, func(val string) string {
+			if counter < limit {
+				counter++
+				return replacement
 			}
 
 			return val
 		})
-
-		return output
-	}
-
-	switch limit := replaceLimit; {
-	case limit > 0:
+	} else {
+		matchCount := len(regex.FindAllString(input, -1))
+		limit = matchCount + limit
 		counter := 0
-		output = regex.ReplaceAllStringFunc(
-			input,
-			func(val string) string {
-				if counter == replaceLimit {
-					return val
-				}
 
-				counter++
+		output = regex.ReplaceAllStringFunc(input, func(val string) string {
+			if counter >= limit {
+				return replacement
+			}
 
-				return regex.ReplaceAllString(val, replacement)
-			},
-		)
-	case limit < 0:
-		matches := regex.FindAllString(input, -1)
+			counter++
 
-		l := len(matches) + limit
-		counter := 0
-		output = regex.ReplaceAllStringFunc(
-			input,
-			func(val string) string {
-				if counter >= l {
-					return regex.ReplaceAllString(val, replacement)
-				}
-
-				counter++
-
-				return val
-			},
-		)
-	default:
-		output = regex.ReplaceAllString(input, replacement)
+			return val
+		})
 	}
 
 	return output
@@ -761,6 +782,7 @@ func replaceIndex(
 						continue outer
 					}
 				}
+
 				break
 			}
 		}

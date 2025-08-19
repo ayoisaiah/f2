@@ -48,6 +48,8 @@ func validateTest(t *testing.T, cases []testutil.TestCase) {
 					tc.Changes,
 					conf.AutoFixConflicts,
 					conf.AllowOverwrites,
+					conf.FixConflictsPatternRegex,
+					conf.FixConflictsPattern,
 				)
 
 				if tc.ConflictDetected && !conflictDetected {

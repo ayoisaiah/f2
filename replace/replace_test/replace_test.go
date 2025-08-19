@@ -76,6 +76,63 @@ func TestReplace(t *testing.T) {
 			Args: []string{"-f", "budget", "-r", "forecast", "-l", "1"},
 		},
 		{
+			Name: "replace first and last match alone",
+			Changes: file.Changes{
+				{
+					Source: "budget_budget_budget_2023.xlsx",
+				},
+			},
+			Want: []string{
+				"forecast_budget_forecast_2023.xlsx",
+			},
+			Args: []string{
+				"-f",
+				"budget",
+				"-r",
+				"forecast",
+				"--replace-range",
+				"1;3",
+			},
+		},
+		{
+			Name: "replace first and last match alone with negative index",
+			Changes: file.Changes{
+				{
+					Source: "budget_budget_budget_2023.xlsx",
+				},
+			},
+			Want: []string{
+				"forecast_budget_forecast_2023.xlsx",
+			},
+			Args: []string{
+				"-f",
+				"budget",
+				"-r",
+				"forecast",
+				"--replace-range",
+				"-1;-3",
+			},
+		},
+		{
+			Name: "replace first two matches with a range",
+			Changes: file.Changes{
+				{
+					Source: "budget_budget_budget_2023.xlsx",
+				},
+			},
+			Want: []string{
+				"forecast_forecast_budget_2023.xlsx",
+			},
+			Args: []string{
+				"-f",
+				"budget",
+				"-r",
+				"forecast",
+				"--replace-range",
+				"1..2",
+			},
+		},
+		{
 			Name: "replace the first 2 matches in reverse",
 			Changes: file.Changes{
 				{

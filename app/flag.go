@@ -192,7 +192,7 @@ var (
 
 	flagReplaceRange = &cli.StringFlag{
 		Name:    "replace-range",
-		Aliases: []string{""},
+		Aliases: []string{"L"},
 		Usage:   localize.T("flag.replaceRange.usage"),
 	}
 

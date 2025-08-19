@@ -69,6 +69,8 @@ func execute(ctx context.Context, cmd *cli.Command) error {
 		matches,
 		appConfig.AutoFixConflicts,
 		appConfig.AllowOverwrites,
+		appConfig.FixConflictsPatternRegex,
+		appConfig.FixConflictsPattern,
 	)
 
 	if hasConflicts {

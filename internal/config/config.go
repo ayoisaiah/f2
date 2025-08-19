@@ -123,14 +123,17 @@ type Config struct {
 	IndexPresent             bool           `json:"-"`
 }
 
-func parseRange(s string) (int, int, error) {
-	parts := strings.Split(s, "-")
-	if len(parts) != 2 {
+func parseRange(s string) (start, end int, err error) {
+	numRangeParts := 2
+
+	parts := strings.Split(s, "..")
+	if len(parts) != numRangeParts {
 		return 0, 0, fmt.Errorf("invalid range: %s", s)
 	}
 
 	start, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
 	end, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
+
 	if err1 != nil || err2 != nil {
 		return 0, 0, fmt.Errorf("invalid numbers in range: %s", s)
 	}
@@ -152,16 +155,21 @@ func expandRange(s string) ([]int, error) {
 	for i := range nums {
 		nums[i] = start + i
 	}
+
 	return nums, nil
 }
 
 func parseMultiRange(s string) ([]int, error) {
+	if strings.TrimSpace(s) == "" {
+		return nil, nil
+	}
+
 	var result []int
 
-	for part := range strings.SplitSeq(s, ",") {
+	for part := range strings.SplitSeq(s, ";") {
 		part = strings.TrimSpace(part)
 
-		if strings.Contains(part, "-") {
+		if strings.Contains(part, "..") {
 			nums, err := expandRange(part)
 			if err != nil {
 				return nil, err
@@ -177,6 +185,7 @@ func parseMultiRange(s string) ([]int, error) {
 			result = append(result, n)
 		}
 	}
+
 	return result, nil
 }
 
@@ -276,8 +285,8 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 	c.ReplaceRange = rng
 
 	// Don't replace the extension in pair mode
-	if conf.Pair {
-		conf.IgnoreExt = true
+	if c.Pair {
+		c.IgnoreExt = true
 	}
 
 	if c.SortVariable != "" && !sortVarRegex.MatchString(c.SortVariable) {
@@ -386,7 +395,7 @@ func (c *Config) setDefaultOpts(cmd *cli.Command) error {
 
 		r := regexp.MustCompile(`%(\d+)?d`)
 		c.FixConflictsPatternRegex = regexp.MustCompile(
-			r.ReplaceAllString(conf.FixConflictsPattern, `(\d+)`),
+			r.ReplaceAllString(c.FixConflictsPattern, `(\d+)`),
 		)
 	}
 
@@ -506,7 +515,8 @@ func (c *Config) checkIfExifToolVarIsPresent() bool {
 		exifToolVarRegex.MatchString(c.SortVariable)
 }
 
-// Get retrieves the current configuration or panics if not initialized.
+// Init initializes renaming configuration from command-line arguments and
+// environmental variables.
 func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
 	conf = &Config{
 		Date:             time.Now(),
