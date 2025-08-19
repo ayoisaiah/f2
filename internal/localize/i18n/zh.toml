@@ -77,9 +77,9 @@ f2 标志 [选项] [文件和目录路径...]
 
     用于匹配文件和目录的正则表达式模式。
     它接受 RE2 标准定义的语法，如果省略则默认为 .*，
-      匹配整个文件/目录名。
+    匹配整个文件/目录名。
 
-      当使用 -s/--string-mode 时，此模式被视为文字字符串。"""
+    当使用 -s/--string-mode 时，此模式被视为文字字符串。"""
   [flag.replace]
     usage = """
 
@@ -93,8 +93,8 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.allowOverwrites]
     usage = """
 
-        允许重命名操作覆盖现有文件。
-        注意：使用此选项可能导致不可恢复的数据丢失。"""
+    允许重命名操作覆盖现有文件。
+    注意：使用此选项可能导致不可恢复的数据丢失。"""
   [flag.clean]
     usage = """
 
@@ -102,21 +102,21 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.exclude]
     usage = """
 
-        排除与提供的正则表达式匹配的文件和目录。
-        此标志可以重复使用以指定多个排除模式。
+    排除与提供的正则表达式匹配的文件和目录。
+    此标志可以重复使用以指定多个排除模式。
 
-        示例:
-            -E 'json' -E 'yml' (过滤掉 JSON 和 YAML 文件)
-            -E 'json|yaml' (与上述等效)
+    示例:
+      -E 'json' -E 'yml' (过滤掉 JSON 和 YAML 文件)
+      -E 'json|yaml' (与上述等效)
 
-        注意:
-            这不会阻止递归进入匹配的目录 (请改用
-            --exclude-dir)。"""
+    注意:
+      这不会阻止递归进入匹配的目录 (请改用
+      --exclude-dir)。"""
   [flag.excludeDir]
     usage = """
 
-        阻止 F2 递归进入与提供的正则表达式模式
-        匹配的目录。"""
+    阻止 F2 递归进入与提供的正则表达式模式
+    匹配的目录。"""
   [flag.exec]
     usage = """
 
@@ -124,18 +124,18 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.exiftoolOpts]
     usage = """
 
-        在使用 ExifTool 变量替换模式时，提供自定义
-        Exiftool 输出的选项。
+    在使用 ExifTool 变量替换模式时，提供自定义
+    Exiftool 输出的选项。
 
-        支持的选项:
-            --api
-            --charset
-            --coordFormat
-            --dateFormat
-            --extractEmbedded
+    支持的选项:
+      --api
+      --charset
+      --coordFormat
+      --dateFormat
+      --extractEmbedded
 
-        示例:
-            $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
+    示例:
+      $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
   [flag.fixConflicts]
     usage = """
 
@@ -143,37 +143,37 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.fixConflictsPattern]
     usage = """
 
-        指定在发生冲突时用于重命名文件的自定义模式。
-        该模式应为有效的 Go 格式字符串，包含一个用于冲突索引
-        的 '%d' 占位符。
+    指定在发生冲突时用于重命名文件的自定义模式。
+    该模式应为有效的 Go 格式字符串，包含一个用于冲突索引
+    的 '%d' 占位符。
 
-        示例: '_%02d'  (生成 _01, _02, 等)
+    示例: '_%02d'  (生成 _01, _02, 等)
 
-        如果未指定，则使用默认模式 '(%d)'。"""
+    如果未指定，则使用默认模式 '(%d)'。"""
   [flag.hidden]
     usage = """
 
-        在搜索和重命名过程中包括隐藏的文件和目录。
+    在搜索和重命名过程中包括隐藏的文件和目录。
 
-        在 Linux 和 macOS 上，隐藏文件是那些以点字符开头的文件。
-        在 Windows 上，只有具有“隐藏”属性的文件才被视为隐藏文件。
+    在 Linux 和 macOS 上，隐藏文件是那些以点字符开头的文件。
+    在 Windows 上，只有具有“隐藏”属性的文件才被视为隐藏文件。
 
-        要同时匹配隐藏目录，请将此标志与 -d/--include-dir 标志结合使用。"""
+    要同时匹配隐藏目录，请将此标志与 -d/--include-dir 标志结合使用。"""
   [flag.include]
     usage = """
 
-        仅包括与提供的正则表达式匹配的文件，而不是
-        所有由 --find 标志匹配的文件。
+    仅包括与提供的正则表达式匹配的文件，而不是
+    所有由 --find 标志匹配的文件。
 
-        此标志可重复使用以指定多个包含模式。
+    此标志可重复使用以指定多个包含模式。
 
-        示例:
-            -I 'json' -I 'yml' (仅包括 JSON 和 YAML 文件)"""
+    示例:
+      -I 'json' -I 'yml' (仅包括 JSON 和 YAML 文件)"""
   [flag.includeDir]
     usage = """
 
-        在重命名操作中包括匹配的目录 (默认情况下它们
-        被排除)。"""
+    在重命名操作中包括匹配的目录 (默认情况下它们
+    被排除)。"""
   [flag.ignoreCase]
     usage = """
 
@@ -202,32 +202,32 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.pair]
     usage = """
 
-        启用配对重命名，将同一目录中同名但扩展名不同的
-        文件重命名为相同的新名称。在配对模式下，
-        文件扩展名将被忽略。
+    启用配对重命名，将同一目录中同名但扩展名不同的
+    文件重命名为相同的新名称。在配对模式下，
+    文件扩展名将被忽略。
 
-        示例:
-            之前: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+    示例:
+      之前: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
 
-            $ f2 -r "Photo_{%03d}" --pair -x
+      $ f2 -r "Photo_{%03d}" --pair -x
 
-            之后: Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG"""
+      之后: Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG"""
   [flag.pairOrder]
     usage = """
 
-        根据扩展名对配对文件进行排序。这有助于控制
-        首先重命名哪个文件，以及在使用变量时应提取
-        哪个文件的元数据。
+    根据扩展名对配对文件进行排序。这有助于控制
+    首先重命名哪个文件，以及在使用变量时应提取
+    哪个文件的元数据。
 
-        示例:
-          --pair-order 'dng,jpg' # 在 jpg 之前重命名 dng 文件
-          --pair-order 'xmp,arw' # 在 arw 之前重命名 xmp 文件"""
+    示例:
+      --pair-order 'dng,jpg' # 在 jpg 之前重命名 dng 文件
+      --pair-order 'xmp,arw' # 在 arw 之前重命名 xmp 文件"""
   [flag.quiet]
     usage = """
 
-        不向标准输出 (stdout) 打印任何内容。如果未找到匹配项，
-      且未使用此标志，f2 将以错误代码而不是正常的成功代码退出。
-        错误将继续写入标准错误流 (stderr)。"""
+    不向标准输出 (stdout) 打印任何内容。如果未找到匹配项，
+    且未使用此标志，f2 将以错误代码而不是正常的成功代码退出。
+    错误将继续写入标准错误流 (stderr)。"""
   [flag.recursive]
     usage = """
 
@@ -235,18 +235,27 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.replaceLimit]
     usage = """
 
-        限制对每个匹配文件进行的替换次数。0 (默认)
-        表示替换所有匹配项。负值表示从文件名末尾
-        开始替换。"""
+    限制对每个匹配文件进行的替换次数。0 (默认)
+    表示替换所有匹配项。负值表示从文件名末尾
+    开始替换。"""
+  [flag.replaceRange]
+    usage = """
+
+    使用索引替换特定匹配或匹配范围。
+
+    示例：
+      --replace-range 1..3 # 替换前 3 个匹配项
+      --replace-range 2 # 仅替换第 2 个匹配项
+      --replace-range 1;-2 # 替换第 1 个和倒数第 2 个匹配项"""
   [flag.resetIndexPerDir]
     usage = """
 
-        在递归操作期间进入新目录时重置
-        自动递增索引。"""
+    在递归操作期间进入新目录时重置
+    自动递增索引。"""
   [flag.sort]
     usage = """
 
-        根据提供的标准按升序对匹配项进行排序。
+    根据提供的标准按升序对匹配项进行排序。
 
     允许的值:
       * 'default'    : 字典顺序。
@@ -270,14 +279,14 @@ f2 标志 [选项] [文件和目录路径...]
   [flag.sortVar]
     usage = """
 
-        在使用 --sort/--sortr 和 time_var, int_var, 或 string_var 时激活。
-        提供支持的变量以根据文件元数据对文件进行排序。
-        有关更多详细信息，请参阅 https://f2.freshman.tech/guide/sorting。"""
+    在使用 --sort/--sortr 和 time_var, int_var, 或 string_var 时激活。
+    提供支持的变量以根据文件元数据对文件进行排序。
+    有关更多详细信息，请参阅 https://f2.freshman.tech/guide/sorting。"""
   [flag.stringMode]
     usage = """
 
-        将搜索模式 (由 -f/--find 指定) 视为文字字符串
-        而不是正则表达式。"""
+    将搜索模式 (由 -f/--find 指定) 视为文字字符串
+    而不是正则表达式。"""
   [flag.targetDir]
     usage = """
 

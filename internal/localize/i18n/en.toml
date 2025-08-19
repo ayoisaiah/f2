@@ -242,9 +242,12 @@ Override the default options according to your preferences. For example,
   [flag.replaceRange]
     usage = """
 
-		Limits the number of replacements made on each matched file. 0 (default)
-		means replace all matches. Negative values replace from the end of the
-		filename."""
+		Replace a specific match or range of matches using an index.
+
+    Example:
+      --replace-range 1..3 # replace the first 3 matches
+      --replace-range 2 # replace the 2nd match alone
+      --replace-range 1;-2 # replace the first match and the 2nd to the last match"""
   [flag.resetIndexPerDir]
     usage = """
 

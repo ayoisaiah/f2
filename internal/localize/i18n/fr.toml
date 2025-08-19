@@ -1,23 +1,23 @@
 [help]
   [help.usage]
-    text = '''
+    text = """
 f2 DRAPEAUX [OPTIONS] [CHEMINS VERS LES FICHIERS ET RÉPERTOIRES...]
-  commande | f2 DRAPEAUX [OPTIONS]'''
+  commande | f2 DRAPEAUX [OPTIONS]"""
 
     heading = "UTILISATION"
   [help.positional_args]
     heading = "ARGUMENTS POSITIONNELS"
 
-    text = '''
+    text = """
 Fournissez éventuellement un ou plusieurs fichiers et répertoires pour rechercher des correspondances.
     Si omis, il recherche uniquement dans le répertoire courant. Notez également que
-    les répertoires ne sont pas parcourus récursivement sauf si --recursive/-R est utilisé.'''
+    les répertoires ne sont pas parcourus récursivement sauf si --recursive/-R est utilisé."""
 
   [help.options]
     heading = "OPTIONS"
 
   [help.short]
-    text = '''
+    text = """
 L'outil de renommage par lots que vous apprécierez vraiment d'utiliser.
 
 {{.Usage}}
@@ -29,7 +29,7 @@ L'outil de renommage par lots que vous apprécierez vraiment d'utiliser.
 
 {{.LearnMore}}
   Utilisez f2 --help pour afficher les options de ligne de commande.
-  Lisez le manuel sur https://f2.freshman.tech'''
+  Lisez le manuel sur https://f2.freshman.tech"""
 
   [help.learn_more]
     heading = "EN SAVOIR PLUS"
@@ -38,11 +38,11 @@ L'outil de renommage par lots que vous apprécierez vraiment d'utiliser.
   [help.env]
     heading = "VARIABLES D'ENVIRONNEMENT"
 
-    text = '''
+    text = """
 Remplacez les options par défaut selon vos préférences. Par exemple,
     vous pouvez activer le mode d'exécution et ignorer les extensions de fichiers par défaut :
 
-    export F2_DEFAULT_OPTS=--exec --ignore-ext'''
+    export F2_DEFAULT_OPTS=--exec --ignore-ext"""
 
   [help.color]
     text = "Définissez n'importe quelle valeur pour désactiver la sortie colorée."
@@ -68,39 +68,39 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
   heading = "DRAPEAUX"
 
   [flag.csv]
-   usage = '''
+   usage = """
 
-    Charge un fichier CSV et renomme en fonction de son contenu.'''
+    Charge un fichier CSV et renomme en fonction de son contenu."""
 
   [flag.find]
-    usage = '''
+    usage = """
 
     Un motif d'expression régulière utilisé pour faire correspondre les fichiers et les répertoires.
     Il accepte la syntaxe définie par la norme RE2 et est par défaut .*
 		si omis, ce qui correspond au nom complet du fichier/répertoire.
 
-		Lorsque -s/--string-mode est utilisé, ce motif est traité comme une chaîne littérale.'''
+		Lorsque -s/--string-mode est utilisé, ce motif est traité comme une chaîne littérale."""
   [flag.replace]
-    usage = '''
+    usage = """
 
     La chaîne de remplacement qui remplace chaque correspondance dans le nom de fichier.
     Elle prend en charge les variables de capture, les variables intégrées et les variables exiftool.
-    Si omise, elle est par défaut une chaîne vide.'''
+    Si omise, elle est par défaut une chaîne vide."""
   [flag.undo]
-    usage = '''
+    usage = """
 
-    Annule la dernière opération de renommage effectuée dans le répertoire de travail courant.'''
+    Annule la dernière opération de renommage effectuée dans le répertoire de travail courant."""
   [flag.allowOverwrites]
-    usage = '''
+    usage = """
 
 		Permet à l'opération de renommage d'écraser les fichiers existants.
-		Attention : L'utilisation de cette option peut entraîner une perte de données irrécupérable.'''
+		Attention : L'utilisation de cette option peut entraîner une perte de données irrécupérable."""
   [flag.clean]
-    usage = '''
+    usage = """
 
-    Nettoie les répertoires vides qui ont été parcourus lors d'une opération de renommage.'''
+    Nettoie les répertoires vides qui ont été parcourus lors d'une opération de renommage."""
   [flag.exclude]
-    usage = '''
+    usage = """
 
 		Exclut les fichiers et les répertoires qui correspondent à l'expression régulière fournie.
 		Ce drapeau peut être répété pour spécifier plusieurs motifs d'exclusion.
@@ -111,18 +111,18 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 
 		Note :
 			Cela n'empêche pas la récursion dans les répertoires correspondants (utilisez
-			--exclude-dir à la place).'''
+			--exclude-dir à la place)."""
   [flag.excludeDir]
-    usage = '''
+    usage = """
 
 		Empêche F2 de parcourir récursivement les répertoires qui correspondent au motif
-		d'expression régulière fourni.'''
+		d'expression régulière fourni."""
   [flag.exec]
-    usage = '''
+    usage = """
 
-    Exécute l'opération de renommage et applique les modifications au système de fichiers.'''
+    Exécute l'opération de renommage et applique les modifications au système de fichiers."""
   [flag.exiftoolOpts]
-    usage = '''
+    usage = """
 
 		Fournit des options pour personnaliser la sortie d'Exiftool lors de l'utilisation de
 		variables ExifTool dans les motifs de remplacement.
@@ -135,13 +135,13 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 			--extractEmbedded
 
 		Exemple :
-			$ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' '''
+			$ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
   [flag.fixConflicts]
-    usage = '''
+    usage = """
 
-    Corrige automatiquement les conflits de renommage à l'aide de règles prédéfinies.'''
+    Corrige automatiquement les conflits de renommage à l'aide de règles prédéfinies."""
   [flag.fixConflictsPattern]
-    usage = '''
+    usage = """
 
 		Spécifie un motif personnalisé pour renommer les fichiers en cas de conflits.
 		Le motif doit être une chaîne de format Go valide contenant un seul
@@ -149,9 +149,9 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 
 		Exemple : '_%02d'  (génère _01, _02, etc.)
 
-		S'il n'est pas spécifié, le motif par défaut '(%d)' est utilisé.'''
+		S'il n'est pas spécifié, le motif par défaut '(%d)' est utilisé."""
   [flag.hidden]
-    usage = '''
+    usage = """
 
 		Inclut les fichiers et répertoires cachés dans le processus de recherche et de renommage.
 
@@ -159,9 +159,9 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 		Sous Windows, seuls les fichiers avec l'attribut 'caché' sont considérés comme cachés.
 
 		Pour faire correspondre également les répertoires cachés, combinez ceci avec le drapeau
-		-d/--include-dir.'''
+		-d/--include-dir."""
   [flag.include]
-    usage = '''
+    usage = """
 
 		N'inclut que les fichiers qui correspondent à l'expression régulière fournie au lieu de
 		tous les fichiers correspondants au drapeau --find.
@@ -169,39 +169,39 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 		Ce drapeau peut être répété pour spécifier plusieurs motifs d'inclusion.
 
 		Exemple :
-			-I 'json' -I 'yml' (n'inclut que les fichiers JSON et YAML)'''
+			-I 'json' -I 'yml' (n'inclut que les fichiers JSON et YAML)"""
   [flag.includeDir]
-    usage = '''
+    usage = """
 
 		Inclut les répertoires correspondants dans l'opération de renommage (ils sont exclus
-		par défaut).'''
+		par défaut)."""
   [flag.ignoreCase]
-    usage = '''
+    usage = """
 
-    Ignore la sensibilité à la casse lors de la recherche de correspondances.'''
+    Ignore la sensibilité à la casse lors de la recherche de correspondances."""
   [flag.ignoreExt]
-    usage = '''
+    usage = """
 
-    Ignore l'extension de fichier lors de la recherche de correspondances.'''
+    Ignore l'extension de fichier lors de la recherche de correspondances."""
   [flag.json]
-    usage = '''
+    usage = """
 
 		Produit une sortie JSON, à l'exception des messages d'erreur qui sont envoyés à
-		l'erreur standard.'''
+		l'erreur standard."""
   [flag.maxDepth]
-    usage = '''
+    usage = """
 
-    Limite la profondeur de la recherche récursive. Définissez à 0 (par défaut) pour aucune limite.'''
+    Limite la profondeur de la recherche récursive. Définissez à 0 (par défaut) pour aucune limite."""
   [flag.noColor]
-    usage = '''
+    usage = """
 
-    Désactive la sortie colorée.'''
+    Désactive la sortie colorée."""
   [flag.onlyDir]
-    usage = '''
+    usage = """
 
-    Renomme uniquement les répertoires, pas les fichiers (implique -d/--include-dir).'''
+    Renomme uniquement les répertoires, pas les fichiers (implique -d/--include-dir)."""
   [flag.pair]
-    usage = '''
+    usage = """
 
 		Activez le renommage par paires pour renommer les fichiers portant le même nom (mais des
 		extensions différentes) dans le même répertoire avec le même nouveau nom. En mode paire,
@@ -212,9 +212,9 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 
 			$ f2 -r "Photo_{%03d}" --pair -x
 
-			Après : Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG'''
+			Après : Photo_001.ARW Photo_001.JPG Photo_002.ARW Photo_002.JPG"""
   [flag.pairOrder]
-    usage = '''
+    usage = """
 
 		Ordonnez les fichiers appariés en fonction de leur extension. Cela vous aide à contrôler
 		le fichier à renommer en premier, et dont les métadonnées doivent être extraites lors de
@@ -222,30 +222,39 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
 
 		Exemple :
 		  --pair-order 'dng,jpg' # renommer les fichiers dng avant les jpg
-		  --pair-order 'xmp,arw' # renommer les fichiers xmp avant les arw'''
+		  --pair-order 'xmp,arw' # renommer les fichiers xmp avant les arw"""
   [flag.quiet]
-    usage = '''
+    usage = """
 
 		N'imprime rien sur stdout. Si aucune correspondance n'est trouvée, f2 se terminera avec
 	  un code d'erreur au lieu du code de succès normal sans ce drapeau.
-		Les erreurs continueront d'être écrites sur stderr.'''
+		Les erreurs continueront d'être écrites sur stderr."""
   [flag.recursive]
-    usage = '''
+    usage = """
 
-    Parcourt récursivement les répertoires lors de la recherche de correspondances.'''
+    Parcourt récursivement les répertoires lors de la recherche de correspondances."""
   [flag.replaceLimit]
-    usage = '''
+    usage = """
 
 		Limite le nombre de remplacements effectués sur chaque fichier correspondant. 0 (par défaut)
 		signifie remplacer toutes les correspondances. Les valeurs négatives remplacent à partir de la fin du
-		nom de fichier.'''
+		nom de fichier."""
+  [flag.replaceRange]
+    usage = """
+
+    Remplace une correspondance spécifique ou une plage de correspondances à l'aide d'un index.
+
+    Exemple:
+      --replace-range 1..3 # remplace les 3 premières correspondances
+      --replace-range 2 # remplace uniquement la 2e correspondance
+      --replace-range 1;-2 # remplace la première et l'avant-dernière correspondance"""
   [flag.resetIndexPerDir]
-    usage = '''
+    usage = """
 
 		Réinitialise l'index à incrémentation automatique lors de l'entrée dans un nouveau répertoire pendant une
-		opération récursive.'''
+		opération récursive."""
   [flag.sort]
-    usage = '''
+    usage = """
 
 		Trie les correspondances par ordre croissant en fonction des critères fournis.
 
@@ -259,34 +268,34 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
       * 'ctime'      : Trier par heure de dernière modification des métadonnées du fichier.
       * 'time_var'   : Trier par variable de temps.
       * 'int_var'    : Trier par variable entière.
-      * 'string_var' : Trier lexicographiquement par variable de chaîne.'''
+      * 'string_var' : Trier lexicographiquement par variable de chaîne."""
   [flag.sortr]
-    usage = '''
+    usage = """
 
-    Accepte les mêmes valeurs que --sort mais trie les correspondances par ordre décroissant.'''
+    Accepte les mêmes valeurs que --sort mais trie les correspondances par ordre décroissant."""
   [flag.sortPerDir]
-    usage = '''
+    usage = """
 
-    Garantit que le tri est effectué séparément dans chaque répertoire plutôt que globalement.'''
+    Garantit que le tri est effectué séparément dans chaque répertoire plutôt que globalement."""
   [flag.sortVar]
-    usage = '''
+    usage = """
 
 		Actif lors de l'utilisation de --sort/--sortr avec time_var, int_var ou string_var.
 		Fournissez une variable prise en charge pour trier les fichiers en fonction des métadonnées du fichier.
-		Voir https://f2.freshman.tech/guide/sorting pour plus de détails.'''
+		Voir https://f2.freshman.tech/guide/sorting pour plus de détails."""
   [flag.stringMode]
-    usage = '''
+    usage = """
 
 		Traite le motif de recherche (spécifié par -f/--find) comme une chaîne littérale
-		au lieu d'une expression régulière.'''
+		au lieu d'une expression régulière."""
   [flag.targetDir]
-    usage = '''
+    usage = """
 
-    Spécifiez un répertoire cible pour déplacer les fichiers renommés et réorganiser votre système de fichiers.'''
+    Spécifiez un répertoire cible pour déplacer les fichiers renommés et réorganiser votre système de fichiers."""
   [flag.verbose]
-    usage = '''
+    usage = """
 
-    Active la sortie détaillée pendant l'opération de renommage.'''
+    Active la sortie détaillée pendant l'opération de renommage."""
 
 [app]
   usage = """

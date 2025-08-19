@@ -93,8 +93,8 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.allowOverwrites]
     usage = """
 
-        Ermöglicht dem Umbenennungsvorgang, vorhandene Dateien zu überschreiben.
-        Achtung: Die Verwendung dieser Option kann zu nicht wiederherstellbarem Datenverlust führen."""
+    Ermöglicht dem Umbenennungsvorgang, vorhandene Dateien zu überschreiben.
+    Achtung: Die Verwendung dieser Option kann zu nicht wiederherstellbarem Datenverlust führen."""
   [flag.clean]
     usage = """
 
@@ -102,21 +102,21 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.exclude]
     usage = """
 
-        Schließt Dateien und Verzeichnisse aus, die dem angegebenen regulären Ausdruck entsprechen.
-        Dieses Flag kann wiederholt werden, um mehrere Ausschlussmuster anzugeben.
+    Schließt Dateien und Verzeichnisse aus, die dem angegebenen regulären Ausdruck entsprechen.
+    Dieses Flag kann wiederholt werden, um mehrere Ausschlussmuster anzugeben.
 
-        Beispiel:
-            -E 'json' -E 'yml' (filtert JSON- und YAML-Dateien heraus)
-            -E 'json|yaml' (entspricht dem oben genannten)
+    Beispiel:
+      -E 'json' -E 'yml' (filtert JSON- und YAML-Dateien heraus)
+      -E 'json|yaml' (entspricht dem oben genannten)
 
-        Hinweis:
-            Dies verhindert nicht das rekursive Durchsuchen von passenden Verzeichnissen (verwenden
-            Sie stattdessen --exclude-dir)."""
+    Hinweis:
+      Dies verhindert nicht das rekursive Durchsuchen von passenden Verzeichnissen (verwenden
+      Sie stattdessen --exclude-dir)."""
   [flag.excludeDir]
     usage = """
 
-        Verhindert, dass F2 rekursiv in Verzeichnisse eintritt, die dem angegebenen
-        regulären Ausdrucksmuster entsprechen."""
+    Verhindert, dass F2 rekursiv in Verzeichnisse eintritt, die dem angegebenen
+    regulären Ausdrucksmuster entsprechen."""
   [flag.exec]
     usage = """
 
@@ -124,18 +124,18 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.exiftoolOpts]
     usage = """
 
-        Bietet Optionen zur Anpassung der Exiftool-Ausgabe bei Verwendung von
-        ExifTool-Variablen in Ersatzmustern.
+    Bietet Optionen zur Anpassung der Exiftool-Ausgabe bei Verwendung von
+    ExifTool-Variablen in Ersatzmustern.
 
-        Unterstützte Optionen:
-            --api
-            --charset
-            --coordFormat
-            --dateFormat
-            --extractEmbedded
+    Unterstützte Optionen:
+      --api
+      --charset
+      --coordFormat
+      --dateFormat
+      --extractEmbedded
 
-        Beispiel:
-            $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
+    Beispiel:
+      $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
   [flag.fixConflicts]
     usage = """
 
@@ -143,37 +143,37 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.fixConflictsPattern]
     usage = """
 
-        Gibt ein benutzerdefiniertes Muster für die Umbenennung von Dateien bei Konflikten an.
-        Das Muster muss eine gültige Go-Formatzeichenfolge sein, die einen einzigen
-        '%d'-Platzhalter für den Konfliktindex enthält.
+    Gibt ein benutzerdefiniertes Muster für die Umbenennung von Dateien bei Konflikten an.
+    Das Muster muss eine gültige Go-Formatzeichenfolge sein, die einen einzigen
+    '%d'-Platzhalter für den Konfliktindex enthält.
 
-        Beispiel: '_%02d'  (erzeugt _01, _02 usw.)
+    Beispiel: '_%02d'  (erzeugt _01, _02 usw.)
 
-        Wenn nicht angegeben, wird das Standardmuster '(%d)' verwendet."""
+    Wenn nicht angegeben, wird das Standardmuster '(%d)' verwendet."""
   [flag.hidden]
     usage = """
 
-        Schließt versteckte Dateien und Verzeichnisse in den Such- und Umbenennungsprozess ein.
+    Schließt versteckte Dateien und Verzeichnisse in den Such- und Umbenennungsprozess ein.
 
-        Unter Linux und macOS sind versteckte Dateien solche, die mit einem Punkt beginnen.
-        Unter Windows gelten nur Dateien mit dem Attribut 'versteckt' als versteckt.
+    Unter Linux und macOS sind versteckte Dateien solche, die mit einem Punkt beginnen.
+    Unter Windows gelten nur Dateien mit dem Attribut 'versteckt' als versteckt.
 
-        Um auch versteckte Verzeichnisse abzugleichen, kombinieren Sie dies mit dem Flag -d/--include-dir."""
+    Um auch versteckte Verzeichnisse abzugleichen, kombinieren Sie dies mit dem Flag -d/--include-dir."""
   [flag.include]
     usage = """
 
-        Schließt nur Dateien ein, die dem angegebenen regulären Ausdruck entsprechen, anstatt
-        aller Dateien, die mit dem Flag --find übereinstimmen.
+    Schließt nur Dateien ein, die dem angegebenen regulären Ausdruck entsprechen, anstatt
+    aller Dateien, die mit dem Flag --find übereinstimmen.
 
-        Dieses Flag kann wiederholt werden, um mehrere Einschlussmuster anzugeben.
+    Dieses Flag kann wiederholt werden, um mehrere Einschlussmuster anzugeben.
 
-        Beispiel:
-            -I 'json' -I 'yml' (schließt nur JSON- und YAML-Dateien ein)"""
+    Beispiel:
+      -I 'json' -I 'yml' (schließt nur JSON- und YAML-Dateien ein)"""
   [flag.includeDir]
     usage = """
 
-        Schließt passende Verzeichnisse in den Umbenennungsvorgang ein (sie sind
-        standardmäßig ausgeschlossen)."""
+    Schließt passende Verzeichnisse in den Umbenennungsvorgang ein (sie sind
+    standardmäßig ausgeschlossen)."""
   [flag.ignoreCase]
     usage = """
 
@@ -185,8 +185,8 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.json]
     usage = """
 
-        Erzeugt eine JSON-Ausgabe, mit Ausnahme von Fehlermeldungen, die an den
-        Standardfehler gesendet werden."""
+    Erzeugt eine JSON-Ausgabe, mit Ausnahme von Fehlermeldungen, die an den
+    Standardfehler gesendet werden."""
   [flag.maxDepth]
     usage = """
 
@@ -202,32 +202,32 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.pair]
     usage = """
 
-        Aktiviert die paarweise Umbenennung, um Dateien mit demselben Namen (aber unterschiedlichen
-        Erweiterungen) im selben Verzeichnis in denselben neuen Namen umzubenennen. Im Paarmodus
-        werden Dateierweiterungen ignoriert.
+    Aktiviert die paarweise Umbenennung, um Dateien mit demselben Namen (aber unterschiedlichen
+    Erweiterungen) im selben Verzeichnis in denselben neuen Namen umzubenennen. Im Paarmodus
+    werden Dateierweiterungen ignoriert.
 
-        Beispiel:
-            Vorher: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+    Beispiel:
+      Vorher: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
 
-            $ f2 -r "Foto_{%03d}" --pair -x
+      $ f2 -r "Foto_{%03d}" --pair -x
 
-            Nachher: Foto_001.ARW Foto_001.JPG Foto_002.ARW Foto_002.JPG"""
+      Nachher: Foto_001.ARW Foto_001.JPG Foto_002.ARW Foto_002.JPG"""
   [flag.pairOrder]
     usage = """
 
-        Ordnet die gepaarten Dateien entsprechend ihrer Erweiterung. Dies hilft Ihnen zu steuern,
-        welche Datei zuerst umbenannt wird und wessen Metadaten bei der Verwendung von
-        Variablen extrahiert werden sollen.
+    Ordnet die gepaarten Dateien entsprechend ihrer Erweiterung. Dies hilft Ihnen zu steuern,
+    welche Datei zuerst umbenannt wird und wessen Metadaten bei der Verwendung von
+    Variablen extrahiert werden sollen.
 
-        Beispiel:
-          --pair-order 'dng,jpg' # benennt dng-Dateien vor jpg um
-          --pair-order 'xmp,arw' # benennt xmp-Dateien vor arw um"""
+    Beispiel:
+      --pair-order 'dng,jpg' # benennt dng-Dateien vor jpg um
+      --pair-order 'xmp,arw' # benennt xmp-Dateien vor arw um"""
   [flag.quiet]
     usage = """
 
-        Gibt nichts auf stdout aus. Wenn keine Übereinstimmungen gefunden werden, wird f2 mit
-      einem Fehlercode anstelle des normalen Erfolgscodes beendet, wenn dieses Flag nicht gesetzt ist.
-        Fehler werden weiterhin nach stderr geschrieben."""
+    Gibt nichts auf stdout aus. Wenn keine Übereinstimmungen gefunden werden, wird f2 mit
+    einem Fehlercode anstelle des normalen Erfolgscodes beendet, wenn dieses Flag nicht gesetzt ist.
+    Fehler werden weiterhin nach stderr geschrieben."""
   [flag.recursive]
     usage = """
 
@@ -235,18 +235,26 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.replaceLimit]
     usage = """
 
-        Begrenzt die Anzahl der Ersetzungen für jede übereinstimmende Datei. 0 (Standard)
-        bedeutet, alle Übereinstimmungen zu ersetzen. Negative Werte ersetzen vom Ende des
-        Dateinamens aus."""
+    Begrenzt die Anzahl der Ersetzungen für jede übereinstimmende Datei. 0 (Standard)
+    bedeutet, alle Übereinstimmungen zu ersetzen. Negative Werte ersetzen vom Ende des
+    Dateinamens aus."""
+  [flag.replaceRange]
+    usage = """
+    Ersetzt eine bestimmte Übereinstimmung oder einen Bereich von Übereinstimmungen anhand eines Indexes.
+
+    Beispiel:
+      --replace-range 1..3 # ersetzt die ersten 3 Übereinstimmungen
+      --replace-range 2 # ersetzt nur die 2. Übereinstimmung
+      --replace-range 1;-2 # ersetzt die erste und die vorletzte Übereinstimmung"""
   [flag.resetIndexPerDir]
     usage = """
 
-        Setzt den automatisch inkrementierenden Index zurück, wenn während eines
-        rekursiven Vorgangs ein neues Verzeichnis betreten wird."""
+    Setzt den automatisch inkrementierenden Index zurück, wenn während eines
+    rekursiven Vorgangs ein neues Verzeichnis betreten wird."""
   [flag.sort]
     usage = """
 
-        Sortiert Übereinstimmungen in aufsteigender Reihenfolge nach den angegebenen Kriterien.
+    Sortiert Übereinstimmungen in aufsteigender Reihenfolge nach den angegebenen Kriterien.
 
     Erlaubte Werte:
       * 'default'    : Lexikographische Reihenfolge.
@@ -270,14 +278,14 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   [flag.sortVar]
     usage = """
 
-        Aktiv bei Verwendung von --sort/--sortr mit time_var, int_var oder string_var.
-        Geben Sie eine unterstützte Variable an, um die Dateien anhand von Dateimetadaten zu sortieren.
-        Weitere Details finden Sie unter https://f2.freshman.tech/guide/sorting."""
+    Aktiv bei Verwendung von --sort/--sortr mit time_var, int_var oder string_var.
+    Geben Sie eine unterstützte Variable an, um die Dateien anhand von Dateimetadaten zu sortieren.
+    Weitere Details finden Sie unter https://f2.freshman.tech/guide/sorting."""
   [flag.stringMode]
     usage = """
 
-        Behandelt das Suchmuster (angegeben durch -f/--find) als literalen String
-        anstelle eines regulären Ausdrucks."""
+    Behandelt das Suchmuster (angegeben durch -f/--find) als literalen String
+    anstelle eines regulären Ausdrucks."""
   [flag.targetDir]
     usage = """
 

@@ -93,8 +93,8 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.allowOverwrites]
     usage = """
 
-        Permite que la operación de renombrado sobrescriba archivos existentes.
-        Precaución: Usar esta opción puede llevar a una pérdida de datos irrecuperable."""
+    Permite que la operación de renombrado sobrescriba archivos existentes.
+    Precaución: Usar esta opción puede llevar a una pérdida de datos irrecuperable."""
   [flag.clean]
     usage = """
 
@@ -102,21 +102,21 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.exclude]
     usage = """
 
-        Excluye archivos y directorios que coincidan con la expresión regular proporcionada.
-        Este indicador se puede repetir para especificar múltiples patrones de exclusión.
+    Excluye archivos y directorios que coincidan con la expresión regular proporcionada.
+    Este indicador se puede repetir para especificar múltiples patrones de exclusión.
 
-        Ejemplo:
-            -E 'json' -E 'yml' (filtra archivos JSON y YAML)
-            -E 'json|yaml' (equivalente al anterior)
+    Ejemplo:
+        -E 'json' -E 'yml' (filtra archivos JSON y YAML)
+        -E 'json|yaml' (equivalente al anterior)
 
-        Nota:
-            Esto no evita la recursión en directorios que coincidan (use
-            --exclude-dir en su lugar)."""
+    Nota:
+        Esto no evita la recursión en directorios que coincidan (use
+        --exclude-dir en su lugar)."""
   [flag.excludeDir]
     usage = """
 
-        Evita que F2 entre de forma recursiva en directorios que coincidan con el patrón
-        de expresión regular proporcionado."""
+    Evita que F2 entre de forma recursiva en directorios que coincidan con el patrón
+    de expresión regular proporcionado."""
   [flag.exec]
     usage = """
 
@@ -124,18 +124,18 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.exiftoolOpts]
     usage = """
 
-        Proporciona opciones para personalizar la salida de Exiftool al usar variables de
-        ExifTool en patrones de reemplazo.
+    Proporciona opciones para personalizar la salida de Exiftool al usar variables de
+    ExifTool en patrones de reemplazo.
 
-        Opciones soportadas:
-            --api
-            --charset
-            --coordFormat
-            --dateFormat
-            --extractEmbedded
+    Opciones soportadas:
+        --api
+        --charset
+        --coordFormat
+        --dateFormat
+        --extractEmbedded
 
-        Ejemplo:
-            $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
+    Ejemplo:
+        $ f2 -r '{xt.GPSDateTime}' --exiftool-opts '--dateFormat %Y-%m-%d' """
   [flag.fixConflicts]
     usage = """
 
@@ -143,37 +143,37 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.fixConflictsPattern]
     usage = """
 
-        Especifica un patrón personalizado para renombrar archivos cuando ocurren conflictos.
-        El patrón debe ser una cadena de formato de Go válida que contenga un único
-        marcador de posición '%d' para el índice de conflicto.
+    Especifica un patrón personalizado para renombrar archivos cuando ocurren conflictos.
+    El patrón debe ser una cadena de formato de Go válida que contenga un único
+    marcador de posición '%d' para el índice de conflicto.
 
-        Ejemplo: '_%02d'  (genera _01, _02, etc.)
+    Ejemplo: '_%02d'  (genera _01, _02, etc.)
 
-        Si no se especifica, se usa el patrón predeterminado '(%d)'."""
+    Si no se especifica, se usa el patrón predeterminado '(%d)'."""
   [flag.hidden]
     usage = """
 
-        Incluye archivos y directorios ocultos en el proceso de búsqueda y renombrado.
+    Incluye archivos y directorios ocultos en el proceso de búsqueda y renombrado.
 
-        En Linux y macOS, los archivos ocultos son aquellos que comienzan con un punto.
-        En Windows, solo los archivos con el atributo 'oculto' se consideran ocultos.
+    En Linux y macOS, los archivos ocultos son aquellos que comienzan con un punto.
+    En Windows, solo los archivos con el atributo 'oculto' se consideran ocultos.
 
-        Para incluir también directorios ocultos, combine esto con el indicador -d/--include-dir."""
+    Para incluir también directorios ocultos, combine esto con el indicador -d/--include-dir."""
   [flag.include]
     usage = """
 
-        Solo incluye archivos que coincidan con la expresión regular proporcionada en lugar de
-        todos los archivos encontrados por el indicador --find.
+    Solo incluye archivos que coincidan con la expresión regular proporcionada en lugar de
+    todos los archivos encontrados por el indicador --find.
 
-        Este indicador se puede repetir para especificar múltiples patrones de inclusión.
+    Este indicador se puede repetir para especificar múltiples patrones de inclusión.
 
-        Ejemplo:
-            -I 'json' -I 'yml' (solo incluye archivos JSON y YAML)"""
+    Ejemplo:
+        -I 'json' -I 'yml' (solo incluye archivos JSON y YAML)"""
   [flag.includeDir]
     usage = """
 
-        Incluye los directorios que coincidan en la operación de renombrado (son excluidos
-        por defecto)."""
+    Incluye los directorios que coincidan en la operación de renombrado (son excluidos
+    por defecto)."""
   [flag.ignoreCase]
     usage = """
 
@@ -185,8 +185,8 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.json]
     usage = """
 
-        Produce una salida en formato JSON, excepto los mensajes de error que se envían
-        al error estándar."""
+    Produce una salida en formato JSON, excepto los mensajes de error que se envían
+    al error estándar."""
   [flag.maxDepth]
     usage = """
 
@@ -202,32 +202,32 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.pair]
     usage = """
 
-        Habilita el renombrado en pares para renombrar archivos con el mismo nombre (pero diferentes
-        extensiones) en el mismo directorio al mismo nombre nuevo. En modo de par,
-        las extensiones de archivo se ignoran.
+    Habilita el renombrado en pares para renombrar archivos con el mismo nombre (pero diferentes
+    extensiones) en el mismo directorio al mismo nombre nuevo. En modo de par,
+    las extensiones de archivo se ignoran.
 
-        Ejemplo:
-            Antes: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
+    Ejemplo:
+      Antes: DSC08533.ARW DSC08533.JPG DSC08534.ARW DSC08534.JPG
 
-            $ f2 -r "Foto_{%03d}" --pair -x
+      $ f2 -r "Foto_{%03d}" --pair -x
 
-            Después: Foto_001.ARW Foto_001.JPG Foto_002.ARW Foto_002.JPG"""
+      Después: Foto_001.ARW Foto_001.JPG Foto_002.ARW Foto_002.JPG"""
   [flag.pairOrder]
     usage = """
 
-        Ordena los archivos emparejados según su extensión. Esto ayuda a controlar
-        qué archivo se renombrará primero y de cuál se deben extraer los metadatos al
-        usar variables.
+    Ordena los archivos emparejados según su extensión. Esto ayuda a controlar
+    qué archivo se renombrará primero y de cuál se deben extraer los metadatos al
+    usar variables.
 
-        Ejemplo:
-          --pair-order 'dng,jpg' # renombra archivos dng antes que jpg
-          --pair-order 'xmp,arw' # renombra archivos xmp antes que arw"""
+    Ejemplo:
+      --pair-order 'dng,jpg' # renombra archivos dng antes que jpg
+      --pair-order 'xmp,arw' # renombra archivos xmp antes que arw"""
   [flag.quiet]
     usage = """
 
-        No imprime nada en la salida estándar (stdout). Si no se encuentran coincidencias, f2 saldrá con
-      un código de error en lugar del código de éxito normal sin este indicador.
-        Los errores seguirán escribiéndose en el error estándar (stderr)."""
+    No imprime nada en la salida estándar (stdout). Si no se encuentran coincidencias, f2 saldrá con
+    un código de error en lugar del código de éxito normal sin este indicador.
+    Los errores seguirán escribiéndose en el error estándar (stderr)."""
   [flag.recursive]
     usage = """
 
@@ -235,18 +235,28 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.replaceLimit]
     usage = """
 
-        Limita el número de reemplazos realizados en cada archivo encontrado. 0 (predeterminado)
-        significa reemplazar todas las coincidencias. Los valores negativos reemplazan desde el final del
+    Limita el número de reemplazos realizados en cada archivo encontrado. 0 (predeterminado)
+    significa reemplazar todas las coincidencias. Los valores negativos reemplazan desde el final del
         nombre del archivo."""
+  [flag.replaceRange]
+    usage = """
+
+    Reemplaza una coincidencia específica o un rango de coincidencias usando un índice.
+
+    Ejemplo:
+      --replace-range 1..3 # reemplaza las primeras 3 coincidencias
+      --replace-range 2 # reemplaza solo la segunda coincidencia
+      --replace-range 1;-2 # reemplaza la primera y la penúltima coincidencia"""
+
   [flag.resetIndexPerDir]
     usage = """
 
-        Reinicia el índice de autoincremento al entrar en un nuevo directorio durante una
-        operación recursiva."""
+    Reinicia el índice de autoincremento al entrar en un nuevo directorio durante una
+    operación recursiva."""
   [flag.sort]
     usage = """
 
-        Ordena las coincidencias en orden ascendente según los criterios proporcionados.
+    Ordena las coincidencias en orden ascendente según los criterios proporcionados.
 
     Valores permitidos:
       * 'default'    : Orden lexicográfico.
@@ -270,14 +280,14 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   [flag.sortVar]
     usage = """
 
-        Activo al usar --sort/--sortr con time_var, int_var, o string_var.
-        Proporcione una variable compatible para ordenar los archivos según los metadatos del archivo.
-        Consulte https://f2.freshman.tech/guide/sorting para más detalles."""
+    Activo al usar --sort/--sortr con time_var, int_var, o string_var.
+    Proporcione una variable compatible para ordenar los archivos según los metadatos del archivo.
+    Consulte https://f2.freshman.tech/guide/sorting para más detalles."""
   [flag.stringMode]
     usage = """
 
-        Trata el patrón de búsqueda (especificado por -f/--find) como una cadena de texto
-        literal en lugar de una expresión regular."""
+    Trata el patrón de búsqueda (especificado por -f/--find) como una cadena de texto
+    literal en lugar de una expresión regular."""
   [flag.targetDir]
     usage = """
 
