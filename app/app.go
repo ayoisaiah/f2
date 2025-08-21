@@ -29,7 +29,6 @@ func isInputFromPipe() bool {
 	return fileInfo.Mode()&os.ModeCharDevice == 0
 }
 
-// isOutputToPipe detects if F2's output is being piped to another command.
 // handlePipeInput processes input from a pipe and appends it to os.Args.
 func handlePipeInput(reader io.Reader) error {
 	if !isInputFromPipe() {

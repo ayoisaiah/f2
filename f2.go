@@ -22,6 +22,7 @@ var errConflictDetected = &apperr.Error{
 	Message: "conflict: resolve manually or use -F/--fix-conflicts",
 }
 
+// isOutputToPipe detects if F2's output is being piped to another command.
 func isOutputToPipe() bool {
 	fileInfo, _ := os.Stdout.Stat()
 
