@@ -63,6 +63,7 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
   parsing_fix_conflicts_pattern = "le --fix-conflicts-pattern '%s' fourni est invalide"
   rename_failed = "Certains fichiers n'ont pas pu être renommés"
   eval_invalid_args = "arguments invalides"
+  search_eval_failed = "échec de la recherche conditionnelle"
 
 [flag]
   heading = "DRAPEAUX"
@@ -308,7 +309,6 @@ offre plusieurs options pour un contrôle précis du processus de renommage.
   error = "erreur"
   backup_failed = "échec de la sauvegarde"
   backup_cleanup_failed = "échec du nettoyage du fichier de sauvegarde"
-  search_eval_failed = "échec de la recherche conditionnelle"
   non_existent_file = "saut du fichier source inexistant à la ligne"
   no_matches = "les critères de recherche n'ont correspondu à aucun fichier"
   no_matches_csv = "aucun candidat au renommage trouvé dans le fichier CSV"

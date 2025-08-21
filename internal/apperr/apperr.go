@@ -1,6 +1,9 @@
 package apperr
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type Error struct {
 	Cause   error
@@ -37,4 +40,15 @@ func (e *Error) Fmt(str ...any) *Error {
 func (e *Error) WithCtx(ctx any) *Error {
 	e.Context = ctx
 	return e
+}
+
+func Unwrap(err error) error {
+	ae := &Error{}
+
+	ok := errors.As(err, &ae)
+	if !ok {
+		return err
+	}
+
+	return ae.Cause
 }

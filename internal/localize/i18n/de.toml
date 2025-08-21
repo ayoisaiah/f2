@@ -63,6 +63,7 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
   parsing_fix_conflicts_pattern = "das angegebene --fix-conflicts-pattern '%s' ist ungültig"
   rename_failed = "einige Dateien konnten nicht umbenannt werden"
   eval_invalid_args = "ungültige Argumente"
+  search_eval_failed = "bedingte Suche fehlgeschlagen"
 
 [flag]
   heading = "FLAGS"
@@ -306,7 +307,6 @@ des Umbenennungsprozesses. """
   error = "Fehler"
   backup_failed = "Sicherung fehlgeschlagen"
   backup_cleanup_failed = "Bereinigung der Sicherungsdatei fehlgeschlagen"
-  search_eval_failed = "bedingte Suche fehlgeschlagen"
   non_existent_file = "überspringe nicht existierende Quelldatei in Zeile"
   no_matches = "die Suchkriterien stimmten mit keiner Datei überein"
   no_matches_csv = "keine Umbenennungskandidaten in CSV-Datei gefunden"

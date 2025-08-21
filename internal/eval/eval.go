@@ -12,10 +12,91 @@ import (
 	"github.com/ayoisaiah/f2/v2/internal/localize"
 )
 
-var functions = make(map[string]goval.ExpressionFunction)
+var (
+	errInvalidArgs = &apperr.Error{
+		Message: localize.T("error.eval_invalid_args"),
+	}
 
-var errInvalidArgs = &apperr.Error{
-	Message: localize.T("error.eval_invalid_args"),
+	errEval = &apperr.Error{
+		Message: localize.T("error.search_eval_failed"),
+	}
+)
+
+var functions = map[string]goval.ExpressionFunction{
+	"strlen": func(args ...any) (any, error) {
+		if len(args) == 0 {
+			return nil, errInvalidArgs
+		}
+
+		str, _ := args[0].(string)
+
+		return len(str), nil
+	},
+
+	"dur": func(args ...any) (any, error) {
+		if len(args) == 0 {
+			return nil, errInvalidArgs
+		}
+
+		str, _ := args[0].(string)
+
+		dur, err := parseDuration(str)
+		if err != nil {
+			return nil, err
+		}
+
+		return dur.Seconds(), nil
+	},
+
+	"contains": func(args ...any) (any, error) {
+		if len(args) <= 1 {
+			return nil, errInvalidArgs
+		}
+
+		str, _ := args[0].(string)
+		substr, _ := args[1].(string)
+
+		return strings.Contains(str, substr), nil
+	},
+
+	"size": func(args ...any) (any, error) {
+		if len(args) == 0 {
+			return nil, errInvalidArgs
+		}
+
+		str, _ := args[0].(string)
+
+		// Handle Exiftool format: "26 kB" -> "26K", "1.2 MB" -> "1.2M"
+		// Remove spaces between number and unit for compatibility with size.ParseCapacity
+		r := strings.NewReplacer(
+			" kB", "K",
+			" MB", "M",
+			" GB", "G",
+			" TB", "T",
+			" bytes", "",
+		)
+		str = r.Replace(str)
+
+		s, err := size.ParseCapacity(str)
+		if err != nil {
+			return nil, err
+		}
+
+		return int(s.Bytes()), nil
+	},
+
+	"matches": func(args ...any) (any, error) {
+		if len(args) <= 1 {
+			return nil, errInvalidArgs
+		}
+
+		str, _ := args[0].(string)
+		exp, _ := args[1].(string)
+
+		reg := regexp.MustCompile(exp)
+
+		return reg.MatchString(str), nil
+	},
 }
 
 // ParseDuration parses a duration string.
@@ -68,95 +149,12 @@ func parseDuration(s string) (time.Duration, error) {
 	return sumDur, nil
 }
 
-func init() {
-	functions["strlen"] = func(args ...any) (any, error) {
-		if len(args) == 0 {
-			return nil, errInvalidArgs
-		}
-
-		str, _ := args[0].(string)
-
-		return len(str), nil
-	}
-
-	functions["dur"] = func(args ...any) (any, error) {
-		if len(args) == 0 {
-			return nil, errInvalidArgs
-		}
-
-		str, _ := args[0].(string)
-
-		dur, err := parseDuration(str)
-		if err != nil {
-			return nil, err
-		}
-
-		return dur.Seconds(), nil
-	}
-
-	functions["contains"] = func(args ...any) (any, error) {
-		if len(args) <= 1 {
-			return nil, errInvalidArgs
-		}
-
-		str, _ := args[0].(string)
-		substr, _ := args[1].(string)
-
-		return strings.Contains(str, substr), nil
-	}
-
-	functions["size"] = func(args ...any) (any, error) {
-		if len(args) == 0 {
-			return nil, errInvalidArgs
-		}
-
-		str, _ := args[0].(string)
-
-		// Handle Exiftool format: "26 kB" -> "26K", "1.2 MB" -> "1.2M"
-		// Remove spaces between number and unit for compatibility with size.ParseCapacity
-		r := strings.NewReplacer(
-			" kB",
-			"K",
-			" MB",
-			"M",
-			" GB",
-			"G",
-			" TB",
-			"T",
-			" bytes",
-			"",
-		)
-		str = r.Replace(str)
-
-		s, err := size.ParseCapacity(str)
-		if err != nil {
-			return nil, err
-		}
-
-		//nolint:gosec // risk of overflow is acceptable
-		return int(s.Bytes()), nil
-	}
-
-	functions["matches"] = func(args ...any) (any, error) {
-		if len(args) <= 1 {
-			return nil, errInvalidArgs
-		}
-
-		str, _ := args[0].(string)
-		exp, _ := args[1].(string)
-
-		reg := regexp.MustCompile(exp)
-
-		return reg.MatchString(str), nil
-	}
-}
-
 func Evaluate(expression string) (bool, error) {
 	eval := goval.NewEvaluator()
 
 	result, err := eval.Evaluate(expression, nil, functions)
 	if err != nil {
-		return false, err
+		return false, errEval.Wrap(err)
 	}
 
 	r, _ := result.(bool)

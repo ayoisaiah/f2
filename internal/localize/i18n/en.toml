@@ -63,6 +63,7 @@ Override the default options according to your preferences. For example,
   parsing_fix_conflicts_pattern = "the provided --fix-conflicts-pattern '%s' is invalid"
   rename_failed = "some files could not be renamed"
   eval_invalid_args = "invalid arguments"
+  search_eval_failed = "conditional search failed"
 
 [flag]
   heading = "FLAGS"
@@ -307,7 +308,6 @@ offers several options for fine-grained control over the renaming process. """
   error = "error"
   backup_failed = "backup failed"
   backup_cleanup_failed = "backup file cleanup failed"
-  search_eval_failed = "conditional search failed"
   non_existent_file = "skipping non existent source file at row"
   no_matches = "the search criteria didn't match any files"
   no_matches_csv = "no renaming candidates found in CSV file"

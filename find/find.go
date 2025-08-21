@@ -14,6 +14,7 @@ import (
 
 	"github.com/araddon/dateparse"
 
+	"github.com/ayoisaiah/f2/v2/internal/apperr"
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/eval"
 	"github.com/ayoisaiah/f2/v2/internal/file"
@@ -193,8 +194,6 @@ func evaluateSearchCondition(
 	if err != nil {
 		return true, err
 	}
-
-	match.Target = ""
 
 	if !result {
 		return true, nil
@@ -455,9 +454,9 @@ func processFindExpression(
 			slog.Debug(
 				"attaching exif data to file",
 				slog.String("match", matches[index].SourcePath),
-				slog.String("file", fileMeta[i].File),
+				slog.String("exiftool_path", fileMeta[i].File),
 				slog.Bool(
-					"is_match",
+					"matches_exiftool",
 					fileMeta[i].File == matches[index].SourcePath,
 				),
 			)
@@ -472,13 +471,17 @@ func processFindExpression(
 			}
 		}
 
-		if removeMatch {
-			slog.Debug(
-				"excluding file: find condition evaluated to false",
-				slog.String("path", match.SourcePath),
-				slog.String("evaluated", match.Target),
-			)
-		}
+		slog.Debug(
+			fmt.Sprintf(
+				"find condition evaluated to %t",
+				!removeMatch,
+			),
+			slog.String("path", match.SourcePath),
+			slog.String("evaluated", match.Target),
+			slog.Any("err", apperr.Unwrap(err)),
+		)
+
+		match.Target = ""
 
 		return removeMatch
 	})

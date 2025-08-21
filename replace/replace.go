@@ -4,10 +4,12 @@
 package replace
 
 import (
+	"fmt"
 	"log/slog"
 	"path/filepath"
 	"strings"
 
+	"github.com/ayoisaiah/f2/v2/internal/apperr"
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/eval"
 	"github.com/ayoisaiah/f2/v2/internal/file"
@@ -186,7 +188,8 @@ func prepNextChain(
 
 		slog.Debug(
 			"preparing for next replacement chain",
-			slog.Any("change", change),
+			slog.Any("change", matches[j]),
+			slog.String("change.source", matches[j].Source),
 		)
 
 		if conf.Search.FindCond == nil {
@@ -213,6 +216,16 @@ func prepNextChain(
 
 			matches[j].MatchesFindCond = false
 		}
+
+		slog.Debug(
+			fmt.Sprintf(
+				"find condition evaluated to %t",
+				result,
+			),
+			slog.String("path", change.SourcePath),
+			slog.String("evaluated", change.Target),
+			slog.Any("err", apperr.Unwrap(err)),
+		)
 
 		if !result {
 			matches[j].MatchesFindCond = false
@@ -248,9 +261,9 @@ func Replace(
 			slog.Debug(
 				"attaching exif data to file",
 				slog.String("match", matches[index].SourcePath),
-				slog.String("file", fileMeta[i].File),
+				slog.String("exiftool_path", fileMeta[i].File),
 				slog.Bool(
-					"is_match",
+					"matches_exiftool",
 					fileMeta[i].File == matches[index].SourcePath,
 				),
 			)

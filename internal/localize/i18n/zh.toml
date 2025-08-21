@@ -63,6 +63,7 @@ f2 标志 [选项] [文件和目录路径...]
   parsing_fix_conflicts_pattern = "提供的 --fix-conflicts-pattern '%s' 无效"
   rename_failed = "部分文件无法重命名"
   eval_invalid_args = "无效参数"
+  search_eval_failed = "条件搜索失败"
 
 [flag]
   heading = "标志"
@@ -306,7 +307,6 @@ f2 批量重命名文件和目录，将文件与指定模式进行匹配。
   error = "错误"
   backup_failed = "备份失败"
   backup_cleanup_failed = "备份文件清理失败"
-  search_eval_failed = "条件搜索失败"
   non_existent_file = "跳过该行不存在的源文件"
   no_matches = "搜索条件未匹配任何文件"
   no_matches_csv = "在 CSV 文件中未找到重命名候选项"

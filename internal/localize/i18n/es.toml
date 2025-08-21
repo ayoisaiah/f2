@@ -63,6 +63,7 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
   parsing_fix_conflicts_pattern = "el patrón --fix-conflicts-pattern '%s' proporcionado es inválido"
   rename_failed = "algunos archivos no pudieron ser renombrados"
   eval_invalid_args = "argumentos inválidos"
+  search_eval_failed = "falló la búsqueda condicional"
 
 [flag]
   heading = "INDICADORES"
@@ -308,7 +309,6 @@ de renombrado. """
   error = "error"
   backup_failed = "falló la copia de seguridad"
   backup_cleanup_failed = "falló la limpieza del archivo de copia de seguridad"
-  search_eval_failed = "falló la búsqueda condicional"
   non_existent_file = "omitiendo archivo de origen inexistente en la fila"
   no_matches = "los criterios de búsqueda no coincidieron con ningún archivo"
   no_matches_csv = "no se encontraron candidatos para renombrar en el archivo CSV"

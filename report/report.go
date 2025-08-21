@@ -49,9 +49,8 @@ func SearchEvalFailed(path, target string, err error) {
 	pterm.Fprintln(
 		config.Stderr,
 		pterm.Sprintf(
-			"%s: %s (%v) -> %s",
+			"%s: %v -> %s",
 			pterm.Yellow(path),
-			localize.T("report.search_eval_failed"),
 			err,
 			target,
 		),
