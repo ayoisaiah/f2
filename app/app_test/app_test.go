@@ -3,9 +3,14 @@ package app_test
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v3"
@@ -14,6 +19,83 @@ import (
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
+
+// buildBinary builds the package at pkgPath to a temp dir and returns the path to the binary.
+func buildBinary(t *testing.T, pkgPath string) string {
+	t.Helper()
+
+	tmp := t.TempDir()
+	bin := filepath.Join(tmp, "f2")
+
+	// Build the binary: go build -o <bin> <pkgPath>
+	cmd := exec.Command("go", "build", "-o", bin, pkgPath)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("build failed: %v\n%s", err, out)
+	}
+
+	return bin
+}
+
+func run(
+	t *testing.T,
+	bin string,
+	args ...string,
+) (stdout, stderr string, exitCode int) {
+	t.Helper()
+
+	var outBuf, errBuf bytes.Buffer
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, bin, args...)
+	cmd.Stdout = &outBuf
+	cmd.Stderr = &errBuf
+
+	err := cmd.Run()
+
+	// By convention: nil err ⇒ exit code 0. Non-nil may still be a normal nonzero exit.
+	if err == nil {
+		return outBuf.String(), errBuf.String(), 0
+	}
+
+	var ee *exec.ExitError
+	if errors.As(err, &ee) {
+		return outBuf.String(), errBuf.String(), ee.ExitCode()
+	}
+
+	// If we get here, the process didn't even start or was killed before exec;
+	// treat as an infrastructure failure.
+	t.Fatalf("failed to run %q: %v (stderr: %s)", bin, err, errBuf.String())
+
+	return "", "", -1 // unreachable
+}
+
+func TestHelp(t *testing.T) {
+	bin := buildBinary(t, "../../cmd/f2") // adjust to your CLI package path
+
+	langs := []string{"en", "fr", "es", "de", "ru", "pt", "zh"}
+
+	for _, v := range langs {
+		t.Run(v, func(t *testing.T) {
+			t.Setenv("LANG", v)
+
+			stdout, stderr, code := run(t, bin, "--help")
+
+			if code != 0 {
+				t.Fatalf("expected exit 0, got %d; stderr:\n%s", code, stderr)
+			}
+
+			fmt.Println(stdout)
+
+			if stdout == "" {
+				t.Fatalf("expected help output, got empty stdout")
+			}
+		})
+	}
+}
 
 func TestShortHelp(t *testing.T) {
 	tc := &testutil.TestCase{
@@ -50,30 +132,6 @@ func TestShortHelp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func TestHelp(t *testing.T) {
-	t.Skip("versioning is no longer hard coded")
-
-	tc := &testutil.TestCase{
-		Name: "help",
-		Args: []string{"f2_test", "--help"},
-	}
-
-	var stdout bytes.Buffer
-
-	renamer, err := app.Get(os.Stdin, &stdout)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = renamer.Run(t.Context(), tc.Args)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tc.SnapShot.Stdout = stdout.Bytes()
-	testutil.CompareGoldenFile(t, tc)
 }
 
 func TestVersion(t *testing.T) {
