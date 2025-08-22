@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"testing"
 	"time"
@@ -17,17 +17,22 @@ import (
 
 	"github.com/ayoisaiah/f2/v2/app"
 	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
 
-// buildBinary builds the package at pkgPath to a temp dir and returns the path to the binary.
+// buildBinary builds the package at pkgPath to a temp dir and returns
+// the path to the binary.
 func buildBinary(t *testing.T, pkgPath string) string {
 	t.Helper()
 
 	tmp := t.TempDir()
 	bin := filepath.Join(tmp, "f2")
 
-	// Build the binary: go build -o <bin> <pkgPath>
+	if runtime.GOOS == osutil.Windows {
+		bin = filepath.Join(tmp, "f2.exe")
+	}
+
 	cmd := exec.Command("go", "build", "-o", bin, pkgPath)
 
 	out, err := cmd.CombinedOutput()
@@ -55,13 +60,12 @@ func run(
 	cmd.Stderr = &errBuf
 
 	err := cmd.Run()
-
-	// By convention: nil err ⇒ exit code 0. Non-nil may still be a normal nonzero exit.
 	if err == nil {
 		return outBuf.String(), errBuf.String(), 0
 	}
 
 	var ee *exec.ExitError
+
 	if errors.As(err, &ee) {
 		return outBuf.String(), errBuf.String(), ee.ExitCode()
 	}
@@ -74,7 +78,7 @@ func run(
 }
 
 func TestHelp(t *testing.T) {
-	bin := buildBinary(t, "../../cmd/f2") // adjust to your CLI package path
+	bin := buildBinary(t, "../../cmd/f2")
 
 	langs := []string{"en", "fr", "es", "de", "ru", "pt", "zh"}
 
@@ -88,10 +92,34 @@ func TestHelp(t *testing.T) {
 				t.Fatalf("expected exit 0, got %d; stderr:\n%s", code, stderr)
 			}
 
-			fmt.Println(stdout)
-
 			if stdout == "" {
 				t.Fatalf("expected help output, got empty stdout")
+			}
+		})
+	}
+}
+
+func TestShortHelp_Localized(t *testing.T) {
+	bin := buildBinary(t, "../../cmd/f2")
+
+	langs := []string{"en", "fr", "es", "de", "ru", "pt", "zh"}
+
+	for _, v := range langs {
+		t.Run(v, func(t *testing.T) {
+			t.Setenv("LANG", v)
+
+			stdout, stderr, code := run(t, bin)
+
+			if code != 0 {
+				t.Fatalf("expected exit 0, got %d; stderr:\n%s", code, stderr)
+			}
+
+			if stdout != "" {
+				t.Fatalf("expected empty stdout, but got: %s", stdout)
+			}
+
+			if stderr == "" {
+				t.Fatalf("expected short help output, got empty stderr")
 			}
 		})
 	}
