@@ -3,6 +3,7 @@ package validate
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -85,8 +86,17 @@ func checkSourceNotFoundConflict(
 	if ctx.change.Status == status.SourceNotFound {
 		conflictDetected = true
 
+		slog.Debug(
+			"conflict: source file not found",
+			slog.Any("match", ctx.change),
+		)
+
 		if ctx.autoFix {
 			ctx.change.Status = status.Ignored
+			slog.Debug(
+				"auto-fix: change ignored",
+				slog.Any("match", ctx.change),
+			)
 		}
 	}
 
@@ -102,13 +112,26 @@ func checkEmptyFilenameConflict(
 	if ctx.change.Target == "." || ctx.change.Target == "" {
 		conflictDetected = true
 
+		slog.Debug(
+			"empty filename detected",
+			slog.Any("match", ctx.change),
+		)
+
 		ctx.change.AutoFixTarget("")
 		ctx.change.Status = status.EmptyFilename
 
 		if ctx.autoFix {
 			// The file is left unchanged
 			ctx.change.AutoFixTarget(ctx.change.Source)
-			ctx.change.Status = status.Unchanged
+
+			if ctx.change.OriginalName == ctx.change.Target {
+				ctx.change.Status = status.Unchanged
+			}
+
+			slog.Debug(
+				"auto-fix: orignal name restored",
+				slog.Any("match", ctx.change),
+			)
 		}
 	}
 
@@ -161,6 +184,11 @@ func checkPathExistsConflict(
 		conflictDetected = true
 		ctx.change.Status = status.PathExists
 
+		slog.Debug(
+			"conflict: target path already exists",
+			slog.Any("match", ctx.change),
+		)
+
 		if ctx.autoFix {
 			ctx.change.AutoFixTarget(
 				newTarget(
@@ -168,6 +196,11 @@ func checkPathExistsConflict(
 					ctx.fixConflictsRegex,
 					ctx.fixConflictsPattern,
 				),
+			)
+
+			slog.Debug(
+				"auto-fix: new target generated",
+				slog.Any("match", ctx.change),
 			)
 		}
 	}
@@ -189,9 +222,24 @@ func checkSourceAlreadyRenamedConflict(
 	conflictDetected = true
 	ctx.change.Status = status.SourceAlreadyRenamed
 
+	slog.Debug(
+		"conflict: source has already been renamed",
+		slog.Any("match", ctx.change),
+		slog.Int("match.index", ctx.changeIndex),
+		slog.Any("prev_change", changes[seenIndex]),
+		slog.Int("prev_change.index", seenIndex),
+	)
+
 	if ctx.autoFix {
 		changes[seenIndex], changes[ctx.changeIndex] = changes[ctx.changeIndex], changes[seenIndex]
 		ctx.change.Status = status.OK
+
+		slog.Debug("auto-fix: swap change positions",
+			slog.Any("match", changes[seenIndex]),
+			slog.Int("match.index", seenIndex),
+			slog.Any("prev_change", changes[ctx.changeIndex]),
+			slog.Int("prev_change.index", ctx.changeIndex),
+		)
 	}
 
 	return
@@ -203,9 +251,15 @@ func checkSourceAlreadyRenamedConflict(
 func checkOverwritingPathConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
-	if _, ok := ctx.seenPaths[ctx.change.TargetPath]; ok {
+	if i, ok := ctx.seenPaths[ctx.change.TargetPath]; ok {
 		conflictDetected = true
 		ctx.change.Status = status.OverwritingNewPath
+
+		slog.Debug(
+			"conflict: overwriting renamed file",
+			slog.Any("match", ctx.change),
+			slog.Any("prev_change", changes[i]),
+		)
 	}
 
 	if !conflictDetected {
@@ -219,6 +273,11 @@ func checkOverwritingPathConflict(
 				ctx.fixConflictsRegex,
 				ctx.fixConflictsPattern,
 			),
+		)
+
+		slog.Debug(
+			"auto-fix: new target generated",
+			slog.Any("match", ctx.change),
 		)
 	}
 
@@ -298,6 +357,11 @@ func checkTrailingPeriodConflictInWindows(
 
 		if conflictDetected {
 			ctx.change.Status = status.TrailingPeriod
+
+			slog.Debug(
+				"conflict: trailing period detected",
+				slog.Any("match", ctx.change),
+			)
 		}
 
 		if ctx.autoFix && conflictDetected {
@@ -315,6 +379,11 @@ func checkTrailingPeriodConflictInWindows(
 				string(os.PathSeparator),
 			))
 
+			slog.Debug(
+				"auto-fix: trailing periods removed",
+				slog.Any("match", ctx.change),
+			)
+
 			return
 		}
 	}
@@ -330,47 +399,64 @@ func checkFileNameLengthConflict(
 	ctx validationCtx,
 ) (conflictDetected bool) {
 	exceeded := isTargetLengthExceeded(ctx.change.Target)
-	if exceeded {
-		conflictDetected = true
-		ctx.change.Status = status.FilenameLengthExceeded
-
-		if !ctx.autoFix {
-			return
-		}
-
-		if runtime.GOOS == osutil.Windows {
-			// trim filename so that it's less than 255 characters
-			filename := []rune(filepath.Base(ctx.change.Target))
-			ext := []rune(filepath.Ext(string(filename)))
-			f := []rune(
-				pathutil.StripExtension(string(filename)),
-			)
-			index := windowsMaxFileCharLength - len(ext)
-			f = f[:index]
-			ctx.change.AutoFixTarget(string(f) + string(ext))
-
-			return
-		}
-
-		// trim filename so that it's no more than 255 bytes
-		filename := filepath.Base(ctx.change.Target)
-		ext := filepath.Ext(filename)
-		fileNoExt := pathutil.StripExtension(filename)
-		index := unixMaxBytes - len([]byte(ext))
-
-		for {
-			if len([]byte(fileNoExt)) > index {
-				frune := []rune(fileNoExt)
-				fileNoExt = string(frune[:len(frune)-1])
-
-				continue
-			}
-
-			break
-		}
-
-		ctx.change.AutoFixTarget(fileNoExt + ext)
+	if !exceeded {
+		return
 	}
+
+	conflictDetected = true
+	ctx.change.Status = status.FilenameLengthExceeded
+
+	slog.Debug(
+		"conflict: filename length exceeded",
+		slog.Any("match", ctx.change),
+	)
+
+	if !ctx.autoFix {
+		return
+	}
+
+	if runtime.GOOS == osutil.Windows {
+		// trim filename so that it's less than 255 characters
+		filename := []rune(filepath.Base(ctx.change.Target))
+		ext := []rune(filepath.Ext(string(filename)))
+		f := []rune(
+			pathutil.StripExtension(string(filename)),
+		)
+		index := windowsMaxFileCharLength - len(ext)
+		f = f[:index]
+		ctx.change.AutoFixTarget(string(f) + string(ext))
+
+		slog.Debug(
+			"auto-fix: trim file name length",
+			slog.Any("match", ctx.change),
+		)
+
+		return
+	}
+
+	// trim filename so that it's no more than 255 bytes
+	filename := filepath.Base(ctx.change.Target)
+	ext := filepath.Ext(filename)
+	fileNoExt := pathutil.StripExtension(filename)
+	index := unixMaxBytes - len([]byte(ext))
+
+	for {
+		if len([]byte(fileNoExt)) > index {
+			frune := []rune(fileNoExt)
+			fileNoExt = string(frune[:len(frune)-1])
+
+			continue
+		}
+
+		break
+	}
+
+	ctx.change.AutoFixTarget(fileNoExt + ext)
+
+	slog.Debug(
+		"auto-fix: trim file name length",
+		slog.Any("match", ctx.change),
+	)
 
 	return
 }
@@ -388,6 +474,12 @@ func checkForbiddenCharactersConflict(
 	if forbiddenChars != "" {
 		conflictDetected = true
 		ctx.change.Status = status.ForbiddenCharacters
+
+		slog.Debug(
+			"conflict: forbidden characters detected",
+			slog.Any("target", ctx.change.Target),
+			slog.Any("characters", forbiddenChars),
+		)
 
 		if !ctx.autoFix {
 			return
@@ -411,6 +503,11 @@ func checkForbiddenCharactersConflict(
 		}
 
 		ctx.change.AutoFixTarget(newTarget)
+
+		slog.Debug(
+			"auto-fix: forbidden characters removed",
+			slog.Any("match", ctx.change),
+		)
 	}
 
 	return
@@ -475,6 +572,8 @@ func detectConflicts(
 
 	for i := 0; i < len(changes); i++ {
 		change := changes[i]
+
+		slog.Debug("checking for conflicts", slog.Any("match", change))
 
 		ctx.change = change
 		ctx.changeIndex = i

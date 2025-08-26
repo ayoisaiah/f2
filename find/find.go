@@ -596,7 +596,7 @@ func Find(conf *config.Config) (matches file.Changes, err error) {
 	if conf.Search.FindCond == nil && conf.Pair {
 		sortfiles.Pairs(matches, conf.PairOrder)
 		slog.Debug(
-			"finished sorting file pairings",
+			"file pairings sorted",
 			slog.Any("matches", matches),
 		)
 	}
@@ -604,7 +604,7 @@ func Find(conf *config.Config) (matches file.Changes, err error) {
 	if conf.Sort != config.SortDefault {
 		sortfiles.Changes(matches, conf)
 		slog.Debug(
-			fmt.Sprintf("finished sorting matches by %s", conf.Sort),
+			fmt.Sprintf("matches sorted by %s", conf.Sort),
 			slog.Any("matches", matches),
 		)
 	}

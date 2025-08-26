@@ -67,7 +67,6 @@ func (c *Change) LogValue() slog.Value {
 	attrs := []slog.Attr{
 		slog.String("source_path", c.SourcePath),
 		slog.String("target", c.Target),
-		slog.Bool("is_dir", c.IsDir),
 	}
 
 	if !c.SortCriterion.TimeVar.IsZero() {
