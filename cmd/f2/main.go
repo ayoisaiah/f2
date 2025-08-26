@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/lmittmann/tint"
+
 	"github.com/ayoisaiah/f2/v2"
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/report"
@@ -14,8 +16,15 @@ func init() {
 	_, exists := os.LookupEnv(config.EnvDebug)
 	if exists {
 		slog.SetDefault(
-			slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			slog.New(tint.NewHandler(os.Stderr, &tint.Options{
 				Level: slog.LevelDebug,
+				ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+					if a.Key == slog.TimeKey || a.Key == slog.LevelKey {
+						return slog.Attr{}
+					}
+
+					return a
+				},
 			})),
 		)
 	}
