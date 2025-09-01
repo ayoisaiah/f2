@@ -431,6 +431,21 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "use --timezone to shift timezone for formatting",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/2008-10-22T17:28:39+01:00.jpg",
+			},
+			Args: []string{
+				"-r", "{xt.DateTimeOriginal.dt}{ext}", "--timezone", "Africa/Lagos",
+			},
+		},
+		{
 			Name: "use --api Exiftool option to customize date format",
 			Changes: file.Changes{
 				{

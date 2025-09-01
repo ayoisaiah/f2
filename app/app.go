@@ -157,6 +157,7 @@ func CreateCLIApp(r io.Reader, w io.Writer) *cli.Command {
 			flagSortVar,
 			flagStringMode,
 			flagTargetDir,
+			flagTimezone,
 			flagVerbose,
 		},
 		UseShortOptionHandling:    true,

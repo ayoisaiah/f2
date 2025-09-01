@@ -293,6 +293,22 @@ Override the default options according to your preferences. For example,
     usage = """
 
     Specify a target directory to move renamed files and reorganize your filesystem."""
+  [flag.timeZone]
+    usage = """
+
+    When using datetime variables, this sets the target timezone for timestamp formatting.
+    It correctly handles Daylight Saving Time (DST) and ensures timestamps reflect the
+    local "wall clock" time of a specific location.
+
+    The <zone> argument must be a valid IANA Time Zone Database name (e.g.,
+    "America/New_York", "Europe/London", "Africa/Kigali", "UTC").
+
+    By default, the file's embedded timezone is used. If the file has no timezone
+    information, your system's local timezone is used as a fallback.
+
+    Examples:
+      # Rename photos using the local time in Tokyo (JST, UTC+9)
+      $ f2 -f '*.dng' -r '{xt.DateTimeOriginal.dt}' --timezone 'Asia/Tokyo'"""
   [flag.verbose]
     usage = """
 

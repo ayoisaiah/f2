@@ -293,6 +293,25 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
     usage = """
 
     Spécifiez un répertoire cible pour déplacer les fichiers renommés et réorganiser votre système de fichiers."""
+  [flag.timeZone]
+    usage = """
+
+    Lors de l'utilisation de variables de date et d'heure, ceci définit le fuseau
+    horaire cible pour le formatage de l'horodatage. Il gère correctement l'heure
+    d'été (DST) et garantit que les horodatages reflètent l'heure locale
+    ("murale") d'un emplacement spécifique.
+
+    L'argument <zone> doit être un nom valide de la base de données des fuseaux
+    horaires IANA (par ex., "America/New_York", "Europe/London", "Africa/Kigali",
+    "UTC").
+
+    Par défaut, le fuseau horaire intégré au fichier est utilisé. Si le fichier
+    ne contient aucune information de fuseau horaire, le fuseau horaire local de
+    votre système est utilisé comme solution de repli.
+
+    Exemples :
+      # Renommer les photos en utilisant l'heure locale de Tokyo (JST, UTC+9)
+      $ f2 -f '*.dng' -r '{xt.DateTimeOriginal.dt}' --timezone 'Asia/Tokyo'"""
   [flag.verbose]
     usage = """
 

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -728,6 +729,18 @@ func replaceExifToolVars(
 				continue
 			}
 
+			if current.attr == "DateTimeOriginal" {
+				o, err := meta.GetString("OffsetTimeOriginal")
+				if err != nil {
+					slog.Debug(
+						"could not retrieve OffsetTimeOriginal, assuming UTC time",
+						slog.Any("match", change),
+					)
+				}
+
+				v += o
+			}
+
 			value = replaceSlashes(v)
 		}
 
@@ -852,9 +865,15 @@ func transformString(source, token string) string {
 	}
 
 	if strings.HasPrefix(token, "dt") {
+		conf := config.Get()
+
 		dateTime, err := dateparse.ParseAny(source)
 		if err != nil {
 			return source
+		}
+
+		if conf.Location != nil {
+			dateTime = dateTime.In(conf.Location)
 		}
 
 		return replaceDateToken(dateTime, token)

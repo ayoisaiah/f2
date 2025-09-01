@@ -293,6 +293,25 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
     usage = """
 
     Especifica un directorio de destino para mover los archivos renombrados y reorganizar su sistema de archivos."""
+  [flag.timeZone]
+    usage = """
+
+    Al usar variables de fecha y hora, esto establece la zona horaria de destino
+    para el formato de la marca de tiempo. Maneja correctamente el horario de
+    verano (DST) y asegura que las marcas de tiempo reflejen la hora local
+    ("de reloj") de una ubicación específica.
+
+    El argumento <zone> debe ser un nombre válido de la base de datos de zonas
+    horarias de IANA (p. ej., "America/New_York", "Europe/London",
+    "Africa/Kigali", "UTC").
+
+    Por defecto, se utiliza la zona horaria incrustada en el archivo. Si el
+    archivo no tiene información de zona horaria, se utiliza la zona horaria
+    local de su sistema como alternativa.
+
+    Ejemplos:
+      # Renombrar fotos usando la hora local de Tokio (JST, UTC+9)
+      $ f2 -f '*.dng' -r '{xt.DateTimeOriginal.dt}' --timezone 'Asia/Tokyo'"""
   [flag.verbose]
     usage = """
 

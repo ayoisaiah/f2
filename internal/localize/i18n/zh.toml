@@ -292,6 +292,21 @@ f2 标志 [选项] [文件和目录路径...]
     usage = """
 
     指定一个目标目录，以移动重命名的文件并重新组织您的文件系统。"""
+  [flag.timeZone]
+    usage = """
+
+    使用日期时间变量时，此项设置用于时间戳格式化的目标时区。它能正确处理夏
+    令时（DST），并确保时间戳反映特定地点的本地“挂钟”时间。
+
+    <zone> 参数必须是有效的 IANA 时区数据库名称（例如 "America/New_York"、
+    "Europe/London"、"Africa/Kigali"、"UTC"）。
+
+    默认情况下，将使用文件的嵌入时区。如果文件没有时区信息，则使用您系统的
+    本地时区作为备用选项。
+
+    示例：
+      # 使用东京本地时间（JST, UTC+9）重命名照片
+      $ f2 -f '*.dng' -r '{xt.DateTimeOriginal.dt}' --timezone 'Asia/Tokyo'"""
   [flag.verbose]
     usage = """
 

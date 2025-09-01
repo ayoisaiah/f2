@@ -75,30 +75,30 @@ type Search struct {
 type Config struct {
 	Date                     time.Time      `json:"date"`
 	BackupLocation           io.Writer      `json:"-"`
+	Location                 *time.Location `json:"location"`
 	ExcludeDirRegex          *regexp.Regexp `json:"exclude_dir_regex"`
 	ExcludeRegex             *regexp.Regexp `json:"exclude_regex"`
 	IncludeRegex             *regexp.Regexp `json:"include_regex"`
 	Search                   *Search        `json:"search_regex"`
 	FixConflictsPatternRegex *regexp.Regexp `json:"fix_conflicts_pattern_regex"`
-	Replacement              string         `json:"replacement"`
-	WorkingDir               string         `json:"working_dir"`
+	TargetDir                string         `json:"target_dir"`
 	FixConflictsPattern      string         `json:"fix_conflicts_pattern"`
 	CSVFilename              string         `json:"csv_filename"`
 	BackupFilename           string         `json:"backup_filename"`
-	TargetDir                string         `json:"target_dir"`
+	WorkingDir               string         `json:"working_dir"`
 	SortVariable             string         `json:"sort_variable"`
+	Replacement              string         `json:"replacement"`
 	ExiftoolOpts             ExiftoolOpts   `json:"exiftool_opts"`
-	PairOrder                []string       `json:"pair_order"`
-	FindSlice                []string       `json:"find_slice"`
 	FilesAndDirPaths         []string       `json:"files_and_dir_paths"`
+	FindSlice                []string       `json:"find_slice"`
 	ReplacementSlice         []string       `json:"replacement_slice"`
 	ReplaceRange             []int          `json:"replace_range"`
+	PairOrder                []string       `json:"pair_order"`
 	ReplaceLimit             int            `json:"replace_limit"`
 	StartNumber              int            `json:"start_number"`
 	MaxDepth                 int            `json:"max_depth"`
 	Sort                     Sort           `json:"sort"`
 	Revert                   bool           `json:"revert"`
-	IncludeDir               bool           `json:"include_dir"`
 	IgnoreExt                bool           `json:"ignore_ext"`
 	IgnoreCase               bool           `json:"ignore_case"`
 	Verbose                  bool           `json:"verbose"`
@@ -121,6 +121,7 @@ type Config struct {
 	Clean                    bool           `json:"clean"`
 	ExifToolVarPresent       bool           `json:"-"`
 	IndexPresent             bool           `json:"-"`
+	IncludeDir               bool           `json:"include_dir"`
 }
 
 func parseRange(s string) (start, end int, err error) {
@@ -384,6 +385,15 @@ func (c *Config) setDefaultOpts(cmd *cli.Command) error {
 	c.FixConflictsPattern = cmd.String("fix-conflicts-pattern")
 	c.ResetIndexPerDir = cmd.Bool("reset-index-per-dir")
 	c.NoColor = cmd.Bool("no-color")
+
+	if cmd.String("timezone") != "" {
+		loc, locErr := time.LoadLocation(cmd.String("timezone"))
+		if locErr != nil {
+			return locErr
+		}
+
+		c.Location = loc
+	}
 
 	if c.FixConflictsPattern == "" {
 		c.FixConflictsPattern = DefaultFixConflictsPattern

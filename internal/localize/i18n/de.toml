@@ -291,6 +291,24 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
     usage = """
 
     Gibt ein Zielverzeichnis an, um umbenannte Dateien zu verschieben und Ihr Dateisystem neu zu organisieren."""
+  [flag.timeZone]
+    usage = """
+
+    Bei Verwendung von Datum-Zeit-Variablen wird hiermit die Ziel-Zeitzone für die
+    Formatierung des Zeitstempels festgelegt. Sommerzeit (DST) wird korrekt
+    berücksichtigt, und es wird sichergestellt, dass Zeitstempel die lokale
+    "Uhrzeit" eines bestimmten Ortes wiedergeben.
+
+    Das Argument <zone> muss ein gültiger Name aus der IANA-Zeitzonendatenbank
+    sein (z. B. "America/New_York", "Europe/London", "Africa/Kigali", "UTC").
+
+    Standardmäßig wird die eingebettete Zeitzone der Datei verwendet. Wenn die
+    Datei keine Zeitzoneninformationen enthält, wird die lokale Zeitzone Ihres
+    Systems als Fallback genutzt.
+
+    Beispiele:
+      # Fotos unter Verwendung der Ortszeit von Tokio (JST, UTC+9) umbenennen
+      $ f2 -f '*.dng' -r '{xt.DateTimeOriginal.dt}' --timezone 'Asia/Tokyo'"""
   [flag.verbose]
     usage = """
 

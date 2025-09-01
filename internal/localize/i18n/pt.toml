@@ -295,6 +295,25 @@ Substitua as opções padrão de acordo com suas preferências. Por exemplo,
     usage = """
 
     Especifica um diretório de destino para mover arquivos renomeados e reorganizar seu sistema de arquivos."""
+  [flag.timeZone]
+    usage = """
+
+    Ao usar variáveis de data e hora, isso define o fuso horário de destino para
+    a formatação do carimbo de data/hora. Ele lida corretamente com o horário de
+    verão (DST) e garante que os carimbos de data/hora reflitam o horário local
+    ("de parede") de um local específico.
+
+    O argumento <zone> deve ser um nome válido do banco de dados de fusos horários
+    da IANA (por exemplo, "America/New_York", "Europe/London", "Africa/Kigali",
+    "UTC").
+
+    Por padrão, o fuso horário incorporado do arquivo é usado. Se o arquivo não
+    tiver informações de fuso horário, o fuso horário local do seu sistema será
+    usado como alternativa.
+
+    Exemplos:
+      # Renomear fotos usando o horário local de Tóquio (JST, UTC+9)
+      $ f2 -f '*.dng' -r '{xt.DateTimeOriginal.dt}' --timezone 'Asia/Tokyo'"""
   [flag.verbose]
     usage = """
 

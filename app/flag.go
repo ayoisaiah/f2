@@ -28,7 +28,8 @@ var supportedDefaultOpts = map[string]bool{
 	"--sortr":               true,
 	"--reset-index-per-dir": true,
 	"--string-mode":         true, "-s": true,
-	"--verbose": true, "-V": true,
+	"--timezone": true,
+	"--verbose":  true, "-V": true,
 }
 
 var (
@@ -233,6 +234,12 @@ var (
 		Name:    "target-dir",
 		Aliases: []string{"t"},
 		Usage:   localize.T("flag.targetDir.usage"),
+	}
+
+	flagTimezone = &cli.StringFlag{
+		Name:        "timezone",
+		Usage:       localize.T("flag.timeZone.usage"),
+		DefaultText: "<zone>",
 	}
 
 	flagVerbose = &cli.BoolFlag{
