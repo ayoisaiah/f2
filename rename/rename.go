@@ -4,6 +4,7 @@ package rename
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -30,12 +31,22 @@ var traversedDirs = make(map[string]string)
 // commit iterates over all the matches and renames them on the filesystem.
 // Directories are auto-created if necessary, and errors are aggregated.
 func commit(fileChanges file.Changes) []int {
+	slog.Debug(
+		"committing file changes",
+		slog.Int("change_count", len(fileChanges)),
+	)
+
 	var errIndices []int
 
 	for i := range fileChanges {
 		ch := fileChanges[i]
 
 		if ch.Status == status.Ignored {
+			slog.Debug(
+				"skipping ignored file",
+				slog.Any("match", ch),
+			)
+
 			continue
 		}
 
@@ -43,6 +54,11 @@ func commit(fileChanges file.Changes) []int {
 
 		// skip paths that are unchanged in every aspect
 		if ch.SourcePath == targetPath {
+			slog.Debug(
+				"skipping unchanged file",
+				slog.Any("match", ch),
+			)
+
 			continue
 		}
 
@@ -59,6 +75,13 @@ func commit(fileChanges file.Changes) []int {
 			targetPath = filepath.Join(
 				ch.TargetDir,
 				"__"+timeStr+"__"+ch.Target+"__"+timeStr+"__", // step 1
+			)
+
+			slog.Debug(
+				"using intermediate target for case-insensitive filesystem",
+				slog.String("source", ch.SourcePath),
+				slog.String("target", ch.TargetPath),
+				slog.String("intermediate_target", targetPath),
 			)
 		}
 
@@ -79,22 +102,42 @@ func commit(fileChanges file.Changes) []int {
 				errIndices = append(errIndices, i)
 				ch.Error = err
 
-				continue
+				slog.Error(
+					"error while creating directories",
+					slog.Any("match", ch),
+				)
 			}
 		}
 
 		traversedDirs[ch.BaseDir] = ch.BaseDir
 
+		slog.Debug(
+			"renaming source to target",
+			slog.Any("match", ch),
+			slog.Any("target", targetPath),
+		)
+
 		err := os.Rename(ch.SourcePath, targetPath) // step 2
 		// if the intermediate rename is successful,
 		// proceed with the original renaming operation
 		if err == nil && isCaseChangeOnly {
+			slog.Debug(
+				"renaming intermediate target to final target",
+				slog.Any("match", ch),
+				slog.String("intermediate_target", targetPath),
+			)
+
 			err = os.Rename(targetPath, ch.TargetPath) // step 3
 		}
 
 		if err != nil {
 			errIndices = append(errIndices, i)
 			ch.Error = err
+
+			slog.Error(
+				"renaming error detected",
+				slog.Any("match", ch),
+			)
 		}
 	}
 
@@ -108,6 +151,11 @@ func Rename(
 	fileChanges file.Changes,
 ) error {
 	if conf.TargetDir != "" {
+		slog.Debug(
+			"ensure that target directory exists",
+			slog.String("target_dir", conf.TargetDir),
+		)
+
 		err := os.MkdirAll(conf.TargetDir, osutil.DirPermission)
 		if err != nil {
 			return err
@@ -116,6 +164,11 @@ func Rename(
 
 	renameErrs := commit(fileChanges)
 	if len(renameErrs) > 0 {
+		slog.Debug(
+			"renaming operation completed with errors",
+			slog.Int("error_count", len(renameErrs)),
+		)
+
 		return errRenameFailed.WithCtx(renameErrs)
 	}
 
@@ -137,11 +190,22 @@ func PostRename(
 				continue
 			}
 
+			slog.Debug(
+				"attempting to cleaning directory",
+				slog.String("dir", dir),
+			)
+
 			// This will fail if the directory is not empty so no need
 			// to check before hand
 			err := os.Remove(dir)
 			if err == nil {
 				cleanedDirs = append(cleanedDirs, dir)
+			} else {
+				slog.Error(
+					"failed to clean directory",
+					slog.String("dir", dir),
+					slog.Any("error", err),
+				)
 			}
 		}
 	}
@@ -168,6 +232,11 @@ func PostRename(
 
 		if err := os.Remove(backupFilePath); err != nil {
 			report.BackupFileRemovalFailed(err)
+		} else {
+			slog.Debug(
+				"successfully removed backup file",
+				slog.String("path", backupFilePath),
+			)
 		}
 	}
 

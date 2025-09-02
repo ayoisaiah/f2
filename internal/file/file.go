@@ -69,6 +69,14 @@ func (c *Change) LogValue() slog.Value {
 		slog.String("target", c.Target),
 	}
 
+	if c.IsDir {
+		attrs = append(attrs, slog.Bool("is_dir", c.IsDir))
+	}
+
+	if c.Error != nil {
+		attrs = append(attrs, slog.Any("error", c.Error))
+	}
+
 	if !c.SortCriterion.TimeVar.IsZero() {
 		attrs = append(
 			attrs,

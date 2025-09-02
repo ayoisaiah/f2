@@ -3,6 +3,7 @@ package rename
 import (
 	"bufio"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -16,6 +17,11 @@ func createBackupFile(fileName string) (io.Writer, error) {
 		"f2",
 		"backups",
 		fileName,
+	)
+
+	slog.Debug(
+		"creating backup file",
+		slog.String("backup_file", backupFilePath),
 	)
 
 	err := os.MkdirAll(filepath.Dir(backupFilePath), osutil.DirPermission)
@@ -54,6 +60,8 @@ func backupChanges(
 		Changes:     changes,
 		CleanedDirs: cleanedDirs,
 	}
+
+	slog.Debug("backing up changed", slog.Any("backup", b))
 
 	err = b.RenderJSON(w)
 	if err != nil {
