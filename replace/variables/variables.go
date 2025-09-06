@@ -729,7 +729,8 @@ func replaceExifToolVars(
 				continue
 			}
 
-			if current.attr == "DateTimeOriginal" {
+			if current.attr == "DateTimeOriginal" &&
+				current.transformToken == "dt" {
 				o, err := meta.GetString("OffsetTimeOriginal")
 				if err != nil {
 					slog.Debug(
@@ -858,6 +859,11 @@ func transformString(source, token string) string {
 	case "norm":
 		result, _, err := transform.String(norm.NFKC, source)
 		if err != nil {
+			slog.Debug(
+				"unable to perform unicode normalization",
+				slog.String("source", source),
+			)
+
 			return source
 		}
 
@@ -869,6 +875,11 @@ func transformString(source, token string) string {
 
 		dateTime, err := dateparse.ParseAny(source)
 		if err != nil {
+			slog.Debug(
+				"unable to parse datetime string",
+				slog.String("source", source),
+			)
+
 			return source
 		}
 
