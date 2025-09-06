@@ -100,6 +100,17 @@ Remplacez les options par défaut selon vos préférences. Par exemple,
     usage = """
 
     Nettoie les répertoires vides qui ont été parcourus lors d'une opération de renommage."""
+  [flag.dt]
+    usage = """
+
+    Définit la variable de date et d'heure par défaut pour votre modèle de
+    remplacement afin que vous n'ayez pas à répéter le chemin complet de la
+    variable pour chaque jeton. Par exemple, les deux commandes suivantes
+    produisent le même résultat, mais la seconde est nettement plus facile à taper :
+
+    $ f2 -r '{xt.DateTimeOriginal.dt.YYYY}-{xt.DateTimeOriginal.dt.MM}-{xt.DateTimeOriginal.DD}T{xt.DateTimeOriginal.dt.H}{xt.DateTimeOriginal.dt.MM}{xt.DateTimeOriginal.dt.ss}'
+
+    $ f2 -r '{YYYY}-{MM}-{DD}T{H}{MM}{ss}' --dt 'xt.DateTimeOriginal'"""
   [flag.exclude]
     usage = """
 

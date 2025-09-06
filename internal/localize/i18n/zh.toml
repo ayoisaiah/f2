@@ -100,6 +100,15 @@ f2 标志 [选项] [文件和目录路径...]
     usage = """
 
     清理在重命名操作中遍历过的空目录。"""
+  [flag.dt]
+    usage = """
+
+    为您的替换模式设置默认的日期时间变量，这样您就不必为每个标记重复完整的
+    变量路径。例如，以下两个命令产生相同的结果，但第二个输入起来要容易得多：
+
+    $ f2 -r '{xt.DateTimeOriginal.dt.YYYY}-{xt.DateTimeOriginal.dt.MM}-{xt.DateTimeOriginal.DD}T{xt.DateTimeOriginal.dt.H}{xt.DateTimeOriginal.dt.MM}{xt.DateTimeOriginal.dt.ss}'
+
+    $ f2 -r '{YYYY}-{MM}-{DD}T{H}{MM}{ss}' --dt 'xt.DateTimeOriginal'"""
   [flag.exclude]
     usage = """
 

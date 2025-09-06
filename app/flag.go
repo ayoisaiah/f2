@@ -71,6 +71,11 @@ var (
 		Usage:   localize.T("flag.clean.usage"),
 	}
 
+	flagDT = &cli.StringFlag{
+		Name:  "dt",
+		Usage: localize.T("flag.dt.usage"),
+	}
+
 	flagExclude = &cli.StringSliceFlag{
 		Name:        "exclude",
 		Aliases:     []string{"E"},

@@ -53,6 +53,12 @@ func helpText(app *cli.Command) string {
 		flagClean.GetUsage(),
 	)
 
+	flagDTHelp := fmt.Sprintf(
+		`%s %s`,
+		pterm.Green("--", flagDT.Name),
+		flagDT.GetUsage(),
+	)
+
 	flagExcludeHelp := fmt.Sprintf(
 		`%s, %s %s`,
 		pterm.Green("-", flagExclude.Aliases[0]),
@@ -342,6 +348,8 @@ Project repository: https://github.com/ayoisaiah/f2
 
 	%s
 
+	%s
+
 %s
   %s
 
@@ -365,6 +373,7 @@ Project repository: https://github.com/ayoisaiah/f2
 		pterm.Bold.Sprintf("%s", localize.T("help.options.heading")),
 		flagAllowOverwritesHelp,
 		flagCleanHelp,
+		flagDTHelp,
 		flagExcludeHelp,
 		flagExcludeDirHelp,
 		flagExiftoolOptsHelp,

@@ -52,6 +52,9 @@ var (
 	)
 	findVariableRegex = regexp.MustCompile(`{(.*)}`)
 	exifToolVarRegex  = regexp.MustCompile(`{xt\..*}`)
+	dateTokenRegex    = regexp.MustCompile(
+		`{(YYYY|YY|MMMM|MMM|MM|M|DDDD|DDD|DD|D|H|hh|h|mm|m|ss|s|A|a|unix|since)}`,
+	)
 )
 
 var conf *Config
@@ -88,6 +91,7 @@ type Config struct {
 	WorkingDir               string         `json:"working_dir"`
 	SortVariable             string         `json:"sort_variable"`
 	Replacement              string         `json:"replacement"`
+	DateTimeVariable         string         `json:"dt"`
 	ExiftoolOpts             ExiftoolOpts   `json:"exiftool_opts"`
 	FilesAndDirPaths         []string       `json:"files_and_dir_paths"`
 	FindSlice                []string       `json:"find_slice"`
@@ -277,6 +281,32 @@ func (c *Config) setOptions(cmd *cli.Command) error {
 	c.PairOrder = strings.Split(cmd.String("pair-order"), ",")
 	c.Clean = cmd.Bool("clean")
 	c.SortVariable = cmd.String("sort-var")
+	c.DateTimeVariable = cmd.String("dt")
+
+	if c.DateTimeVariable != "" {
+		for i, v := range c.ReplacementSlice {
+			if dateTokenRegex.MatchString(v) {
+				submatches := dateTokenRegex.FindAllStringSubmatch(v, -1)
+
+				for _, submatch := range submatches {
+					repl := fmt.Sprintf(
+						"{%s.dt.%s}",
+						c.DateTimeVariable,
+						submatch[1],
+					)
+
+					regex, err := regexp.Compile(submatch[0])
+					if err != nil {
+						return err
+					}
+
+					v = regex.ReplaceAllString(v, repl)
+				}
+			}
+
+			c.ReplacementSlice[i] = v
+		}
+	}
 
 	rng, err := parseMultiRange(cmd.String("replace-range"))
 	if err != nil {

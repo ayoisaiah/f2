@@ -100,6 +100,17 @@ Das Stapel-Umbenennungswerkzeug, das Sie wirklich gerne verwenden werden.
     usage = """
 
     Bereinigt leere Verzeichnisse, die bei einem Umbenennungsvorgang durchlaufen wurden."""
+  [flag.dt]
+    usage = """
+
+    Legt die Standard-Datum/Zeit-Variable für Ihr Ersetzungsmuster fest, damit Sie
+    nicht für jedes Token den vollständigen Variablenpfad wiederholen müssen. Zum
+    Beispiel erzeugen die beiden folgenden Befehle dasselbe Ergebnis, aber der zweite
+    ist wesentlich einfacher zu tippen:
+
+    $ f2 -r '{xt.DateTimeOriginal.dt.YYYY}-{xt.DateTimeOriginal.dt.MM}-{xt.DateTimeOriginal.DD}T{xt.DateTimeOriginal.dt.H}{xt.DateTimeOriginal.dt.MM}{xt.DateTimeOriginal.dt.ss}'
+
+    $ f2 -r '{YYYY}-{MM}-{DD}T{H}{MM}{ss}' --dt 'xt.DateTimeOriginal'"""
   [flag.exclude]
     usage = """
 

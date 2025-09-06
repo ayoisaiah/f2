@@ -100,6 +100,17 @@ Override the default options according to your preferences. For example,
     usage = """
 
     Clean empty directories that were traversed in a renaming operation."""
+  [flag.dt]
+    usage = """
+
+    Sets the default datetime variable for your replace pattern so that you don't
+    have to repeat the full variable path for each token. For example, the
+    following two commands produce the same result, but the second is significantly
+    easier to type:
+
+    $ f2 -r '{xt.DateTimeOriginal.dt.YYYY}-{xt.DateTimeOriginal.dt.MM}-{xt.DateTimeOriginal.DD}T{xt.DateTimeOriginal.dt.H}{xt.DateTimeOriginal.dt.MM}{xt.DateTimeOriginal.dt.ss}'
+
+    $ f2 -r '{YYYY}-{MM}-{DD}T{H}{MM}{ss}' --dt 'xt.DateTimeOriginal'"""
   [flag.exclude]
     usage = """
 

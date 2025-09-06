@@ -100,6 +100,17 @@ Substitua as opções padrão de acordo com suas preferências. Por exemplo,
     usage = """
 
     Limpa diretórios vazios que foram percorridos em uma operação de renomeação."""
+[flag.dt]
+    usage = """
+
+    Define a variável de data e hora padrão para o seu padrão de substituição,
+    de modo que você não precise repetir o caminho completo da variável para cada
+    token. Por exemplo, os dois comandos a seguir produzem o mesmo resultado,
+    mas o segundo é significativamente mais fácil de digitar:
+
+    $ f2 -r '{xt.DateTimeOriginal.dt.YYYY}-{xt.DateTimeOriginal.dt.MM}-{xt.DateTimeOriginal.DD}T{xt.DateTimeOriginal.dt.H}{xt.DateTimeOriginal.dt.MM}{xt.DateTimeOriginal.dt.ss}'
+
+    $ f2 -r '{YYYY}-{MM}-{DD}T{H}{MM}{ss}' --dt 'xt.DateTimeOriginal'"""
   [flag.exclude]
     usage = """
 

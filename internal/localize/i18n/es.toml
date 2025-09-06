@@ -100,6 +100,17 @@ Sobrescriba las opciones predeterminadas según sus preferencias. Por ejemplo,
     usage = """
 
     Limpiar los directorios vacíos que se recorrieron en una operación de renombrado."""
+  [flag.dt]
+    usage = """
+
+    Establece la variable de fecha y hora predeterminada para su patrón de reemplazo,
+    de modo que no tenga que repetir la ruta completa de la variable para cada token.
+    Por ejemplo, los dos comandos siguientes producen el mismo resultado, pero el
+    segundo es significativamente más fácil de escribir:
+
+    $ f2 -r '{xt.DateTimeOriginal.dt.YYYY}-{xt.DateTimeOriginal.dt.MM}-{xt.DateTimeOriginal.DD}T{xt.DateTimeOriginal.dt.H}{xt.DateTimeOriginal.dt.MM}{xt.DateTimeOriginal.dt.ss}'
+
+    $ f2 -r '{YYYY}-{MM}-{DD}T{H}{MM}{ss}' --dt 'xt.DateTimeOriginal'"""
   [flag.exclude]
     usage = """
 

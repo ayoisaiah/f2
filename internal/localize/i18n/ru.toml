@@ -100,7 +100,17 @@ f2 ФЛАГИ [ОПЦИИ] [ПУТИ К ФАЙЛАМ И КАТАЛОГАМ...]
     usage = """
 
     Очистить пустые каталоги, которые были пройдены в ходе операции переименования."""
+  [flag.dt]
+    usage = """
 
+    Устанавливает переменную даты и времени по умолчанию для вашего шаблона замены,
+    чтобы вам не приходилось повторять полный путь переменной для каждого токена.
+    Например, следующие две команды приводят к одинаковому результату, но вторую
+    значительно проще вводить:
+
+    $ f2 -r '{xt.DateTimeOriginal.dt.YYYY}-{xt.DateTimeOriginal.dt.MM}-{xt.DateTimeOriginal.DD}T{xt.DateTimeOriginal.dt.H}{xt.DateTimeOriginal.dt.MM}{xt.DateTimeOriginal.dt.ss}'
+
+    $ f2 -r '{YYYY}-{MM}-{DD}T{H}{MM}{ss}' --dt 'xt.DateTimeOriginal'"""
   [flag.exclude]
     usage = """
 

@@ -431,6 +431,36 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "use --dt flag to reduce repetition",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/2008-10-23.jpg",
+			},
+			Args: []string{
+				"-r", "{YYYY}-{MM}-{DD}{ext}", "--dt", "xt.GPSDateTime",
+			},
+		},
+		{
+			Name: "If --dt is unset date token variables do not work",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/{YYYY}-{MM}-{DD}.jpg",
+			},
+			Args: []string{
+				"-r", "{YYYY}-{MM}-{DD}{ext}",
+			},
+		},
+		{
 			Name: "using DateTimeOriginal without dt conforms to --dateFormat and ignores timezone shift",
 			Changes: file.Changes{
 				{
