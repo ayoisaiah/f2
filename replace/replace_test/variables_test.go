@@ -431,6 +431,21 @@ func TestVariables(t *testing.T) {
 			},
 		},
 		{
+			Name: "using DateTimeOriginal without dt conforms to --dateFormat and ignores timezone shift",
+			Changes: file.Changes{
+				{
+					BaseDir: "testdata",
+					Source:  "gps.jpg",
+				},
+			},
+			Want: []string{
+				"testdata/20081022_162839.jpg",
+			},
+			Args: []string{
+				"-r", "{xt.DateTimeOriginal}{ext}", "--timezone", "America/New_York", "--exiftool-opts", `--dateFormat %Y%m%d_%H%M%S`,
+			},
+		},
+		{
 			Name: "use --timezone to shift timezone for formatting",
 			Changes: file.Changes{
 				{
