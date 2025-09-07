@@ -730,7 +730,7 @@ func replaceExifToolVars(
 			}
 
 			if current.attr == "DateTimeOriginal" &&
-				current.transformToken == "dt" {
+				strings.HasPrefix(current.transformToken, "dt") {
 				o, err := meta.GetString("OffsetTimeOriginal")
 				if err != nil {
 					slog.Debug(
