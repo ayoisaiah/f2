@@ -1,3 +1,24 @@
+## 2.2.0 (2025-09-08)
+
+### New features
+
+- Add ability to select files using
+  [find expressions](https://f2.freshman.tech/guide/find-expressions).
+- Add `--dt` to make entering date tokens much easier.
+- Add `--timezone` for shifting datetime variables to a specific timezone.
+- Add `--replace-range` to enable even more targeted replacements.
+- Add xxHash algorithm for file hashes.
+
+### Enhancements
+
+- Performance is improved by ~2x when using `exiftool` variables.
+- F2 is now fully translated to French, German, Russian, Chinese, Portuguese,
+  and Spanish.
+
+### Fixes
+
+- Applied fix for upstream bug which led to unintentional space trimming
+
 ## 2.1.2 (2025-05-27)
 
 - `--target-dir` now works with relative paths in Windows
