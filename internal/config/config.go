@@ -50,7 +50,7 @@ var (
 	indexVarRegex = regexp.MustCompile(
 		`{+(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?(##)?}+`,
 	)
-	findVariableRegex = regexp.MustCompile(`{(.*)}`)
+	findVariableRegex = regexp.MustCompile(`^{(.*)}$`)
 	exifToolVarRegex  = regexp.MustCompile(`{xt\..*}`)
 	dateTokenRegex    = regexp.MustCompile(
 		`{(YYYY|YY|MMMM|MMM|MM|M|DDDD|DDD|DD|D|H|hh|h|mm|m|ss|s|A|a|unix|since)}`,
