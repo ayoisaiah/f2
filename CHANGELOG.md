@@ -1,3 +1,7 @@
+## 2.2.1 (2025-09-14)
+
+- Bug fix: ensure regex searches don't incorrectly trigger find expressions
+
 ## 2.2.0 (2025-09-08)
 
 ### New features
