@@ -39,7 +39,7 @@ var (
 )
 
 var (
-	sortVarRegex                    = regexp.MustCompile("^{.*}$")
+	sortVarRegex                    = regexp.MustCompile("^{.+}$")
 	defaultFixConflictsPatternRegex = regexp.MustCompile(`\((\d+)\)$`)
 	customFixConflictsPatternRegex  = regexp.MustCompile(
 		`^(\D*?(%(\d+)?d)\D*?)$`,
@@ -50,8 +50,8 @@ var (
 	indexVarRegex = regexp.MustCompile(
 		`{+(\$\d+)?(\d+)?(%(\d?)+d)([borh])?(-?\d+)?(?:<(\d+(?:-\d+)?(?:;\s*\d+(?:-\d+)?)*)>)?(##)?}+`,
 	)
-	findVariableRegex = regexp.MustCompile(`^{(.*)}$`)
-	exifToolVarRegex  = regexp.MustCompile(`{xt\..*}`)
+	findVariableRegex = regexp.MustCompile(`^{(.+)}$`)
+	exifToolVarRegex  = regexp.MustCompile(`{xt\..+}`)
 	dateTokenRegex    = regexp.MustCompile(
 		`{(YYYY|YY|MMMM|MMM|MM|M|DDDD|DDD|DD|D|H|hh|h|mm|m|ss|s|A|a|unix|since)}`,
 	)
