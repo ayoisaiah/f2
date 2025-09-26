@@ -27,7 +27,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli/v3 v3.3.10-0.20250809215531-db7d18f23ca8
+	github.com/urfave/cli/v3 v3.4.1
 	go.withmatt.com/size v0.0.0-20250220224316-11aee5773e67
 )
 
