@@ -1,399 +1,490 @@
-## 2.2.1 (2025-09-14)
+# Changelog
 
-- Bug fix: ensure regex searches don't incorrectly trigger find expressions
+All notable changes to this project will be documented in this file.
 
-## 2.2.0 (2025-09-08)
+The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-### New features
+## [Unreleased](https://github.com/ayoisaiah/f2/compare/2.2.1...HEAD)
 
-- Add ability to select files using
+## [2.2.1] - 2025-09-14
+
+### Fixed
+
+- Ensure regex searches don't incorrectly trigger find expressions.
+
+## [2.2.0] - 2025-09-08
+
+### Added
+
+- Ability to select files using
   [find expressions](https://f2.freshman.tech/guide/find-expressions).
-- Add `--dt` to make entering date tokens much easier.
-- Add `--timezone` for shifting datetime variables to a specific timezone.
-- Add `--replace-range` to enable even more targeted replacements.
-- Add xxHash algorithm for file hashes.
+- `--dt` to make entering date tokens much easier.
+- `--timezone` for shifting datetime variables to a specific timezone.
+- `--replace-range` to enable even more targeted replacements.
+- xxHash algorithm for file hashes.
 
-### Enhancements
+### Changed
 
 - Performance is improved by ~2x when using `exiftool` variables.
-- F2 is now fully translated to French, German, Russian, Chinese, Portuguese,
-  and Spanish.
+- Fully translated to French, German, Russian, Chinese, Portuguese, and Spanish.
 
-### Fixes
+### Fixed
 
-- Applied fix for upstream bug which led to unintentional space trimming
+- Applied fix for upstream bug which led to unintentional space trimming.
 
-## 2.1.2 (2025-05-27)
+## [2.1.2] - 2025-05-27
 
-- `--target-dir` now works with relative paths in Windows
+### Fixed
 
-## 2.1.1 (2025-05-16)
+- `--target-dir` now works with relative paths in Windows.
 
-- Fix UNC path bug in Windows.
+## [2.1.1] - 2025-05-16
 
-## 2.1.0 (2025-05-01)
+### Fixed
 
-- Fix natural sort bug.
-- Improve target changing error message.
-- Add `--include` flag for targeting specific files.
+- UNC path bug in Windows.
+
+## [2.1.0] - 2025-05-01
+
+### Added
+
+- `--include` flag for targeting specific files.
+- Unicode normalization transform variable (`{.norm}`).
+
+### Changed
+
 - Improve diacritics transformation (`{.di}`).
-- Add Unicode normalization transform variable (`{.norm}`).
-- Fix crash when using capture variable indices.
+- Improve target changing error message.
 
-## 2.0.3 (2024-11-23)
+### Fixed
 
-- Fix bug caused by space trimming in `--find`, `--replace`, `--exclude`, and
+- Natural sort bug.
+- Crash when using capture variable indices.
+
+## [2.0.3] - 2024-11-23
+
+### Fixed
+
+- Bug caused by space trimming in `--find`, `--replace`, `--exclude`, and
   `--exclude-dir`.
 
-## 2.0.2 (2024-11-22)
+## [2.0.2] - 2024-11-22
 
-- Fix bug with using commas in find or replace strings.
+### Fixed
 
-## 2.0.1 (2024-11-06)
+- Using commas correctly in find or replace strings.
 
-This is a patch release to update the Go module to v2. It contains no new
-features.
+## [2.0.1] - 2024-11-06
 
-## 2.0.0 (2024-11-03)
+### Changed
 
-### New features
+- Patch release to update the Go module to v2. No new features.
 
-- Add `natural` sort option for sorting filenames containing numbers in a
-  natural way.
-- Add ability to extract double extensions like `.tar.gz` using `{2ext}`
-- Add `--exiftool-opts` to customize Exiftool's output.
-- Add `--exclude-dir` flag for excluding whole directories when matching files.
-- Add ability to specify a custom pattern when fixing conflicts
-  (`--fix-conflicts-pattern`).
-- Add support for
-  [file pair renaming](https://f2.freshman.tech/guide/pair-renaming) with
-  `--pair` and `--pair-order`.
-- Add `--target-dir` option for specifying a target directory for renamed files.
-- Add `--clean` option for cleaning up empty directories after renaming.
-- Add ability to sort files based on arbitrary input using `--sort` and
-  `--sort-var`
-- Add ability to apply sorting per directory with `--sort-per-dir`
-- Add ability to reset an index when recursing into a new directory with
-  `--reset-index-per-dir`.
+## [2.0.0] - 2024-11-03
 
-### Enhancements
+### Added
 
-- Significant performance improvements (up to ~3x faster than the previous
-  version).
-- Improve conflict detection by adding validations for:
+- `natural` sort option for sorting filenames containing numbers naturally.
+- Ability to extract double extensions like `.tar.gz` using `{2ext}`.
+- `--exiftool-opts` to customize Exiftool's output.
+- `--exclude-dir` to exclude whole directories when matching files.
+- Custom pattern for fixing conflicts with `--fix-conflicts-pattern`.
+- Support for [file pair renaming](https://f2.freshman.tech/guide/pair-renaming)
+  via `--pair` and `--pair-order`.
+- `--target-dir` to specify a target directory for renamed files.
+- `--clean` for cleaning up empty directories after renaming.
+- Arbitrary-input sorting via `--sort` and `--sort-var`.
+- Per-directory sorting with `--sort-per-dir`.
+- Reset index per directory with `--reset-index-per-dir`.
+
+### Changed
+
+- Significant performance improvements (up to ~3× faster).
+- Improved conflict detection with validations:
   - When the source file is not found.
   - When the target name changes later in the same operation.
-- Clean up output reporting.
+- Cleaner output reporting.
 - Improvements to `--undo`.
-- Improve CSV renaming implementation.
-- Improve help messages and documentation.
+- Improved CSV renaming implementation.
+- Improved help messages and documentation.
 
-### Bug fixes
+### Fixed
 
-- Fix status reporting for unchanged files.
-- Fix dotfiles being regarded as hidden in Windows.
-- Fix piping file arguments from external commands.
-- Fix some Windows-specific bugs with CSV renaming.
+- Status reporting for unchanged files.
+- Dotfiles incorrectly regarded as hidden in Windows.
+- Piping file arguments from external commands.
+- Windows-specific bugs with CSV renaming.
 
-### Deprecations / Removals
+### Removed
 
-- Remove random variables.
-- Remove simple mode.
+- Random variables.
+- Simple mode.
 
-## 1.9.1 (2023-02-09)
+## [1.9.1] - 2023-02-09
 
-- Improve performance in dry-run mode (due to table rendering).
-- Fix issue where files could be overwritten when `--fix-conflicts` is used.
+### Changed
 
-## 1.9.0 (2023-02-02)
+- Improved performance in dry-run mode (table rendering).
+
+### Fixed
+
+- Files could be overwritten when `--fix-conflicts` is used.
+
+## [1.9.0] - 2023-02-02
+
+### Added
+
+- Capture variables with indexing.
+- JSON support.
+- Ability to extract date from arbitrary strings.
+
+### Changed
 
 - Simple mode now prompts before executing.
-- You can now use capture variables with indexing.
-- Syntax for string transformation has been improved and simplified.
-- JSON support has been added.
-- Simplify variables syntax.
-- Add ability to extract date from arbitrary strings.
-- Improve support for case insensitive filesystems.
+- Syntax for string transformation improved and simplified.
+- Variables syntax simplified.
+- Improved support for case-insensitive filesystems.
 - Indexing fixes and syntax updates.
 
-## 1.8.0 (2022-02-22)
+## [1.8.0] - 2022-02-22
 
-- Add a "simple mode" for quick renaming operations in the current directory.
-- Ignore extension flag no longer affects directory names.
+### Added
+
+- "Simple mode" for quick renaming operations in the current directory.
 - Default options can be changed via `F2_DEFAULT_OPTS`.
-- Fix duplicate paths when traversing directories to prevent unnecessary errors.
+
+### Changed
+
+- Ignore extension flag no longer affects directory names.
+- Fixed duplicate paths when traversing directories to prevent unnecessary
+  errors.
 - Output is now sorted in dry-run mode.
 - Update notification is now opt-in via `F2_UPDATE_NOTIFIER`.
-- Version information is now more streamlined.
-- Dry run table output has been improved and made more compact.
+- Version information streamlined.
+- Dry-run table output improved and made more compact.
 
-## 1.7.2 (2021-08-23)
+## [1.7.2] - 2021-08-23
 
-Fixes:
+### Fixed
 
-- Path not specified error in Windows when running on a long path has been
-  fixed.
+- "Path not specified" error in Windows when running on a long path.
 
-## 1.7.1 (2021-08-05)
+## [1.7.1] - 2021-08-05
 
-The following enhancements were made:
+### Changed
 
 - Quiet mode (`--quiet`) no longer suppresses errors.
-- Help output has been improved and made more succinct.
+- Help output improved and made more succinct.
 - Running F2 without arguments now shows a short help message.
 
-## 1.7.0 (2021-08-04)
+## [1.7.0] - 2021-08-04
 
-This release brings the following improvements:
+### Added
 
-- CSV support (See
+- CSV support (see
   [renaming from a CSV file](https://github.com/ayoisaiah/f2/wiki/Renaming-from-a-CSV-file)).
-- Improved no color options. You can now set the `F2_NO_COLOR` environmental
-  variable or use the brand new `--no-color` flag to disable coloured output.
-- Validation error messages are now much clearer (no longer mixing emoji and
-  text).
-- Console output has been improved by using
-  [pterm](https://github.com/pterm/pterm). The green, red, and yellow colours
-  are slightly different now due to this change.
-- You can now specify a set of files or directory as argument to F2 (thanks to
-  [nightson](https://github.com/nightson) for suggesting this enhancement).
-- The backup directory has changed to `~/.local/share/f2/backups` on Linux,
-  `~/Library/Application Support/f2/backups` on macOS, and
-  `%LOCALAPPDATA%\f2\backups` on Windows. The previous backup directory
-  (`~/.f2/backups`) is still supported (in case you have existing backups
-  there), but new backup files will not be created there anymore. This change
-  was made to conform to the
-  [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
-  and conventions for storing application files on each operating system, and to
-  avoid cluttering up the home directory.
-- A `--verbose` option was added for outputting each renaming operation in
-  `--exec` mode.
+- `--verbose` option for outputting each renaming operation in `--exec` mode.
 
-## 1.6.7 (2021-06-06)
+### Changed
 
-Features:
+- Improved no-color options: set `F2_NO_COLOR` or use `--no-color`.
+- Validation error messages are now clearer (no longer mixing emoji and text).
+- Console output improved via [pterm](https://github.com/pterm/pterm). Colors
+  slightly adjusted.
+- You can now specify a set of files or directories as arguments to F2.
+- Backup directory changed to:
+  - Linux: `~/.local/share/f2/backups`
+  - macOS: `~/Library/Application Support/f2/backups`
+  - Windows: `%LOCALAPPDATA%\f2\backups`  
+    Previous backup directory (`~/.f2/backups`) is still supported for reads.
 
-- String literal mode now supports operation chaining
+## [1.6.7] - 2021-06-06
 
-## 1.6.6 (2021-05-29)
+### Added
 
-Feature enhancements:
+- String literal mode now supports operation chaining.
 
-- Fix rare bug where using `--fix-conflicts` could cause an existing file to be
+## [1.6.6] - 2021-05-29
+
+### Fixed
+
+- Rare bug where `--fix-conflicts` could cause an existing file to be
   overwritten.
 
-## 1.6.5 (2021-05-26)
+## [1.6.5] - 2021-05-26
 
-Feature enhancements:
+### Added
 
-- Add the ability to force overwriting files through the `--allow-overwrites`
-  option.
+- `--allow-overwrites` to force overwriting files.
 
-## 1.6.4 (2021-05-24)
+## [1.6.4] - 2021-05-24
 
-Feature enhancements:
+### Added
 
-- You can now chain several renaming operations by specifying the `--find` and
-  `--replace` flags multiple times.
+- Chain several renaming operations by specifying `--find` and `--replace`
+  multiple times.
 
-## 1.6.3 (2021-05-20)
+## [1.6.3] - 2021-05-20
 
-Feature enhancements:
+### Changed
 
-- String transformation variables have been changed to match all other built-in
-  variables.
+- String transformation variables updated to match all other built-in variables.
 
-## 1.6.2 (2021-05-16)
+## [1.6.2] - 2021-05-16
 
-Feature enhancements:
+### Changed
 
-- Auto fixing conflicts is now more reliable especially when overwriting newly
+- Auto-fixing conflicts is more reliable, especially when overwriting newly
   renamed paths.
-- Trailing periods in a file or sub directory name is now detected as a conflict
+
+### Fixed
+
+- Trailing periods in a file or subdirectory name detected as a conflict
   (Windows only).
 
-## 1.6.1 (2021-05-08)
+## [1.6.1] - 2021-05-08
 
-Feature enhancements:
+### Changed
 
-- Bug fixes for exif variables (prevent potential panic).
-- Improve `--help` output.
-- Improve error message when reverting an operation.
+- Improved `--help` output.
+- Improved error message when reverting an operation.
 - Replace slashes in `exiftool` output to prevent inadvertent directory
   creation.
 
-## 1.6.0 (2021-05-07)
+### Fixed
 
-Feature enhancements:
+- Bug fixes for EXIF variables (prevent potential panic).
 
-- Add `exiftool` support
-- Improve built-in exif variables
+## [1.6.0] - 2021-05-07
 
-## 1.5.9 (2021-05-06)
+### Added
 
-Fixes:
+- `exiftool` support.
+- Improved built-in EXIF variables.
 
-- Bug fixes for Exif variables
+## [1.5.9] - 2021-05-06
 
-## 1.5.8 (2021-05-05)
+### Fixed
 
-Feature enhancements:
+- Bug fixes for EXIF variables.
 
-- Add option to remove diacritics in file names so that `žůžo` becomes `zuzo`.
-- Fix some minor bugs with undo mode.
+## [1.5.8] - 2021-05-05
 
-## 1.5.7 (2021-05-04)
+### Added
 
-Feature enhancements:
+- Option to remove diacritics in file names (e.g., `žůžo` → `zuzo`).
 
-- Respect the `NO_COLOR` environmental variable.
-- Handle case insensitive filesystems correctly so that changes such as
-  `abc.txt` -> `ABC.txt` do not produce conflicts.
+### Fixed
 
-## 1.5.6 (2021-05-04)
+- Minor bugs with undo mode.
 
-Feature enhancements:
+## [1.5.7] - 2021-05-04
 
-- Replacements can now start from the end of the file name by passing a negative
-  number to `--replace-limit`. For example, `-2` will replace the last 2 matches
-  in the file name.
+### Changed
 
-## 1.5.5 (2021-05-04)
+- Respect the `NO_COLOR` environment variable.
+- Handle case-insensitive filesystems correctly (e.g., `abc.txt` → `ABC.txt`
+  without conflicts).
 
-Feature enhancements:
+## [1.5.6] - 2021-05-04
 
-- Add the `-l` or `--replace-limit` option for limiting replacements.
-- String literal mode now provides the correct output when used with
-  `--ignore-case`.
+### Added
 
-## 1.5.4 (2021-05-04)
+- Negative values for `--replace-limit` to start replacements from the end
+  (e.g., `-2` replaces the last two matches).
 
-Feature enhancements:
+## [1.5.5] - 2021-05-04
+
+### Added
+
+- `-l` / `--replace-limit` to limit replacements.
+
+### Fixed
+
+- String literal mode provides correct output with `--ignore-case`.
+
+## [1.5.4] - 2021-05-04
+
+### Changed
 
 - Updated syntax for string transformation.
-- Exif variables no longer output extra text for greater control. For example:
-  `{{exif.et}}` gives `1_10` instead of `1_10s`.
+- EXIF variables no longer output extra text (e.g., `{{exif.et}}` now `1_10`
+  instead of `1_10s`).
 
-## 1.5.3 (2021-04-29)
+## [1.5.3] - 2021-04-29
 
-Feature enhancements:
+### Changed
 
-- Critical fix for undo mode where it wouldn't find the backup file for the
-  current directory.
-- Sorting matches in alphabetical order by default in dry-run mode.
-- Improve performance when using built-in variables in the replacement string.
+- Sort matches alphabetically by default in dry-run mode.
+- Improved performance when using built-in variables in the replacement string.
 
-## 1.5.2 (2021-04-26)
+### Fixed
 
-Feature enhancements:
+- Critical fix for undo mode finding the backup file for the current directory.
 
-- Fix roman numeral format for numbers over 3999.
-- Slight change to randomise variable syntax.
+## [1.5.2] - 2021-04-26
 
-## 1.5.1 (2021-04-26)
+### Fixed
 
-Feature enhancements:
+- Roman numeral format for numbers over 3999.
+- Slight change to randomize variable syntax.
+
+## [1.5.1] - 2021-04-26
+
+### Added
+
+- Support for file hash variables: `sha1`, `md5`, `sha256`, `sha512`.
+
+### Changed
 
 - Update syntax for random string variable.
-- Ensure multiple instances of a random string variable is replaced correctly.
-- Add support for file hash variables: `sha1`, `md5`, `sha256`, and `sha512`.
 
-## 1.5.0 (2021-04-26)
+### Fixed
 
-Feature enhancements:
+- Ensure multiple instances of a random string variable are replaced correctly.
 
-- Add a `--quiet` option so that F2 will not output any info to the standard
-  output (including errors).
-- Improved colours and support coloured output on Windows.
-- Add support for ID3 and random string variables.
-- Add sorting options. You can sort by file size and date attributes.
-- Conflict detection is now much improved. F2 will now check if the filename
-  contains invalid characters or if it exceeds the maximum allowed length.
-- Backups for each operation is now automated. `--undo` no longer takes a file
-  argument, and the `--output-file` flag is deprecated and removed.
-- The backup file is now deleted automatically after a successful reversion.
+## [1.5.0] - 2021-04-26
 
-## 1.4.0 (2021-04-14)
+### Added
 
-Feature enhancements:
+- `--quiet` to suppress all output (including errors).
+- Support for ID3 and random string variables.
+- Sorting options: by file size and date attributes.
 
-- Auto create necessary directories when using backward slash (\) in replacement
-  string (windows only).
-- Full support for exif variables (JPEG, DNG, and most camera RAW formats).
-- Add ability to limit max depth when searching recursively (`--max-depth` or
-  `-m`).
+### Changed
 
-## 1.3.0 (2021-03-27)
+- Improved colors; support colored output on Windows.
+- Conflict detection improved: invalid characters and max-length checks.
+- Backups automated; `--undo` no longer takes a file argument; `--output-file`
+  removed.
+- Backup file is deleted automatically after a successful reversion.
 
-Feature enhancements:
+## [1.4.0] - 2021-04-14
+
+### Added
+
+- Auto-create necessary directories when using backslash (`\`) in replacement
+  string (Windows only).
+- Full support for EXIF variables (JPEG, DNG, and most camera RAW formats).
+- Limit max depth when searching recursively (`--max-depth` / `-m`).
+
+## [1.3.0] - 2021-03-27
+
+### Added
 
 - Proper support for hidden files and directories on Windows.
-- Filter out matched files with the `--exclude` or `-E` flag.
-- String mode now works correctly when the find pattern is empty (the whole
-  string is replaced).
+- Filter out matched files with `--exclude` / `-E`.
+- String mode works when find pattern is empty (whole string is replaced).
 
-## 1.2.2 (2021-03-11)
+## [1.2.2] - 2021-03-11
 
-Feature enhancements:
+### Changed
 
-- String-literal mode was previously using a regex to find matches, but has now
-  been corrected to an ordinary string.
-- String-literal mode supports case insensitive mode (`-i` or `--ignore-case`).
+- String-literal mode now uses ordinary string matching (previously regex).
+- String-literal mode supports case-insensitive matches (`-i` /
+  `--ignore-case`).
 
-## 1.2.1 (2021-03-11)
+## [1.2.1] - 2021-03-11
 
-Fixes:
+### Fixed
 
-- Auto fixing conflicts is now more reliable.
-- Failure to match any files no longer causes the program to exit with an error.
+- Auto-fixing conflicts is more reliable.
+- Failure to match any files no longer exits with an error.
 
-## 1.2.0 (2021-03-09)
+## [1.2.0] - 2021-03-09
 
-Features:
+### Added
 
-- Implement date variables: (`ctime`, `atime`, `mtime`, e.t.c).
-- Add support for EXIF related variables for images.
-- Add string literal mode.
+- Date variables (`ctime`, `atime`, `mtime`, etc.).
+- EXIF-related variables for images.
+- String-literal mode.
 
-## 1.1.1 (2021-02-24)
+## [1.1.1] - 2021-02-24
 
-- Minor fixes
+### Fixed
 
-## 1.1.0 (2021-02-24)
+- Minor fixes.
 
-Feature enhancements:
+## [1.1.0] - 2021-02-24
 
-- The `--force` flag has been renamed to `--fix-conflicts`. The short version
-  remains `-F`.
-- F2 will no longer overwrite files even if `-F` is used. Instead, it will
-  differentiate conflicting files by appending a number suffix similar to how
-  file managers work.
+### Changed
 
-## 1.0.1 (2021-02-22)
+- `--force` renamed to `--fix-conflicts` (short `-F` unchanged).
+- F2 no longer overwrites files even with `-F`; conflicting files get number
+  suffixes like common file managers.
 
-Fixes:
+## [1.0.1] - 2021-02-22
+
+### Fixed
 
 - Remove unnecessary version number prefix.
 
-## 1.0.0 (2021-02-22)
+## [1.0.0] - 2021-02-22
 
-Features:
+### Added
 
-- Supports filtering files using regular expression, including capture groups.
-- Ignores hidden directories and files by default.
+- Filter files using regular expressions, including capture groups.
+- Ignore hidden directories and files by default.
 - Dry run by default.
-- Detects potential conflicts such as file collisions, or overwrites.
-- Supports recursive renaming of both files and directories.
-- Supports using an ascending integer for renaming (e.g 001, 002, 003, e.t.c.).
-- Supports undoing an operation from a map file.
+- Detect potential conflicts (collisions/overwrites).
+- Recursive renaming of files and directories.
+- Ascending integer renaming (e.g., `001`, `002`, `003`, …).
+- Undo an operation from a map file.
 
-## 0.2.0 (2020-05-26)
+## [0.2.0] - 2020-05-26
 
-Features:
+### Added
 
-- Undo last successful operation
-- Specify starting index for numbering scheme
+- Undo last successful operation.
+- Specify starting index for numbering scheme.
 
-## 0.1.0 (2020-05-24)
+## [0.1.0] - 2020-05-24
 
-Initial release
+### Added
+
+- Initial release.
+
+[2.2.1]: https://github.com/ayoisaiah/f2/compare/v2.2.0...v2.2.1
+[2.2.0]: https://github.com/ayoisaiah/f2/compare/v2.1.2...v2.2.0
+[2.1.2]: https://github.com/ayoisaiah/f2/compare/v2.1.1...v2.1.2
+[2.1.1]: https://github.com/ayoisaiah/f2/compare/v2.1.0...v2.1.1
+[2.1.0]: https://github.com/ayoisaiah/f2/compare/v2.0.3...v2.1.0
+[2.0.3]: https://github.com/ayoisaiah/f2/compare/v2.0.2...v2.0.3
+[2.0.2]: https://github.com/ayoisaiah/f2/compare/v2.0.1...v2.0.2
+[2.0.1]: https://github.com/ayoisaiah/f2/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/ayoisaiah/f2/compare/v1.9.1...v2.0.0
+[1.9.1]: https://github.com/ayoisaiah/f2/compare/v1.9.0...v1.9.1
+[1.9.0]: https://github.com/ayoisaiah/f2/compare/v1.8.0...v1.9.0
+[1.8.0]: https://github.com/ayoisaiah/f2/compare/v1.7.2...v1.8.0
+[1.7.2]: https://github.com/ayoisaiah/f2/compare/v1.7.1...v1.7.2
+[1.7.1]: https://github.com/ayoisaiah/f2/compare/v1.7.0...v1.7.1
+[1.7.0]: https://github.com/ayoisaiah/f2/compare/v1.6.7...v1.7.0
+[1.6.7]: https://github.com/ayoisaiah/f2/compare/v1.6.6...v1.6.7
+[1.6.6]: https://github.com/ayoisaiah/f2/compare/v1.6.5...v1.6.6
+[1.6.5]: https://github.com/ayoisaiah/f2/compare/v1.6.4...v1.6.5
+[1.6.4]: https://github.com/ayoisaiah/f2/compare/v1.6.3...v1.6.4
+[1.6.3]: https://github.com/ayoisaiah/f2/compare/v1.6.2...v1.6.3
+[1.6.2]: https://github.com/ayoisaiah/f2/compare/v1.6.1...v1.6.2
+[1.6.1]: https://github.com/ayoisaiah/f2/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/ayoisaiah/f2/compare/v1.5.9...v1.6.0
+[1.5.9]: https://github.com/ayoisaiah/f2/compare/v1.5.8...v1.5.9
+[1.5.8]: https://github.com/ayoisaiah/f2/compare/v1.5.7...v1.5.8
+[1.5.7]: https://github.com/ayoisaiah/f2/compare/v1.5.6...v1.5.7
+[1.5.6]: https://github.com/ayoisaiah/f2/compare/v1.5.5...v1.5.6
+[1.5.5]: https://github.com/ayoisaiah/f2/compare/v1.5.4...v1.5.5
+[1.5.4]: https://github.com/ayoisaiah/f2/compare/v1.5.3...v1.5.4
+[1.5.3]: https://github.com/ayoisaiah/f2/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/ayoisaiah/f2/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/ayoisaiah/f2/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/ayoisaiah/f2/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/ayoisaiah/f2/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/ayoisaiah/f2/compare/v1.2.2...v1.3.0
+[1.2.2]: https://github.com/ayoisaiah/f2/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/ayoisaiah/f2/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/ayoisaiah/f2/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/ayoisaiah/f2/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/ayoisaiah/f2/compare/v1.0.1...v1.1.0
+[1.0.1]: https://github.com/ayoisaiah/f2/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/ayoisaiah/f2/compare/v0.2.0...v1.0.0
+[0.2.0]: https://github.com/ayoisaiah/f2/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/ayoisaiah/f2/releases/tag/v0.1.0
