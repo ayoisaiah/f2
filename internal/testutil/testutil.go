@@ -197,6 +197,7 @@ func UpdateFileChanges(files file.Changes) {
 			ch.TargetDir,
 			ch.Target,
 		)
+		files[i].Steps = []string{files[i].SourcePath, files[i].TargetPath}
 	}
 }
 

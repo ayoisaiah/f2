@@ -158,6 +158,7 @@ func createFileChange(
 ) *file.Change {
 	baseDir := filepath.Dir(dirPath)
 	fileName := fileInfo.Name()
+	sourcePath := filepath.Join(baseDir, fileName)
 
 	match := &file.Change{
 		BaseDir:      baseDir,
@@ -165,7 +166,8 @@ func createFileChange(
 		IsDir:        fileInfo.IsDir(),
 		Source:       fileName,
 		OriginalName: fileName,
-		SourcePath:   filepath.Join(baseDir, fileName),
+		SourcePath:   sourcePath,
+		Steps:        []string{sourcePath},
 	}
 
 	if conf.TargetDir != "" {
@@ -615,5 +617,5 @@ func Find(conf *config.Config) (matches file.Changes, err error) {
 		sortfiles.Hierarchically(matches)
 	}
 
-	return
+	return matches, err
 }
