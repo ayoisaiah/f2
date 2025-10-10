@@ -94,6 +94,8 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 
 		processed[source] = true
 
+		sourcePath := filepath.Join(sourceDir, fileName)
+
 		match := &file.Change{
 			BaseDir:      sourceDir,
 			TargetDir:    sourceDir,
@@ -101,7 +103,8 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 			Source:       fileName,
 			Target:       fileName,
 			OriginalName: fileName,
-			SourcePath:   filepath.Join(sourceDir, fileName),
+			SourcePath:   sourcePath,
+			Steps:        []string{sourcePath},
 			CSVRow:       record,
 			Position:     i,
 		}

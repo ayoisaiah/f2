@@ -2,6 +2,7 @@ package file
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"path/filepath"
@@ -50,6 +51,7 @@ type Change struct {
 	SourcePath    string                 `json:"-"`
 	TargetPath    string                 `json:"-"`
 	CSVRow        []string               `json:"-"`
+	Steps         []string               `json:"-"`
 	SortCriterion struct {
 		TimeVar   time.Time
 		Time      time.Time
@@ -125,6 +127,10 @@ func (c *Change) AutoFixTarget(newTarget string) {
 		c.TargetPath += "/"
 	}
 
+	if len(c.Steps) > 0 {
+		c.Steps[len(c.Steps)-1] = c.TargetPath
+	}
+
 	c.Status = status.OK
 }
 
@@ -181,7 +187,7 @@ func (c Changes) SourceNamesWithIndices(
 		indices = append(indices, i)
 	}
 
-	return
+	return names, indices
 }
 
 func (c Changes) ShouldExtractExiftool() bool {
@@ -220,8 +226,7 @@ func (c Changes) RenderTable(w io.Writer, noColor bool) {
 			changeStatus = pterm.Red(strings.TrimPrefix(msg, ": "))
 		}
 
-		d := []string{change.SourcePath, change.TargetPath, changeStatus}
-		data[i] = d
+		data[i] = append(change.Steps, changeStatus)
 	}
 
 	printTable(data, w, noColor)
@@ -230,24 +235,37 @@ func (c Changes) RenderTable(w io.Writer, noColor bool) {
 func printTable(data [][]string, w io.Writer, noColor bool) {
 	// using tablewriter as pterm table rendering is too slow
 	table := tablewriter.NewWriter(w)
-	table.SetHeader(
-		[]string{
-			localize.T("table.original"),
-			localize.T("table.renamed"),
-			localize.T("table.status"),
-		},
+
+	headers := []string{localize.T("table.original")}
+
+	numSteps := len(data[0])
+
+	for i := 0; i < numSteps-3; i++ {
+		headers = append(headers, fmt.Sprintf("-> %d", i+1))
+	}
+
+	headers = append(
+		headers,
+		localize.T("table.renamed"),
+		localize.T("table.status"),
 	)
+
+	table.SetHeader(headers)
 	table.SetCenterSeparator("*")
 	table.SetColumnSeparator("|")
 	table.SetRowSeparator("—")
 	table.SetAutoWrapText(false)
 
 	if !noColor {
-		table.SetHeaderColor(
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
-		)
+		headerColors := []tablewriter.Colors{}
+		for range headers {
+			headerColors = append(
+				headerColors,
+				tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor},
+			)
+		}
+
+		table.SetHeaderColor(headerColors...)
 	}
 
 	table.AppendBulk(data)

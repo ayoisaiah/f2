@@ -88,6 +88,8 @@ func replaceMatches(
 				slog.Any("match", change),
 			)
 
+			change.Steps = append(change.Steps, change.TargetPath)
+
 			continue
 		}
 
@@ -103,6 +105,8 @@ func replaceMatches(
 			change.Status = status.OK
 			pairs++
 
+			change.Steps = append(change.Steps, change.TargetPath)
+
 			continue
 		}
 
@@ -112,6 +116,8 @@ func replaceMatches(
 		if err != nil {
 			return nil, err
 		}
+
+		change.Steps = append(change.Steps, change.TargetPath)
 
 		matches[i] = change
 	}
