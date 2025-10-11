@@ -473,7 +473,7 @@ func checkForbiddenCharactersConflict(
 	forbiddenChars := checkForbiddenCharacters(ctx.change.Target)
 	if forbiddenChars != "" {
 		conflictDetected = true
-		ctx.change.Status = status.ForbiddenCharacters
+		ctx.change.Status = status.ForbiddenCharacters.Append(forbiddenChars)
 
 		slog.Debug(
 			"conflict: forbidden characters detected",

@@ -2,6 +2,7 @@ package status
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/ayoisaiah/f2/v2/internal/localize"
 )
@@ -30,6 +31,13 @@ func (s *Status) UnmarshalJSON(data []byte) error {
 
 func (s Status) String() string {
 	return s.Message
+}
+
+// Append returns an updated Status with the provided string appended to the
+// original status message.
+func (s Status) Append(str string) Status {
+	s.Message = fmt.Sprintf("%s -> %s", localize.T("status."+s.ID), str)
+	return s
 }
 
 func newStatus(id string) Status {
