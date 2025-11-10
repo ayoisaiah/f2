@@ -76,7 +76,7 @@ func TestValidateWindows(t *testing.T) {
 					Source:  "atomic-habits.pdf",
 					Target:  "<>:?etc.pdf",
 					BaseDir: "ebooks",
-					Status:  status.ForbiddenCharacters,
+					Status:  status.ForbiddenCharacters.Append("<,>,:,?"),
 				},
 			},
 			ConflictDetected: true,
