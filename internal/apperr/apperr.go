@@ -25,21 +25,28 @@ func (e *Error) Unwrap() error {
 	return e.Cause
 }
 
-// Wrap associates the underlying error.
+// Wrap returns a copy of the error with the cause set.
 func (e *Error) Wrap(err error) *Error {
-	e.Cause = err
-	return e
+	newE := *e
+	newE.Cause = err
+
+	return &newE
 }
 
-// Fmt calls fmt.Sprintf on the error message.
+// Fmt returns a copy of the error with the message formatted.
 func (e *Error) Fmt(str ...any) *Error {
-	e.Message = fmt.Sprintf(e.Message, str...)
-	return e
+	newE := *e
+	newE.Message = fmt.Sprintf(e.Message, str...)
+
+	return &newE
 }
 
+// WithCtx returns a copy of the error with context attached.
 func (e *Error) WithCtx(ctx any) *Error {
-	e.Context = ctx
-	return e
+	newE := *e
+	newE.Context = ctx
+
+	return &newE
 }
 
 func Unwrap(err error) error {
