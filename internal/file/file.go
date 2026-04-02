@@ -13,7 +13,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/pterm/pterm"
 
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/status"
 )
@@ -93,20 +92,18 @@ func (c *Change) LogValue() slog.Value {
 		)
 	}
 
-	conf := config.Get()
-
-	if conf.Sort == config.SortStringVar {
+	if c.SortCriterion.StringVar != "" {
 		attrs = append(
 			attrs,
 			slog.String("string_var", c.SortCriterion.StringVar),
 		)
 	}
 
-	if conf.Sort == config.SortIntVar {
+	if c.SortCriterion.IntVar != 0 {
 		attrs = append(attrs, slog.Int("int_var", c.SortCriterion.IntVar))
 	}
 
-	if conf.Sort == config.SortSize {
+	if c.SortCriterion.Size != 0 {
 		attrs = append(attrs, slog.Int64("size", c.SortCriterion.Size))
 	}
 

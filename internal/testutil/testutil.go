@@ -283,11 +283,14 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 		t.Fatal(err)
 	}
 
+	var conf *config.Config
+
 	f2App.Action = func(_ context.Context, cmd *cli.Command) error {
 		// Reset pterm to default state
 		pterm.EnableStyling()
 		// Re-initialize config with pipe output value set per test
-		_, _ = config.Init(cmd, tc.PipeOutput)
+		c, _ := config.Init(cmd, tc.PipeOutput)
+		conf = c
 
 		return nil
 	}
@@ -298,5 +301,5 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 		t.Fatal(err)
 	}
 
-	return config.Get()
+	return conf
 }

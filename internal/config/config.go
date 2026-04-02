@@ -57,8 +57,6 @@ var (
 	)
 )
 
-var conf *Config
-
 // ExiftoolOpts defines supported options for customizing Exitool's output.
 type ExiftoolOpts struct {
 	API             string `long:"api"             json:"api"`              // corresponds to the `-api` flag
@@ -512,16 +510,6 @@ func IsATTY(fd uintptr) bool {
 	return isatty.IsTerminal(fd) || isatty.IsCygwinTerminal(fd)
 }
 
-// Get retrives an already set config or panics if the configuration
-// has not yet been initialized.
-func Get() *Config {
-	if conf == nil {
-		panic("config has not been initialized")
-	}
-
-	return conf
-}
-
 // configureOutput configures the output behavior of the application based
 // on environment variables and piping status. All output is suppressed in
 // quiet mode.
@@ -558,7 +546,7 @@ func (c *Config) checkIfExifToolVarIsPresent() bool {
 // Init initializes renaming configuration from command-line arguments and
 // environmental variables.
 func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
-	conf = &Config{
+	c := &Config{
 		Date:             time.Now(),
 		FilesAndDirPaths: []string{DefaultWorkingDir},
 		Sort:             SortDefault,
@@ -570,33 +558,33 @@ func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
 
 	var err error
 
-	err = conf.setDefaultOpts(cmd)
+	err = c.setDefaultOpts(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	err = conf.setOptions(cmd)
+	err = c.setOptions(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	if conf.WorkingDir == "" {
+	if c.WorkingDir == "" {
 		// Get the current working directory
-		conf.WorkingDir, err = filepath.Abs(DefaultWorkingDir)
+		c.WorkingDir, err = filepath.Abs(DefaultWorkingDir)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	conf.BackupFilename = generateBackupFilename(conf.WorkingDir)
+	c.BackupFilename = generateBackupFilename(c.WorkingDir)
 
-	conf.configureOutput()
+	c.configureOutput()
 
-	conf.ExifToolVarPresent = conf.checkIfExifToolVarIsPresent()
-	conf.IndexPresent = slices.ContainsFunc(
-		conf.ReplacementSlice,
+	c.ExifToolVarPresent = c.checkIfExifToolVarIsPresent()
+	c.IndexPresent = slices.ContainsFunc(
+		c.ReplacementSlice,
 		indexVarRegex.MatchString,
 	)
 
-	return conf, nil
+	return c, nil
 }
