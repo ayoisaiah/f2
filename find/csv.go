@@ -73,7 +73,7 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 			// Skip missing source files
 			if errors.Is(statErr, os.ErrNotExist) {
 				if conf.Verbose {
-					report.NonExistentFile(source, i+1)
+					report.NonExistentFile(conf.Stderr, source, i+1)
 				}
 
 				continue

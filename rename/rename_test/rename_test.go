@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
 	"github.com/ayoisaiah/f2/v2/internal/testutil"
 	"github.com/ayoisaiah/f2/v2/rename"
@@ -157,12 +156,11 @@ func postRename(t *testing.T, cases []testutil.TestCase) {
 
 		var backup bytes.Buffer
 
-		config.Stderr = &stderr
-
 		t.Run(tc.Name, func(t *testing.T) {
 			conf := testutil.GetConfig(t, &tc, ".")
 
 			conf.BackupLocation = &backup
+			conf.Stderr = &stderr
 
 			r := rename.NewRenamer(conf)
 			r.PostRename(tc.Changes, tc.Error)

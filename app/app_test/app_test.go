@@ -16,7 +16,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/ayoisaiah/f2/v2/app"
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
@@ -133,16 +132,12 @@ func TestShortHelp(t *testing.T) {
 
 	var stdout bytes.Buffer
 
-	config.Stderr = &stdout
-
-	t.Cleanup(func() {
-		config.Stderr = os.Stderr
-	})
-
-	renamer, err := app.Get(os.Stdin, os.Stdin)
+	renamer, err := app.Get(os.Stdin, &stdout)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	renamer.ErrWriter = &stdout
 
 	// renamer.Run() calls os.Exit() which causes the test to panic
 	// This will recover and make the relevant assertion

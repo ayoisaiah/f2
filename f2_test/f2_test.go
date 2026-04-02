@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/ayoisaiah/f2/v2"
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/testutil"
 )
 
@@ -21,7 +20,7 @@ func TestImagePairRenaming(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	config.Stderr = &stderr
+	app.ErrWriter = &stderr
 
 	err = app.Run(t.Context(), []string{
 		"f2_test",
@@ -102,7 +101,7 @@ func TestConditionalSearch(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		config.Stderr = &stderr
+		app.ErrWriter = &stderr
 
 		err = app.Run(t.Context(), tc.Args)
 		if err != nil {

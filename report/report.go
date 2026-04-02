@@ -3,6 +3,7 @@
 package report
 
 import (
+	"io"
 	"os"
 	"strings"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 )
 
-func ExitWithErr(err error) {
+func ExitWithErr(w io.Writer, err error) {
 	pterm.EnableOutput()
 
 	errPrefix := localize.T("report.error")
@@ -28,15 +29,15 @@ func ExitWithErr(err error) {
 	}
 
 	pterm.Fprintln(
-		config.Stderr,
+		w,
 		pterm.Sprintf("%s: %v", pterm.Red(errPrefix), errMessage),
 	)
 	os.Exit(int(osutil.ExitError))
 }
 
-func BackupFailed(err error) {
+func BackupFailed(w io.Writer, err error) {
 	pterm.Fprintln(
-		config.Stderr,
+		w,
 		pterm.Sprintf(
 			"%s: %v",
 			pterm.Red(localize.T("report.backup_failed")),
@@ -45,9 +46,9 @@ func BackupFailed(err error) {
 	)
 }
 
-func SearchEvalFailed(path, target string, err error) {
+func SearchEvalFailed(w io.Writer, path, target string, err error) {
 	pterm.Fprintln(
-		config.Stderr,
+		w,
 		pterm.Sprintf(
 			"%s: %v -> %s",
 			pterm.Yellow(path),
@@ -57,9 +58,9 @@ func SearchEvalFailed(path, target string, err error) {
 	)
 }
 
-func BackupFileRemovalFailed(err error) {
+func BackupFileRemovalFailed(w io.Writer, err error) {
 	pterm.Fprintln(
-		config.Stderr,
+		w,
 		pterm.Sprintf(
 			"%s: %v",
 			pterm.Red(localize.T("report.backup_cleanup_failed")),
@@ -68,13 +69,13 @@ func BackupFileRemovalFailed(err error) {
 	)
 }
 
-func ShortHelp(helpText string) {
-	pterm.Fprintln(config.Stderr, helpText)
+func ShortHelp(w io.Writer, helpText string) {
+	pterm.Fprintln(w, helpText)
 }
 
-func DefaultOpt(opt, val string) {
+func DefaultOpt(w io.Writer, opt, val string) {
 	pterm.Fprintln(
-		config.Stderr,
+		w,
 		pterm.Sprintf(
 			localize.T(
 				"report.default_opt",
@@ -85,9 +86,9 @@ func DefaultOpt(opt, val string) {
 	)
 }
 
-func NonExistentFile(name string, row int) {
+func NonExistentFile(w io.Writer, name string, row int) {
 	pterm.Fprintln(
-		config.Stderr,
+		w,
 		pterm.Sprintf(
 			"%s %d: %s",
 			localize.T("report.non_existent_file"),
@@ -113,7 +114,7 @@ func NoMatches(conf *config.Config) {
 		msg = localize.T("report.no_matches_undo")
 	}
 
-	pterm.Fprintln(config.Stderr, pterm.Sprint(msg))
+	pterm.Fprintln(conf.Stderr, pterm.Sprint(msg))
 }
 
 // Report prints a report of the renaming changes to be made.
@@ -123,10 +124,10 @@ func Report(
 	conflictDetected bool,
 ) {
 	if conf.JSON {
-		err := fileChanges.RenderJSON(config.Stdout)
+		err := fileChanges.RenderJSON(conf.Stdout)
 		if err != nil {
 			pterm.Fprintln(
-				config.Stderr,
+				conf.Stderr,
 				pterm.Sprintf(
 					"%s %v",
 					pterm.Red(localize.T("report.error")),
@@ -138,14 +139,14 @@ func Report(
 		return
 	}
 
-	fileChanges.RenderTable(config.Stdout, conf.NoColor)
+	fileChanges.RenderTable(conf.Stdout, conf.NoColor)
 
 	if conflictDetected || conf.JSON {
 		return
 	}
 
 	pterm.Fprintln(
-		config.Stderr,
+		conf.Stderr,
 		pterm.Sprintf(
 			"%s %s",
 			pterm.Green(localize.T("report.dry_run"), ":"),
@@ -169,7 +170,7 @@ func PrintResults(conf *config.Config, fileChanges file.Changes, err error) {
 					change := fileChanges[index]
 
 					pterm.Fprintln(
-						config.Stderr,
+						conf.Stderr,
 						pterm.Sprintf(
 							"%s %v",
 							pterm.Red(localize.T("report.error"), ":"),
@@ -189,14 +190,14 @@ func PrintResults(conf *config.Config, fileChanges file.Changes, err error) {
 		change := fileChanges[i]
 
 		if conf.PipeOutput && change.Error == nil {
-			pterm.Fprintln(config.Stdout, change.TargetPath)
+			pterm.Fprintln(conf.Stdout, change.TargetPath)
 		}
 
 		if !conf.Verbose {
 			continue
 		}
 
-		pterm.Fprintln(config.Stderr,
+		pterm.Fprintln(conf.Stderr,
 			pterm.Sprintf(
 				"%s '%s' to '%s'",
 				pterm.Green(localize.T("report.renamed"), ":"),

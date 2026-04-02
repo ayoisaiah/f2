@@ -31,13 +31,13 @@ func init() {
 }
 
 func main() {
-	renamer, err := f2.New(os.Stdin, os.Stdout)
+	f2App, err := f2.New(os.Stdin, os.Stdout)
 	if err != nil {
-		report.ExitWithErr(err)
+		report.ExitWithErr(os.Stderr, err)
 	}
 
-	err = renamer.Run(context.Background(), os.Args)
+	err = f2App.Run(context.Background(), os.Args)
 	if err != nil {
-		report.ExitWithErr(err)
+		report.ExitWithErr(os.Stderr, err)
 	}
 }

@@ -226,7 +226,7 @@ func (r *Renamer) PostRename(
 			r.conf.BackupLocation,
 		)
 		if err != nil {
-			report.BackupFailed(err)
+			report.BackupFailed(r.conf.Stderr, err)
 		}
 	}
 
@@ -239,7 +239,7 @@ func (r *Renamer) PostRename(
 		)
 
 		if err := os.Remove(backupFilePath); err != nil {
-			report.BackupFileRemovalFailed(err)
+			report.BackupFileRemovalFailed(r.conf.Stderr, err)
 		} else {
 			slog.Debug(
 				"successfully removed backup file",

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/ayoisaiah/f2/v2/internal/apperr"
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
 	"github.com/ayoisaiah/f2/v2/internal/status"
 	"github.com/ayoisaiah/f2/v2/internal/testutil"
@@ -102,8 +101,8 @@ func reportTest(t *testing.T, cases []testutil.TestCase) {
 
 			var stderr bytes.Buffer
 
-			config.Stdout = &stdout
-			config.Stderr = &stderr
+			conf.Stdout = &stdout
+			conf.Stderr = &stderr
 
 			switch strings.Split(t.Name(), "/")[0] {
 			case "TestReport":
@@ -257,7 +256,7 @@ func TestNoMatches(t *testing.T) {
 
 func TestExitWithErr(t *testing.T) {
 	if os.Getenv("BE_CRASHER") == "1" {
-		report.ExitWithErr(errors.New("something went wrong"))
+		report.ExitWithErr(t.Output(), errors.New("something went wrong"))
 		return
 	}
 
@@ -281,9 +280,7 @@ func TestBackupFailed(t *testing.T) {
 
 	var stderr bytes.Buffer
 
-	config.Stderr = &stderr
-
-	report.BackupFailed(errors.New("unable to write file"))
+	report.BackupFailed(&stderr, errors.New("unable to write file"))
 
 	tc.SnapShot.Stderr = stderr.Bytes()
 
@@ -297,9 +294,7 @@ func TestBackupRemovalFailed(t *testing.T) {
 
 	var stderr bytes.Buffer
 
-	config.Stderr = &stderr
-
-	report.BackupFileRemovalFailed(errors.New("file not found"))
+	report.BackupFileRemovalFailed(&stderr, errors.New("file not found"))
 
 	tc.SnapShot.Stderr = stderr.Bytes()
 
@@ -313,9 +308,7 @@ func TestNonExistentFile(t *testing.T) {
 
 	var stderr bytes.Buffer
 
-	config.Stderr = &stderr
-
-	report.NonExistentFile("test_file.txt", 0)
+	report.NonExistentFile(&stderr, "test_file.txt", 0)
 
 	tc.SnapShot.Stderr = stderr.Bytes()
 

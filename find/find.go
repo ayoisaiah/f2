@@ -469,7 +469,12 @@ func processFindExpression(
 		removeMatch, err := evaluateSearchCondition(conf, match, searchVars)
 		if err != nil {
 			if conf.Verbose {
-				report.SearchEvalFailed(match.SourcePath, match.Target, err)
+				report.SearchEvalFailed(
+					conf.Stderr,
+					match.SourcePath,
+					match.Target,
+					err,
+				)
 			}
 		}
 

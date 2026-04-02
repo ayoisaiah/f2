@@ -289,7 +289,7 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 		// Reset pterm to default state
 		pterm.EnableStyling()
 		// Re-initialize config with pipe output value set per test
-		c, _ := config.Init(cmd, tc.PipeOutput)
+		c, _ := config.Init(cmd, cmd.Writer, cmd.ErrWriter, tc.PipeOutput)
 		conf = c
 
 		return nil

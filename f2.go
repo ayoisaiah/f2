@@ -31,7 +31,12 @@ func isOutputToPipe() bool {
 
 // execute initiates a new renaming operation based on the provided CLI context.
 func execute(ctx context.Context, cmd *cli.Command) error {
-	appConfig, err := config.Init(cmd, isOutputToPipe())
+	appConfig, err := config.Init(
+		cmd,
+		cmd.Writer,
+		cmd.ErrWriter,
+		isOutputToPipe(),
+	)
 	if err != nil {
 		return err
 	}

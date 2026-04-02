@@ -11,7 +11,6 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v3"
 
-	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/localize"
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 	"github.com/ayoisaiah/f2/v2/report"
@@ -79,12 +78,9 @@ func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 	app.Before = func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 		// print short help and exit if no arguments or flags are present
 		if cmd.NumFlags() == 0 && !cmd.Args().Present() || len(origArgs) <= 1 {
-			report.ShortHelp(ShortHelp(cmd))
+			report.ShortHelp(cmd.ErrWriter, ShortHelp(cmd))
 			os.Exit(int(osutil.ExitOK))
 		}
-
-		config.Stdout = cmd.Writer
-		config.Stdin = cmd.Reader
 
 		app.Metadata["ctx"] = cmd
 

@@ -217,7 +217,12 @@ func prepNextChain(
 		result, err := eval.Evaluate(change.Target)
 		if err != nil {
 			if conf.Verbose {
-				report.SearchEvalFailed(change.SourcePath, change.Target, err)
+				report.SearchEvalFailed(
+					conf.Stderr,
+					change.SourcePath,
+					change.Target,
+					err,
+				)
 			}
 
 			matches[j].MatchesFindCond = false

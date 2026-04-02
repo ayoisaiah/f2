@@ -33,12 +33,6 @@ const (
 )
 
 var (
-	Stdin  io.Reader = os.Stdin
-	Stdout io.Writer = os.Stdout
-	Stderr io.Writer = os.Stderr
-)
-
-var (
 	sortVarRegex                    = regexp.MustCompile("^{.+}$")
 	defaultFixConflictsPatternRegex = regexp.MustCompile(`\((\d+)\)$`)
 	customFixConflictsPatternRegex  = regexp.MustCompile(
@@ -74,6 +68,8 @@ type Search struct {
 
 // Config represents the program configuration.
 type Config struct {
+	Stdout                   io.Writer      `json:"-"`
+	Stderr                   io.Writer      `json:"-"`
 	Date                     time.Time      `json:"date"`
 	BackupLocation           io.Writer      `json:"-"`
 	Location                 *time.Location `json:"location"`
@@ -545,8 +541,14 @@ func (c *Config) checkIfExifToolVarIsPresent() bool {
 
 // Init initializes renaming configuration from command-line arguments and
 // environmental variables.
-func Init(cmd *cli.Command, pipeOutput bool) (*Config, error) {
+func Init(
+	cmd *cli.Command,
+	stdout, stderr io.Writer,
+	pipeOutput bool,
+) (*Config, error) {
 	c := &Config{
+		Stdout:           stdout,
+		Stderr:           stderr,
 		Date:             time.Now(),
 		FilesAndDirPaths: []string{DefaultWorkingDir},
 		Sort:             SortDefault,
