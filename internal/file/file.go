@@ -257,7 +257,7 @@ func printTable(data [][]string, w io.Writer, noColor bool) {
 	table.SetAutoWrapText(false)
 
 	if !noColor {
-		headerColors := []tablewriter.Colors{}
+		headerColors := make([]tablewriter.Colors, 0, len(headers))
 		for range headers {
 			headerColors = append(
 				headerColors,
