@@ -85,9 +85,11 @@ func execute(ctx context.Context, cmd *cli.Command) error {
 		return nil
 	}
 
-	err = rename.Rename(appConfig, matches)
+	renamer := rename.NewRenamer(appConfig)
 
-	rename.PostRename(appConfig, matches, err)
+	err = renamer.Rename(matches)
+
+	renamer.PostRename(matches, err)
 
 	return err
 }

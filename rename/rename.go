@@ -24,13 +24,23 @@ var errRenameFailed = &apperr.Error{
 	Message: localize.T("error.rename_failed"),
 }
 
-// traversedDirs records the directories that were traversed during a renaming
-// operation.
-var traversedDirs = make(map[string]string)
+// Renamer handles the state and logic for a renaming operation.
+type Renamer struct {
+	conf          *config.Config
+	traversedDirs map[string]string
+}
+
+// NewRenamer creates a new Renamer instance.
+func NewRenamer(conf *config.Config) *Renamer {
+	return &Renamer{
+		conf:          conf,
+		traversedDirs: make(map[string]string),
+	}
+}
 
 // commit iterates over all the matches and renames them on the filesystem.
 // Directories are auto-created if necessary, and errors are aggregated.
-func commit(fileChanges file.Changes) []int {
+func (r *Renamer) commit(fileChanges file.Changes) []int {
 	slog.Debug(
 		"committing file changes",
 		slog.Int("change_count", len(fileChanges)),
@@ -109,7 +119,7 @@ func commit(fileChanges file.Changes) []int {
 			}
 		}
 
-		traversedDirs[ch.BaseDir] = ch.BaseDir
+		r.traversedDirs[ch.BaseDir] = ch.BaseDir
 
 		slog.Debug(
 			"renaming source to target",
@@ -146,23 +156,22 @@ func commit(fileChanges file.Changes) []int {
 
 // Rename renames files according to the provided changes and configuration
 // handling conflicts and backups.
-func Rename(
-	conf *config.Config,
+func (r *Renamer) Rename(
 	fileChanges file.Changes,
 ) error {
-	if conf.TargetDir != "" {
+	if r.conf.TargetDir != "" {
 		slog.Debug(
 			"ensure that target directory exists",
-			slog.String("target_dir", conf.TargetDir),
+			slog.String("target_dir", r.conf.TargetDir),
 		)
 
-		err := os.MkdirAll(conf.TargetDir, osutil.DirPermission)
+		err := os.MkdirAll(r.conf.TargetDir, osutil.DirPermission)
 		if err != nil {
 			return err
 		}
 	}
 
-	renameErrs := commit(fileChanges)
+	renameErrs := r.commit(fileChanges)
 	if len(renameErrs) > 0 {
 		slog.Debug(
 			"renaming operation completed with errors",
@@ -177,15 +186,14 @@ func Rename(
 
 // PostRename handles actions after a renaming operation, such as printing
 // results, cleaning empty directories, and creating a backup file if applicable.
-func PostRename(
-	conf *config.Config,
+func (r *Renamer) PostRename(
 	fileChanges file.Changes,
 	renameErr error,
 ) {
 	var cleanedDirs []string
 
-	if conf.Clean && !conf.Revert {
-		for _, dir := range traversedDirs {
+	if r.conf.Clean && !r.conf.Revert {
+		for _, dir := range r.traversedDirs {
 			if dir == "." { // don't try to clean the working directory
 				continue
 			}
@@ -210,24 +218,24 @@ func PostRename(
 		}
 	}
 
-	if len(fileChanges) != 0 && !conf.Revert {
+	if len(fileChanges) != 0 && !r.conf.Revert {
 		err := backupChanges(
 			fileChanges,
 			cleanedDirs,
-			conf.BackupFilename,
-			conf.BackupLocation,
+			r.conf.BackupFilename,
+			r.conf.BackupLocation,
 		)
 		if err != nil {
 			report.BackupFailed(err)
 		}
 	}
 
-	if conf.Revert && renameErr == nil {
+	if r.conf.Revert && renameErr == nil {
 		backupFilePath := filepath.Join(
 			os.TempDir(),
 			"f2",
 			"backups",
-			conf.BackupFilename,
+			r.conf.BackupFilename,
 		)
 
 		if err := os.Remove(backupFilePath); err != nil {
@@ -240,5 +248,5 @@ func PostRename(
 		}
 	}
 
-	report.PrintResults(conf, fileChanges, renameErr)
+	report.PrintResults(r.conf, fileChanges, renameErr)
 }

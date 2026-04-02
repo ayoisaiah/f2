@@ -59,7 +59,9 @@ func renameTest(t *testing.T, cases []testutil.TestCase) {
 		}
 
 		t.Run(tc.Name, func(t *testing.T) {
-			err := rename.Rename(conf, tc.Changes)
+			r := rename.NewRenamer(conf)
+
+			err := r.Rename(tc.Changes)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -162,7 +164,8 @@ func postRename(t *testing.T, cases []testutil.TestCase) {
 
 			conf.BackupLocation = &backup
 
-			rename.PostRename(conf, tc.Changes, tc.Error)
+			r := rename.NewRenamer(conf)
+			r.PostRename(tc.Changes, tc.Error)
 
 			tc.SnapShot.Stdout = backup.Bytes()
 			tc.SnapShot.Stderr = stderr.Bytes()
