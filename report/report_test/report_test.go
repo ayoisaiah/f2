@@ -262,6 +262,7 @@ func TestExitWithErr(t *testing.T) {
 	}
 
 	cmd := exec.Command(os.Args[0], "-test.run=TestExitWithErr")
+
 	cmd.Env = append(os.Environ(), "BE_CRASHER=1")
 
 	err := cmd.Run()

@@ -272,6 +272,7 @@ func getHash(filePath string, hashValue hashAlgorithm) (string, error) {
 // replaceFileHashVars replaces a hash variable with the corresponding
 // hash value.
 func replaceFileHashVars(
+	conf *config.Config,
 	target, sourcePath string,
 	hashMatches hashVars,
 ) (string, error) {
@@ -283,7 +284,7 @@ func replaceFileHashVars(
 			return "", err
 		}
 
-		hashValue = transformString(hashValue, current.transformToken)
+		hashValue = transformString(conf, hashValue, current.transformToken)
 
 		target = RegexReplace(current.regex, target, hashValue, 0, nil)
 	}
@@ -344,6 +345,7 @@ func replaceDateToken(t time.Time, token string) string {
 // replaceDateVars replaces any date variables in the target with the
 // corresponding date value.
 func replaceDateVars(
+	conf *config.Config,
 	target, sourcePath string,
 	dateVarMatches dateVars,
 ) (string, error) {
@@ -360,7 +362,7 @@ func replaceDateVars(
 
 		timeStr := replaceDateToken(selectedTime, current.token)
 
-		timeStr = transformString(timeStr, current.transformToken)
+		timeStr = transformString(conf, timeStr, current.transformToken)
 
 		target = RegexReplace(regex, target, timeStr, 0, nil)
 	}
@@ -408,6 +410,7 @@ func getID3Tags(sourcePath string) (*ID3, error) {
 // replaceID3Variables replaces all id3 variables in the target file name
 // with the corresponding id3 tag value.
 func replaceID3Variables(
+	conf *config.Config,
 	target, sourcePath string,
 	id3v id3Vars,
 ) (string, error) {
@@ -464,7 +467,11 @@ func replaceID3Variables(
 			}
 		}
 
-		id3Tag = transformString(replaceSlashes(id3Tag), current.transformToken)
+		id3Tag = transformString(
+			conf,
+			replaceSlashes(id3Tag),
+			current.transformToken,
+		)
 
 		target = RegexReplace(current.regex, target, id3Tag, 0, nil)
 	}
@@ -625,6 +632,7 @@ func getExifDimensions(exifData *Exif, dimension string) string {
 // if an error occurs while attempting to get the value represented
 // by the variables, it is replaced with an empty string.
 func replaceExifVars(
+	conf *config.Config,
 	target, sourcePath string,
 	ev exifVars,
 ) (string, error) {
@@ -679,6 +687,7 @@ func replaceExifVars(
 		}
 
 		exifTag = transformString(
+			conf,
 			replaceSlashes(exifTag),
 			current.transformToken,
 		)
@@ -745,7 +754,7 @@ func replaceExifToolVars(
 			value = replaceSlashes(v)
 		}
 
-		value = transformString(value, current.transformToken)
+		value = transformString(conf, value, current.transformToken)
 
 		target = RegexReplace(current.regex, target, value, 0, nil)
 	}
@@ -835,7 +844,7 @@ func replaceIndex(
 	return target
 }
 
-func transformString(source, token string) string {
+func transformString(conf *config.Config, source, token string) string {
 	switch token {
 	case "up":
 		return strings.ToUpper(source)
@@ -871,8 +880,6 @@ func transformString(source, token string) string {
 	}
 
 	if strings.HasPrefix(token, "dt") {
-		conf := config.Get()
-
 		dateTime, err := dateparse.ParseAny(source)
 		if err != nil {
 			slog.Debug(
@@ -896,6 +903,7 @@ func transformString(source, token string) string {
 // replaceTransformVars handles string transformations like uppercase,
 // lowercase, stripping characters, e.t.c.
 func replaceTransformVars(
+	conf *config.Config,
 	target string,
 	matches []string,
 	tv transformVars,
@@ -923,7 +931,7 @@ func replaceTransformVars(
 				target = RegexReplace(
 					regex,
 					target,
-					transformString(v, current.token),
+					transformString(conf, v, current.token),
 					1,
 					nil,
 				)
@@ -935,7 +943,7 @@ func replaceTransformVars(
 		target = RegexReplace(
 			regex,
 			target,
-			transformString(match, current.token),
+			transformString(conf, match, current.token),
 			0,
 			nil,
 		)
@@ -947,7 +955,12 @@ func replaceTransformVars(
 // replaceCSVVars inserts the appropriate CSV column
 // in the replacement target or an empty string if the column
 // is not present in the row.
-func replaceCSVVars(target string, csvRow []string, cv csvVars) string {
+func replaceCSVVars(
+	conf *config.Config,
+	target string,
+	csvRow []string,
+	cv csvVars,
+) string {
 	for i := range cv.submatches {
 		current := cv.values[i]
 		column := current.column - 1
@@ -958,7 +971,7 @@ func replaceCSVVars(target string, csvRow []string, cv csvVars) string {
 			value = csvRow[column]
 		}
 
-		value = transformString(value, current.transformToken)
+		value = transformString(conf, value, current.transformToken)
 
 		target = RegexReplace(current.regex, target, value, 0, nil)
 	}
@@ -967,6 +980,7 @@ func replaceCSVVars(target string, csvRow []string, cv csvVars) string {
 }
 
 func replaceParentDirVars(
+	conf *config.Config,
 	target, absSourcePath string,
 	pv parentDirVars,
 ) string {
@@ -997,7 +1011,7 @@ func replaceParentDirVars(
 			}
 		}
 
-		source := transformString(parentDir, current.transformToken)
+		source := transformString(conf, parentDir, current.transformToken)
 
 		target = RegexReplace(current.regex, target, source, 0, nil)
 	}
@@ -1006,13 +1020,14 @@ func replaceParentDirVars(
 }
 
 func replaceFilenameVars(
+	conf *config.Config,
 	target, sourceName string,
 	fv filenameVars,
 ) string {
 	for i := range fv.matches {
 		current := fv.matches[i]
 
-		source := transformString(sourceName, current.transformToken)
+		source := transformString(conf, sourceName, current.transformToken)
 
 		target = RegexReplace(current.regex, target, source, 0, nil)
 	}
@@ -1027,7 +1042,11 @@ func getDoubleExtension(filename string) string {
 	return ext2 + ext
 }
 
-func replaceExtVars(change *file.Change, ev extVars) (target string) {
+func replaceExtVars(
+	conf *config.Config,
+	change *file.Change,
+	ev extVars,
+) (target string) {
 	for i := range ev.matches {
 		fileExt := filepath.Ext(change.OriginalName)
 
@@ -1041,7 +1060,7 @@ func replaceExtVars(change *file.Change, ev extVars) (target string) {
 			fileExt = getDoubleExtension(change.OriginalName)
 		}
 
-		source := transformString(fileExt, current.transformToken)
+		source := transformString(conf, fileExt, current.transformToken)
 
 		target = RegexReplace(current.regex, change.Target, source, 0, nil)
 	}
@@ -1105,6 +1124,7 @@ func Replace(
 		}
 
 		change.Target = replaceFilenameVars(
+			conf,
 			change.Target,
 			sourceName,
 			vars.filename,
@@ -1112,7 +1132,7 @@ func Replace(
 	}
 
 	if len(vars.ext.matches) > 0 {
-		change.Target = replaceExtVars(change, vars.ext)
+		change.Target = replaceExtVars(conf, change, vars.ext)
 	}
 
 	if len(vars.parentDir.matches) > 0 {
@@ -1122,6 +1142,7 @@ func Replace(
 		}
 
 		change.Target = replaceParentDirVars(
+			conf,
 			change.Target,
 			abspath,
 			vars.parentDir,
@@ -1130,6 +1151,7 @@ func Replace(
 
 	if len(vars.date.matches) > 0 {
 		out, err := replaceDateVars(
+			conf,
 			change.Target,
 			change.SourcePath,
 			vars.date,
@@ -1156,6 +1178,7 @@ func Replace(
 
 	if len(vars.exif.matches) > 0 {
 		out, err := replaceExifVars(
+			conf,
 			change.Target,
 			change.SourcePath,
 			vars.exif,
@@ -1169,6 +1192,7 @@ func Replace(
 
 	if len(vars.id3.matches) > 0 {
 		out, err := replaceID3Variables(
+			conf,
 			change.Target,
 			change.SourcePath,
 			vars.id3,
@@ -1181,13 +1205,14 @@ func Replace(
 	}
 
 	if csvVarRegex.MatchString(change.Target) {
-		out := replaceCSVVars(change.Target, change.CSVRow, vars.csv)
+		out := replaceCSVVars(conf, change.Target, change.CSVRow, vars.csv)
 
 		change.Target = out
 	}
 
 	if len(vars.hash.matches) > 0 {
 		out, err := replaceFileHashVars(
+			conf,
 			change.Target,
 			change.SourcePath,
 			vars.hash,
@@ -1208,6 +1233,7 @@ func Replace(
 		matches := conf.Search.Regex.FindAllString(sourceName, -1)
 
 		out, err := replaceTransformVars(
+			conf,
 			change.Target,
 			matches,
 			vars.transform,
