@@ -31,30 +31,6 @@ const (
 	dotCharacter = 46
 )
 
-// shouldFilter decides whether a match should be included in the final
-// pool of files for renaming.
-func shouldFilter(conf *config.Config, match *file.Change) bool {
-	if conf.ExcludeRegex != nil &&
-		conf.ExcludeRegex.MatchString(match.Source) {
-		return true
-	}
-
-	if !conf.IncludeDir && match.IsDir {
-		return true
-	}
-
-	if conf.OnlyDir && !match.IsDir {
-		return true
-	}
-
-	if conf.IncludeRegex != nil &&
-		!conf.IncludeRegex.MatchString(match.Source) {
-		return true
-	}
-
-	return false
-}
-
 // skipFileIfHidden checks if a file is hidden, and if so, returns a boolean
 // confirming whether it should be skipped or not.
 func skipFileIfHidden(
@@ -214,6 +190,7 @@ func checkIfMatch(
 	conf *config.Config,
 	path string,
 	entry fs.DirEntry,
+	filters Filters,
 	sortVars *variables.Variables,
 ) (*file.Change, bool, error) {
 	var err error
@@ -251,7 +228,7 @@ func checkIfMatch(
 		slog.Any("match", match),
 	)
 
-	if shouldFilter(conf, match) {
+	if filters.Skip(conf, match) {
 		slog.Debug(
 			"excluding file based on filter criteria",
 			slog.Any("match", match),
@@ -275,6 +252,7 @@ func walkDirectory(
 	conf *config.Config,
 	rootPath string,
 	processedPaths map[string]bool,
+	filters Filters,
 	sortVars *variables.Variables,
 ) (file.Changes, error) {
 	var matches file.Changes
@@ -339,6 +317,7 @@ func walkDirectory(
 				conf,
 				currentPath,
 				entry,
+				filters,
 				sortVars,
 			)
 			if err != nil {
@@ -369,6 +348,7 @@ func shouldSkipExcludedDir(conf *config.Config, entry fs.DirEntry) bool {
 func searchPaths(
 	ctx context.Context,
 	conf *config.Config,
+	filters Filters,
 	sortVars, searchVars *variables.Variables,
 ) (file.Changes, error) {
 	processedPaths := make(map[string]bool)
@@ -393,6 +373,7 @@ func searchPaths(
 				conf,
 				rootPath,
 				fs.FileInfoToDirEntry(fileInfo),
+				filters,
 				sortVars,
 			)
 			if matchErr != nil {
@@ -413,6 +394,7 @@ func searchPaths(
 			conf,
 			rootPath,
 			processedPaths,
+			filters,
 			sortVars,
 		)
 		if err != nil {
@@ -607,7 +589,7 @@ func Find(
 	if conf.CSVFilename != "" {
 		matches, err = handleCSV(conf)
 	} else {
-		matches, err = searchPaths(ctx, conf, &sortVars, &searchVars)
+		matches, err = searchPaths(ctx, conf, NewFilters(conf), &sortVars, &searchVars)
 		if err != nil {
 			return nil, err
 		}
