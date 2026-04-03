@@ -39,6 +39,7 @@ func replaceString(conf *config.Config, originalName string) string {
 // applyReplacements applies the configured replacement patterns to the source
 // filename.
 func applyReplacement(
+	ctx context.Context,
 	conf *config.Config,
 	vars *variables.Variables,
 	change *file.Change,
@@ -53,7 +54,7 @@ func applyReplacement(
 	change.Target = replaceString(conf, originalName)
 
 	// Replace any variables present with their corresponding values
-	err := variables.Replace(conf, change, vars)
+	err := variables.Replace(ctx, conf, change, vars)
 	if err != nil {
 		return err
 	}
@@ -73,6 +74,7 @@ func applyReplacement(
 // replaceMatches handles the replacement of matches in each file with the
 // replacement string.
 func replaceMatches(
+	ctx context.Context,
 	conf *config.Config,
 	matches file.Changes,
 ) (file.Changes, error) {
@@ -116,7 +118,7 @@ func replaceMatches(
 
 		change.Position = i - pairs
 
-		err := applyReplacement(conf, &vars, change)
+		err := applyReplacement(ctx, conf, &vars, change)
 		if err != nil {
 			return nil, err
 		}
@@ -135,6 +137,7 @@ func replaceMatches(
 }
 
 func handleReplacementChain(
+	ctx context.Context,
 	conf *config.Config,
 	matches file.Changes,
 ) (file.Changes, error) {
@@ -149,7 +152,7 @@ func handleReplacementChain(
 
 		var err error
 
-		matches, err = replaceMatches(conf, matches)
+		matches, err = replaceMatches(ctx, conf, matches)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +166,7 @@ func handleReplacementChain(
 			return nil, err
 		}
 
-		err = prepNextChain(conf, matches)
+		err = prepNextChain(ctx, conf, matches)
 		if err != nil {
 			return nil, err
 		}
@@ -173,6 +176,7 @@ func handleReplacementChain(
 }
 
 func prepNextChain(
+	ctx context.Context,
 	conf *config.Config,
 	matches file.Changes,
 ) (err error) {
@@ -187,7 +191,7 @@ func prepNextChain(
 		}
 	}
 
-	g, _ := errgroup.WithContext(context.Background())
+	g, _ := errgroup.WithContext(ctx)
 	g.SetLimit(runtime.NumCPU())
 
 	for j := range matches {
@@ -217,7 +221,7 @@ func prepNextChain(
 		g.Go(func() error {
 			change.Target = conf.Search.FindCond.String()
 
-			err := variables.Replace(conf, change, &findVars)
+			err := variables.Replace(ctx, conf, change, &findVars)
 			if err != nil {
 				return err
 			}
@@ -262,6 +266,7 @@ func prepNextChain(
 // preExtractMetadata parallelizes the extraction of ID3 and Hashing metadata
 // to speed up the replacement process.
 func preExtractMetadata(
+	ctx context.Context,
 	conf *config.Config,
 	matches file.Changes,
 ) error {
@@ -298,7 +303,7 @@ func preExtractMetadata(
 		return nil
 	}
 
-	g, _ := errgroup.WithContext(context.Background())
+	g, _ := errgroup.WithContext(ctx)
 	g.SetLimit(runtime.NumCPU())
 
 	for i := range matches {
@@ -313,14 +318,14 @@ func preExtractMetadata(
 				rv := &rvars[i]
 
 				if rv.id3Present && change.ID3Data == nil {
-					err := variables.Replace(conf, change, &rv.vars)
+					err := variables.Replace(ctx, conf, change, &rv.vars)
 					if err != nil {
 						return err
 					}
 				}
 
 				if rv.hashPresent && change.HashData == nil {
-					err := variables.Replace(conf, change, &rv.vars)
+					err := variables.Replace(ctx, conf, change, &rv.vars)
 					if err != nil {
 						return err
 					}
@@ -337,10 +342,11 @@ func preExtractMetadata(
 // Replace applies the file name replacements according to the --replace
 // argument.
 func Replace(
+	ctx context.Context,
 	conf *config.Config,
 	matches file.Changes,
 ) (file.Changes, error) {
-	err := preExtractMetadata(conf, matches)
+	err := preExtractMetadata(ctx, conf, matches)
 	if err != nil {
 		return matches, err
 	}
@@ -385,14 +391,14 @@ func Replace(
 				return nil, extractErr
 			}
 
-			err = applyReplacement(conf, &vars, ch)
+			err = applyReplacement(ctx, conf, &vars, ch)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	matches, err = handleReplacementChain(conf, matches)
+	matches, err = handleReplacementChain(ctx, conf, matches)
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,27 @@
 package variables
 
 import (
+	"context"
 	"regexp"
+
+	"github.com/ayoisaiah/f2/v2/internal/config"
+	"github.com/ayoisaiah/f2/v2/internal/file"
+)
+
+// VariableProvider defines the interface for all variable replacement providers.
+type VariableProvider interface {
+	Replace(ctx context.Context, conf *config.Config, change *file.Change) error
+}
+
+type hashAlgorithm string
+
+const (
+	sha1Hash   hashAlgorithm = "sha1"
+	sha256Hash hashAlgorithm = "sha256"
+	sha512Hash hashAlgorithm = "sha512"
+	md5Hash    hashAlgorithm = "md5"
+	xxh32Hash  hashAlgorithm = "xxh32"
+	xxh64Hash  hashAlgorithm = "xxh64"
 )
 
 type numbersToSkip struct {

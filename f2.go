@@ -47,7 +47,7 @@ func execute(ctx context.Context, cmd *cli.Command) error {
 		slog.Any("config", appConfig),
 	)
 
-	matches, err := find.Find(appConfig)
+	matches, err := find.Find(ctx, appConfig)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func execute(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if !appConfig.Revert {
-		matches, err = replace.Replace(appConfig, matches)
+		matches, err = replace.Replace(ctx, appConfig, matches)
 		if err != nil {
 			return err
 		}

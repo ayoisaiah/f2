@@ -1,6 +1,7 @@
 package find
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -114,6 +115,7 @@ func isMaxDepth(rootPath, currentPath string, maxDepth int) bool {
 }
 
 func extractCustomSort(
+	ctx context.Context,
 	conf *config.Config,
 	ch *file.Change,
 	vars *variables.Variables,
@@ -121,7 +123,7 @@ func extractCustomSort(
 	// Temporarily set Target to SortVariable due to how variables.Replace() works
 	ch.Target = conf.SortVariable
 
-	err := variables.Replace(conf, ch, vars)
+	err := variables.Replace(ctx, conf, ch, vars)
 	if err != nil {
 		return err
 	}
@@ -178,6 +180,7 @@ func createFileChange(
 }
 
 func evaluateSearchCondition(
+	ctx context.Context,
 	conf *config.Config,
 	match *file.Change,
 	searchVars *variables.Variables,
@@ -187,7 +190,7 @@ func evaluateSearchCondition(
 		return false, nil
 	}
 
-	err = variables.Replace(conf, match, searchVars)
+	err = variables.Replace(ctx, conf, match, searchVars)
 	if err != nil {
 		return true, err
 	}
@@ -207,6 +210,7 @@ func evaluateSearchCondition(
 }
 
 func checkIfMatch(
+	ctx context.Context,
 	conf *config.Config,
 	path string,
 	entry fs.DirEntry,
@@ -257,7 +261,7 @@ func checkIfMatch(
 	}
 
 	if conf.SortVariable != "" {
-		err = extractCustomSort(conf, match, sortVars)
+		err = extractCustomSort(ctx, conf, match, sortVars)
 		if err != nil {
 			return nil, false, err
 		}
@@ -267,6 +271,7 @@ func checkIfMatch(
 }
 
 func walkDirectory(
+	ctx context.Context,
 	conf *config.Config,
 	rootPath string,
 	processedPaths map[string]bool,
@@ -330,6 +335,7 @@ func walkDirectory(
 			}
 
 			match, isMatch, err := checkIfMatch(
+				ctx,
 				conf,
 				currentPath,
 				entry,
@@ -361,6 +367,7 @@ func shouldSkipExcludedDir(conf *config.Config, entry fs.DirEntry) bool {
 // searchPaths walks through the filesystem and finds matches for the provided
 // search pattern or variables comparison.
 func searchPaths(
+	ctx context.Context,
 	conf *config.Config,
 	sortVars, searchVars *variables.Variables,
 ) (file.Changes, error) {
@@ -382,6 +389,7 @@ func searchPaths(
 			}
 
 			match, isMatch, matchErr := checkIfMatch(
+				ctx,
 				conf,
 				rootPath,
 				fs.FileInfoToDirEntry(fileInfo),
@@ -401,6 +409,7 @@ func searchPaths(
 		}
 
 		dirMatches, err := walkDirectory(
+			ctx,
 			conf,
 			rootPath,
 			processedPaths,
@@ -416,7 +425,7 @@ func searchPaths(
 	if conf.Search.FindCond != nil {
 		var err error
 
-		matches, err = processFindExpression(conf, matches, searchVars)
+		matches, err = processFindExpression(ctx, conf, matches, searchVars)
 		if err != nil {
 			return nil, err
 		}
@@ -426,6 +435,7 @@ func searchPaths(
 }
 
 func processFindExpression(
+	ctx context.Context,
 	conf *config.Config,
 	matches file.Changes,
 	searchVars *variables.Variables,
@@ -466,7 +476,12 @@ func processFindExpression(
 	}
 
 	matches = slices.DeleteFunc(matches, func(match *file.Change) bool {
-		removeMatch, err := evaluateSearchCondition(conf, match, searchVars)
+		removeMatch, err := evaluateSearchCondition(
+			ctx,
+			conf,
+			match,
+			searchVars,
+		)
 		if err != nil {
 			if conf.Verbose {
 				report.SearchEvalFailed(
@@ -566,7 +581,10 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 
 // Find returns a collection of files and directories that match the search
 // pattern or explicitly included as command-line arguments.
-func Find(conf *config.Config) (matches file.Changes, err error) {
+func Find(
+	ctx context.Context,
+	conf *config.Config,
+) (matches file.Changes, err error) {
 	if conf.Revert {
 		return loadFromBackup(conf)
 	}
@@ -589,7 +607,7 @@ func Find(conf *config.Config) (matches file.Changes, err error) {
 	if conf.CSVFilename != "" {
 		matches, err = handleCSV(conf)
 	} else {
-		matches, err = searchPaths(conf, &sortVars, &searchVars)
+		matches, err = searchPaths(ctx, conf, &sortVars, &searchVars)
 		if err != nil {
 			return nil, err
 		}

@@ -31,7 +31,7 @@ func replaceTest(t *testing.T, cases []testutil.TestCase) {
 
 				conf := testutil.GetConfig(t, tc, ".")
 
-				changes, err := replace.Replace(conf, tc.Changes)
+				changes, err := replace.Replace(t.Context(), conf, tc.Changes)
 				if err == nil {
 					testutil.CompareTargetPath(t, tc.Want, changes)
 					return

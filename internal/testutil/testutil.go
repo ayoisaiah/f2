@@ -296,7 +296,7 @@ func GetConfig(tb testing.TB, tc *TestCase, testDir string) *config.Config {
 	}
 
 	// Initialize the config
-	err = f2App.Run(context.Background(), args)
+	err = f2App.Run(tb.Context(), args)
 	if err != nil {
 		tb.Fatal(err)
 	}

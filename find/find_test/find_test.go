@@ -264,7 +264,7 @@ func findTest(t *testing.T, cases []testutil.TestCase, testDir string) {
 			// directory argument
 			config := testutil.GetConfig(t, &tc, testDir)
 
-			changes, err := find.Find(config)
+			changes, err := find.Find(t.Context(), config)
 			if err == nil {
 				testutil.CompareSourcePath(t, tc.Want, changes)
 				return
