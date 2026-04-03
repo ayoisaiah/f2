@@ -253,11 +253,11 @@ func ProcessTestCaseChanges(t *testing.T, cases []TestCase) {
 }
 
 // GetConfig constructs the app configuration from command-line arguments.
-func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
-	t.Helper()
+func GetConfig(tb testing.TB, tc *TestCase, testDir string) *config.Config {
+	tb.Helper()
 
 	for k, v := range tc.SetEnv {
-		t.Setenv(k, v)
+		tb.Setenv(k, v)
 	}
 
 	if len(tc.Args) == 0 {
@@ -280,7 +280,7 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 
 	f2App, err := app.Get(os.Stdin, os.Stdout)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	var conf *config.Config
@@ -296,9 +296,9 @@ func GetConfig(t *testing.T, tc *TestCase, testDir string) *config.Config {
 	}
 
 	// Initialize the config
-	err = f2App.Run(t.Context(), args)
+	err = f2App.Run(context.Background(), args)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	return conf

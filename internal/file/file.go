@@ -36,11 +36,30 @@ func (b Backup) RenderJSON(w io.Writer) error {
 	return nil
 }
 
+// ID3 represents id3 data from an audio file.
+type ID3 struct {
+	Format      string
+	FileType    string
+	Title       string
+	Album       string
+	Artist      string
+	AlbumArtist string
+	Genre       string
+	Composer    string
+	Year        int
+	Track       int
+	TotalTracks int
+	Disc        int
+	TotalDiscs  int
+}
+
 // Change represents a single renaming change.
 type Change struct {
 	Error         error                  `json:"error,omitempty"`
 	PrimaryPair   *Change                `json:"-"`
 	ExiftoolData  *exiftool.FileMetadata `json:"-"`
+	ID3Data       *ID3                   `json:"-"`
+	HashData      map[string]string      `json:"-"`
 	BaseDir       string                 `json:"base_dir"`
 	TargetDir     string                 `json:"target_dir"`
 	Source        string                 `json:"source"`

@@ -4,10 +4,14 @@
 package replace
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"runtime"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/ayoisaiah/f2/v2/internal/apperr"
 	"github.com/ayoisaiah/f2/v2/internal/config"
@@ -183,6 +187,9 @@ func prepNextChain(
 		}
 	}
 
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(runtime.NumCPU())
+
 	for j := range matches {
 		change := matches[j]
 
@@ -207,45 +214,124 @@ func prepNextChain(
 			continue
 		}
 
-		change.Target = conf.Search.FindCond.String()
+		g.Go(func() error {
+			change.Target = conf.Search.FindCond.String()
 
-		err := variables.Replace(conf, change, &findVars)
+			err := variables.Replace(conf, change, &findVars)
+			if err != nil {
+				return err
+			}
+
+			result, err := eval.Evaluate(change.Target)
+			if err != nil {
+				if conf.Verbose {
+					report.SearchEvalFailed(
+						conf.Stderr,
+						change.SourcePath,
+						change.Target,
+						err,
+					)
+				}
+
+				change.MatchesFindCond = false
+			}
+
+			slog.Debug(
+				fmt.Sprintf(
+					"find condition evaluated to %t",
+					result,
+				),
+				slog.String("path", change.SourcePath),
+				slog.String("evaluated", change.Target),
+				slog.Any("err", apperr.Unwrap(err)),
+			)
+
+			if !result {
+				change.MatchesFindCond = false
+			}
+
+			change.Target = originalTarget
+
+			return nil
+		})
+	}
+
+	return g.Wait()
+}
+
+// preExtractMetadata parallelizes the extraction of ID3 and Hashing metadata
+// to speed up the replacement process.
+func preExtractMetadata(
+	conf *config.Config,
+	matches file.Changes,
+) error {
+	type replacementVars struct {
+		vars        variables.Variables
+		hashPresent bool
+		id3Present  bool
+	}
+
+	var extractionNeeded bool
+
+	rvars := make([]replacementVars, len(conf.ReplacementSlice))
+
+	for i, v := range conf.ReplacementSlice {
+		vars, err := variables.Extract(v)
 		if err != nil {
 			return err
 		}
 
-		result, err := eval.Evaluate(change.Target)
-		if err != nil {
-			if conf.Verbose {
-				report.SearchEvalFailed(
-					conf.Stderr,
-					change.SourcePath,
-					change.Target,
-					err,
-				)
-			}
+		rvars[i].vars = vars
 
-			matches[j].MatchesFindCond = false
+		if len(vars.HashMatches()) > 0 {
+			rvars[i].hashPresent = true
+			extractionNeeded = true
 		}
 
-		slog.Debug(
-			fmt.Sprintf(
-				"find condition evaluated to %t",
-				result,
-			),
-			slog.String("path", change.SourcePath),
-			slog.String("evaluated", change.Target),
-			slog.Any("err", apperr.Unwrap(err)),
-		)
-
-		if !result {
-			matches[j].MatchesFindCond = false
+		if len(vars.ID3Matches()) > 0 {
+			rvars[i].id3Present = true
+			extractionNeeded = true
 		}
-
-		matches[j].Target = originalTarget
 	}
 
-	return nil
+	if !extractionNeeded {
+		return nil
+	}
+
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(runtime.NumCPU())
+
+	for i := range matches {
+		change := matches[i]
+
+		if change.IsDir {
+			continue
+		}
+
+		g.Go(func() error {
+			for i := range rvars {
+				rv := &rvars[i]
+
+				if rv.id3Present && change.ID3Data == nil {
+					err := variables.Replace(conf, change, &rv.vars)
+					if err != nil {
+						return err
+					}
+				}
+
+				if rv.hashPresent && change.HashData == nil {
+					err := variables.Replace(conf, change, &rv.vars)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return g.Wait()
 }
 
 // Replace applies the file name replacements according to the --replace
@@ -254,16 +340,21 @@ func Replace(
 	conf *config.Config,
 	matches file.Changes,
 ) (file.Changes, error) {
+	err := preExtractMetadata(conf, matches)
+	if err != nil {
+		return matches, err
+	}
+
 	if conf.ExifToolVarPresent && matches.ShouldExtractExiftool() {
 		names, indices := matches.SourceNamesWithIndices(conf.Pair)
 
 		slog.Debug("extracting exif variables", slog.Any("paths", names))
 
-		fileMeta, err := variables.ExtractExiftoolMetadata(
+		fileMeta, extractErr := variables.ExtractExiftoolMetadata(
 			conf,
 			names...)
-		if err != nil {
-			return matches, err
+		if extractErr != nil {
+			return matches, extractErr
 		}
 
 		for i := range fileMeta {
@@ -289,9 +380,9 @@ func Replace(
 
 			conf.Replacement = ch.Target
 
-			vars, err := variables.Extract(conf.Replacement)
-			if err != nil {
-				return nil, err
+			vars, extractErr := variables.Extract(conf.Replacement)
+			if extractErr != nil {
+				return nil, extractErr
 			}
 
 			err = applyReplacement(conf, &vars, ch)
@@ -301,7 +392,7 @@ func Replace(
 		}
 	}
 
-	matches, err := handleReplacementChain(conf, matches)
+	matches, err = handleReplacementChain(conf, matches)
 	if err != nil {
 		return nil, err
 	}

@@ -158,3 +158,18 @@ type Variables struct {
 func (v *Variables) IndexMatches() int {
 	return len(v.index.matches)
 }
+
+//nolint:revive // intentional unexported type
+func (v *Variables) HashMatches() []hashVarMatch {
+	return v.hash.matches
+}
+
+//nolint:revive // intentional unexported type
+func (v *Variables) ID3Matches() []id3VarMatch {
+	return v.id3.matches
+}
+
+//nolint:revive // intentional unexported type
+func (v *Variables) ExifMatches() []exifVarMatch {
+	return v.exif.matches
+}

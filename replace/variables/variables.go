@@ -76,23 +76,6 @@ type Exif struct {
 	ISOSpeedRatings       []int
 }
 
-// ID3 represents id3 data from an audio file.
-type ID3 struct {
-	Format      string
-	FileType    string
-	Title       string
-	Album       string
-	Artist      string
-	AlbumArtist string
-	Genre       string
-	Composer    string
-	Year        int
-	Track       int
-	TotalTracks int
-	Disc        int
-	TotalDiscs  int
-}
-
 func greatestCommonDivisor(a, b int) int {
 	precision := 0.0001
 	if float64(b) < precision {
@@ -273,15 +256,36 @@ func getHash(filePath string, hashValue hashAlgorithm) (string, error) {
 // hash value.
 func replaceFileHashVars(
 	conf *config.Config,
-	target, sourcePath string,
+	change *file.Change,
 	hashMatches hashVars,
 ) (string, error) {
+	target := change.Target
+
 	for i := range hashMatches.matches {
 		current := hashMatches.matches[i]
 
-		hashValue, err := getHash(sourcePath, current.hashFn)
-		if err != nil {
-			return "", err
+		var (
+			hashValue string
+			err       error
+		)
+
+		if change.HashData != nil {
+			if val, ok := change.HashData[string(current.hashFn)]; ok {
+				hashValue = val
+			}
+		}
+
+		if hashValue == "" {
+			hashValue, err = getHash(change.SourcePath, current.hashFn)
+			if err != nil {
+				return "", err
+			}
+
+			if change.HashData == nil {
+				change.HashData = make(map[string]string)
+			}
+
+			change.HashData[string(current.hashFn)] = hashValue
 		}
 
 		hashValue = transformString(conf, hashValue, current.transformToken)
@@ -373,7 +377,7 @@ func replaceDateVars(
 // getID3Tags retrieves the id3 tags in an audi file (such as mp3)
 // errors while reading the id3 tags are ignored since the corresponding
 // variable will be replaced with an empty string.
-func getID3Tags(sourcePath string) (*ID3, error) {
+func getID3Tags(sourcePath string) (*file.ID3, error) {
 	f, err := os.Open(sourcePath)
 	if err != nil {
 		return nil, err
@@ -384,13 +388,13 @@ func getID3Tags(sourcePath string) (*ID3, error) {
 	metadata, err := tag.ReadFrom(f)
 	if err != nil {
 		// empty ID3 instance which means the variables are replaced with empty strings
-		return &ID3{}, nil
+		return &file.ID3{}, nil
 	}
 
 	trackNum, totalTracks := metadata.Track()
 	discNum, totalDiscs := metadata.Disc()
 
-	return &ID3{
+	return &file.ID3{
 		Format:      string(metadata.Format()),
 		FileType:    string(metadata.FileType()),
 		Title:       metadata.Title(),
@@ -411,12 +415,21 @@ func getID3Tags(sourcePath string) (*ID3, error) {
 // with the corresponding id3 tag value.
 func replaceID3Variables(
 	conf *config.Config,
-	target, sourcePath string,
+	change *file.Change,
 	id3v id3Vars,
 ) (string, error) {
-	tags, err := getID3Tags(sourcePath)
-	if err != nil {
-		return target, err
+	target := change.Target
+
+	tags := change.ID3Data
+	if tags == nil {
+		var err error
+
+		tags, err = getID3Tags(change.SourcePath)
+		if err != nil {
+			return target, err
+		}
+
+		change.ID3Data = tags
 	}
 
 	for i := range id3v.matches {
@@ -1193,8 +1206,7 @@ func Replace(
 	if len(vars.id3.matches) > 0 {
 		out, err := replaceID3Variables(
 			conf,
-			change.Target,
-			change.SourcePath,
+			change,
 			vars.id3,
 		)
 		if err != nil {
@@ -1213,8 +1225,7 @@ func Replace(
 	if len(vars.hash.matches) > 0 {
 		out, err := replaceFileHashVars(
 			conf,
-			change.Target,
-			change.SourcePath,
+			change,
 			vars.hash,
 		)
 		if err != nil {
