@@ -7,11 +7,11 @@ toolprefix := "go tool -modfile=" + justfile_directory() + "/tools.mod"
 toolsmod := "-modfile=" + justfile_directory() + "/tools.mod"
 # Run all tests
 test filter='.*':
-	@go test ./... -race -coverprofile=coverage.out -coverpkg=. -json -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
+	@go test ./... -race -coverprofile=coverage.out -coverpkg=. -json -run={{filter}} 2>&1 | {{toolprefix}} gotestfmt -hide 'empty-packages'
 
 [no-cd]
 test-pkg filter='.*':
-  @go test ./... -race -json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
+  @go test ./... -race -json -coverprofile=coverage.out -coverpkg=. -run={{filter}} 2>&1 | {{toolprefix}} gotestfmt -hide 'empty-packages'
 
 # Release commands
 release-snapshot:
@@ -28,6 +28,7 @@ docker:
     --build-arg REPO_DESCRIPTION="{{env_var("REPO_DESCRIPTION")}}" \
     -t {{REPO_OWNER}}/{{REPO_BINARY_NAME}}:latest .
 
+[no-cd]
 update-golden filter='.*':
   @go test ./... -update -json -run={{filter}} | {{toolprefix}} gotestfmt
 
