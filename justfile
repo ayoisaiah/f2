@@ -1,4 +1,8 @@
+set dotenv-load
+
 APP := "f2"
+REPO_OWNER := env_var_or_default("REPO_OWNER", "ayoisaiah")
+REPO_BINARY_NAME := env_var_or_default("REPO_BINARY_NAME", "f2")
 toolprefix := "go tool -modfile=" + justfile_directory() + "/tools.mod"
 toolsmod := "-modfile=" + justfile_directory() + "/tools.mod"
 # Run all tests
@@ -15,6 +19,14 @@ release-snapshot:
 
 release:
   @{{toolprefix}} goreleaser release --clean
+
+docker:
+  @docker build \
+    --build-arg GO_VERSION={{env_var("GO_VERSION")}} \
+    --build-arg REPO_OWNER={{REPO_OWNER}} \
+    --build-arg REPO_BINARY_NAME={{REPO_BINARY_NAME}} \
+    --build-arg REPO_DESCRIPTION="{{env_var("REPO_DESCRIPTION")}}" \
+    -t {{REPO_OWNER}}/{{REPO_BINARY_NAME}}:latest .
 
 update-golden filter='.*':
   @go test ./... -update -json -run={{filter}} | {{toolprefix}} gotestfmt
