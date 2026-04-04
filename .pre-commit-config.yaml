@@ -1,18 +1,37 @@
 repos:
-  - repo: https://github.com/tekwizely/pre-commit-golang
-    rev: v1.0.0-beta.5
+  - repo: local
     hooks:
-      - id: my-cmd
-        name: golines
-        args: [golines, '-m', '80', '-w', '--']
-        always_run: false
-        verbose: false
-      - id: go-build-repo-mod
-      - id: go-test-repo-mod
-      - id: go-imports
-      - id: my-cmd
-        name: gofumpt
-        args: [gofumpt, '-w', '--']
-        always_run: false
-        verbose: false
-      - id: golangci-lint-repo-mod
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: go mod tidy
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      - id: go-fmt
+        name: format code
+        entry: just fmt
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      - id: golangci-lint
+        name: lint code
+        entry: just lint
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      - id: govulncheck
+        name: vulnerability check
+        entry: just vulncheck
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      - id: go-test
+        name: run tests
+        entry: just test
+        language: system
+        files: \.go$
+        pass_filenames: false

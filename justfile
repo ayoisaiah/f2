@@ -70,6 +70,11 @@ build-win:
 lint:
 	@{{toolprefix}} golangci-lint run ./...
 
+fmt:
+	@{{toolprefix}} gofumpt -l -w .
+	@{{toolprefix}} goimports -w .
+	@{{toolprefix}} golines -w .
+
 vulncheck:
 	@go tool -modfile=tools.mod govulncheck ./...
 
