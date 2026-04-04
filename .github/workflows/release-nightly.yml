@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   create_nightly_tag:
     name: Create nightly tag for master branch
@@ -55,28 +58,30 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: false
-          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            tools.sum
 
       - name: Delete existing nightly release
         run: |
           gh release delete nightly --yes || true
+- name: Create nightly release
+  uses: softprops/action-gh-release@v2
+  with:
+    tag_name: refs/tags/${{ env.NIGHTLY_TAG }}
+    name: Development build (master)
+    body: |
+      This build is directly sourced from the `master` branch in active development. As such, it may include experimental features and potential bugs.
+    draft: false
+    prerelease: true
 
-      - name: Create nightly release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: refs/tags/${{ env.NIGHTLY_TAG }}
-          name: Development build (master)
-          body: |
-            This build is directly sourced from the `master` branch in active development. As such, it may include experimental features and potential bugs.
-          draft: false
-          prerelease: true
+- name: Install Just
+  uses: taiki-e/install-action@just
 
-      - name: Build assets with Goreleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: ~> v2
-          args: release --clean --snapshot
+- name: Build assets with Goreleaser
+  run: just release-snapshot
 
-      - name: Upload assets to nightly release
+- name: Upload assets to nightly release
+...
+
         run: gh release upload ${{ env.NIGHTLY_TAG }} dist/{*.tar.gz,*.zip,*.tar.zst,*.deb,*.rpm,*.apk,checksums.txt} --clobber

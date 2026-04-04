@@ -1,6 +1,7 @@
 name: Run tests
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -13,6 +14,9 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -33,6 +37,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: |
+            go.sum
+            tools.sum
 
       - name: Use Exiftool
         uses: woss/exiftool-action@v12.92
@@ -43,16 +50,18 @@ jobs:
           apps: exiftool
         if: matrix.os == 'windows-latest'
 
-      - name: Set up gotestfmt
-        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
+      - name: Install Just
+        uses: taiki-e/install-action@just
 
       - name: Run tests
-        run: go test ./... -json -v -race 2>&1 | gotestfmt -hide 'empty-packages'
+        run: just test
 
   trigger_stable_release:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref_type == 'tag'
+    permissions:
+      contents: write
     steps:
       - name: Trigger repository_dispatch event
         run: |

@@ -7,8 +7,12 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 on:
+  workflow_dispatch:
   repository_dispatch:
     types: [release_stable]
+
+permissions:
+  contents: write
 
 jobs:
   release_stable:
@@ -29,6 +33,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ vars.GO_VERSION }}
+          cache-dependency-path: |
+            go.sum
+            tools.sum
 
       - name: Create stable release
         uses: softprops/action-gh-release@v2
@@ -39,8 +46,8 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Install Just
+        uses: taiki-e/install-action@just
+
       - name: Run Goreleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: ~> v2
-          args: release --clean
+        run: just release

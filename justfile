@@ -1,16 +1,24 @@
 APP := "f2"
 toolprefix := "go tool -modfile=" + justfile_directory() + "/tools.mod"
 toolsmod := "-modfile=" + justfile_directory() + "/tools.mod"
-
 # Run all tests
 test filter='.*':
-	@go test ./... -coverprofile=coverage.out -coverpkg=. -json -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
+	@go test ./... -race -coverprofile=coverage.out -coverpkg=. -json -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
 
 [no-cd]
 test-pkg filter='.*':
-  @go test ./... -json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
+  @go test ./... -race -json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
+...
+scc:
+  @{{toolprefix}} scc
 
-[no-cd]
+# Release commands
+release-snapshot:
+  @{{toolprefix}} goreleaser release --clean --snapshot
+
+release:
+  @{{toolprefix}} goreleaser release --clean
+
 update-golden filter='.*':
   @go test ./... -update -json -run={{filter}} | {{toolprefix}} gotestfmt
 
