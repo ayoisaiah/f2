@@ -3,6 +3,7 @@ package variables
 import (
 	"context"
 	"regexp"
+	"sync"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
@@ -44,6 +45,7 @@ type indexVarMatch struct {
 }
 
 type indexVars struct {
+	mu             *sync.Mutex
 	currentBaseDir string
 	capturVarIndex []int
 	offset         []int

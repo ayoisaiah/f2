@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/barasher/go-exiftool"
@@ -60,16 +61,16 @@ type Change struct {
 	ExiftoolData  *exiftool.FileMetadata `json:"-"`
 	ID3Data       *ID3                   `json:"-"`
 	HashData      map[string]string      `json:"-"`
-	BaseDir       string                 `json:"base_dir"`
-	TargetDir     string                 `json:"target_dir"`
+	Status        status.Status          `json:"status"`
+	OriginalName  string                 `json:"-"`
 	Source        string                 `json:"source"`
 	Target        string                 `json:"target"`
-	OriginalName  string                 `json:"-"`
-	Status        status.Status          `json:"status"`
+	TargetDir     string                 `json:"target_dir"`
+	BaseDir       string                 `json:"base_dir"`
 	SourcePath    string                 `json:"-"`
 	TargetPath    string                 `json:"-"`
-	CSVRow        []string               `json:"-"`
 	Steps         []string               `json:"-"`
+	CSVRow        []string               `json:"-"`
 	SortCriterion struct {
 		TimeVar   time.Time
 		Time      time.Time
@@ -77,10 +78,11 @@ type Change struct {
 		IntVar    int
 		Size      int64
 	} `json:"-"`
-	Position        int  `json:"-"`
-	IsDir           bool `json:"is_dir"`
-	WillOverwrite   bool `json:"-"`
-	MatchesFindCond bool `json:"-"`
+	Position        int        `json:"-"`
+	Mu              sync.Mutex `json:"-"`
+	IsDir           bool       `json:"is_dir"`
+	WillOverwrite   bool       `json:"-"`
+	MatchesFindCond bool       `json:"-"`
 }
 
 func (c *Change) LogValue() slog.Value {

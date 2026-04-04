@@ -197,32 +197,47 @@ func prepNextChain(
 	for j := range matches {
 		change := matches[j]
 
+		change.Mu.Lock()
 		originalTarget := change.Target
 
 		// Update the source to the target from the previous replacement
 		// in preparation for the next replacement
-		matches[j].Source = change.Target
+		change.Source = change.Target
+		change.Mu.Unlock()
 
 		slog.Debug(
 			"preparing for next replacement chain",
-			slog.Any("change", matches[j]),
-			slog.String("change.source", matches[j].Source),
+			slog.Any("change", change),
+			slog.String("change.source", change.Source),
 		)
 
 		if conf.Search.FindCond == nil {
 			continue
 		}
 
-		if change.PrimaryPair != nil && change.PrimaryPair.MatchesFindCond {
-			change.MatchesFindCond = true
-			continue
+		if change.PrimaryPair != nil {
+			change.PrimaryPair.Mu.Lock()
+			primaryPairMatches := change.PrimaryPair.MatchesFindCond
+			change.PrimaryPair.Mu.Unlock()
+
+			if primaryPairMatches {
+				change.Mu.Lock()
+				change.MatchesFindCond = true
+				change.Mu.Unlock()
+
+				continue
+			}
 		}
 
 		g.Go(func() error {
+			change.Mu.Lock()
+			defer change.Mu.Unlock()
+
 			change.Target = conf.Search.FindCond.String()
 
 			err := variables.Replace(ctx, conf, change, &findVars)
 			if err != nil {
+				change.Target = originalTarget
 				return err
 			}
 

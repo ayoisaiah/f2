@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/ayoisaiah/f2/v2/internal/config"
 	"github.com/ayoisaiah/f2/v2/internal/file"
@@ -19,6 +20,9 @@ func (iv *indexVars) Replace(
 	conf *config.Config,
 	change *file.Change,
 ) error {
+	iv.mu.Lock()
+	defer iv.mu.Unlock()
+
 	if conf.ResetIndexPerDir {
 		// Detect when a new directory is entered
 		if change.BaseDir != iv.currentBaseDir {
@@ -179,7 +183,9 @@ func replaceIndex(
 // getIndexingVars retrieves all the index variables in the replacement string
 // if any.
 func getIndexingVars(replacementInput string) (indexVars, error) {
-	var indexMatches indexVars
+	indexMatches := indexVars{
+		mu: &sync.Mutex{},
+	}
 
 	submatches := indexVarRegex.FindAllStringSubmatch(
 		replacementInput,
