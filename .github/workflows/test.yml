@@ -56,6 +56,9 @@ jobs:
       - name: Run tests
         run: just test
 
+      - name: Run Go Vulnerability Check
+        run: just vulncheck
+
   trigger_stable_release:
     runs-on: ubuntu-latest
     needs: test

@@ -9,6 +9,7 @@ tool (
 	github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt
 	github.com/segmentio/golines
 	golang.org/x/tools/cmd/goimports
+	golang.org/x/vuln/cmd/govulncheck
 	mvdan.cc/gofumpt
 )
 
@@ -516,9 +517,11 @@ require (
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/telemetry v0.0.0-20260209163413-e7419c687ee4 // indirect
 	golang.org/x/term v0.41.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
+	golang.org/x/vuln v1.1.4 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.242.0 // indirect
 	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2 // indirect

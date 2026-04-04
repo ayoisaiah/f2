@@ -8,9 +8,6 @@ test filter='.*':
 [no-cd]
 test-pkg filter='.*':
   @go test ./... -race -json -coverprofile=coverage.out -coverpkg=. -run={{filter}} | {{toolprefix}} gotestfmt -hide 'empty-packages'
-...
-scc:
-  @{{toolprefix}} scc
 
 # Release commands
 release-snapshot:
@@ -60,6 +57,9 @@ build-win:
 
 lint:
 	@{{toolprefix}} golangci-lint run ./...
+
+vulncheck:
+	@go tool -modfile=tools.mod govulncheck ./...
 
 pre-commit:
 	@pre-commit run
