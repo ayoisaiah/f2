@@ -17,17 +17,15 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Load .env file
-        uses: xom9ikk/dotenv@v2.3.0
-        with:
-          load-mode: strict
+        run: grep -v '^#' .env | sed 's/"//g' >> $GITHUB_ENV
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           registry-url: https://registry.npmjs.org/
           node-version: ${{ env.NODE_VERSION }}

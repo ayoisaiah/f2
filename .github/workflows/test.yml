@@ -26,15 +26,13 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Load .env file
-        uses: xom9ikk/dotenv@v2.3.0
-        with:
-          load-mode: strict
+        run: grep -v '^#' .env | sed 's/"//g' >> $GITHUB_ENV
 
       - name: Setup Go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: |
@@ -42,7 +40,7 @@ jobs:
             tools.sum
 
       - name: Use Exiftool
-        uses: woss/exiftool-action@v12.92
+        uses: woss/exiftool-action@v13.24
         if: matrix.os != 'windows-latest'
 
       - uses: MinoruSekine/setup-scoop@v4.0.1
