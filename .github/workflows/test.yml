@@ -40,14 +40,19 @@ jobs:
             go.sum
             tools.sum
 
-      - name: Use Exiftool
-        uses: woss/exiftool-action@v13.52
-        if: matrix.os != 'windows-latest'
+      - name: Install Exiftool (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libimage-exiftool-perl
 
-      - uses: MinoruSekine/setup-scoop@v4.0.1
+      - name: Install Exiftool (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install exiftool
+
+      - name: Install Exiftool (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: MinoruSekine/setup-scoop@v4.0.1
         with:
           apps: exiftool
-        if: matrix.os == 'windows-latest'
 
       - name: Install Just
         if: matrix.os != 'windows-latest'
