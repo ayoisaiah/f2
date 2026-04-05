@@ -25,6 +25,7 @@ jobs:
           fetch-depth: 0
 
       - name: Load .env file
+        shell: bash
         run: grep -v '^#' .env | sed 's/"//g' >> $GITHUB_ENV
 
       - name: Set up Go ${{ env.GO_VERSION }}
@@ -36,13 +37,13 @@ jobs:
             tools.sum
 
       - name: Create stable release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.client_payload.tag_name }}
-          name: ${{ github.event.client_payload.tag_name }}
-          body: ${{ env.CHANGELOG }}
-          draft: false
-          prerelease: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.event.client_payload.tag_name }} \
+            --title "${{ github.event.client_payload.tag_name }}" \
+            --notes "${{ env.CHANGELOG }}" \
+            --generate-notes
 
       - name: Install Just
         uses: taiki-e/install-action@just

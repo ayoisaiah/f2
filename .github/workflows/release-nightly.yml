@@ -63,14 +63,11 @@ jobs:
           gh release delete nightly --yes || true
 
       - name: Create nightly release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: refs/tags/${{ env.NIGHTLY_TAG }}
-          name: Development build (master)
-          body: |
-            This build is directly sourced from the `master` branch in active development. As such, it may include experimental features and potential bugs.
-          draft: false
-          prerelease: true
+        run: |
+          gh release create ${{ env.NIGHTLY_TAG }} \
+            --title "Development build (master)" \
+            --notes "This build is directly sourced from the \`master\` branch in active development. As such, it may include experimental features and potential bugs." \
+            --prerelease
 
       - name: Install Just
         uses: taiki-e/install-action@just
