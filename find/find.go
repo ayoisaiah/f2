@@ -95,7 +95,11 @@ func extractCustomSort(
 	conf *config.Config,
 	ch *file.Change,
 	vars *variables.Variables,
+	fileInfo fs.FileInfo,
 ) error {
+	ch.SortCriterion.Size = fileInfo.Size()
+	ch.SortCriterion.Time = fileInfo.ModTime()
+
 	// Temporarily set Target to SortVariable due to how variables.Replace() works
 	ch.Target = conf.SortVariable
 
@@ -132,16 +136,16 @@ func extractCustomSort(
 func createFileChange(
 	conf *config.Config,
 	dirPath string,
-	fileInfo fs.FileInfo,
+	fileName string,
+	isDir bool,
 ) *file.Change {
 	baseDir := filepath.Dir(dirPath)
-	fileName := fileInfo.Name()
 	sourcePath := filepath.Join(baseDir, fileName)
 
 	match := &file.Change{
 		BaseDir:      baseDir,
 		TargetDir:    baseDir,
-		IsDir:        fileInfo.IsDir(),
+		IsDir:        isDir,
 		Source:       fileName,
 		OriginalName: fileName,
 		SourcePath:   sourcePath,
@@ -193,35 +197,36 @@ func checkIfMatch(
 	filters Filters,
 	sortVars *variables.Variables,
 ) (*file.Change, bool, error) {
-	var err error
-
-	fileInfo, err := entry.Info()
-	if err != nil {
-		return nil, false, err
-	}
-
-	var isMatch bool
+	fileName := entry.Name()
+	isDir := entry.IsDir()
 
 	if conf.Search.FindCond != nil {
-		match := createFileChange(conf, path, fileInfo)
+		fileInfo, err := entry.Info()
+		if err != nil {
+			return nil, false, err
+		}
+
+		match := createFileChange(conf, path, fileName, isDir)
 		match.Target = conf.Search.FindCond.String()
+		match.SortCriterion.Size = fileInfo.Size()
+		match.SortCriterion.Time = fileInfo.ModTime()
 
-		return match, true, err
+		return match, true, nil
 	}
 
-	fileName := entry.Name()
+	searchName := fileName
 
-	if conf.IgnoreExt && !entry.IsDir() && !conf.Pair {
-		fileName = pathutil.StripExtension(fileName)
+	if conf.IgnoreExt && !isDir && !conf.Pair {
+		searchName = pathutil.StripExtension(fileName)
 	}
 
-	if !conf.Search.Regex.MatchString(fileName) {
+	if !conf.Search.Regex.MatchString(searchName) {
 		return nil, false, nil
 	}
 
-	match := createFileChange(conf, path, fileInfo)
+	match := createFileChange(conf, path, fileName, isDir)
 
-	isMatch = true
+	isMatch := true
 
 	slog.Debug(
 		"found file matching search pattern",
@@ -238,7 +243,12 @@ func checkIfMatch(
 	}
 
 	if conf.SortVariable != "" {
-		err = extractCustomSort(ctx, conf, match, sortVars)
+		fileInfo, err := entry.Info()
+		if err != nil {
+			return nil, false, err
+		}
+
+		err = extractCustomSort(ctx, conf, match, sortVars, fileInfo)
 		if err != nil {
 			return nil, false, err
 		}
@@ -358,12 +368,12 @@ func searchPaths(
 	for _, rootPath := range conf.FilesAndDirPaths {
 		rootPath = filepath.Clean(rootPath)
 
-		fileInfo, err := os.Stat(rootPath)
+		rootPathInfo, err := os.Stat(rootPath)
 		if err != nil {
 			return nil, err
 		}
 
-		if !fileInfo.IsDir() {
+		if !rootPathInfo.IsDir() {
 			if processedPaths[rootPath] {
 				continue
 			}
@@ -372,7 +382,7 @@ func searchPaths(
 				ctx,
 				conf,
 				rootPath,
-				fs.FileInfoToDirEntry(fileInfo),
+				fs.FileInfoToDirEntry(rootPathInfo),
 				filters,
 				sortVars,
 			)
