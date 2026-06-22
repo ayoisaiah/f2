@@ -18,7 +18,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load .env file
         run: grep -v '^#' .env | sed 's/"//g' >> $GITHUB_ENV
