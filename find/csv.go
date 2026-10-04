@@ -23,6 +23,7 @@ func readCSVFile(pathToCSV string) ([][]string, error) {
 	defer f.Close()
 
 	csvReader := csv.NewReader(f)
+	csvReader.FieldsPerRecord = -1
 
 	records, err := csvReader.ReadAll()
 	if err != nil {

@@ -410,6 +410,8 @@ func Replace(
 			if err != nil {
 				return nil, err
 			}
+
+			// ch.Steps = append(ch.Steps, ch.TargetPath)
 		}
 	}
 

@@ -351,6 +351,30 @@ func TestReplace(t *testing.T) {
 			},
 			Args: []string{"-f", "-", "-r", " "},
 		},
+		{
+			Name: "replace from csv file",
+			Changes: file.Changes{
+				{
+					Source: "audio.mp3",
+				},
+				{
+					Source: "pic.jpg",
+				},
+				{
+					Source: "file.tar.gz",
+				},
+				{
+					Source: "audio.flac",
+				},
+			},
+			Want: []string{
+				"sound.mp3",
+				"image.jpg",
+				"archive.tar.gz",
+				"music.flac",
+			},
+			Args: []string{"--csv", "input.csv"},
+		},
 	}
 
 	replaceTest(t, testCases)
