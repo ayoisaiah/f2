@@ -249,10 +249,6 @@ func getID3Vars(replacementInput string) (id3Vars, error) {
 
 // Extract retrieves all the variables present in the replacement string.
 func Extract(replacement string) (vars Variables, err error) {
-	if replacement == "" {
-		return
-	}
-
 	vars.filename, err = getFilenameVars(replacement)
 	if err != nil {
 		return vars, err
