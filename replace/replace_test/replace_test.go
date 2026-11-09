@@ -48,6 +48,16 @@ func replaceTest(t *testing.T, cases []testutil.TestCase) {
 func TestReplace(t *testing.T) {
 	testCases := []testutil.TestCase{
 		{
+			Name: "remove matched text with an empty replacement",
+			Changes: file.Changes{
+				{
+					Source: "a-draft.txt",
+				},
+			},
+			Want: []string{"a.txt"},
+			Args: []string{"-f", "-draft", "-r", ""},
+		},
+		{
 			Name: "basic replace",
 			Changes: file.Changes{
 				{
