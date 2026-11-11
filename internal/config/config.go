@@ -398,7 +398,7 @@ func (c *Config) setDefaultOpts(cmd *cli.Command) error {
 	c.Recursive = cmd.Bool("recursive")
 	c.OnlyDir = cmd.Bool("only-dir")
 	c.StringLiteralMode = cmd.Bool("string-mode")
-	//nolint:gosec // acceptable use
+
 	c.MaxDepth = int(cmd.Uint("max-depth"))
 	c.Verbose = cmd.Bool("verbose")
 	c.AllowOverwrites = cmd.Bool("allow-overwrites")

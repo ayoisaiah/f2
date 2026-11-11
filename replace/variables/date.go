@@ -72,11 +72,11 @@ func replaceDateToken(t time.Time, token string) string {
 
 	token = strings.TrimPrefix(token, "dt.")
 
-	if token == "unix" {
+	if token == tokenUnix {
 		return strconv.FormatInt(t.Unix(), 10)
 	}
 
-	if token == "since" {
+	if token == tokenSince {
 		dur := time.Since(t)
 		return strconv.FormatInt(int64(dur.Seconds()), 10)
 	}

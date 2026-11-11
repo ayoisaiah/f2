@@ -55,7 +55,7 @@ update-deps:
   @go get -u ./...
 
 update-tools:
-  @go get {{toolsmod}} -u ./...
+  @go get {{toolsmod}} -u tool
 
 update: && update-deps update-tools
 

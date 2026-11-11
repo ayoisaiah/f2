@@ -24,28 +24,33 @@ var (
 	dateVarRegex      *regexp.Regexp
 )
 
+const (
+	tokenUnix  = "unix"
+	tokenSince = "since"
+)
+
 var dateTokens = map[string]string{
-	"YYYY":  "2006",
-	"YY":    "06",
-	"MMMM":  "January",
-	"MMM":   "Jan",
-	"MM":    "01",
-	"M":     "1",
-	"DDDD":  "Monday",
-	"DDD":   "Mon",
-	"DD":    "02",
-	"D":     "2",
-	"H":     "15",
-	"hh":    "03",
-	"h":     "3",
-	"mm":    "04",
-	"m":     "4",
-	"ss":    "05",
-	"s":     "5",
-	"A":     "PM",
-	"a":     "pm",
-	"unix":  "unix",
-	"since": "since",
+	"YYYY":     "2006",
+	"YY":       "06",
+	"MMMM":     "January",
+	"MMM":      "Jan",
+	"MM":       "01",
+	"M":        "1",
+	"DDDD":     "Monday",
+	"DDD":      "Mon",
+	"DD":       "02",
+	"D":        "2",
+	"H":        "15",
+	"hh":       "03",
+	"h":        "3",
+	"mm":       "04",
+	"m":        "4",
+	"ss":       "05",
+	"s":        "5",
+	"A":        "PM",
+	"a":        "pm",
+	tokenUnix:  tokenUnix,
+	tokenSince: tokenSince,
 }
 
 func init() {

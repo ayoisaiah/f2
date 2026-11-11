@@ -32,6 +32,8 @@ var supportedDefaultOpts = map[string]struct{}{
 	"--verbose":  {}, "-V": {},
 }
 
+const defaultPatternText = "<pattern>"
+
 var (
 	flagCSV = &cli.StringFlag{
 		Name:        "csv",
@@ -44,7 +46,7 @@ var (
 		Name:        "find",
 		Aliases:     []string{"f"},
 		Usage:       localize.T("flag.find.usage"),
-		DefaultText: "<pattern>",
+		DefaultText: defaultPatternText,
 	}
 
 	flagReplace = &cli.StringSliceFlag{
@@ -80,13 +82,13 @@ var (
 		Name:        "exclude",
 		Aliases:     []string{"E"},
 		Usage:       localize.T("flag.exclude.usage"),
-		DefaultText: "<pattern>",
+		DefaultText: defaultPatternText,
 	}
 
 	flagExcludeDir = &cli.StringSliceFlag{
 		Name:        "exclude-dir",
 		Usage:       localize.T("flag.excludeDir.usage"),
-		DefaultText: "<pattern>",
+		DefaultText: defaultPatternText,
 	}
 
 	flagExec = &cli.BoolFlag{
