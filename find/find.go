@@ -549,12 +549,35 @@ func loadFromBackup(conf *config.Config) (file.Changes, error) {
 		ch.TargetPath = filepath.Join(ch.TargetDir, ch.Target)
 		ch.Status = status.OK
 
-		_, err = os.Stat(ch.SourcePath)
+		changes[i] = ch
+	}
+
+	// The source of a change inside a renamed directory exists only once that
+	// directory is restored, so check each source in undo order, as it will be
+	// on disk after the directories restored before it.
+	ordered := slices.Clone(changes)
+	sortfiles.ForRenamingAndUndo(ordered, true)
+
+	var restoredDirs [][2]string // {path after undo, path before undo}
+
+	for _, ch := range ordered {
+		onDisk := ch.SourcePath
+		for j := len(restoredDirs) - 1; j >= 0; j-- {
+			after, before := restoredDirs[j][0], restoredDirs[j][1]
+			if rel, err := filepath.Rel(after, onDisk); err == nil &&
+				rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+				onDisk = filepath.Join(before, rel)
+			}
+		}
+
+		_, err = os.Stat(onDisk)
 		if errors.Is(err, os.ErrNotExist) {
 			ch.Status = status.SourceNotFound
 		}
 
-		changes[i] = ch
+		if ch.IsDir {
+			restoredDirs = append(restoredDirs, [2]string{ch.TargetPath, onDisk})
+		}
 	}
 
 	if conf.Exec {

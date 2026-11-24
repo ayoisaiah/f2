@@ -2,6 +2,8 @@ package f2_test
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/ayoisaiah/f2/v2"
@@ -112,5 +114,49 @@ func TestConditionalSearch(t *testing.T) {
 		tc.SnapShot.Stderr = stderr.Bytes()
 
 		testutil.CompareGoldenFile(t, &tc)
+	}
+}
+
+// Undo must restore a recursive rename that also renamed directories: the
+// files are restored inside directories that are restored first.
+func TestUndoRecursiveRenameOfDirectories(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("TMPDIR", t.TempDir())
+	t.Chdir(root)
+
+	for _, path := range []string{"My Dir/My File.txt", "My Dir/Sub Dir/Other File.txt"} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := os.WriteFile(path, []byte(path), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	run := func(args ...string) {
+		t.Helper()
+
+		var stdin, stdout, stderr bytes.Buffer
+
+		app, err := f2.New(&stdin, &stdout)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		app.ErrWriter = &stderr
+
+		if err := app.Run(t.Context(), append([]string{"f2_test"}, args...)); err != nil {
+			t.Fatalf("%v: %v\n%s", args, err, stderr.String())
+		}
+	}
+
+	run("-f", " ", "-r", "_", "-R", "-d", "-x")
+	run("-u", "-x")
+
+	for _, path := range []string{"My Dir/My File.txt", "My Dir/Sub Dir/Other File.txt"} {
+		if got, err := os.ReadFile(path); err != nil || string(got) != path {
+			t.Errorf("%s not restored: %v", path, err)
+		}
 	}
 }
