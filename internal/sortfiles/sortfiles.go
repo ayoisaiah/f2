@@ -74,18 +74,24 @@ func Pairs(changes file.Changes, pairOrder []string) {
 }
 
 // ForRenamingAndUndo is used to sort files before directories to avoid renaming
-// conflicts. It also ensures that child directories are renamed before their
-// parents and vice versa in undo mode.
+// conflicts, and child directories before their parents. Undo mode reverses
+// this: a directory is restored before anything inside it.
 func ForRenamingAndUndo(changes file.Changes, revert bool) {
 	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		// in revert mode, restore parents before what is inside them, so that
+		// the paths of the files and directories inside exist again
+		if revert {
+			if c := cmp.Compare(len(a.BaseDir), len(b.BaseDir)); c != 0 {
+				return c
+			}
+
+			// at the same depth, files before directories as when renaming
+			return cmp.Compare(boolToInt(a.IsDir), boolToInt(b.IsDir))
+		}
+
 		// sort files before directories
 		if !a.IsDir && b.IsDir {
 			return -1
-		}
-
-		// sort parent directories before child directories in revert mode
-		if revert {
-			return cmp.Compare(len(a.BaseDir), len(b.BaseDir))
 		}
 
 		// sort child directories before parent directories
@@ -243,4 +249,12 @@ func Changes(
 	case config.SortIntVar:
 		ByIntVar(changes, conf)
 	}
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+
+	return 0
 }
